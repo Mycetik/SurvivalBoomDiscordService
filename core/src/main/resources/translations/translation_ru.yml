@@ -1,0 +1,13 @@
+#
+# SURVIVALBOOM DISCORD | SURVIVALBOOM NETWORK 2025
+#      Русский перевод | By TIMURishche
+#
+
+$name: "russian"
+$display-name: "$[lang.russian]"
+$icon: "🇷🇺"
+
+lang:
+  ukrainian: "Украинский"
+  russian: "Русский"
+  english: "Английский"

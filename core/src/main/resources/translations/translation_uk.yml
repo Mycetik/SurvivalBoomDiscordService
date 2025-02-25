@@ -1,0 +1,25 @@
+#
+# SURVIVALBOOM DISCORD | SURVIVALBOOM NETWORK 2025
+# Український переклад | By TIMURishche
+#
+
+$name: "ukrainian"
+$display-name: "$[lang.ukrainian]"
+$icon: "🇺🇦"
+
+lang:
+  ukrainian: "Українська"
+  russian: "Російська"
+  english: "Англійська"
+
+commands:
+
+  builtin:
+
+    status:
+      $embed:
+        title: "О холеро! Чи то фреді фазбер???"
+        description: "ЕУ ЕУ ЕВАЕ ЕУ УЕ УЕ"
+        fields:
+          - name: "Хрюкі"
+            value: "Хрюкнеш, хохліна?"
