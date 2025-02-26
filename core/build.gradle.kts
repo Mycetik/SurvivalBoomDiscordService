@@ -65,7 +65,7 @@ application {
     mainClass = "net.survivalboom.sbds.core.Main"
 }
 
-val outFile = File(rootProject.projectDir, "SBDS-${version}.jar")
+val outFile = File(project.layout.buildDirectory.asFile.orNull, "libs/SBDS-${version}.jar")
 val runDir = File(rootProject.projectDir, "run")
 val runFile = File(runDir, outFile.name)
 
