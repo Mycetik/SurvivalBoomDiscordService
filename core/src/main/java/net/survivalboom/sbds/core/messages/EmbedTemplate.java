@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.core.messages;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.survivalboom.sbds.api.messages.IEmbedTemplate;
 import net.survivalboom.sbds.api.messages.InvalidEmbedException;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import java.time.LocalDateTime;
 import java.util.*;
 
-public class EmbedTemplate {
+public class EmbedTemplate implements IEmbedTemplate {
 
     // AUTHOR //
 

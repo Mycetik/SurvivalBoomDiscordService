@@ -1,6 +1,8 @@
 package net.survivalboom.sbds.core.messages;
 
 
+import net.survivalboom.sbds.api.messages.IEmbedTemplate;
+import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.InvalidEmbedException;
 import net.survivalboom.sbds.core.translations.Translation;
 import net.survivalboom.sbds.api.utils.Valid;
@@ -13,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class Message extends Valid {
+public class Message extends Valid implements IMessage {
 
     private final Translation translation;
 
@@ -61,9 +63,16 @@ public class Message extends Valid {
         return text;
     }
 
-    public @Nullable List<EmbedTemplate> embeds() {
+
+    public @Nullable List<IEmbedTemplate> embeds() {
+        if (embeds == null) return null;
+        return new ArrayList<>(embeds);
+    }
+
+    public @Nullable List<EmbedTemplate> embeds0() {
         return embeds;
     }
+
 
     public @Nullable Translation translation() {
         return translation;

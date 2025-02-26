@@ -1,18 +1,17 @@
 package net.survivalboom.sbds.core.database;
 
+import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
 import net.survivalboom.sbds.core.modules.Module;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.Valid;
+import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
-import java.sql.SQLException;
 
 public class Repository extends Valid implements IRepository {
 
@@ -54,8 +53,8 @@ public class Repository extends Valid implements IRepository {
     }
 
     @Override
-    public @NotNull Connection getConnection() throws SQLException {
-        return database.requestConnection(this);
+    public @NotNull Session getSession() {
+        return database.requestSession(this);
     }
 
     @Override
@@ -74,7 +73,7 @@ public class Repository extends Valid implements IRepository {
     }
 
     @Override
-    public @NotNull RepositoryHandler<?> getHandler() {
+    public @NotNull RepositoryHandler<? extends DataRecord> getHandler() {
         return handler;
     }
 
@@ -86,5 +85,4 @@ public class Repository extends Valid implements IRepository {
     public void invalid() {
         valid(false);
     }
-
 }

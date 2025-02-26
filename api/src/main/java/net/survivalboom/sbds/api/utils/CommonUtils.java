@@ -1,5 +1,7 @@
 package net.survivalboom.sbds.api.utils;
 
+import org.bspfsystems.yamlconfiguration.configuration.Configuration;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -292,6 +294,52 @@ public class CommonUtils {
 
     }
 
+
+    //
+    // YAML
+    //
+
+    public static @NotNull ConfigurationSection getOrCreateSection(@NotNull ConfigurationSection configuration, @NotNull String path) {
+
+        Objects.requireNonNull(configuration, "configuration == null");
+        Objects.requireNonNull(path, "path == null");
+
+        ConfigurationSection out = configuration.getConfigurationSection(path);
+        if (out == null) out = configuration.createSection(path);
+
+        return out;
+
+    }
+
+    public static @NotNull Properties getPropertiesFromYaml(@NotNull ConfigurationSection section) {
+
+        Properties properties = new Properties();
+        properties.putAll(getStringMapFromYaml(section));
+
+        return properties;
+
+    }
+
+    public static @NotNull Map<String, String> getStringMapFromYaml(@NotNull ConfigurationSection section) {
+
+        Map<String, String> map = new HashMap<>();
+        section.getKeys(false).forEach(k -> loadPropertiesMap(section, map, k));
+
+        return map;
+
+    }
+
+    private static void loadPropertiesMap(@NotNull ConfigurationSection configuration, @NotNull Map<String, String> map, @NotNull String path) {
+
+        ConfigurationSection section = configuration.getConfigurationSection(path);
+        if (section != null) {
+            section.getKeys(false).forEach(k -> loadPropertiesMap(configuration, map, path + "." + k));
+            return;
+        }
+
+        map.put(path, configuration.getString(path));
+
+    }
 
 
 }

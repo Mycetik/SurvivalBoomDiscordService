@@ -108,6 +108,11 @@ public class TranslationManager extends Manager implements ITranslationManager {
     // GETTERS
     //
 
+    @Override
+    public @Nullable ITranslation getTranslation(@NotNull String name) {
+        return getTranslation0(name);
+    }
+
     public @Nullable Translation getTranslation0(@NotNull String name) {
         checkValid();
         return translationMap.get(name);

@@ -7,7 +7,7 @@ import java.util.Objects;
 
 public class NamespacedKey {
 
-    public static String ALLOWED_CHARACTERS = "abcdefghijklmnopqrstvwxyz_1234567890";
+    public static String ALLOWED_CHARACTERS = "abcdefghijklmnopqrstuvwxyz_1234567890";
 
     private final String prefix;
 
@@ -40,6 +40,11 @@ public class NamespacedKey {
 
         return false;
 
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(prefix, key);
     }
 
     public static @NotNull NamespacedKey fromModule(@NotNull IModule module, @NotNull String key) {

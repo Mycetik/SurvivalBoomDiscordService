@@ -10,7 +10,7 @@ import java.util.List;
 public interface IModuleManager {
 
 
-    String ALLOWED_CHARACTERS = "abcdefghijklmnopqrstvwxyz1234567890ABCDEFGHIGKLMNOPQRSTUVWXYZ";
+    String ALLOWED_CHARACTERS = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIGKLMNOPQRSTUVWXYZ";
 
     static boolean checkNameValid(@NotNull String name) {
 

@@ -1,23 +1,23 @@
 package net.survivalboom.sbds.core.database;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
+import net.survivalboom.sbds.core.database.users.UserRepositoryHandler;
 import net.survivalboom.sbds.core.modules.Module;
 import org.bspfsystems.yamlconfiguration.configuration.Configuration;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 
 public class Database extends Manager implements IDatabase {
@@ -26,7 +26,10 @@ public class Database extends Manager implements IDatabase {
 
     private final SBDS sbds;
 
-    @Nullable private HikariDataSource dataSource = null;
+
+    @Nullable private Properties properties;
+
+    @Nullable private SessionFactory sessionFactory = null;
 
 
     private final Map<NamespacedKey, Repository> repositoryMap = new HashMap<>();
@@ -42,8 +45,10 @@ public class Database extends Manager implements IDatabase {
 
         log.info("Loading database...");
 
+        reloadHibernate();
+
         try {
-            reload0();
+            rebuildSessionFactory();
         }
 
         catch (Throwable t) {
@@ -51,12 +56,15 @@ public class Database extends Manager implements IDatabase {
             throw t;
         }
 
+        createRepository0(null, NamespacedKey.sbds("users"), new UserRepositoryHandler());
+
     }
 
     @Override
     protected void shutdown0() {
         log.info("Shutting down database...");
-        if (dataSource != null) dataSource.close();
+        if (sessionFactory != null) sessionFactory.close();
+        repositoryMap.clear();
     }
 
     //
@@ -78,10 +86,15 @@ public class Database extends Manager implements IDatabase {
             log.info("Module {} requested a database reload. Reloading the database!", module);
         }
 
-        else log.info("Reloading database!");
-
         try {
-            reload0();
+
+            log.info("Reloading Hibernate...");
+            reloadHibernate();
+
+            log.info("Reloading repositories...");
+            rebuildSessionFactory();
+            getRepositories0().forEach(Repository::reload);
+
         }
 
         catch (Throwable t) {
@@ -94,53 +107,62 @@ public class Database extends Manager implements IDatabase {
 
     }
 
-    private void reload0() {
+    private void reloadHibernate() {
 
-        checkValid();
-
-        if (dataSource != null) {
-            dataSource.close();
-            dataSource = null;
+        if (sessionFactory != null) {
+            properties = null;
+            sessionFactory.close();
+            sessionFactory = null;
         }
 
         Configuration config = sbds.getConfiguration();
 
+        String jdbcUrl = config.getString("database.jdbc", "null");
+        String driver = config.getString("database.driver", "null");
+        String dialect = config.getString("database.dialect", "null");
+        String tableModifier = config.getString("database.table-modify", "none");
+
         String username = config.getString("database.user");
         String password = config.getString("database.password");
 
-        String jdbcUrl = config.getString("database.jdbc");
-        if (jdbcUrl == null || jdbcUrl.isBlank()) {
 
-            String dbName = config.getString("database.database", "null");
-            String dbHost = config.getString("database.host", "null");
 
-            jdbcUrl = String.format("jdbc:postgresql://%s/%s", dbHost, dbName);
+        Properties properties = CommonUtils.getPropertiesFromYaml(CommonUtils.getOrCreateSection(config, "database.properties"));
 
+        properties.setProperty("hibernate.connection.url", jdbcUrl);
+
+        properties.setProperty("hibernate.connection.driver_class", driver);
+        properties.setProperty("hibernate.dialect", dialect);
+        properties.setProperty("hibernate.hbm2ddl.auto", tableModifier);
+
+        if (username != null) properties.setProperty("hibernate.connection.username", username);
+        if (password != null) properties.setProperty("hibernate.connection.password", password);
+
+        properties.setProperty("hibernate.hikari.poolName", "DatabaseHikariMain");
+        properties.setProperty("hibernate.connection.provider_class", "com.zaxxer.hikari.hibernate.HikariConnectionProvider");
+
+        this.properties = properties;
+
+    }
+
+    private void rebuildSessionFactory() {
+
+        Objects.requireNonNull(properties, "properties == null");
+
+        if (sessionFactory != null) {
+            sessionFactory.close();
+            sessionFactory = null;
         }
 
-        int poolSize = config.getInt("database.hikari.pool-size", 10);
-        int minIdle = config.getInt("database.hikari.min-idle", 2);
-        int idleTimeout = config.getInt("database.hikari.idle-timeout", 30000);
-        int maxLifetime = config.getInt("database.hikari.lifetime", 1800000);
-        int connectionTimeout = config.getInt("database.hikari.connection-timeout", 3000);
-        String driverClassName = config.getString("database.hikari.driver", "org.postgresql.Driver");
+        org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration();
+        configuration.setProperties(properties);
 
-        HikariConfig hikariConfig = new HikariConfig();
+        for (Repository repository : repositoryMap.values()) {
+            Class<?> clazz = repository.getHandler().getDataRecordClass();
+            configuration.addAnnotatedClass(clazz);
+        }
 
-        hikariConfig.setJdbcUrl(jdbcUrl);
-        if (username != null) hikariConfig.setUsername(username);
-        if (password != null) hikariConfig.setPassword(password);
-
-        hikariConfig.setMaximumPoolSize(poolSize);
-        hikariConfig.setMinimumIdle(minIdle);
-        hikariConfig.setIdleTimeout(idleTimeout);
-        hikariConfig.setMaxLifetime(maxLifetime);
-        hikariConfig.setConnectionTimeout(connectionTimeout);
-        hikariConfig.setDriverClassName(driverClassName);
-
-        dataSource = new HikariDataSource(hikariConfig);
-
-        getRepositories0().forEach(Repository::reload);
+        sessionFactory = configuration.buildSessionFactory();
 
     }
 
@@ -149,7 +171,7 @@ public class Database extends Manager implements IDatabase {
     //
 
     @Override
-    public @NotNull Repository createRepository(@NotNull IModule module, @NotNull String name, @NotNull RepositoryHandler handler) {
+    public @NotNull Repository createRepository(@NotNull IModule module, @NotNull String name, @NotNull RepositoryHandler<?> handler) {
 
         Objects.requireNonNull(module, "module == null");
         Objects.requireNonNull(name, "name == null");
@@ -161,7 +183,7 @@ public class Database extends Manager implements IDatabase {
 
     }
 
-    public synchronized @NotNull Repository createRepository0(@Nullable IModule iModule, @NotNull NamespacedKey namespacedKey, @NotNull RepositoryHandler handler) {
+    public synchronized @NotNull Repository createRepository0(@Nullable IModule iModule, @NotNull NamespacedKey namespacedKey, @NotNull RepositoryHandler<?> handler) {
 
         if (repositoryMap.containsKey(namespacedKey)) throw new IllegalArgumentException("Repository with name `" + namespacedKey + "` already exists");
 
@@ -174,10 +196,11 @@ public class Database extends Manager implements IDatabase {
 
         else repository = new Repository(null, namespacedKey, this);
 
-        repository.configure(handler);
-        repository.reload();
-
         repositoryMap.put(namespacedKey, repository);
+
+        repository.configure(handler);
+        rebuildSessionFactory();
+        repository.reload();
 
         return repository;
 
@@ -194,13 +217,15 @@ public class Database extends Manager implements IDatabase {
     }
 
     @Override
-    public void removeRepository(@NotNull NamespacedKey key) {
+    public synchronized void removeRepository(@NotNull NamespacedKey key) {
 
         Repository repository = repositoryMap.get(key);
         if (repository == null) return;
 
         repository.invalid();
         repositoryMap.remove(key);
+
+        rebuildSessionFactory();
 
     }
 
@@ -250,7 +275,7 @@ public class Database extends Manager implements IDatabase {
         IRepository repository = getRepository(key);
         if (repository == null) return null;
 
-        return (T) repository.getHandler();
+        return (T) Objects.requireNonNull(repository.getHandler(), "handler == null, something went wrong");
 
     }
 
@@ -259,14 +284,15 @@ public class Database extends Manager implements IDatabase {
     // CONNECTION
     //
 
-    public @NotNull Connection requestConnection(@NotNull Repository repository) throws SQLException {
+    public @NotNull Session requestSession(@NotNull Repository repository) {
 
         checkValid();
         checkRepository(repository);
+        checkDatabase();
 
-        if (dataSource == null) throw new IllegalStateException("Datasource is not present. Looks like database was reloaded incorrectly.");
+        assert sessionFactory != null;
 
-        return dataSource.getConnection();
+        return sessionFactory.openSession();
 
     }
 
@@ -281,11 +307,8 @@ public class Database extends Manager implements IDatabase {
 
     }
 
-    private void checkDatasource() {
-        Objects.requireNonNull(dataSource, "Datasource == null");
+    private void checkDatabase() {
+        Objects.requireNonNull(sessionFactory, "Datasource is not present. Looks like database was reloaded incorrectly.");
     }
-
-
-    record RegisteredRepository(@Nullable Module module, @NotNull RepositoryHandler repository) {}
 
 }

@@ -29,11 +29,34 @@ dependencies {
     // HIKARI
     implementation("com.zaxxer:HikariCP:6.2.1")
 
+    // JSON
+    implementation("org.json:json:20240303")
+
+    //
     // HIBERNATE
+    //
+
+    // HIBERNATE CORE
     implementation("org.hibernate.orm:hibernate-core:6.6.9.Final")
+
+    // Hibernate Community Dialects
+    // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-community-dialects
+    implementation("org.hibernate.orm:hibernate-community-dialects:6.6.9.Final")
+
+    //
+    // DB DRIVERS
+    //
 
     // POSTRGRE SQL DRIVER
     implementation("org.postgresql:postgresql:42.7.5")
+
+    // MYSQL DRIVER
+    // https://mvnrepository.com/artifact/com.mysql/mysql-connector-j
+    implementation("com.mysql:mysql-connector-j:9.2.0")
+
+    // SQLITE DRIVER
+    // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
+    implementation("org.xerial:sqlite-jdbc:3.49.1.0")
 
 
 }

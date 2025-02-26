@@ -12,7 +12,7 @@ public interface IDatabase {
     void reload(@NotNull IModule module);
 
 
-    @NotNull IRepository createRepository(@NotNull IModule module, @NotNull String name, @NotNull RepositoryHandler handler);
+    @NotNull IRepository createRepository(@NotNull IModule module, @NotNull String name, @NotNull RepositoryHandler<?> handler);
 
     void removeRepository(@NotNull String name);
 
