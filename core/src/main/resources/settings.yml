@@ -84,7 +84,12 @@ database:
     hikari.maxLifetime: 1800000
     hikari.connectionTimeout: 30000
 
-
+#
+# SBDS підтримує систему перекладів.
+# За замовчуванням, користувач може обрати переклад що буде використовуватись у повідомленнях від бота користувачу.
+# Також адміністратори діскорд серверів на яких знаходиться бот, можуть встановити мову для їх сервера за замовчуванням.
+#
+# Тут ви можете налаштувати деякі глобальні параметри перекладів.
 translations:
 
   # Переклад який буде використовуватись за замовчуванням
@@ -100,3 +105,56 @@ translations:
   # true - Кожен раз коли SBDS не знайде повідомлення з перекладу, у консоль буде надіслано попередження.
   # false - SBDS буде просто ігнорувати подібні ситуації.
   warn-missing: true
+
+#
+# Бібліотеки на яких працює SBDS.
+# Не видаляйте стандартні бібліотеки SBDS, інакше він просто не запуститься.
+#
+# Якщо вам потрібна якась бібліотека, можете дописати цю секцію.
+# Але зазвичай, бібліотеки мають бути вказані у секції `libraries` в module.yml для кожного модуля.
+# При запуску SBDS перевіряє та завантажує усе бібліотеки.
+libraries:
+
+  ignore-missing-libraries: false # Ігнорувати помилки при завантаженні бібліотек.
+
+  # JDA - фреймворк для розробки discord ботів на java
+  jda:
+    group: "net.dv8tion"
+    artifact: "JDA"
+    version: "5.2.2"
+
+  # Hibernate - фреймворк для роботи із базою даних.
+  hibernate:
+    group: "org.hibernate.orm"
+    artifact: "hibernate-core"
+    version: "6.6.9.Final"
+
+  # HikariCP - дуже ефективний pool з'єднань із базою даних.
+  hikariCP:
+    group: "com.zaxxer"
+    artifact: "HikariCP"
+    version: "6.2.1"
+
+  # Діаклекти Hibernate для підтримки різних типів баз даних, наприклад SQLite.
+  hibernateDialects:
+    group: "org.hibernate.orm"
+    artifact: "hibernate-community-dialects"
+    version: "6.6.9.Final"
+
+  # Драйвер JDBC для підключення до PostgreSQL.
+  postgresql-driver-jdbc:
+    group: "org.postgresql"
+    artifact: "postgresql"
+    version: "42.7.5"
+
+  # Драйвер JDBC для підключення до MySQL
+  mysql-driver-jdbc:
+    group: "com.mysql"
+    artifact: "mysql-connector-j"
+    version: "9.2.0"
+
+  # Драйвер JDBC для підключення до SQLite.
+  sqlite-driver-jdbc:
+    group: "org.xerial"
+    artifact: "sqlite-jdbc"
+    version: "3.49.1.0"

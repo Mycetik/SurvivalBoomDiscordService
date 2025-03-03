@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.database.IDatabase;
@@ -13,6 +14,7 @@ import net.survivalboom.sbds.core.commands.SlashCommandManager;
 import net.survivalboom.sbds.core.console.ConsoleListener;
 import net.survivalboom.sbds.core.database.Database;
 import net.survivalboom.sbds.core.events.EventManager;
+import net.survivalboom.sbds.core.libraries.LibrariesManager;
 import net.survivalboom.sbds.core.modules.ModuleManager;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.api.SbdsProvider;
@@ -32,6 +34,8 @@ public class SBDS implements ISBDS {
     private final YamlConfiguration configuration;
 
     private final File workingDir;
+
+    private final LibrariesManager librariesManager;
 
 
     private final Database database;
@@ -58,12 +62,14 @@ public class SBDS implements ISBDS {
     private JDA bot = null;
 
 
-    public SBDS(@NotNull Logger logger, @NotNull YamlConfiguration configuration, @NotNull File workingDir, @NotNull String token) {
+    public SBDS(@NotNull Logger logger, @NotNull LibrariesManager librariesManager, @NotNull YamlConfiguration configuration, @NotNull File workingDir, @NotNull String token) {
 
         this.logger = logger;
         this.configuration = configuration;
         this.jdaBuilder = JDABuilder.createDefault(token, EnumSet.allOf(GatewayIntent.class));
         this.workingDir = workingDir;
+
+        this.librariesManager = librariesManager;
 
         this.database = new Database(this);
         this.scheduler = new Scheduler(this);
@@ -88,9 +94,18 @@ public class SBDS implements ISBDS {
 
         started = true;
 
+        librariesManager.configure(this);
+
         database.init();
 
-        bot = jdaBuilder.build();
+        try {
+            bot = jdaBuilder.build();
+        }
+
+        catch (InvalidTokenException e) {
+            logger.warn("Bot token is invalid.");
+            throw new RuntimeException(e);
+        }
 
         bot.awaitReady();
 

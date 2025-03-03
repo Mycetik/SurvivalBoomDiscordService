@@ -1,0 +1,107 @@
+package net.survivalboom.sbds.core.libraries;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.io.File;
+import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
+
+public class JarLoader {
+
+    private final DynamicClassLoader classLoader;
+
+    public JarLoader(@NotNull ClassLoader parent) throws URISyntaxException {
+        classLoader = new DynamicClassLoader("SBDSJarLoader", parent);
+        mountJar(new File(JarLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI()));
+    }
+
+    public void inject() throws NoSuchFieldException, IllegalAccessException {
+        Field scl = ClassLoader.class.getDeclaredField("scl");
+        scl.setAccessible(true);
+        scl.set(null, classLoader);
+    }
+
+    public void mountJar(@NotNull File file) {
+
+
+        try {
+            URL url = file.toURI().toURL();
+            classLoader.addURL(url);
+        }
+
+        catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public @NotNull JarLoader.DynamicClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+
+    public static class DynamicClassLoader extends URLClassLoader {
+
+        public DynamicClassLoader(String name, ClassLoader parent) {
+            super(name, new URL[] {}, parent);
+        }
+
+        @Override
+        public void addURL(@NotNull URL url) {
+            super.addURL(url);
+        }
+
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            return loadClass0(name, resolve);
+        }
+
+        // Я переписав алгоритм завантаження класів, аби він спочатку намагався завантажити класи з підключених JAR.
+        // Тільки якщо алгоритм не знайшов клас у JAR, він кинеться шукати клас в батьківському classloader.
+        // Взагалі, це дуже погана ідея, але у цьому випадку це правильне рішення, оскільки наш завантажувач класів має бути основним
+        // у програмі, тому що ми підвантажуємо усі бібліотеки динамічно.
+        protected Class<?> loadClass0(String name, boolean resolve) throws ClassNotFoundException {
+
+            // Через те що ми підвантажуємо JarLoader у Main від імені AppClassLoader,
+            // клас буде відрізнятись для JVM від класу JarLoader, який завантажить вже цей ClassLoader при ініціалізації SbdsBootstrap.
+            // На жаль, не відповідає принципам ООП, але що поробиш...
+            if (name.equals("net.survivalboom.sbds.core.libraries.JarLoader")) {
+                return getParent().loadClass(name);
+            }
+
+            Class<?> c = findLoadedClass(name);
+            if (c != null) return c;
+
+            try {
+                c = findClass(name);
+            }
+
+            catch (ClassNotFoundException e) {
+
+                ClassLoader parent = getParent();
+                if (parent == null) parent = ClassLoader.getSystemClassLoader();
+
+                c = parent.loadClass(name);
+
+            }
+
+            if (resolve) {
+                resolveClass(c);
+            }
+
+            return c;
+
+        }
+
+
+        @Override
+        public Class<?> findClass(String name) throws ClassNotFoundException {
+            return super.findClass(name);
+        }
+
+    }
+
+}

@@ -17,47 +17,26 @@ dependencies {
 
     implementation(project(":api"))
 
-    implementation("ch.qos.logback:logback-classic:1.5.6")
-    implementation("net.dv8tion:JDA:5.2.2")
-
-    // YAML CONFIGURATION
-    implementation("org.bspfsystems:yamlconfiguration:2.0.1")
-
-    // ANNOTATIONS
-    implementation("org.jetbrains:annotations:15.0")
-
-    // HIKARI
-    implementation("com.zaxxer:HikariCP:6.2.1")
-
-    // JSON
-    implementation("org.json:json:20240303")
-
     //
-    // HIBERNATE
+    // startup
     //
 
-    // HIBERNATE CORE
-    implementation("org.hibernate.orm:hibernate-core:6.6.9.Final")
-
-    // Hibernate Community Dialects
-    // https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-community-dialects
-    implementation("org.hibernate.orm:hibernate-community-dialects:6.6.9.Final")
+    compileOnly("ch.qos.logback:logback-classic:1.5.6") // logging
+    compileOnly("org.bspfsystems:yamlconfiguration:2.0.1") // yaml;
 
     //
-    // DB DRIVERS
+    // basic
     //
 
-    // POSTRGRE SQL DRIVER
-    implementation("org.postgresql:postgresql:42.7.5")
+    compileOnly("org.json:json:20240303") // json
+    compileOnly("net.dv8tion:JDA:5.2.2") // discord api
+    compileOnly("org.jetbrains:annotations:15.0") // annotations
 
-    // MYSQL DRIVER
-    // https://mvnrepository.com/artifact/com.mysql/mysql-connector-j
-    implementation("com.mysql:mysql-connector-j:9.2.0")
+    //
+    // database
+    //
 
-    // SQLITE DRIVER
-    // https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc
-    implementation("org.xerial:sqlite-jdbc:3.49.1.0")
-
+    compileOnly("org.hibernate.orm:hibernate-core:6.6.9.Final") // Hibernate core
 
 }
 
@@ -76,8 +55,6 @@ tasks {
         archiveBaseName.set("SBDS")
         archiveVersion.set(rootProject.version.toString())
         archiveClassifier.set("")
-
-        destinationDirectory.set(rootProject.rootDir)
 
     }
 
