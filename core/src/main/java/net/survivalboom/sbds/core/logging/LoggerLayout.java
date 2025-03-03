@@ -56,8 +56,25 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
 
 
 
+    @SuppressWarnings({"CallToPrintStackTrace"})
     @Override
     public String doLayout(ILoggingEvent event) {
+
+        try {
+
+            return doLayout0(event);
+
+        }
+
+        catch (Throwable t) {
+            System.err.println("[LoggerLayout] An exception was thrown while attempting to parse ` " + event.getMessage() + "`");
+            t.printStackTrace();
+            throw t;
+        }
+
+    }
+
+    private @NotNull String doLayout0(@NotNull ILoggingEvent event) {
 
         String loggerName = event.getLoggerName();
         boolean isRoot = loggerName.equals(Logger.ROOT_LOGGER_NAME);

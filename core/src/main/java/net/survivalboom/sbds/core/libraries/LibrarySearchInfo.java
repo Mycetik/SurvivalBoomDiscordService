@@ -1,12 +1,27 @@
 package net.survivalboom.sbds.core.libraries;
 
 import net.survivalboom.sbds.api.libraries.ILibrariesManager;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public record LibrarySearchInfo(String group, String artifact, String version, List<String> repositories) {
+public class LibrarySearchInfo {
+
+    private final String group;
+
+    private final String artifact;
+
+    private final String version;
+
+    private final List<String> repositories;
+
+
+    private final String jarFileName;
+
+    private final String pomFileName;
 
     public LibrarySearchInfo(@NotNull String group, @NotNull String artifact, @NotNull String version, @NotNull List<String> repositories) {
 
@@ -20,11 +35,66 @@ public record LibrarySearchInfo(String group, String artifact, String version, L
         this.artifact = artifact;
         this.version = version;
 
+        String fileName = group + "." + artifact + "-" + version;
+        this.jarFileName = fileName + ".jar";
+        this.pomFileName = fileName + ".pom";
+
     }
+
+    public @NotNull String url(@NotNull String repository) {
+
+        Objects.requireNonNull(repository, "repo == null");
+
+        String fileName = artifact + "-" + version;
+        String repositoryFormatted = repository.endsWith("/") ? repository : repository + "/";
+
+        return repositoryFormatted + group.replace(".", "/") + "/" + artifact + "/" + version + "/" + fileName;
+
+    }
+
+    public @NotNull String urlPom(@NotNull String repository) {
+        return url(repository) + ".pom";
+    }
+
+    public @NotNull String urlJar(@NotNull String repository) {
+        return url(repository) + ".jar";
+    }
+
+    public @NotNull String gradle() {
+        return group + ":" + artifact + ":" + version;
+    }
+
+
+    public @NotNull String group() {
+        return group;
+    }
+
+    public @NotNull String artifact() {
+        return artifact;
+    }
+
+    public @NotNull String version() {
+        return version;
+    }
+
+    public @NotNull List<String> repositories() {
+        return new ArrayList<>(repositories);
+    }
+
+
+    public @NotNull String jarFileName() {
+        return jarFileName;
+    }
+
+    public @NotNull String pomFileName() {
+        return pomFileName;
+    }
+
+
 
     @Override
     public String toString() {
-        return ILibrariesManager.generateCompactDependencyString(group, artifact, version);
+        return "LibrarySearchInfo{" + gradle() + "}";
     }
 
     @Override
@@ -35,11 +105,50 @@ public record LibrarySearchInfo(String group, String artifact, String version, L
     @Override
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof LibrarySearchInfo(String group1, String artifact1, String version1, List<String> repositories1))) {
+        if (!(obj instanceof LibrarySearchInfo searchInfo)) {
             return false;
         }
 
-        return repositories1.equals(repositories) && version1.equals(version) && group1.equals(group) && artifact1.equals(artifact);
+        return searchInfo.repositories.equals(repositories) && searchInfo.version.equals(version) && searchInfo.group.equals(group) && searchInfo.artifact.equals(artifact);
 
     }
+
+    //
+    // STATIC
+    //
+
+    public static @NotNull LibrarySearchInfo create(@NotNull ConfigurationSection section) throws LibrarySectionParseException {
+
+        List<String> repositories = section.getStringList("repositories");
+        if (repositories.isEmpty()) repositories.add(ILibrariesManager.MAVEN_CENTRAL_URL);
+
+        String gradle = section.getString("gradle");
+        if (gradle != null) {
+            return create(repositories, gradle);
+        }
+
+        String group = section.getString("group");
+        String artifact = section.getString("artifact");
+        String version = section.getString("version");
+
+        if (group == null || artifact == null || version == null) throw new LibrarySectionParseException("Invalid library section");
+
+        return new LibrarySearchInfo(group, artifact, version, repositories);
+
+    }
+
+    public static @NotNull LibrarySearchInfo create(@NotNull List<String> repositories, @NotNull String gradle) throws LibrarySectionParseException {
+
+        Objects.requireNonNull(repositories, "repositories == null");
+        Objects.requireNonNull(gradle, "gradle == null");
+
+        if (repositories.isEmpty()) throw new LibrarySectionParseException("No repositories provided. (repositories.isEmpty() == true)");
+
+        String[] args = gradle.split(":");
+        if (args.length != 3) throw new LibrarySectionParseException("Invalid gradle format `" + gradle + "`.");
+
+        return new LibrarySearchInfo(args[0], args[1], args[2], new ArrayList<>(repositories));
+
+    }
+
 }

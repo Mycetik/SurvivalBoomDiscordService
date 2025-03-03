@@ -86,6 +86,7 @@ tasks {
     create<Exec>("runApp") {
 
         dependsOn(copyToRun)
+        commandLine("cd", "run")
         commandLine("java", "-jar", runFile.path)
 
     }

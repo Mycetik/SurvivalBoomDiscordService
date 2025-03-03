@@ -1,99 +1,59 @@
 package net.survivalboom.sbds.core.libraries;
 
 import net.survivalboom.sbds.api.libraries.ILibrary;
-import net.survivalboom.sbds.api.libraries.LibraryDownloadException;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Library implements ILibrary {
 
-    private final LibrariesManager manager;
-
-    private final File file;
-
     private final String url;
-
-
-    private final String group;
-
-    private final String artifact;
 
 
     private final String name;
 
     private final String description;
 
-    private final String version;
 
+    private final LibrarySearchInfo info;
 
-    private final JSONObject raw;
+    private final ConfigurationSection pom;
 
     private final List<Library> dependencies;
 
 
-    public Library(@NotNull LibrariesManager manager, @NotNull File file, @NotNull String url, @NotNull String group, @NotNull String artifact, @NotNull String version, @NotNull List<Library> dependencies, @NotNull JSONObject raw) {
+    public Library(@NotNull LibrarySearchInfo info, @Nullable String url, @NotNull List<Library> dependencies, @NotNull ConfigurationSection pom) {
 
-        this.manager = manager;
+        Objects.requireNonNull(info, "info == null");
+        Objects.requireNonNull(dependencies, "dependencies == null");
+        Objects.requireNonNull(pom, "pom == null");
 
-        this.file = file;
+        this.info = info;
         this.url = url;
-
-        this.group = group;
-        this.artifact = artifact;
-        this.version = version;
-
+        this.pom = pom;
         this.dependencies = dependencies;
-        this.raw = raw;
 
-        this.name = getStringOrNull("name");
-        this.description = getStringOrNull("description");
+        this.name = pom.getString("project.name");
+        this.description = pom.getString("project.description");
 
     }
 
 
-    public void download() throws LibraryDownloadException {
-        for (Library library : dependencies) library.download();
-        if (installed()) return;
-        manager.downloadJar(this);
+    public @NotNull ConfigurationSection getPom() {
+        return pom;
     }
 
 
-    public boolean installed() {
-        return file.exists();
-    }
-
-
-    public @NotNull JSONObject getRaw() {
-        return new JSONObject(raw);
-    }
-
-
-    public @NotNull String getUrl() {
+    public @Nullable String getUrl() {
         return url;
     }
 
-    public @NotNull File getFile() {
-        return file;
-    }
-
-    public @NotNull String getGroup() {
-        return group;
-    }
-
-    public @NotNull String getArtifact() {
-        return artifact;
-    }
-
-    public @NotNull String getVersion() {
-        return version;
+    public @NotNull LibrarySearchInfo getInfo() {
+        return info;
     }
 
 
@@ -109,25 +69,9 @@ public class Library implements ILibrary {
         return new ArrayList<>(dependencies);
     }
 
-    public @NotNull LibrariesManager getManager() {
-        return manager;
-    }
-
-    private @Nullable String getStringOrNull(@NotNull String str) {
-
-        try {
-            return raw.getString(str);
-        }
-
-        catch (JSONException e) {
-            return null;
-        }
-
-    }
-
     @Override
     public String toString() {
-        return String.format("Library{group=%s, name=%s, version=%s, description=%s, dependencies=%s}", group, name, version, description, dependencies);
+        return String.format("Library{name=%s, gradle=%s, dependencies=%s}", name, info.gradle(), String.join(", ", dependencies.toString()));
     }
 
 }

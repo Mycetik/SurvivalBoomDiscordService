@@ -3,6 +3,7 @@ package net.survivalboom.sbds.api.libraries;
 import net.survivalboom.sbds.api.modules.IModule;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
+import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,33 +16,16 @@ public interface ILibrariesManager {
 
     String MAVEN_CENTRAL_URL = "https://repo1.maven.org/maven2/";
 
-    static @NotNull String generateArtifactUrl(@NotNull String repository, @NotNull String group, @NotNull String artifact, @NotNull String version) {
 
-        Objects.requireNonNull(repository, "repo == null");
-        Objects.requireNonNull(group, "group == null");
-        Objects.requireNonNull(artifact, "artifact == null");
-        Objects.requireNonNull(version, "version == null");
+    default boolean satisfy(@NotNull IModule module, @NotNull File file) throws IOException, InvalidConfigurationException {
 
-        String fileName = artifact + "-" + version;
-        String repositoryFormatted = repository.endsWith("/") ? repository : repository + "/";
+        YamlConfiguration yamlConfiguration = new YamlConfiguration();
+        yamlConfiguration.load(file);
 
-        return repositoryFormatted + group.replace(".", "/") + "/" + artifact + "/" + version + "/" + fileName;
+        return satisfy(module, yamlConfiguration);
 
     }
 
-    static @NotNull String generateJarFileName(@NotNull String group, @NotNull String artifact, @NotNull String version, @Nullable String type) {
-        String s = group + "." + artifact + "-" + version;
-        if (type == null) return s;
-        return s + "." + type;
-    }
-
-    static @NotNull String generateCompactDependencyString(@NotNull String group, @NotNull String artifact, @NotNull String version) {
-        return group + ":" + artifact + ":" + version;
-    }
-
-
-    void download(@NotNull IModule module, @NotNull ConfigurationSection section) throws LibraryParseException, RepositoryConnectionException, IOException, URISyntaxException;
-
-    void download(@NotNull IModule module, @NotNull File file) throws IOException, InvalidConfigurationException, LibraryParseException, RepositoryConnectionException, URISyntaxException;
+    boolean satisfy(@NotNull IModule module, @NotNull ConfigurationSection section);
 
 }
