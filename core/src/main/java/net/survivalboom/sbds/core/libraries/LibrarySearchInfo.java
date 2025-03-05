@@ -4,6 +4,7 @@ import net.survivalboom.sbds.api.libraries.ILibrariesManager;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -23,6 +24,8 @@ public class LibrarySearchInfo {
 
     private final String pomFileName;
 
+    private final String pomUrlFileName;
+
     public LibrarySearchInfo(@NotNull String group, @NotNull String artifact, @NotNull String version, @NotNull List<String> repositories) {
 
         Objects.requireNonNull(group, "group == null");
@@ -38,6 +41,7 @@ public class LibrarySearchInfo {
         String fileName = group + "." + artifact + "-" + version;
         this.jarFileName = fileName + ".jar";
         this.pomFileName = fileName + ".pom";
+        this.pomUrlFileName = fileName + ".pom.url";
 
     }
 
@@ -59,6 +63,7 @@ public class LibrarySearchInfo {
     public @NotNull String urlJar(@NotNull String repository) {
         return url(repository) + ".jar";
     }
+
 
     public @NotNull String gradle() {
         return group + ":" + artifact + ":" + version;
@@ -88,6 +93,23 @@ public class LibrarySearchInfo {
 
     public @NotNull String pomFileName() {
         return pomFileName;
+    }
+
+    public @NotNull String pomUrlFileName() {
+        return pomUrlFileName;
+    }
+
+
+    public @NotNull File jarFile(@NotNull File dir) {
+        return new File(dir, jarFileName);
+    }
+
+    public @NotNull File pomFile(@NotNull File dir) {
+        return new File(dir, pomFileName);
+    }
+
+    public @NotNull File pomUrlFile(@NotNull File dir) {
+        return new File(dir, pomUrlFileName);
     }
 
 
