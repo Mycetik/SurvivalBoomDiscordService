@@ -148,7 +148,7 @@ public class Library implements ILibrary {
 
     @Override
     public String toString() {
-        return String.format("Library{name=%s, gradle=%s, dependencies=%s, dependenciesProviders=%s, dependenciesVersion=%s}", name, info.gradle(),dependencies.toString(), dependencyProviders.toString(), bomDependenciesVersions.toString());
+        return String.format("Library{name=%s, gradle=%s, dependencies=%s, parent=%s, dependenciesProviders=%s, dependenciesVersion=%s}", name, info.gradle(), dependencies, parent, dependencyProviders, bomDependenciesVersions);
     }
 
 }

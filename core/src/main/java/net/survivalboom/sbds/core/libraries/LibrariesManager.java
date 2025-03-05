@@ -35,6 +35,8 @@ public class LibrariesManager  implements ILibrariesManager {
 
     private final Map<String, Library> cachedLibraries = new HashMap<>();
 
+    private final Map<String, ConfigurationSection> cachedPoms = new HashMap<>();
+
 
     public LibrariesManager(@NotNull File file, @NotNull JarLoader jarLoader) {
 
@@ -117,6 +119,10 @@ public class LibrariesManager  implements ILibrariesManager {
     public @NotNull Library findLibrary(@NotNull LibrarySearchInfo info) throws UnknownLibraryException, UnknownDependencyException {
 
         String gradleString = info.gradle();
+
+        if (gradleString.equals("org.apache.commons:commons-parent:21")) {
+            System.out.println("aboba");
+        }
 
         if (cachedLibraries.containsKey(gradleString)) {
             System.out.println("Loaded library `" + gradleString + "` from cache!");
@@ -205,9 +211,9 @@ public class LibrariesManager  implements ILibrariesManager {
         if (parent != null) placeholders.addAll(findProperties(parent));
 
         ConfigurationSection propertiesSection = library.getPom().getConfigurationSection("project.properties");
-        if (propertiesSection == null) return placeholders;
+        if (propertiesSection != null) placeholders.addAll(getAllProperties(propertiesSection, null));
 
-        return placeholders.addAll(getAllProperties(propertiesSection, null))
+        return placeholders
                 .add("${project.version}", library.getInfo().version())
                 .add("${project.name}", library.getName())
                 .add("${project.description}", library.getDescription())
@@ -282,7 +288,10 @@ public class LibrariesManager  implements ILibrariesManager {
 
         for (Map<?, ?> map : section) {
 
-            if (!map.containsKey("type") || !map.containsKey("scope")) continue;
+            String scope = (String) map.get("scope");
+            String type = (String) map.get("type");
+
+            if (scope == null || !scope.equals("import") || type == null || !type.equals("pom")) continue;
 
             String group = placeholders.parse((String) map.get("groupId"));
             String artifact = placeholders.parse((String) map.get("artifactId"));
@@ -323,7 +332,7 @@ public class LibrariesManager  implements ILibrariesManager {
             }
 
             String version = map.containsKey("version") ? map.get("version").toString() : library.getBomVersion(group + ":" + artifact);
-            Objects.requireNonNull(version, "No bom version available for `" + group + ":" + artifact + "`");
+            Objects.requireNonNull(version, "No bom version available for `" + group + ":" + artifact + "` in `" + library);
 
             version = properties.parse(version);
 
@@ -355,21 +364,40 @@ public class LibrariesManager  implements ILibrariesManager {
 
     private @NotNull ConfigurationSection findPom(@NotNull LibrarySearchInfo info) throws UnknownLibraryException {
 
+        String gradleString = info.gradle();
+        if (cachedPoms.containsKey(gradleString)) {
+            return cachedPoms.get(gradleString);
+        }
+
+        ConfigurationSection pom;
+
         if (isLocalPomExists(info)) {
             try {
-                return loadLocalPom(info);
+                pom = loadLocalPom(info);
             }
             catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
-        List<String> repositories = info.repositories();
-        if (repositories.size() == 1) {
-            return findPomInRepository(repositories.getFirst(), info);
+        else {
+
+            List<String> repositories = info.repositories();
+            if (repositories.size() == 1) {
+                pom = findPomInRepository(repositories.getFirst(), info);
+            }
+
+            else {
+
+                pom = findPomInRepositories(info);
+
+            }
+
         }
 
-        return findPomInRepositories(info);
+        cachedPoms.put(gradleString, pom);
+
+        return pom;
 
     }
 
