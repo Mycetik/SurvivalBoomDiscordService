@@ -2,6 +2,7 @@ package net.survivalboom.sbds.core.libraries;
 
 import net.survivalboom.sbds.api.libraries.*;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.http.HttpFileDownloader;
 import net.survivalboom.sbds.api.utils.json.JsonConfiguration;
 import net.survivalboom.sbds.core.SBDS;
@@ -33,6 +34,8 @@ public class LibrariesManager  implements ILibrariesManager {
 
 
     private final Map<String, Library> cachedLibraries = new HashMap<>();
+
+    private final Map<String, ConfigurationSection> cachedPom = new HashMap<>();
 
 
     public LibrariesManager(@NotNull File file, @NotNull JarLoader jarLoader) {
@@ -194,18 +197,21 @@ public class LibrariesManager  implements ILibrariesManager {
         List<String> repositories = findRepositories(pom);
 
         List<Map<?, ?>> section = pom.getMapList("project.dependencies.dependency");
+        Placeholders placeholders = findProperties(pom, repositories);
 
         List<Library> out = new ArrayList<>();
         for (Map<?, ?> map : section) {
 
-            String group = (String) map.get("groupId");
-            String artifact = (String) map.get("artifactId");
-            String version = map.get("version").toString();
+            String group = placeholders.parse((String) map.get("groupId"));
+            String artifact = placeholders.parse((String) map.get("artifactId"));
 
             String scope = (String) map.get("scope");
             if (scope != null && !scope.equals("compile") && !scope.equals("runtime")) {
                 continue;
             }
+
+
+            String version = placeholders.parse(map.get("version").toString());
 
             LibrarySearchInfo info = new LibrarySearchInfo(group, artifact, version, repositories);
 
@@ -246,6 +252,11 @@ public class LibrariesManager  implements ILibrariesManager {
 
     private @NotNull ConfigurationSection findPom(@NotNull LibrarySearchInfo info) throws UnknownLibraryException {
 
+        String gradleString = info.gradle();
+        if (cachedPom.containsKey(gradleString)) {
+            return cachedPom.get(gradleString);
+        }
+
         File file = new File(dir, info.pomFileName());
         if (file.exists()) {
 
@@ -254,7 +265,10 @@ public class LibrariesManager  implements ILibrariesManager {
                 ConfigurationSection section = loadPomFromLocalFile(file);
 
                 File jarFile = new File(dir, info.jarFileName());
-                if (jarFile.exists()) return section;
+                if (jarFile.exists()) {
+                    cachedPom.put(gradleString, section);
+                    return section;
+                }
 
                 log.warn("Library `{}` pom file was found locally, but jar file does not exist. Downloading pom from repositories.", info.gradle());
 
@@ -266,7 +280,11 @@ public class LibrariesManager  implements ILibrariesManager {
 
         }
 
-        return findPomInRepositories(info);
+        ConfigurationSection section = findPomInRepositories(info);
+
+        cachedPom.put(gradleString, section);
+
+        return section;
 
 
     }
@@ -353,7 +371,79 @@ public class LibrariesManager  implements ILibrariesManager {
 
     }
 
+    //
+    // findProperties();
+    //
+    private @NotNull Placeholders findProperties(@NotNull ConfigurationSection pom, @NotNull List<String> repositories) {
 
+        Placeholders placeholders = new Placeholders();
+
+        ConfigurationSection parentSection = pom.getConfigurationSection("project.parent");
+        if (parentSection != null) {
+
+            String group = parentSection.getString("groupId");
+            String artifact = parentSection.getString("artifactId");
+            String version = parentSection.getString("version");
+
+            Objects.requireNonNull(group);
+            Objects.requireNonNull(artifact);
+            Objects.requireNonNull(version);
+
+            LibrarySearchInfo info = new LibrarySearchInfo(group, artifact, version, repositories);
+
+            ConfigurationSection section;
+            try {
+                section = findPom(info);
+            }
+
+            catch (UnknownLibraryException e) {
+                log.error("Could not find a properties of `{}`. Unknown library.", info.gradle());
+                return placeholders;
+            }
+
+            placeholders.addAll(findProperties(section, findRepositories(section)));
+
+
+        }
+
+        ConfigurationSection propertiesSection = pom.getConfigurationSection("project.properties");
+        if (propertiesSection == null) {
+            return placeholders;
+        }
+
+        placeholders.addAll(getAllProperties(propertiesSection, null)).selfParseValues();
+
+        return placeholders;
+
+    }
+
+    private @NotNull Placeholders getAllProperties(@NotNull ConfigurationSection properties, @Nullable String path) {
+
+        Placeholders out = new Placeholders();
+
+        ConfigurationSection section = path == null ? properties : properties.getConfigurationSection(path);
+        Objects.requireNonNull(section);
+
+        for (String s : section.getKeys(false)) {
+
+            String key = path == null ? s : path + "." + s;
+
+            ConfigurationSection sect = properties.getConfigurationSection(key);
+            if (sect == null) {
+                String pKey = "${" + key.replace("!", "") + "}";
+                String value = properties.getString(key);
+                out.add(pKey, value);
+            }
+
+            else out.addAll(getAllProperties(properties, key));
+
+        }
+
+        out.selfParseValues();
+
+        return out;
+
+    }
 
 
 

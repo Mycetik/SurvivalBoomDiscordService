@@ -1,7 +1,5 @@
 package net.survivalboom.sbds.core;
 
-import net.survivalboom.sbds.core.libraries.LibrarySectionParseException;
-import net.survivalboom.sbds.core.libraries.UnknownDependencyException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.libraries.JarLoader;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
@@ -15,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +39,7 @@ public class SbdsBootstrap {
 
     public void launch() {
 
+        LoggerLayout.colors = true;
         LoggerLayout.setup();
 
         logger.info("");

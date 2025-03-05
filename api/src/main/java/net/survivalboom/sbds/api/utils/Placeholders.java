@@ -129,6 +129,12 @@ public class Placeholders {
         return this;
     }
 
+    @NotNull
+    public Placeholders putAll(@Nullable Map<String, String> map) {
+        if (map != null) this.placeholders.putAll(map);
+        return this;
+    }
+
     //
     // PARSE
     //
@@ -177,6 +183,21 @@ public class Placeholders {
 
     public Placeholders copy() {
         return new Placeholders(this);
+    }
+
+
+    public Placeholders selfParseValues() {
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+
+            String value = entry.getValue();
+            String parsedValue = parse(value);
+
+            entry.setValue(parsedValue);
+
+        }
+
+        return this;
+
     }
 
 

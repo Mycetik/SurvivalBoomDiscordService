@@ -1,21 +1,24 @@
 package net.survivalboom.sbds.core.logging;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.IThrowableProxy;
-import ch.qos.logback.classic.spi.StackTraceElementProxy;
 import ch.qos.logback.classic.spi.ThrowableProxy;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.LayoutBase;
-import net.survivalboom.sbds.api.utils.Placeholders;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import ch.qos.logback.classic.Level;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // Я їбав розбиратись із XML. Який дебіл взагалі придумав конфігурувати логер через xml?
 // Краще самому написати, тоді я точно буду знати що усе працює як я хочу.
@@ -31,32 +34,19 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
     public static final String CYAN = "\u001B[36m";
     public static final String BLUE = "\u001B[34m";
 
+    public static Map<String, String> COLOR_MAP = Map.of(
+            "&4", RED,
+            "&c", BRIGHT_RED,
+            "&r", RESET,
+            "&e", YELLOW,
+            "&a", GREEN,
+            "&3", CYAN,
+            "&9", BLUE
+    );
 
-    private static LoggerLayout current = null;
-
-
-    private boolean colorSupport = true;
-
-    private String stackTraceFormat = "    at {CLASS}.{METHOD}({FILE}:{LINE}) ~[{CLASSLOADER}:{MODULE}]";
-
-
-    public void colorSupport(boolean v) {
-        this.colorSupport = v;
-    }
-
-    public boolean colorSupport() {
-        return colorSupport;
-    }
+    public static boolean colors = true;
 
 
-    public void stackTraceFormat(@NotNull String format) {
-        Objects.requireNonNull(format, "format is null");
-        this.stackTraceFormat = format;
-    }
-
-
-
-    @SuppressWarnings({"CallToPrintStackTrace"})
     @Override
     public String doLayout(ILoggingEvent event) {
 
@@ -74,124 +64,103 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
 
     }
 
-    private @NotNull String doLayout0(@NotNull ILoggingEvent event) {
+
+    private String doLayout0(ILoggingEvent event) {
 
         String loggerName = event.getLoggerName();
         boolean isRoot = loggerName.equals(Logger.ROOT_LOGGER_NAME);
-
         String timeFormatted = dtf.format(LocalDateTime.now());
 
-        StringBuilder builder = new StringBuilder();
+        String loggerNamePart = !isRoot ? "&r/&3" + loggerName  : "";
+        String levelColored = colorLevel(event.getLevel().levelStr);
 
-        addColor(RESET, builder);
+        String messageFormatted = parsePlaceholders(event);
 
-        builder.append("[");
-        builder.append(timeFormatted);
-        builder.append(" ");
+        String str = String.format("[%s %s%s&r]: %s&r\n", timeFormatted, levelColored, loggerNamePart, messageFormatted);
 
-        addColor(getColorForLevel(event.getLevel()), builder);
-        builder.append(event.getLevel().toString());
-        addColor(RESET, builder);
 
-        if (!isRoot) {
-            builder.append("/");
-            addColor(CYAN, builder);
-            builder.append(loggerName);
-            addColor(RESET, builder);
+        Throwable throwable = getThrowable(event);
+
+        if (throwable != null) {
+
+            StringWriter stringWriter = new StringWriter();
+            PrintWriter printWriter = new PrintWriter(stringWriter);
+
+            throwable.printStackTrace(printWriter);
+
+            str = str + stringWriter;
+
         }
 
-        builder.append("]: ");
+        return color(str);
 
-        String msgWithReplacements = event.getMessage();
-        if (event.getArgumentArray() != null) {
-            for (Object o : event.getArgumentArray()) {
-                msgWithReplacements = msgWithReplacements.replaceFirst("\\{}", String.valueOf(Objects.requireNonNullElse(o, "null")));
+    }
+
+    private String parsePlaceholders(ILoggingEvent event) {
+
+        String msg = event.getMessage();
+
+        Object[] array = event.getArgumentArray();
+        if (array == null) return msg;
+
+        for (Object o : array) {
+            msg = msg.replaceFirst(Pattern.quote("{}"), Matcher.quoteReplacement(String.valueOf(Objects.requireNonNullElse(o, "null"))));
+        }
+
+        return msg;
+
+    }
+
+    private @Nullable Throwable getThrowable(ILoggingEvent event) {
+
+        ThrowableProxy throwableProxy = (ThrowableProxy) event.getThrowableProxy();
+        if (throwableProxy == null) {
+
+            Object[] array = event.getArgumentArray();
+            if (array == null) return null;
+
+            List<Object> args = List.of(array);
+            if (args.isEmpty()) return null;
+
+            if (args.getLast() instanceof Throwable t) {
+                return t;
             }
+
+            return null;
+
         }
 
-        builder.append(msgWithReplacements);
-
-        builder.append("\n");
-
-        addStackTrace(event, builder);
-
-        return builder.toString();
+        return throwableProxy.getThrowable();
 
     }
 
-    private void addColor(@NotNull String clr, @NotNull StringBuilder builder) {
-        if (!colorSupport) return;
-        builder.append(clr);
-    }
-
-    private @NotNull String getColorForLevel(@NotNull Level level) {
-
-        String levelStr = level.toString();
+    private String colorLevel(@NotNull String levelStr) {
 
         return switch (levelStr) {
-            case "ERROR" -> BRIGHT_RED;
-            case "WARN" -> YELLOW;
-            case "INFO" -> GREEN;
-            case "DEBUG" -> CYAN;
-            case "TRACE" -> BLUE;
-            default -> RESET;
+            case "ERROR" -> "&cERROR";
+            case "WARN" -> "&eWARN";
+            case "INFO" -> "&aINFO";
+            case "DEBUG" -> "&9DEBUG";
+            case "TRACE" -> "&9TRACE";
+            default -> levelStr;
         };
 
     }
 
-    private static void addStackTrace(@NotNull ILoggingEvent event, @NotNull StringBuilder builder) {
+    private String color(String string) {
 
-        IThrowableProxy throwableProxy = event.getThrowableProxy();
-        if (throwableProxy == null) {
+        for (Map.Entry<String, String> entry : COLOR_MAP.entrySet()) {
 
-            Object[] argumentArray = event.getArgumentArray();
-            if (argumentArray == null || argumentArray.length == 0) return;
+            String code = entry.getKey();
+            String color = colors ? entry.getValue() : "";
 
-            Object object = argumentArray[0];
-            if (!(object instanceof Throwable t)) return;
-
-            throwableProxy = new ThrowableProxy(t);
+            string = string.replace(code, color);
 
         }
 
-        throwableProxy = getEdgeCause(throwableProxy);
-
-        builder.append(throwableProxy.getClassName()).append(": ").append(throwableProxy.getMessage()).append("\n");
-
-        for (StackTraceElementProxy element : throwableProxy.getStackTraceElementProxyArray()) {
-            builder.append(stackTraceElementString(element.getStackTraceElement()));
-            builder.append("\n");
-        }
+        return string;
 
     }
-
-    public static String stackTraceElementString(@NotNull StackTraceElement element) {
-
-        String module = element.getModuleVersion();
-        String classLoader = element.getClassLoaderName();
-
-        Placeholders placeholders = new Placeholders();
-        placeholders.add("{CLASS}", element.getClassName());
-        placeholders.add("{METHOD}", element.getMethodName());
-        placeholders.add("{FILE}", Objects.requireNonNullElse(element.getFileName(), "?"));
-        placeholders.add("{LINE}", element.getLineNumber());
-        placeholders.add("{CLASSLOADER}", classLoader == null ? "?" : classLoader);
-        placeholders.add("{MODULE}", module == null ? "?" : module);
-
-        return placeholders.parse(current().stackTraceFormat);
-
-    }
-
-    private static @NotNull IThrowableProxy getEdgeCause(@NotNull IThrowableProxy origin) {
-
-        while (origin.getCause() != null) {
-            origin = origin.getCause();
-        }
-
-        return origin;
-
-    }
-
 
 
     public static @NotNull LoggerLayout setup() {
@@ -211,14 +180,8 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
         rootLogger.setLevel(Level.INFO);
         rootLogger.setAdditive(true);
 
-        current = loggerLayout;
-
         return loggerLayout;
 
-    }
-
-    public static @NotNull LoggerLayout current() {
-        return current;
     }
 
 }
