@@ -47,6 +47,8 @@ public class Database extends Manager implements IDatabase {
 
         reloadHibernate();
 
+        createRepository0(null, NamespacedKey.sbds("users"), new UserRepositoryHandler(), false);
+
         try {
             rebuildSessionFactory();
         }
@@ -55,8 +57,6 @@ public class Database extends Manager implements IDatabase {
             log.error("Failed to initialize the database. Please ensure that database credentials are correct and your database is online.");
             throw t;
         }
-
-        createRepository0(null, NamespacedKey.sbds("users"), new UserRepositoryHandler());
 
     }
 
@@ -119,7 +119,7 @@ public class Database extends Manager implements IDatabase {
 
         String jdbcUrl = config.getString("database.jdbc", "null");
         String driver = config.getString("database.driver", "null");
-        String dialect = config.getString("database.dialect", "null");
+        String dialect = config.getString("database.dialect");
         String tableModifier = config.getString("database.table-modify", "none");
 
         String username = config.getString("database.user");
@@ -132,14 +132,15 @@ public class Database extends Manager implements IDatabase {
         properties.setProperty("hibernate.connection.url", jdbcUrl);
 
         properties.setProperty("hibernate.connection.driver_class", driver);
-        properties.setProperty("hibernate.dialect", dialect);
+        if (dialect != null) properties.setProperty("hibernate.dialect", dialect);
         properties.setProperty("hibernate.hbm2ddl.auto", tableModifier);
 
         if (username != null) properties.setProperty("hibernate.connection.username", username);
         if (password != null) properties.setProperty("hibernate.connection.password", password);
 
         properties.setProperty("hibernate.hikari.poolName", "DatabaseHikariMain");
-        properties.setProperty("hibernate.connection.provider_class", "com.zaxxer.hikari.hibernate.HikariConnectionProvider");
+//        properties.setProperty("hibernate.connection.provider_class", "com.zaxxer.hikari.hibernate.HikariConnectionProvider");
+        properties.setProperty("hibernate.connection.provider_class", "org.hibernate.hikaricp.internal.HikariCPConnectionProvider");
 
         this.properties = properties;
 
@@ -179,11 +180,11 @@ public class Database extends Manager implements IDatabase {
 
         NamespacedKey namespacedKey = NamespacedKey.fromModule(module, name);
 
-        return createRepository0(module, namespacedKey, handler);
+        return createRepository0(module, namespacedKey, handler, true);
 
     }
 
-    public synchronized @NotNull Repository createRepository0(@Nullable IModule iModule, @NotNull NamespacedKey namespacedKey, @NotNull RepositoryHandler<?> handler) {
+    public synchronized @NotNull Repository createRepository0(@Nullable IModule iModule, @NotNull NamespacedKey namespacedKey, @NotNull RepositoryHandler<?> handler, boolean rebuiltSessionFactory) {
 
         if (repositoryMap.containsKey(namespacedKey)) throw new IllegalArgumentException("Repository with name `" + namespacedKey + "` already exists");
 
@@ -199,7 +200,7 @@ public class Database extends Manager implements IDatabase {
         repositoryMap.put(namespacedKey, repository);
 
         repository.configure(handler);
-        rebuildSessionFactory();
+        if (rebuiltSessionFactory) rebuildSessionFactory();
         repository.reload();
 
         return repository;

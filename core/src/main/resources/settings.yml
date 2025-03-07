@@ -42,18 +42,22 @@ database:
   # Рекомендуємо використовувати PostgreSQL, оскільки SBDS зберігає більшість даних у JSON.
   # PostgreSQL має вбудовану підтримку JSON й зберігає його не просто як звичайний текст.
   #
-  jdbc: "jdbc:postgresql://survivalboom.net:5432/mydbd"
+  jdbc: "jdbc:sqlite:./data/database.db"
 
   # Драйвер (class файл в .jar SBDS) що буде використовуватись для з'єднання.
   # Має відповідати протоколу JDBC, що ви вказали вище.
-  driver: "org.postgresql.Driver"
+  # Ось кілька прикладів:
+  # > PostgreSQL => org.postgresql.Driver
+  # > MySQL 8+ => com.mysql.cj.jdbc.Driver
+  # > SQLite => org.sqlite.JDBC
+  driver: "org.sqlite.JDBC"
 
   # Діалект що буде використовуватись Hibernate при генерації SQL запитів до бази даних.
   # Ось кілька прикладів:
   # > PostgreSQL => org.hibernate.dialect.PostgreSQLDialect
   # > MySQL 8+ => org.hibernate.dialect.MySQL8Dialect
   # > SQLite => org.sqlite.hibernate.dialect.SQLiteDialect
-  dialect: "org.hibernate.dialect.PostgreSQLDialect"
+  dialect: "org.hibernate.community.dialect.SQLiteDialect"
 
   # ! Важливо !
   # Цей параметр відповідає за взаємодію Hibernate із таблицями!
@@ -65,8 +69,8 @@ database:
   # * none - не перевіряє нічого й не чіпає нічого (може привести до неправильної роботи!)
   table-modify: update
 
-  user: dinoZavrik # Користувач.
-  password: abobus2024 # Пароль.
+  # user: dinoZavrik # Користувач.
+  # password: abobus2024 # Пароль.
 
   # Hibernate має конфігураційний файл, що зазвичай розміщується всередині jar.
   # Але SBDS конфігурує Hibernate програмно. У цій секції ви можете встановити будь-які параметри Hibernate.
@@ -83,6 +87,22 @@ database:
     hikari.idleTimeout: 30000
     hikari.maxLifetime: 1800000
     hikari.connectionTimeout: 30000
+
+# Налаштування логування.
+logging:
+
+  # Рівень логування у консолі.
+  level: INFO
+
+  # Ігнорування повідомлень рівня INFO.
+  # Тут ви можете вказати список Regex виразів.
+  ignore-info:
+    - ""
+
+  # Ігнорування повідомлень усіх рівнів.
+  # Тут ви також можете вказати список Regex виразів.
+  ignore-any:
+    - ""
 
 #
 # SBDS підтримує систему перекладів.
@@ -135,11 +155,23 @@ libraries:
     artifact: "HikariCP"
     version: "6.2.1"
 
+  # Підтримка HikariCP для Hibernate.
+  hibernate-hikari:
+    group: "org.hibernate.orm"
+    artifact: "hibernate-hikaricp"
+    version: "6.6.9.Final"
+
   # Діаклекти Hibernate для підтримки різних типів баз даних, наприклад SQLite.
   hibernateDialects:
     group: "org.hibernate.orm"
     artifact: "hibernate-community-dialects"
     version: "6.6.9.Final"
+
+
+  #
+  # Драйвери для підключення до баз даних.
+  # Ви можете прибрати якісь із них для економії місця якщо не користуєтесь.
+  #
 
   # Драйвер JDBC для підключення до PostgreSQL.
   postgresql-driver-jdbc:
