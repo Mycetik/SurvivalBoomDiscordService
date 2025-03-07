@@ -17,7 +17,7 @@ public class ModuleClassLoader extends URLClassLoader implements IModuleClassLoa
 
     private final Module module;
 
-    private final JarLoader.DynamicClassLoader rootClassLoader;
+    private final JarLoader jarLoader;
 
     private final ModulesClasspath modulesClasspath;
 
@@ -27,7 +27,7 @@ public class ModuleClassLoader extends URLClassLoader implements IModuleClassLoa
         super(module.getName(), new URL[]{module.getFile().toURI().toURL()}, module.getClass().getClassLoader());
         this.module = module;
         this.modulesClasspath = module.getModuleManager().getModulesClasspath();
-        this.rootClassLoader = module.getSbds().getLibrariesManager().getJarLoader().getClassLoader();
+        this.jarLoader = module.getSbds().getLibrariesManager().getJarLoader();
         modulesClasspath.register(this);
     }
 
@@ -63,7 +63,7 @@ public class ModuleClassLoader extends URLClassLoader implements IModuleClassLoa
         clazz = modulesClasspath.request(name, this);
         if (clazz != null) return clazz;
 
-        clazz = rootClassLoader.loadClassWithoutModules(name, resolve);
+        clazz = jarLoader.loadClassWithoutModules(name, resolve);
         if (clazz != null) return clazz;
 
         throw new ClassNotFoundException();

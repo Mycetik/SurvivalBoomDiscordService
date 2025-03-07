@@ -21,7 +21,7 @@ public class Main {
         File workingDir = CommonUtils.getJarFile(Main.class).getParentFile();
 
         JarLoader jarLoader = new JarLoader(Main.class.getClassLoader());
-        Thread.currentThread().setContextClassLoader(jarLoader.getClassLoader());
+        Thread.currentThread().setContextClassLoader(jarLoader);
 
         checkInitialLibraries(workingDir, jarLoader);
         launch(workingDir, jarLoader);
@@ -44,20 +44,11 @@ public class Main {
         librariesDownloader.download("https://repo1.maven.org/maven2/", "org.bspfsystems", "yamlconfiguration", "2.0.1");
         librariesDownloader.download("https://repo1.maven.org/maven2/", "org.json", "json", "20240303");
 
-        // maven
-//        librariesDownloader.download("https://repo1.maven.org/maven2/", "org.apache.httpcomponents", "httpcore", "4.4.16");
-//        librariesDownloader.download("https://repo1.maven.org/maven2/", "commons-codec", "commons-codec", "1.11");
-//        librariesDownloader.download("https://repo1.maven.org/maven2/", "commons-logging", "commons-logging", "1.2");
-//        librariesDownloader.download("https://repo1.maven.org/maven2/", "org.apache.httpcomponents", "httpclient", "4.5.14");
-//        librariesDownloader.download("https://repo1.maven.org/maven2/", "org.apache.maven.resolver", "maven-resolver-spi", "2.0.6");
-//        librariesDownloader.download("https://repo1.maven.org/maven2/", "org.apache.maven.resolver", "maven-resolver-util", "2.0.6");
-//        librariesDownloader.download("https://repo1.maven.org/maven2/", "org.apache.maven.resolver", "maven-resolver-transport-http", "1.9.22");
-
     }
 
     private static void launch(@NotNull File workingDir, @NotNull JarLoader jarLoader) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
 
-        Class<?> bootstrapClass = jarLoader.getClassLoader().findClass("net.survivalboom.sbds.core.SbdsBootstrap");
+        Class<?> bootstrapClass = jarLoader.findClass("net.survivalboom.sbds.core.SbdsBootstrap");
 
         Constructor<?> constructor = bootstrapClass.getDeclaredConstructors()[0];
         Object bootstrapInstance = constructor.newInstance(workingDir, jarLoader);
