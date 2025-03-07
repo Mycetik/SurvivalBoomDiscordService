@@ -25,6 +25,7 @@ public class UserData extends DataRecord implements IUserData {
     @Convert(converter = TranslationConverter.class)
     @Nullable private ITranslation translation;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
     private final Map<String, Object> json;
 
