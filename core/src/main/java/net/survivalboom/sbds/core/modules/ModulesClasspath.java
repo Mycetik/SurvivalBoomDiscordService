@@ -28,6 +28,22 @@ public class ModulesClasspath {
         return new ArrayList<>(classLoaders);
     }
 
+    public @Nullable Class<?> findInModules(@NotNull String name) {
+
+        for (ModuleClassLoader classLoader : getClassLoaders()) {
+
+            try {
+                return classLoader.loadClass0(name, false, false, false);
+            }
+
+            catch (ClassNotFoundException ignored) {}
+
+        }
+
+        return null;
+
+    }
+
     public @Nullable Class<?> request(@NotNull String name, @NotNull ModuleClassLoader requester) {
 
         ModuleMeta meta = requester.getModule().getMeta();

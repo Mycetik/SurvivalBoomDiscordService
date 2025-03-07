@@ -37,6 +37,8 @@ public class ModuleManager extends Manager implements IModuleManager {
     @Override
     protected void init0() {
 
+        sbds.getLibrariesManager().getJarLoader().configure(modulesClasspath::findInModules);
+
         logger.info("Loading modules...");
         modulesDir.mkdirs();
 

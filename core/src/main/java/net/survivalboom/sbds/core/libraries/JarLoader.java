@@ -104,10 +104,7 @@ public class JarLoader extends URLClassLoader {
         }
 
         Class<?> clazz = modulesClasspathInterface.apply(name);
-        if (clazz != null) {
-            System.out.println("Loaded module class `" + clazz.getName() + "`");
-            return clazz;
-        }
+        if (clazz != null) return clazz;
 
         throw new ClassNotFoundException();
 

@@ -38,18 +38,18 @@ public class ModuleClassLoader extends URLClassLoader implements IModuleClassLoa
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        Class<?> clazz = loadClass0(name, resolve);
-        classes.put(name, clazz);
-        return clazz;
-    }
-
-    private Class<?> loadClass0(@NotNull String name, boolean resolve) throws ClassNotFoundException {
 
         Class<?> result = classes.get(name);
-        if (result != null) {
-            System.out.print("Found cached class `" + name + "`");
-            return result;
-        }
+        if (result != null) return result;
+
+        Class<?> clazz = loadClass0(name, resolve, true, true);
+        classes.put(name, clazz);
+
+        return clazz;
+
+    }
+
+    public Class<?> loadClass0(@NotNull String name, boolean resolve, boolean dependencies, boolean global) throws ClassNotFoundException {
 
         Class<?> clazz = findLoadedClass(name);
         if (clazz != null) return clazz;
@@ -60,11 +60,15 @@ public class ModuleClassLoader extends URLClassLoader implements IModuleClassLoa
             return clazz;
         }
 
-        clazz = modulesClasspath.request(name, this);
-        if (clazz != null) return clazz;
+        if (dependencies) {
+            clazz = modulesClasspath.request(name, this);
+            if (clazz != null) return clazz;
+        }
 
-        clazz = jarLoader.loadClassWithoutModules(name, resolve);
-        if (clazz != null) return clazz;
+        if (global) {
+            clazz = jarLoader.loadClassWithoutModules(name, resolve);
+            if (clazz != null) return clazz;
+        }
 
         throw new ClassNotFoundException();
 
