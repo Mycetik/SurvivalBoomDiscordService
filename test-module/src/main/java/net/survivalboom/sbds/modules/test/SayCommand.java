@@ -2,7 +2,7 @@ package net.survivalboom.sbds.modules.test;
 
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.survivalboom.sbds.api.commands.argument.Argument;
-import net.survivalboom.sbds.api.commands.argument.channel.TextChannelArgument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.TextChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
