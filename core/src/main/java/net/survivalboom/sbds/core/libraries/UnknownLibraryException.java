@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.libraries;
+package net.survivalboom.sbds.core.libraries;
 
 public class UnknownLibraryException extends Exception {
 

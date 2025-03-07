@@ -1,7 +1,5 @@
 package net.survivalboom.sbds.core;
 
-import net.survivalboom.sbds.api.libraries.LibraryParseException;
-import net.survivalboom.sbds.api.libraries.RepositoryConnectionException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.libraries.JarLoader;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
@@ -15,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +39,7 @@ public class SbdsBootstrap {
 
     public void launch() {
 
+        LoggerLayout.colors = true;
         LoggerLayout.setup();
 
         logger.info("");
@@ -89,7 +87,7 @@ public class SbdsBootstrap {
 
     }
 
-    private void checkLibraries() throws RepositoryConnectionException, IOException, URISyntaxException, LibraryParseException {
+    private void checkLibraries() {
 
         logger.info("Loading libraries...");
 
@@ -99,7 +97,12 @@ public class SbdsBootstrap {
             return;
         }
 
-        librariesManager.download0(null, section, true);
+        boolean success = librariesManager.satisfy0(null, section, true);
+        if (!success) {
+            logger.error("Some libraries were failed to download. Refusing to start.");
+            librariesManager.getLibraries().forEach(library -> logger.warn(library.toString()));
+            throw new RuntimeException();
+        }
 
     }
 

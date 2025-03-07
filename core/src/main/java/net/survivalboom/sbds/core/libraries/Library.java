@@ -1,101 +1,64 @@
 package net.survivalboom.sbds.core.libraries;
 
 import net.survivalboom.sbds.api.libraries.ILibrary;
-import net.survivalboom.sbds.api.libraries.LibraryDownloadException;
+import net.survivalboom.sbds.api.utils.Placeholders;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONException;
-import org.json.JSONObject;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Library implements ILibrary {
-
-    private final LibrariesManager manager;
-
-    private final File file;
-
-    private final String url;
-
-
-    private final String group;
-
-    private final String artifact;
 
 
     private final String name;
 
     private final String description;
 
-    private final String version;
+    private final String url; // URL з якого був завантажений POM цієї бібліотеки. Якщо pom був знайдений локально, url буде завантажено із XXX.pom.url.
 
 
-    private final JSONObject raw;
+    private final LibrarySearchInfo info;
 
-    private final List<Library> dependencies;
+    private final PomFile pom;
+
+    private final List<String> repositories;
+
+    private List<Library> dependencies;
+
+    private Placeholders properties;
+
+    private Library parent;
 
 
-    public Library(@NotNull LibrariesManager manager, @NotNull File file, @NotNull String url, @NotNull String group, @NotNull String artifact, @NotNull String version, @NotNull List<Library> dependencies, @NotNull JSONObject raw) {
+    private Map<String, String> bomDependenciesVersions;
 
-        this.manager = manager;
+    private List<Library> dependencyProviders;
 
-        this.file = file;
-        this.url = url;
 
-        this.group = group;
-        this.artifact = artifact;
-        this.version = version;
+    public Library(@NotNull LibrarySearchInfo info, @NotNull List<String> repositories, @NotNull PomFile pom) {
 
-        this.dependencies = dependencies;
-        this.raw = raw;
+        Objects.requireNonNull(info, "info == null");
+        Objects.requireNonNull(pom, "pom == null");
+        Objects.requireNonNull(repositories, "repositories == null");
 
-        this.name = getStringOrNull("name");
-        this.description = getStringOrNull("description");
+        ConfigurationSection pomCfg = pom.pom();
+
+        this.url = pomCfg.getString("url");
+        Objects.requireNonNull(url, "url was not found in pom section");
+
+        this.info = info;
+        this.pom = pom;
+        this.repositories = new ArrayList<>(repositories);
+
+        this.name = pomCfg.getString("project.name");
+        this.description = pomCfg.getString("project.description");
 
     }
 
-
-    public void download() throws LibraryDownloadException {
-        for (Library library : dependencies) library.download();
-        if (installed()) return;
-        manager.downloadJar(this);
-    }
-
-
-    public boolean installed() {
-        return file.exists();
-    }
-
-
-    public @NotNull JSONObject getRaw() {
-        return new JSONObject(raw);
-    }
-
-
-    public @NotNull String getUrl() {
-        return url;
-    }
-
-    public @NotNull File getFile() {
-        return file;
-    }
-
-    public @NotNull String getGroup() {
-        return group;
-    }
-
-    public @NotNull String getArtifact() {
-        return artifact;
-    }
-
-    public @NotNull String getVersion() {
-        return version;
-    }
-
+    //
+    // GETTERS
+    //
 
     public @Nullable String getName() {
         return name;
@@ -105,29 +68,89 @@ public class Library implements ILibrary {
         return description;
     }
 
+    public @NotNull LibrarySearchInfo getInfo() {
+        return info;
+    }
+
+    public @NotNull PomFile getPom() {
+        return pom;
+    }
+
+    public @NotNull String getUrl() {
+        return url;
+    }
+
+    public @NotNull List<String> getRepositories() {
+        return new ArrayList<>(repositories);
+    }
+
+
+    public @Nullable String getBomVersion(@NotNull String rec) {
+
+        Objects.requireNonNull(rec, "rec == null");
+        if (bomDependenciesVersions.containsKey(rec)) return bomDependenciesVersions.get(rec);
+
+        String version = dependencyProviders.stream().map(lib -> lib.getBomVersion(rec)).filter(Objects::nonNull).findAny().orElse(null);
+        if (version != null) return version;
+
+        if (parent == null) return null;
+
+        return parent.getBomVersion(rec);
+
+    }
+
     public @NotNull List<Library> getDependencies() {
         return new ArrayList<>(dependencies);
     }
 
-    public @NotNull LibrariesManager getManager() {
-        return manager;
+    public @Nullable Library getParent() {
+        return parent;
     }
 
-    private @Nullable String getStringOrNull(@NotNull String str) {
-
-        try {
-            return raw.getString(str);
-        }
-
-        catch (JSONException e) {
-            return null;
-        }
-
+    public @NotNull Placeholders getProperties() {
+        return properties;
     }
+
+
+    //
+    // SETTERS
+    //
+
+    public void setDependencies(@NotNull List<Library> list) {
+        if (this.dependencies != null) throw new IllegalStateException("Already set");
+        Objects.requireNonNull(list);
+        this.dependencies = new ArrayList<>(list);
+    }
+
+    public void setParent(@NotNull Library parent) {
+        if (this.parent != null) throw new IllegalStateException("Already set");
+        Objects.requireNonNull(parent);
+        this.parent = parent;
+    }
+
+    public void setProperties(@NotNull Placeholders placeholders) {
+        if (this.properties != null) throw new IllegalStateException("Already set");
+        Objects.requireNonNull(placeholders);
+        this.properties = placeholders.copy();
+    }
+
+
+    public void setBomDependenciesVersions(@NotNull Map<String, String> map) {
+        if (this.bomDependenciesVersions != null) throw new IllegalStateException("Already set");
+        Objects.requireNonNull(map);
+        this.bomDependenciesVersions = map;
+    }
+
+    public void setDependencyProviders(@NotNull List<Library> list) {
+        if (this.dependencyProviders != null) throw new IllegalStateException("Already set");
+        Objects.requireNonNull(list);
+        this.dependencyProviders = list;
+    }
+
 
     @Override
     public String toString() {
-        return String.format("Library{group=%s, name=%s, version=%s, description=%s, dependencies=%s}", group, name, version, description, dependencies);
+        return String.format("Library{name=%s, gradle=%s, dependencies=%s, parent=%s, dependenciesProviders=%s, dependenciesVersion=%s}", name, info.gradle(), dependencies, parent, dependencyProviders, bomDependenciesVersions);
     }
 
 }

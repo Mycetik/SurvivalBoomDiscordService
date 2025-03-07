@@ -8,10 +8,14 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 
 public class JarLoader {
 
     private final DynamicClassLoader classLoader;
+
+    private final List<File> files = new ArrayList<>();
 
     public JarLoader(@NotNull ClassLoader parent) throws URISyntaxException {
         classLoader = new DynamicClassLoader("SBDSJarLoader", parent);
@@ -26,6 +30,7 @@ public class JarLoader {
 
     public void mountJar(@NotNull File file) {
 
+        if (files.contains(file)) return;
 
         try {
             URL url = file.toURI().toURL();
@@ -35,6 +40,8 @@ public class JarLoader {
         catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
+
+        files.add(file);
 
     }
 
