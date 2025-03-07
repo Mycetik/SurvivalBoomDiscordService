@@ -76,6 +76,8 @@ tasks {
 
         doFirst {
 
+            runDir.mkdirs()
+
             Files.deleteIfExists(runFile.toPath())
             Files.copy(outFile.toPath(), runFile.toPath())
 
