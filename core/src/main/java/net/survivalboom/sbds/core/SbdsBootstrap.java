@@ -100,6 +100,7 @@ public class SbdsBootstrap {
         boolean success = librariesManager.satisfy0(null, section, true);
         if (!success) {
             logger.error("Some libraries were failed to download. Refusing to start.");
+            librariesManager.getLibraries().forEach(library -> logger.warn(library.toString()));
             throw new RuntimeException();
         }
 

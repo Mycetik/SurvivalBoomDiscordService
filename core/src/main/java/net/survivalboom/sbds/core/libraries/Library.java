@@ -20,7 +20,7 @@ public class Library implements ILibrary {
 
     private final LibrarySearchInfo info;
 
-    private final ConfigurationSection pom;
+    private final PomFile pom;
 
     private final List<String> repositories;
 
@@ -36,21 +36,23 @@ public class Library implements ILibrary {
     private List<Library> dependencyProviders;
 
 
-    public Library(@NotNull LibrarySearchInfo info, @NotNull List<String> repositories, @NotNull ConfigurationSection pom) {
+    public Library(@NotNull LibrarySearchInfo info, @NotNull List<String> repositories, @NotNull PomFile pom) {
 
         Objects.requireNonNull(info, "info == null");
         Objects.requireNonNull(pom, "pom == null");
         Objects.requireNonNull(repositories, "repositories == null");
 
-        this.url = pom.getString("url");
+        ConfigurationSection pomCfg = pom.pom();
+
+        this.url = pomCfg.getString("url");
         Objects.requireNonNull(url, "url was not found in pom section");
 
         this.info = info;
         this.pom = pom;
         this.repositories = new ArrayList<>(repositories);
 
-        this.name = pom.getString("project.name");
-        this.description = pom.getString("project.description");
+        this.name = pomCfg.getString("project.name");
+        this.description = pomCfg.getString("project.description");
 
     }
 
@@ -70,7 +72,7 @@ public class Library implements ILibrary {
         return info;
     }
 
-    public @NotNull ConfigurationSection getPom() {
+    public @NotNull PomFile getPom() {
         return pom;
     }
 

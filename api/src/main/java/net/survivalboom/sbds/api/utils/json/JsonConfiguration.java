@@ -8,9 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class JsonConfiguration extends FileConfiguration {
 
@@ -147,10 +145,41 @@ public class JsonConfiguration extends FileConfiguration {
 
     @Override
     public String saveToString() {
-        JSONObject json = new JSONObject();
-        convertConfigToJson(this, json, "");
-        return json.toString(4); // Форматированный вывод с отступами
+        return saveToJson().toString(4); // Форматированный вывод с отступами
     }
+
+    public @NotNull JSONObject saveToJson() {;
+//        convertConfigToJson(this, json, "");
+        Map<String, Object> flatMap = new LinkedHashMap<>();
+        flattenConfiguration("", this, flatMap);
+        return new JSONObject(flatMap);
+    }
+
+    private void flattenConfiguration(String prefix, Object current, Map<String, Object> flatMap) {
+        if (current instanceof MemorySection section) {
+            for (String key : section.getKeys(false)) {
+                if (key.startsWith("!")) {
+                    // Потерянное (конфликтное) значение – убираем "!" и формируем ключ
+                    String flatKey = prefix.isEmpty() ? key.substring(1) : prefix + "." + key.substring(1);
+                    flatMap.put(flatKey, section.get(key));
+                } else {
+                    String newPrefix = prefix.isEmpty() ? key : prefix + "." + key;
+                    Object value = section.get(key);
+                    if (value instanceof MemorySection) {
+                        flattenConfiguration(newPrefix, value, flatMap);
+                    } else if (value instanceof List) {
+                        flatMap.put(newPrefix, value);
+                    } else {
+                        flatMap.put(newPrefix, value);
+                    }
+                }
+            }
+        } else {
+            flatMap.put(prefix, current);
+        }
+    }
+
+
 
     /**
      * Рекурсивно обходит конфигурацию и строит JSONObject.

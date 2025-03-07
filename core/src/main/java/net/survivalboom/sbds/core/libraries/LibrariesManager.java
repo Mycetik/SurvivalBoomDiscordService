@@ -7,6 +7,7 @@ import net.survivalboom.sbds.api.utils.http.HttpFileDownloader;
 import net.survivalboom.sbds.api.utils.json.JsonConfiguration;
 import net.survivalboom.sbds.core.SBDS;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
@@ -19,6 +20,7 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 
 public class LibrariesManager  implements ILibrariesManager {
@@ -35,7 +37,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
     private final Map<String, Library> cachedLibraries = new HashMap<>();
 
-    private final Map<String, ConfigurationSection> cachedPoms = new HashMap<>();
+    private final List<PomFile> cachedPoms = new ArrayList<>();
 
 
     public LibrariesManager(@NotNull File file, @NotNull JarLoader jarLoader) {
@@ -51,11 +53,15 @@ public class LibrariesManager  implements ILibrariesManager {
 
     }
 
-
     public void configure(@NotNull SBDS sbds) {
         if (this.sbds != null) throw new RuntimeException("Пошел нахуй, чурка!");
         this.sbds = sbds;
     }
+
+    public @NotNull List<Library> getLibraries() {
+        return new ArrayList<>(cachedLibraries.values());
+    }
+
 
     //
     //
@@ -93,7 +99,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
             Library library;
             try {
-                library = findLibrary(searchInfo);
+                library = findLibrary(searchInfo, true);
             }
 
             catch (UnknownLibraryException e) {
@@ -106,30 +112,34 @@ public class LibrariesManager  implements ILibrariesManager {
                 return false;
             }
 
-            log.info("Successfully found `{}`!", library);
+            try {
+                downloadLibrary(library);
+            }
+
+            catch (LibraryDownloadException e) {
+                log.error("Failed to download `{}`. An exception occurred.", searchInfo);
+                return false;
+            }
 
 
         }
+
+        downloadPoms();
 
         return true;
 
     }
 
 
-    public @NotNull Library findLibrary(@NotNull LibrarySearchInfo info) throws UnknownLibraryException, UnknownDependencyException {
+    public @NotNull Library findLibrary(@NotNull LibrarySearchInfo info, boolean resolveDependencies) throws UnknownLibraryException, UnknownDependencyException {
 
         String gradleString = info.gradle();
 
-        if (gradleString.equals("org.apache.commons:commons-parent:21")) {
-            System.out.println("aboba");
-        }
-
         if (cachedLibraries.containsKey(gradleString)) {
-            System.out.println("Loaded library `" + gradleString + "` from cache!");
             return cachedLibraries.get(gradleString);
         }
 
-        ConfigurationSection pom = findPom(info);
+        PomFile pom = findPom(info);
 
         List<String> repositories = findRepositories(pom);
 
@@ -147,8 +157,12 @@ public class LibrariesManager  implements ILibrariesManager {
         List<Library> bomDependencyProviders = findBomProviders(library);
         library.setDependencyProviders(bomDependencyProviders);
 
-        List<Library> dependencies = findDependencies(library);
-        library.setDependencies(dependencies);
+        if (resolveDependencies) {
+            List<Library> dependencies = findDependencies(library);
+            library.setDependencies(dependencies);
+        }
+
+        else library.setDependencies(new ArrayList<>());
 
         cachedLibraries.put(gradleString, library);
 
@@ -157,12 +171,117 @@ public class LibrariesManager  implements ILibrariesManager {
     }
 
     //
+    // downloadLibraries()
+    //
+    public void downloadLibrary(@NotNull Library library) throws LibraryDownloadException {
+
+        Objects.requireNonNull(library);
+
+        for (Library dependency : library.getDependencies()) downloadLibrary(dependency);
+
+        LibrarySearchInfo info = library.getInfo();
+        File file = info.jarFile(dir);
+
+        if (file.exists()) {
+            jarLoader.mountJar(file);
+            return;
+        }
+
+        String url = info.urlJar(library.getUrl());
+
+        try {
+
+            log.info("Downloading `{}` from `{}`...", file.getName(), url);
+            try (InputStream in = new URI(url).toURL().openStream()) {
+                Files.copy(in, file.toPath());
+            }
+
+            jarLoader.mountJar(file);
+
+        }
+
+        catch (IOException | URISyntaxException e) {
+            throw new LibraryDownloadException(e);
+        }
+
+    }
+
+    public void downloadPoms() {
+
+        for (PomFile pomFile : cachedPoms) {
+
+            File file = pomFile.info().pomFile(dir);
+            if (file.exists()) continue;
+
+            JsonConfiguration jsonConfiguration = (JsonConfiguration) pomFile.pom();
+            JSONObject json = jsonConfiguration.saveToJson();
+            String xml = XML.toString(json);
+
+            log.info("Caching `{}` on disk...", file.getName());
+
+            try {
+
+                file.createNewFile();
+
+                try (FileOutputStream stream = new FileOutputStream(file)) {
+                    stream.write(xml.getBytes(StandardCharsets.UTF_8));
+                }
+
+            }
+
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
+    }
+
+    private boolean isNewerVersion(String newVersion, String oldVersion) {
+        if (newVersion == null || oldVersion == null) throw new IllegalArgumentException("Version cannot be null");
+
+        String[] newParts = newVersion.split("[-.]");
+        String[] oldParts = oldVersion.split("[-.]");
+
+        int length = Math.max(newParts.length, oldParts.length);
+
+        for (int i = 0; i < length; i++) {
+            String newPart = i < newParts.length ? newParts[i] : "0";
+            String oldPart = i < oldParts.length ? oldParts[i] : "0";
+
+            // Проверяем, число это или нет
+            boolean isNewNumeric = newPart.matches("\\d+");
+            boolean isOldNumeric = oldPart.matches("\\d+");
+
+            if (isNewNumeric && isOldNumeric) {
+                // Сравниваем числа
+                int newNum = Integer.parseInt(newPart);
+                int oldNum = Integer.parseInt(oldPart);
+                if (newNum > oldNum) return true;
+                if (newNum < oldNum) return false;
+            } else {
+                // Если одно число, а другое строка → число "старше"
+                if (isNewNumeric) return true;
+                if (isOldNumeric) return false;
+
+                // Сравниваем строки (beta, RC, SNAPSHOT)
+                int cmp = newPart.compareTo(oldPart);
+                if (cmp > 0) return true;
+                if (cmp < 0) return false;
+            }
+        }
+
+        return false; // Версии равны
+    }
+
+
+    //
     // findRepositories();
     //
 
-    private @NotNull List<String> findRepositories(@NotNull ConfigurationSection pom) {
+    private @NotNull List<String> findRepositories(@NotNull PomFile pom) {
 
-        List<Map<?, ?>> section = pom.getMapList("project.repositories.repository");
+        List<Map<?, ?>> section = pom.pom().getMapList("project.repositories.repository");
         if (section.isEmpty()) return List.of(ILibrariesManager.MAVEN_CENTRAL_URL);
 
         List<String> out = new ArrayList<>();
@@ -182,7 +301,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
     private @Nullable Library findParent(@NotNull Library library) throws UnknownLibraryException, UnknownDependencyException {
 
-        ConfigurationSection parentSection = library.getPom().getConfigurationSection("project.parent");
+        ConfigurationSection parentSection = library.getPom().pom().getConfigurationSection("project.parent");
         if (parentSection == null) return null;
 
         String group = parentSection.getString("groupId");
@@ -195,7 +314,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
         LibrarySearchInfo info = new LibrarySearchInfo(group, artifact, version, library.getRepositories());
 
-        return findLibrary(info);
+        return findLibrary(info, false);
 
     }
 
@@ -210,7 +329,7 @@ public class LibrariesManager  implements ILibrariesManager {
         Library parent = library.getParent();
         if (parent != null) placeholders.addAll(findProperties(parent));
 
-        ConfigurationSection propertiesSection = library.getPom().getConfigurationSection("project.properties");
+        ConfigurationSection propertiesSection = library.getPom().pom().getConfigurationSection("project.properties");
         if (propertiesSection != null) placeholders.addAll(getAllProperties(propertiesSection, null));
 
         return placeholders
@@ -258,7 +377,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
         Map<String, String> bom = new HashMap<>();
 
-        List<Map<?, ?>> section = library.getPom().getMapList("project.dependencyManagement.dependencies.dependency");
+        List<Map<?, ?>> section = library.getPom().pom().getMapList("project.dependencyManagement.dependencies.dependency");
         if (section.isEmpty()) return bom;
 
         Placeholders placeholders = library.getProperties();
@@ -281,7 +400,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
         List<Library> out = new ArrayList<>();
 
-        List<Map<?, ?>> section = library.getPom().getMapList("project.dependencyManagement.dependencies.dependency");
+        List<Map<?, ?>> section = library.getPom().pom().getMapList("project.dependencyManagement.dependencies.dependency");
         if (section.isEmpty()) return out;
 
         Placeholders placeholders = library.getProperties();
@@ -299,7 +418,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
             LibrarySearchInfo info = new LibrarySearchInfo(group, artifact, version, library.getRepositories());
 
-            Library provider = findLibrary(info);
+            Library provider = findLibrary(info, false);
 
             out.add(provider);
 
@@ -318,7 +437,7 @@ public class LibrariesManager  implements ILibrariesManager {
         List<String> repositories = library.getRepositories();
         Placeholders properties = library.getProperties();
 
-        List<Map<?, ?>> section = library.getPom().getMapList("project.dependencies.dependency");
+        List<Map<?, ?>> section = library.getPom().pom().getMapList("project.dependencies.dependency");
 
         List<Library> out = new ArrayList<>();
         for (Map<?, ?> map : section) {
@@ -331,8 +450,17 @@ public class LibrariesManager  implements ILibrariesManager {
                 continue;
             }
 
+            Boolean optional = (Boolean) map.get("optional");
+            if (optional != null && optional) {
+                continue;
+            }
+
             String version = map.containsKey("version") ? map.get("version").toString() : library.getBomVersion(group + ":" + artifact);
-            Objects.requireNonNull(version, "No bom version available for `" + group + ":" + artifact + "` in `" + library);
+            if (version == null) {
+                log.warn("No BOM version found for dependency `{}`. Required by `{}`. Trying to use latest version...", group + ":" + artifact, library);
+                version = findLatestVersion(group, artifact);
+                Objects.requireNonNull(version, "CACUS!");
+            }
 
             version = properties.parse(version);
 
@@ -340,7 +468,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
             Library dependency;
             try {
-                dependency = findLibrary(info);
+                dependency = findLibrary(info, true);
             }
 
             catch (UnknownLibraryException e) {
@@ -357,21 +485,56 @@ public class LibrariesManager  implements ILibrariesManager {
 
     }
 
+    private @Nullable String findLatestVersion(@NotNull String group, @NotNull String artifact) {
+
+        String url = ILibrariesManager.MAVEN_CENTRAL_URL + group.replace(".", "/") + "/" + artifact + "/maven-metadata.xml";
+
+        log.info(url);
+
+        byte[] bytes;
+        try {
+
+            try (InputStream in = new URI(url).toURL().openStream()) {
+                bytes = in.readAllBytes();
+            }
+
+        }
+
+        catch (IOException | URISyntaxException e) {
+            log.warn("Error!", e);
+            return null;
+        }
+
+        String string = new String(bytes, StandardCharsets.UTF_8);
+
+        JSONObject json = XML.toJSONObject(string);
+
+        JsonConfiguration jsonConfiguration = new JsonConfiguration();
+        jsonConfiguration.loadFromJson(json);
+
+        String ver = jsonConfiguration.getString("metadata.versioning.release");
+        if (ver == null) ver = jsonConfiguration.getString("metadata.version");
+
+        return ver;
+
+    }
+
 
     //
     // findPom();
     //
 
-    private @NotNull ConfigurationSection findPom(@NotNull LibrarySearchInfo info) throws UnknownLibraryException {
+    private @NotNull PomFile findPom(@NotNull LibrarySearchInfo info) throws UnknownLibraryException {
 
-        String gradleString = info.gradle();
-        if (cachedPoms.containsKey(gradleString)) {
-            return cachedPoms.get(gradleString);
+        PomFile cachedPomFile = cachedPoms.stream().filter(p -> p.info().equals(info)).findAny().orElse(null);
+
+        if (cachedPomFile != null) {
+            return cachedPomFile;
         }
 
         ConfigurationSection pom;
 
-        if (isLocalPomExists(info)) {
+        if (info.pomFile(dir).exists()) {
             try {
                 pom = loadLocalPom(info);
             }
@@ -395,18 +558,12 @@ public class LibrariesManager  implements ILibrariesManager {
 
         }
 
-        cachedPoms.put(gradleString, pom);
+        Objects.requireNonNull(pom.getString("url"), "`url` key not found in pom `" + info + "`");
 
-        return pom;
+        PomFile pomFile = new PomFile(info, pom);
+        cachedPoms.add(pomFile);
 
-    }
-
-    private boolean isLocalPomExists(@NotNull LibrarySearchInfo info) {
-
-        File pomFile = info.pomFile(dir);
-        File pomUrlFile = info.pomUrlFile(dir);
-
-        return pomFile.exists() && pomUrlFile.exists();
+        return pomFile;
 
     }
 
@@ -414,19 +571,13 @@ public class LibrariesManager  implements ILibrariesManager {
     private @NotNull ConfigurationSection loadLocalPom(@NotNull LibrarySearchInfo info) throws IOException {
 
         File pomFile = info.pomFile(dir);
-        File pomUrlFile = info.pomUrlFile(dir);
-
-        String url;
-        try (InputStream in = new FileInputStream(pomUrlFile)) {
-            url = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        }
 
         byte[] bytes;
         try (InputStream in = new FileInputStream(pomFile)) {
             bytes = in.readAllBytes();
         }
 
-        return loadPomFile(bytes, url);
+        return loadPomFile(bytes);
 
     }
 
@@ -471,19 +622,20 @@ public class LibrariesManager  implements ILibrariesManager {
             throw new UnknownLibraryException("Library `" + info.gradle() + "` not found in repository `" + repo + "`. " + e);
         }
 
-        return loadPomFile(bytes, repo);
+        ConfigurationSection pom = loadPomFile(bytes);
+        pom.set("url", repo);
+
+        return pom;
 
     }
 
-    private @NotNull ConfigurationSection loadPomFile(byte[] bytes, @NotNull String repo) {
+    private @NotNull ConfigurationSection loadPomFile(byte[] bytes) {
 
         String string = new String(bytes, StandardCharsets.UTF_8);
 
         JSONObject json = XML.toJSONObject(string);
         JsonConfiguration jsonConfiguration = new JsonConfiguration();
         jsonConfiguration.loadFromJson(json);
-
-        jsonConfiguration.set("url", repo);
 
         return jsonConfiguration;
 
