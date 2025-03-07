@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.commands.argument.channel;
+package net.survivalboom.sbds.api.commands.argument.discord.channel;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
