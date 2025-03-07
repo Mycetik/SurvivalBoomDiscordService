@@ -3,7 +3,6 @@ package net.survivalboom.sbds.core.libraries;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -20,12 +19,6 @@ public class JarLoader {
     public JarLoader(@NotNull ClassLoader parent) throws URISyntaxException {
         classLoader = new DynamicClassLoader("SBDSJarLoader", parent);
         mountJar(new File(JarLoader.class.getProtectionDomain().getCodeSource().getLocation().toURI()));
-    }
-
-    public void inject() throws NoSuchFieldException, IllegalAccessException {
-        Field scl = ClassLoader.class.getDeclaredField("scl");
-        scl.setAccessible(true);
-        scl.set(null, classLoader);
     }
 
     public void mountJar(@NotNull File file) {
