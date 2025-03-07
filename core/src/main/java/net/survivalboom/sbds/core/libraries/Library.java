@@ -15,8 +15,6 @@ public class Library implements ILibrary {
 
     private final String description;
 
-    private final String url; // URL з якого був завантажений POM цієї бібліотеки. Якщо pom був знайдений локально, url буде завантажено із XXX.pom.url.
-
 
     private final LibrarySearchInfo info;
 
@@ -43,9 +41,6 @@ public class Library implements ILibrary {
         Objects.requireNonNull(repositories, "repositories == null");
 
         ConfigurationSection pomCfg = pom.pom();
-
-        this.url = pomCfg.getString("url");
-        Objects.requireNonNull(url, "url was not found in pom section");
 
         this.info = info;
         this.pom = pom;
@@ -74,10 +69,6 @@ public class Library implements ILibrary {
 
     public @NotNull PomFile getPom() {
         return pom;
-    }
-
-    public @NotNull String getUrl() {
-        return url;
     }
 
     public @NotNull List<String> getRepositories() {

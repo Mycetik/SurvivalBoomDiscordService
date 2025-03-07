@@ -187,7 +187,7 @@ public class LibrariesManager  implements ILibrariesManager {
             return;
         }
 
-        String url = info.urlJar(library.getUrl());
+        String url = info.urlJar(library.getPom().url());
 
         try {
 
@@ -208,24 +208,19 @@ public class LibrariesManager  implements ILibrariesManager {
 
     public void downloadPoms() {
 
-        for (PomFile pomFile : cachedPoms) {
+        for (PomFile pom : cachedPoms) {
 
-            File file = pomFile.info().pomFile(dir);
-            if (file.exists()) continue;
+            if (checkLocalPom(pom.info())) continue;
 
-            JsonConfiguration jsonConfiguration = (JsonConfiguration) pomFile.pom();
-            JSONObject json = jsonConfiguration.saveToJson();
-            String xml = XML.toString(json);
+            File pomFile = pom.info().pomFile(dir);
+            File urlFile = pom.info().pomUrlFile(dir);
 
-            log.info("Caching `{}` on disk...", file.getName());
+            log.info("Caching `{}` on disk...", pomFile.getName());
 
             try {
 
-                file.createNewFile();
-
-                try (FileOutputStream stream = new FileOutputStream(file)) {
-                    stream.write(xml.getBytes(StandardCharsets.UTF_8));
-                }
+                write(pomFile, pom.original());
+                write(urlFile, pom.url());
 
             }
 
@@ -233,6 +228,16 @@ public class LibrariesManager  implements ILibrariesManager {
                 throw new RuntimeException(e);
             }
 
+        }
+
+    }
+
+    private void write(@NotNull File file, @NotNull String string) throws IOException {
+
+        file.createNewFile();
+
+        try (FileOutputStream stream = new FileOutputStream(file)) {
+            stream.write(string.getBytes(StandardCharsets.UTF_8));
         }
 
     }
@@ -435,12 +440,27 @@ public class LibrariesManager  implements ILibrariesManager {
 
     private @NotNull List<Library> findDependencies(@NotNull Library library) throws UnknownDependencyException {
 
+        List<Library> out = new ArrayList<>();
+
         List<String> repositories = library.getRepositories();
         Placeholders properties = library.getProperties();
 
         List<Map<?, ?>> section = library.getPom().pom().getMapList("project.dependencies.dependency");
 
-        List<Library> out = new ArrayList<>();
+        if (section.isEmpty()) {
+
+            ConfigurationSection dSect = library.getPom().pom().getConfigurationSection("project.dependencies.dependency");
+            if (dSect == null) return out;
+
+            Map<String, String> m = new HashMap<>();
+            for (String key : dSect.getKeys(false)) {
+                m.put(key, dSect.getString(key));
+            }
+
+            section.add(m);
+
+        }
+
         for (Map<?, ?> map : section) {
 
             String group = properties.parse((String) map.get("groupId"));
@@ -485,6 +505,8 @@ public class LibrariesManager  implements ILibrariesManager {
 
 
     }
+
+
 
     private @Nullable String findLatestVersion(@NotNull String group, @NotNull String artifact) {
 
@@ -533,9 +555,9 @@ public class LibrariesManager  implements ILibrariesManager {
             return cachedPomFile;
         }
 
-        ConfigurationSection pom;
+        PomFile pom;
 
-        if (info.pomFile(dir).exists()) {
+        if (checkLocalPom(info)) {
             try {
                 pom = loadLocalPom(info);
             }
@@ -559,30 +581,42 @@ public class LibrariesManager  implements ILibrariesManager {
 
         }
 
-        Objects.requireNonNull(pom.getString("url"), "`url` key not found in pom `" + info + "`");
+        cachedPoms.add(pom);
 
-        PomFile pomFile = new PomFile(info, pom);
-        cachedPoms.add(pomFile);
+        return pom;
 
-        return pomFile;
+    }
+
+    private boolean checkLocalPom(@NotNull LibrarySearchInfo info) {
+
+        File pomFile = info.pomFile(dir);
+        File urlFile = info.pomUrlFile(dir);
+
+        return pomFile.exists() && urlFile.exists();
 
     }
 
 
-    private @NotNull ConfigurationSection loadLocalPom(@NotNull LibrarySearchInfo info) throws IOException {
+    private @NotNull PomFile loadLocalPom(@NotNull LibrarySearchInfo info) throws IOException {
 
         File pomFile = info.pomFile(dir);
+        File urlFile = info.pomUrlFile(dir);
 
         byte[] bytes;
         try (InputStream in = new FileInputStream(pomFile)) {
             bytes = in.readAllBytes();
         }
 
-        return loadPomFile(bytes);
+        String url;
+        try (FileInputStream in = new FileInputStream(urlFile)) {
+            url = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+
+        return loadPomFile(info, url, bytes);
 
     }
 
-    private @NotNull ConfigurationSection findPomInRepositories(@NotNull LibrarySearchInfo info) throws UnknownLibraryException {
+    private @NotNull PomFile findPomInRepositories(@NotNull LibrarySearchInfo info) throws UnknownLibraryException {
 
         List<String> repositories = info.repositories();
         for (String repo : repositories) {
@@ -603,7 +637,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
     }
 
-    private @NotNull ConfigurationSection findPomInRepository(@NotNull String repo, @NotNull LibrarySearchInfo info) throws UnknownLibraryException {
+    private @NotNull PomFile findPomInRepository(@NotNull String repo, @NotNull LibrarySearchInfo info) throws UnknownLibraryException {
 
         String url = info.urlPom(repo);
 
@@ -623,14 +657,11 @@ public class LibrariesManager  implements ILibrariesManager {
             throw new UnknownLibraryException("Library `" + info.gradle() + "` not found in repository `" + repo + "`. " + e);
         }
 
-        ConfigurationSection pom = loadPomFile(bytes);
-        pom.set("url", repo);
-
-        return pom;
+        return loadPomFile(info, repo, bytes);
 
     }
 
-    private @NotNull ConfigurationSection loadPomFile(byte[] bytes) {
+    private @NotNull PomFile loadPomFile(@NotNull LibrarySearchInfo info, @NotNull String url, byte[] bytes) {
 
         String string = new String(bytes, StandardCharsets.UTF_8);
 
@@ -638,7 +669,7 @@ public class LibrariesManager  implements ILibrariesManager {
         JsonConfiguration jsonConfiguration = new JsonConfiguration();
         jsonConfiguration.loadFromJson(json);
 
-        return jsonConfiguration;
+        return new PomFile(info, url, jsonConfiguration, string);
 
     }
 
