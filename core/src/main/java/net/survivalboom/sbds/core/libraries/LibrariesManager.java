@@ -62,6 +62,9 @@ public class LibrariesManager  implements ILibrariesManager {
         return new ArrayList<>(cachedLibraries.values());
     }
 
+    public @NotNull JarLoader getJarLoader() {
+        return jarLoader;
+    }
 
     //
     //

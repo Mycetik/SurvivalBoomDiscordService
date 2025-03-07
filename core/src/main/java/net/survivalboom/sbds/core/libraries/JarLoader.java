@@ -9,6 +9,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 
 public class JarLoader {
 
@@ -38,12 +40,20 @@ public class JarLoader {
 
     }
 
+    public void configure(Function<String, Class<?>> modulesClasspathInterface) {
+        Objects.requireNonNull(modulesClasspathInterface);
+        if (classLoader.modulesClasspathInterface != null) throw new RuntimeException("fuck yourself!");
+        classLoader.modulesClasspathInterface = modulesClasspathInterface;
+    }
+
     public @NotNull JarLoader.DynamicClassLoader getClassLoader() {
         return classLoader;
     }
 
 
     public static class DynamicClassLoader extends URLClassLoader {
+
+        private Function<String, Class<?>> modulesClasspathInterface = null; // Костиль, я знаю, але я не винен що java так працює. Йдіть в сраку!
 
         public DynamicClassLoader(String name, ClassLoader parent) {
             super(name, new URL[] {}, parent);
@@ -61,9 +71,9 @@ public class JarLoader {
 
         // Я переписав алгоритм завантаження класів, аби він спочатку намагався завантажити класи з підключених JAR.
         // Тільки якщо алгоритм не знайшов клас у JAR, він кинеться шукати клас в батьківському classloader.
-        // Взагалі, це дуже погана ідея, але у цьому випадку це правильне рішення, оскільки наш завантажувач класів має бути основним
+        // Взагалі, це дуже погана ідея, але у цьому випадку це єдине рішення, оскільки наш завантажувач класів має бути основним
         // у програмі, тому що ми підвантажуємо усі бібліотеки динамічно.
-        protected Class<?> loadClass0(String name, boolean resolve) throws ClassNotFoundException {
+        public Class<?> loadClassWithoutModules(@NotNull String name, boolean resolve) throws ClassNotFoundException {
 
             // Через те що ми підвантажуємо JarLoader у Main від імені AppClassLoader,
             // клас буде відрізнятись для JVM від класу JarLoader, який завантажить вже цей ClassLoader при ініціалізації SbdsBootstrap.
@@ -93,6 +103,26 @@ public class JarLoader {
             }
 
             return c;
+
+        }
+
+        protected @NotNull Class<?> loadClass0(String name, boolean resolve) throws ClassNotFoundException {
+
+            try {
+                return loadClassWithoutModules(name, resolve);
+            }
+
+            catch (ClassNotFoundException e) {
+                if (modulesClasspathInterface == null) throw e;
+            }
+
+            Class<?> clazz = modulesClasspathInterface.apply(name);
+            if (clazz != null) {
+                System.out.println("Loaded module class `" + clazz.getName() + "`");
+                return clazz;
+            }
+
+            throw new ClassNotFoundException();
 
         }
 

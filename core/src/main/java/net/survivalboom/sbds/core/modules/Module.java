@@ -286,7 +286,7 @@ public class Module extends Valid implements IModule {
     }
 
     @Override
-    public @NotNull ISBDS getSbds() {
+    public @NotNull SBDS getSbds() {
         return sbds;
     }
 

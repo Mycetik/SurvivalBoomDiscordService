@@ -28,7 +28,7 @@ public class ModulesClasspath {
         return new ArrayList<>(classLoaders);
     }
 
-    public @NotNull Class<?> request(@NotNull String name, @NotNull ModuleClassLoader requester) throws ClassNotFoundException {
+    public @Nullable Class<?> request(@NotNull String name, @NotNull ModuleClassLoader requester) {
 
         ModuleMeta meta = requester.getModule().getMeta();
 
@@ -42,7 +42,7 @@ public class ModulesClasspath {
 
         }
 
-        throw new ClassNotFoundException();
+        return null;
 
     }
 
