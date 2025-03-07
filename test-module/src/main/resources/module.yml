@@ -18,4 +18,5 @@ dependencies:
 
 libraries:
 
-  - gradle: "net.datafaker:datafaker:1.7.0"
+  test:
+    gradle: "net.datafaker:datafaker:1.7.0"

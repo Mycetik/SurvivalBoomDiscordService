@@ -11,7 +11,7 @@ public interface IModuleMeta {
 
     @NotNull String getVersion();
 
-    @NotNull String getDescription();
+    @Nullable String getDescription();
 
 
     @NotNull String getMain();

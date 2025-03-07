@@ -134,7 +134,7 @@ public class ModuleManager extends Manager implements IModuleManager {
 
         String moduleName = meta.getName();
 
-        module.downloadLibraries();
+        if (!module.downloadLibraries()) throw new RuntimeException("Library download failed");
 
         module.loadModule();
 

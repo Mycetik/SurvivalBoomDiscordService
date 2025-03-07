@@ -512,7 +512,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
         String url = ILibrariesManager.MAVEN_CENTRAL_URL + group.replace(".", "/") + "/" + artifact + "/maven-metadata.xml";
 
-        log.info(url);
+        log.info("Searching for latest version `{}` on `{}`...", group + ":" + artifact, url);
 
         byte[] bytes;
         try {
