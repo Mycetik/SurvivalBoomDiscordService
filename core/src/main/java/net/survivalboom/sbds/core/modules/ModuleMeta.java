@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
 
+// TODO Можливо додати прив'язку бібліотек до конкретних модулів і зберігати цю інформацію тут. Чому б ні?
 public class ModuleMeta implements IModuleMeta {
 
     @NotNull private final String name;
@@ -33,6 +34,8 @@ public class ModuleMeta implements IModuleMeta {
 
 
     @NotNull private final Map<String, Dependency> dependencies = new HashMap<>();
+
+    @Nullable private final ConfigurationSection librariesSection;
 
 
     public ModuleMeta(@NotNull Configuration configuration) throws InvalidModuleMetaException {
@@ -55,6 +58,8 @@ public class ModuleMeta implements IModuleMeta {
 
         String author = configuration.getString("author");
         this.authors = author != null ? List.of(author) : configuration.getStringList("authors");
+
+        this.librariesSection = configuration.getConfigurationSection("libraries");
 
         ConfigurationSection dependenciesSection = configuration.getConfigurationSection("dependencies");
         if (dependenciesSection == null) return;
@@ -106,6 +111,10 @@ public class ModuleMeta implements IModuleMeta {
 
     public @Nullable Dependency getDependency(@NotNull String name) {
         return dependencies.get(name);
+    }
+
+    public @Nullable ConfigurationSection getLibrariesSection() {
+        return librariesSection;
     }
 
 

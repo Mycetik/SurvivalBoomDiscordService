@@ -237,6 +237,7 @@ public class LibrariesManager  implements ILibrariesManager {
 
     }
 
+    // TODO Зробити перевірку на вже встановлену нову версію, якщо є, не шукати стару версію.
     private boolean isNewerVersion(String newVersion, String oldVersion) {
         if (newVersion == null || oldVersion == null) throw new IllegalArgumentException("Version cannot be null");
 

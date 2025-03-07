@@ -227,18 +227,23 @@ public class SBDS implements ISBDS {
     }
 
     @Override
-    public @NotNull IDatabase getDatabase() {
+    public @NotNull Database getDatabase() {
         return database;
     }
 
     @Override
-    public @NotNull ITranslationManager getTranslationManager() {
+    public @NotNull TranslationManager getTranslationManager() {
         return translationManager;
     }
 
     @Override
     public @NotNull Scheduler getScheduler() {
         return scheduler;
+    }
+
+    @Override
+    public @NotNull LibrariesManager getLibrariesManager() {
+        return librariesManager;
     }
 
 

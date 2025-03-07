@@ -6,6 +6,7 @@ import net.survivalboom.sbds.api.modules.InvalidModuleException;
 import net.survivalboom.sbds.api.modules.InvalidModuleMetaException;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.Manager;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -132,6 +133,8 @@ public class ModuleManager extends Manager implements IModuleManager {
         if (modules.containsKey(meta.getName())) throw new IllegalArgumentException("Module with name " + meta.getName() + "already loaded");
 
         String moduleName = meta.getName();
+
+        module.downloadLibraries();
 
         module.loadModule();
 

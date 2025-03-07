@@ -7,6 +7,7 @@ import net.survivalboom.sbds.api.modules.InvalidModuleMetaException;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.Valid;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +73,20 @@ public class Module extends Valid implements IModule {
         logger = LoggerFactory.getLogger(getName());
 
         return meta;
+
+    }
+
+    public boolean downloadLibraries() {
+
+        ConfigurationSection librariesSection = meta.getLibrariesSection();
+        if (librariesSection == null) return true;
+
+        logger.info("Loading libraries...");
+        boolean success = sbds.getLibrariesManager().satisfy0(this, librariesSection, true);
+
+        if (!success) logger.error("Failed to load libraries. Refusing to load the module!");
+
+        return success;
 
     }
 
