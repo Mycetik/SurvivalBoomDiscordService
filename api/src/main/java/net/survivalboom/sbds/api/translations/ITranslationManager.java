@@ -7,4 +7,9 @@ public interface ITranslationManager {
 
     @Nullable ITranslation getTranslation(@NotNull String name);
 
+
+    @Nullable ITranslation defaultTranslation();
+
+    @Nullable ITranslation fallbackTranslation();
+
 }

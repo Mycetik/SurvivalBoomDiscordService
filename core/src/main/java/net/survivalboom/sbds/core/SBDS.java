@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.database.IDatabase;
+import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.commands.SlashCommandManager;
@@ -15,6 +16,7 @@ import net.survivalboom.sbds.core.console.ConsoleListener;
 import net.survivalboom.sbds.core.database.Database;
 import net.survivalboom.sbds.core.events.EventManager;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
+import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.ModuleManager;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.api.SbdsProvider;
@@ -53,6 +55,8 @@ public class SBDS implements ISBDS {
 
     private final TranslationManager translationManager;
 
+    private final Messages messages;
+
 
     private boolean started = false;
 
@@ -79,6 +83,7 @@ public class SBDS implements ISBDS {
         this.slashCommandManager = new SlashCommandManager(this);
 
         this.translationManager = new TranslationManager(this);
+        this.messages = new Messages(this);
 
         SbdsProvider.internal_internal_internal_internal_internal_internal_set(this);
 
@@ -234,6 +239,11 @@ public class SBDS implements ISBDS {
     @Override
     public @NotNull TranslationManager getTranslationManager() {
         return translationManager;
+    }
+
+    @Override
+    public @NotNull IMessages getMessages() {
+        return messages;
     }
 
     @Override

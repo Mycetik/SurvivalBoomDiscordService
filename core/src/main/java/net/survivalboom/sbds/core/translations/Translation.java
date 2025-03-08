@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.translations;
 
+import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.InvalidTranslationException;
 import net.survivalboom.sbds.api.translations.MessageLoadException;
@@ -70,6 +71,7 @@ public class Translation extends Valid implements ITranslation {
 
     }
 
+    @Override
     public synchronized void update() throws IOException, InvalidConfigurationException, MessageLoadException {
 
         YamlConfiguration yamlConfiguration = new YamlConfiguration();
@@ -79,6 +81,7 @@ public class Translation extends Valid implements ITranslation {
 
     }
 
+    @Override
     public synchronized void save() throws IOException {
 
         checkValid();
@@ -101,10 +104,17 @@ public class Translation extends Valid implements ITranslation {
     }
 
 
+    @Override
     public @Nullable Message getMessage(@NotNull String name) {
         checkValid();
         return messages.get(name);
     }
+
+    @Override
+    public @NotNull List<IMessage> getMessages() {
+        return new ArrayList<>(messages.values());
+    }
+
 
     public void addMessage(@NotNull String key, @NotNull Message message) {
 
@@ -153,29 +163,34 @@ public class Translation extends Valid implements ITranslation {
 
     }
 
-
+    @Override
     public @NotNull File getFile() {
         return file;
     }
 
+    @Override
     public @NotNull String getName() {
         return name;
     }
 
 
+    @Override
     public @Nullable String displayName() {
         return displayName;
     }
 
+    @Override
     public void displayName(@Nullable String displayName) {
         this.displayName = displayName;
     }
 
 
+    @Override
     public @Nullable String icon() {
         return icon;
     }
 
+    @Override
     public void icon(@Nullable String icon) {
         this.icon = icon;
     }

@@ -98,8 +98,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
             parser.parse();
 
             if (!parser.checkCount()) {
-                event.reply("Ебать, пизда, ты все сломал.").queue();
-                return;
+                throw new RuntimeException("Invalid argument count");
             }
 
             SlashExecutionInfo info = new SlashExecutionInfo(command, event.getInteraction(), commandName, parser.getArguments(), rootLogger, sbds);
@@ -110,7 +109,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         catch (Throwable t) {
             logger.error("[{}:{}] An internal error occurred while attempting to perform slash command /{}.", event.getGuild().getName(), event.getUser().getName(), commandName, t);
-            event.reply("Ебать, пизда, ты все сломал.").queue();
+            event.reply("An internal error occurred. Check console for details. " + t).queue();
         }
 
     }

@@ -6,23 +6,17 @@ import org.jetbrains.annotations.Nullable;
 
 public interface IUserRepositoryHandler {
 
-    default @Nullable IUserData getUser(@NotNull User user) {
-        return getUser(user.getIdLong());
-    }
+    @Nullable IUserData getUser(@NotNull User user);
 
     @Nullable IUserData getUser(long id);
 
 
-    default @NotNull IUserData createUser(@NotNull User user) {
-        return createUser(user.getIdLong());
-    }
+    @NotNull IUserData createUser(@NotNull User user);
 
     @NotNull IUserData createUser(long id);
 
 
-    default boolean deleteUser(@NotNull User user) {
-        return deleteUser(user.getIdLong());
-    }
+    boolean deleteUser(@NotNull User user);
 
     boolean deleteUser(long id);
 

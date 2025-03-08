@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.commands;
 
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -18,6 +19,8 @@ public abstract class ExecutionInfo {
 
     private final ISBDS sbds;
 
+    private final IMessages messages;
+
 
     public ExecutionInfo(@NotNull Command command, @NotNull String alias, @NotNull TypeMap arguments, @NotNull Logger logger, @NotNull ISBDS sbds) {
 
@@ -27,6 +30,7 @@ public abstract class ExecutionInfo {
 
         this.logger = logger;
         this.sbds = sbds;
+        this.messages = sbds.getMessages();
 
     }
 
@@ -49,6 +53,10 @@ public abstract class ExecutionInfo {
 
     public @NotNull ISBDS sbds() {
         return sbds;
+    }
+
+    public @NotNull IMessages messages() {
+        return messages;
     }
 
 }

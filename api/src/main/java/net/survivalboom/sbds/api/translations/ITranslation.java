@@ -1,11 +1,13 @@
 package net.survivalboom.sbds.api.translations;
 
+import net.survivalboom.sbds.api.messages.IMessage;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public interface ITranslation {
 
@@ -27,5 +29,10 @@ public interface ITranslation {
     @Nullable String icon();
 
     void icon(@Nullable String icon);
+
+
+    @Nullable IMessage getMessage(@NotNull String name);
+
+    @NotNull List<IMessage> getMessages();
 
 }

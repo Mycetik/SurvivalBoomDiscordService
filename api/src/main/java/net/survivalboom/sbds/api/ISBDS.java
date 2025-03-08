@@ -6,6 +6,7 @@ import net.survivalboom.sbds.api.console.IConsoleListener;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.events.IEventManager;
 import net.survivalboom.sbds.api.libraries.ILibrariesManager;
+import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.IModuleManager;
 import net.survivalboom.sbds.api.scheduler.IScheduler;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
@@ -30,6 +31,8 @@ public interface ISBDS {
     @NotNull IDatabase getDatabase();
 
     @NotNull ITranslationManager getTranslationManager();
+
+    @NotNull IMessages getMessages();
 
     @NotNull ILibrariesManager getLibrariesManager();
 

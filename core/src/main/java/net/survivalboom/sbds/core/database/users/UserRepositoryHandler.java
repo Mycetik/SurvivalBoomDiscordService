@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.core.database.users;
 
+import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
-import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.database.users.IUserRepositoryHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,7 +13,12 @@ public class UserRepositoryHandler extends RepositoryHandler<UserData> implement
     }
 
     @Override
-    public @Nullable IUserData getUser(long id) {
+    public @Nullable UserData getUser(@NotNull User user) {
+        return getUser(user.getIdLong());
+    }
+
+    @Override
+    public @Nullable UserData getUser(long id) {
 
         UserData userData = cache.get(id);
         if (userData == null) {
@@ -31,9 +36,14 @@ public class UserRepositoryHandler extends RepositoryHandler<UserData> implement
     }
 
     @Override
-    public @NotNull IUserData createUser(long id) {
+    public @NotNull UserData createUser(@NotNull User user) {
+        return createUser(user.getIdLong());
+    }
 
-        IUserData iuserData = getUser(id);
+    @Override
+    public @NotNull UserData createUser(long id) {
+
+        UserData iuserData = getUser(id);
         if (iuserData != null) return iuserData;
 
         UserData userData = new UserData(id);
@@ -47,9 +57,14 @@ public class UserRepositoryHandler extends RepositoryHandler<UserData> implement
     }
 
     @Override
+    public boolean deleteUser(@NotNull User user) {
+        return deleteUser(user.getIdLong());
+    }
+
+    @Override
     public boolean deleteUser(long id) {
 
-        UserData userData = (UserData) getUser(id);
+        UserData userData = getUser(id);
         if (userData == null) return false;
 
         delete(userData);

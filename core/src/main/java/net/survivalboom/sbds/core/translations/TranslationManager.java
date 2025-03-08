@@ -68,6 +68,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
         if (defaultTranslation == null) log.warn("Default translation with name `{}` not found.", defaultTranslationName);
 
         String fallbackTranslationName = sbds.getConfiguration().getString("translations.fallback", "null");
+        fallbackTranslation = getTranslation0(fallbackTranslationName);
         if (fallbackTranslation == null) log.warn("Fallback translation with name `{}` not found.", fallbackTranslationName);
 
     }
@@ -124,6 +125,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
     }
 
 
+    @Override
     public @Nullable Translation defaultTranslation() {
         return defaultTranslation;
     }
@@ -132,6 +134,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
         this.defaultTranslation = translation;
     }
 
+    @Override
     public @Nullable Translation fallbackTranslation() {
         return fallbackTranslation;
     }

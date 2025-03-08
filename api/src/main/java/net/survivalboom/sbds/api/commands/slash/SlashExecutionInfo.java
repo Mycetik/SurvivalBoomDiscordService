@@ -4,9 +4,11 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
+import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.ExecutionInfo;
+import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,6 +37,14 @@ public class SlashExecutionInfo extends ExecutionInfo {
 
     public @NotNull User user() {
         return this.interaction.getUser();
+    }
+
+    public @Nullable ReplyCallbackAction reply(@NotNull String name, @Nullable Placeholders placeholders) {
+        return messages().reply(interaction, placeholders, name, user());
+    }
+
+    public @Nullable ReplyCallbackAction reply(@NotNull String name) {
+        return messages().reply(interaction, null, name, user());
     }
 
 }

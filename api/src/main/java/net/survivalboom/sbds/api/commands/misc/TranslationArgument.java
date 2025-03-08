@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.commands.misc;
 
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
@@ -14,13 +15,20 @@ public class TranslationArgument extends SimpleArgument<ITranslation> {
     @Override
     protected ITranslation parse0(@NotNull Object input, @NotNull ArgumentResources resources) throws ArgumentParseException {
 
+        String translationName;
         if (input instanceof String s) {
-            ITranslation translation = resources.sbds().getTranslationManager().getTranslation(s);
-            if (translation == null) throw new ArgumentParseException("Invalid translation `" + s + "`");
-            return translation;
+            translationName = s;
         }
 
-        throw new ArgumentParseException("Invalid type");
+        else if (input instanceof OptionMapping optionMapping) {
+            translationName = optionMapping.getAsString();
+        }
+
+        else throw new ArgumentParseException("Invalid type `" + input.getClass().getName() + "`");
+
+        ITranslation translation = resources.sbds().getTranslationManager().getTranslation(translationName);
+        if (translation == null) throw new ArgumentParseException("Invalid translation `" + translationName + "`");
+        return translation;
 
     }
 

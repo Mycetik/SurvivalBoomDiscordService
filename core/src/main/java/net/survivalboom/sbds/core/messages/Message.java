@@ -1,9 +1,13 @@
 package net.survivalboom.sbds.core.messages;
 
 
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.messages.IEmbedTemplate;
 import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.InvalidEmbedException;
+import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.core.translations.Translation;
 import net.survivalboom.sbds.api.utils.Valid;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
@@ -76,6 +80,20 @@ public class Message extends Valid implements IMessage {
 
     public @Nullable Translation translation() {
         return translation;
+    }
+
+    @Override
+    public @NotNull MessageCreateData messageData(@Nullable Placeholders placeholders) {
+
+        if (embeds == null) {
+            return MessageCreateData.fromContent(placeholders.parse(text));
+        }
+
+        List<MessageEmbed> messageEmbeds = new ArrayList<>();
+        embeds.forEach(e -> messageEmbeds.add(e.build(placeholders).build()));
+
+        return MessageCreateData.fromEmbeds(messageEmbeds);
+
     }
 
 
