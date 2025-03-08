@@ -42,6 +42,10 @@ database:
   # Рекомендуємо використовувати PostgreSQL, оскільки SBDS зберігає більшість даних у JSON.
   # PostgreSQL має вбудовану підтримку JSON й зберігає його не просто як звичайний текст.
   #
+  # Приклади:
+  # > PostgreSQL => jdbc:postgresql://yourdomain.com/database
+  # > MySQL => jdbc:mysql://yourdomain.com/database
+  # > SQLite => jdbc:sqlite:./data/database.db
   jdbc: "jdbc:sqlite:./data/database.db"
 
   # Драйвер (class файл в .jar SBDS) що буде використовуватись для з'єднання.
