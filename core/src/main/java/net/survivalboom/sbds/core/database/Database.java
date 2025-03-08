@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.*;
 
 public class Database extends Manager implements IDatabase {
@@ -44,6 +45,8 @@ public class Database extends Manager implements IDatabase {
     protected void init0() {
 
         log.info("Loading database...");
+
+        new File(sbds.getWorkingDir(), "data").mkdirs();
 
         reloadHibernate();
 
