@@ -24,17 +24,17 @@ import java.util.regex.Pattern;
 // Краще самому написати, тоді я точно буду знати що усе працює як я хочу.
 public class LoggerLayout extends LayoutBase<ILoggingEvent> {
 
-    private static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("hh:mm:ss");
+    private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("hh:mm:ss");
 
-    public static final String RESET = "\u001B[0m";
-    public static final String BRIGHT_RED = "\u001B[91m";
-    public static final String RED = "\u001B[31m";
-    public static final String YELLOW = "\u001B[33m";
-    public static final String GREEN = "\u001B[32m";
-    public static final String CYAN = "\u001B[36m";
-    public static final String BLUE = "\u001B[34m";
+    public final String RESET = "\u001B[0m";
+    public final String BRIGHT_RED = "\u001B[91m";
+    public final String RED = "\u001B[31m";
+    public final String YELLOW = "\u001B[33m";
+    public final String GREEN = "\u001B[32m";
+    public final String CYAN = "\u001B[36m";
+    public final String BLUE = "\u001B[34m";
 
-    public static Map<String, String> COLOR_MAP = Map.of(
+    public Map<String, String> COLOR_MAP = Map.of(
             "&4", RED,
             "&c", BRIGHT_RED,
             "&r", RESET,
@@ -44,13 +44,19 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
             "&9", BLUE
     );
 
-    public static boolean colors = true;
+    public boolean colors = true;
+
+    public ch.qos.logback.classic.Logger rootLogger;
+
+    public LoggerFilter loggerFilter;
 
 
     @Override
     public String doLayout(ILoggingEvent event) {
 
         try {
+
+            if (loggerFilter != null && loggerFilter.process(event)) return null;
 
             return doLayout0(event);
 
@@ -163,15 +169,16 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
     }
 
 
-    public static @NotNull LoggerLayout setup() {
+    public final static LoggerLayout layout = new LoggerLayout();
+
+
+    public static void setup() {
 
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
 
-        LoggerLayout loggerLayout = new LoggerLayout();
-
         ConsoleAppender<ILoggingEvent> consoleAppender = new ConsoleAppender<>();
         consoleAppender.setContext(context);
-        consoleAppender.setLayout(loggerLayout);
+        consoleAppender.setLayout(layout);
         consoleAppender.start();
 
         ch.qos.logback.classic.Logger rootLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
@@ -180,7 +187,7 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
         rootLogger.setLevel(Level.INFO);
         rootLogger.setAdditive(true);
 
-        return loggerLayout;
+        layout.rootLogger = rootLogger;
 
     }
 

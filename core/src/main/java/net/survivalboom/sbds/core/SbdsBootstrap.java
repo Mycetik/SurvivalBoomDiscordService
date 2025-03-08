@@ -3,6 +3,7 @@ package net.survivalboom.sbds.core;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.libraries.JarLoader;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
+import net.survivalboom.sbds.core.logging.LoggerFilter;
 import net.survivalboom.sbds.core.logging.LoggerLayout;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
@@ -39,8 +40,8 @@ public class SbdsBootstrap {
 
     public void launch() {
 
-        LoggerLayout.colors = true;
         LoggerLayout.setup();
+        LoggerLayout.layout.colors = true;
 
         logger.info("");
         logger.info("    ____              _           _____                ");
@@ -58,6 +59,11 @@ public class SbdsBootstrap {
 
             checkFiles();
             loadConfiguration();
+
+            LoggerFilter filter = new LoggerFilter(yamlConfiguration);
+            filter.init();
+            LoggerLayout.layout.loggerFilter = filter;
+
             checkLibraries();
 
             sbdsStart().blockThread();
@@ -106,7 +112,7 @@ public class SbdsBootstrap {
 
     }
 
-    private boolean loadConfiguration() {
+    private boolean loadConfiguration() throws IOException {
 
         logger.info("Loading configuration...");
 
@@ -123,6 +129,7 @@ public class SbdsBootstrap {
 
         if (token == null) {
             logger.warn("Token file is empty. Please provide a discord bot token. Exiting in 10 seconds...");
+            new File(workingDir, "token").createNewFile();
             Main.exit();
             return true;
         }
