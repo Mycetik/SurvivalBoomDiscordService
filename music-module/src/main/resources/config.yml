@@ -1,0 +1,18 @@
+#
+#  Music Module | SBDS
+# Configuration | By TIMURishche
+#
+
+# Ноди lavalink. Можете вказати декілька для розподілення навантаження.
+nodes:
+
+  - name: "main"
+    url: "https://survivalboom.net"
+    password: "dinoZaveriiik!!"
+
+support:
+  youtube: true
+  spotify: true
+  soundcloud: true
+  apple: true
+  direct-media: true

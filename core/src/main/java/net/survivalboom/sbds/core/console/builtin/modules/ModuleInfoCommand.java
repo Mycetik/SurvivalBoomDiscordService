@@ -23,7 +23,7 @@ public class ModuleInfoCommand extends CommandBase implements ConsoleCommand {
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        Module module = ModuleManager.convertIModule(Objects.requireNonNull(info.arguments().getByName("module", IModule.class)));
+        Module module = ModuleManager.convertIModule(Objects.requireNonNull(info.arguments().get("module", IModule.class)));
 
         Logger logger = info.logger();
 

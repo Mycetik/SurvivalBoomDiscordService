@@ -1,6 +1,5 @@
 package net.survivalboom.sbds.core.modules;
 
-import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.modules.InvalidModuleException;
 import net.survivalboom.sbds.api.modules.InvalidModuleMetaException;
@@ -8,6 +7,7 @@ import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.Valid;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,9 +28,15 @@ public class Module extends Valid implements IModule {
 
     private final JarFile jarFile;
 
+    private File dataDir;
+
+
     private final ModuleManager moduleManager;
 
     private final ModuleRegistration registration = new ModuleRegistration();
+
+
+    private final YamlConfiguration yamlConfiguration = new YamlConfiguration();
 
 
     private final SBDS sbds;
@@ -71,6 +77,7 @@ public class Module extends Valid implements IModule {
         }
 
         logger = LoggerFactory.getLogger(getName());
+        dataDir = new File(moduleManager.getModulesDir(), getName());
 
         return meta;
 
@@ -251,6 +258,11 @@ public class Module extends Valid implements IModule {
     }
 
     @Override
+    public @NotNull File getDataFolder() {
+        return dataDir;
+    }
+
+    @Override
     public @NotNull JarFile getJar() {
         return jarFile;
     }
@@ -258,6 +270,11 @@ public class Module extends Valid implements IModule {
     @Override
     public @NotNull ModuleManager getModuleManager() {
         return moduleManager;
+    }
+
+    @Override
+    public @NotNull YamlConfiguration getConfig() {
+        return yamlConfiguration;
     }
 
 

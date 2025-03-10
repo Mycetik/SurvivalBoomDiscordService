@@ -17,27 +17,27 @@ public class TypeMap {
 
     public TypeMap() {}
 
-    public @Nullable Object getByName(@NotNull String name) {
+    public @Nullable Object get(@NotNull String name) {
         Objects.requireNonNull(name, "name == null");
         return map.get(name);
     }
 
-    public @Nullable <T> T getByName(@NotNull String name, @NotNull Class<T> type) {
+    public @Nullable <T> T get(@NotNull String name, @NotNull Class<T> type) {
 
         Objects.requireNonNull(type, "type == null");
 
-        Object object = getByName(name);
+        Object object = get(name);
         if (object == null) return null;
 
         return type.cast(object);
 
     }
 
-    public @NotNull <T> T getByName(@NotNull String name, @NotNull T orElse) {
+    public @NotNull <T> T get(@NotNull String name, @NotNull T orElse) {
 
         Objects.requireNonNull(orElse, "orElse == null");
 
-        Object object = getByName(name);
+        Object object = get(name);
         if (object == null) {
             return orElse;
         }
@@ -50,6 +50,10 @@ public class TypeMap {
             return orElse;
         }
 
+    }
+
+    public @Nullable <T> T getCastOrNull(@NotNull String name, @NotNull Class<T> clazz) {
+        return get(name, clazz);
     }
 
     public int size() {

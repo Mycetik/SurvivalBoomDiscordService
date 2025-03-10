@@ -18,7 +18,7 @@ public class LoadModuleCommand extends CommandBase implements ConsoleCommand {
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        File file = info.arguments().getByName("file", File.class);
+        File file = info.arguments().get("file", File.class);
         assert file != null;
 
         IModule module = info.sbds().getModuleManager().loadModule(file);

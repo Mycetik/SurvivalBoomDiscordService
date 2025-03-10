@@ -7,6 +7,7 @@ import net.survivalboom.sbds.api.translations.MessageLoadException;
 import net.survivalboom.sbds.core.messages.Message;
 import net.survivalboom.sbds.api.utils.Valid;
 import net.survivalboom.sbds.api.messages.InvalidEmbedException;
+import net.survivalboom.sbds.core.modules.Module;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
@@ -30,6 +31,8 @@ public class Translation extends Valid implements ITranslation {
 
     private final Map<String, Message> messages = new HashMap<>();
 
+    private final Map<Module, Map<String, Message>> moduleMessages = new HashMap<>();
+
 
     public Translation(@NotNull File file) throws IOException, InvalidConfigurationException, MessageLoadException, InvalidTranslationException {
 
@@ -47,6 +50,7 @@ public class Translation extends Valid implements ITranslation {
         load(yamlConfiguration);
 
     }
+
 
     private void load(@NotNull YamlConfiguration yamlConfiguration) throws MessageLoadException {
 
@@ -104,16 +108,27 @@ public class Translation extends Valid implements ITranslation {
     }
 
 
+
     @Override
     public @Nullable Message getMessage(@NotNull String name) {
         checkValid();
-        return messages.get(name);
+
+        Message message = messages.get(name);
+        if (message != null) return message;
+
+        return getModuleMessage(name);
+
+    }
+
+    private @Nullable Message getModuleMessage(@NotNull String name) {
+        return moduleMessages.values().stream().map(map -> map.get(name)).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
     @Override
     public @NotNull List<IMessage> getMessages() {
         return new ArrayList<>(messages.values());
     }
+
 
 
     public void addMessage(@NotNull String key, @NotNull Message message) {
@@ -130,6 +145,7 @@ public class Translation extends Valid implements ITranslation {
     public @NotNull List<Message> getMessages0() {
         return new ArrayList<>(messages.values());
     }
+
 
 
     private void load(@NotNull YamlConfiguration configuration, @NotNull Map<String, Message> map, @NotNull String path) throws MessageLoadException {
@@ -163,6 +179,8 @@ public class Translation extends Valid implements ITranslation {
 
     }
 
+
+
     @Override
     public @NotNull File getFile() {
         return file;
@@ -171,6 +189,26 @@ public class Translation extends Valid implements ITranslation {
     @Override
     public @NotNull String getName() {
         return name;
+    }
+
+
+    public void addModuleTranslation(@NotNull Module module, @NotNull YamlConfiguration yamlConfiguration) throws MessageLoadException {
+        checkValid();
+
+        Set<String> keys = yamlConfiguration.getKeys(false);
+        keys.remove("$name");
+
+        Map<String, Message> map = new HashMap<>();
+        for (String s : keys) {
+            load(yamlConfiguration, map, s);
+        }
+
+        moduleMessages.put(module, map);
+
+    }
+
+    public void removeModuleTranslation(@NotNull Module module) {
+        moduleMessages.remove(module);
     }
 
 
@@ -204,4 +242,5 @@ public class Translation extends Valid implements ITranslation {
     public String toString() {
         return "Translation{name=" + name + ", display-name=" + displayName + ", messages=" + messages.size() + ", icon=" + icon + ", file=" + file.getName() + "}";
     }
+
 }

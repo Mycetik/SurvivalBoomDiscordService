@@ -20,8 +20,8 @@ public class SayCommand extends CommandBase implements ConsoleCommand, SlashComm
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        TextChannel channel = info.arguments().getByName("channel", TextChannel.class);
-        String message = info.arguments().getByName("message", String.class);
+        TextChannel channel = info.arguments().get("channel", TextChannel.class);
+        String message = info.arguments().get("message", String.class);
 
         assert channel != null;
         assert message != null;
@@ -35,8 +35,8 @@ public class SayCommand extends CommandBase implements ConsoleCommand, SlashComm
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
-        TextChannel channel = info.arguments().getByName("channel", TextChannel.class);
-        String message = info.arguments().getByName("message", String.class);
+        TextChannel channel = info.arguments().get("channel", TextChannel.class);
+        String message = info.arguments().get("message", String.class);
 
         assert channel != null;
         assert message != null;

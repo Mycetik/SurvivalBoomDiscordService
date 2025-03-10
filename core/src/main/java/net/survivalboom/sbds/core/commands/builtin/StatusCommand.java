@@ -1,8 +1,5 @@
 package net.survivalboom.sbds.core.commands.builtin;
 
-import net.dv8tion.jda.api.interactions.DiscordLocale;
-import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
-import net.dv8tion.jda.api.interactions.commands.localization.ResourceBundleLocalizationFunction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
@@ -29,7 +26,7 @@ public class StatusCommand extends CommandBase implements SlashCommand {
         TranslationManager translationManager = (TranslationManager) info.sbds().getTranslationManager();
         Translation translation = translationManager.getTranslation0("ukrainian");
 
-        Message message = translation.getMessage(Objects.requireNonNull(info.arguments().getByName("msg", String.class)));
+        Message message = translation.getMessage(Objects.requireNonNull(info.arguments().get("msg", String.class)));
         if (message == null) {
             info.interaction().reply("Null! " + String.join(" ", translation.getMessages0().stream().map(Message::key).toList())).queue();
             return;

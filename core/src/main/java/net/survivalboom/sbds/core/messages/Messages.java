@@ -15,6 +15,7 @@ import net.survivalboom.sbds.api.translations.ITranslationManager;
 import net.survivalboom.sbds.api.utils.Manager;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
+import net.survivalboom.sbds.core.database.Database;
 import net.survivalboom.sbds.core.database.users.UserData;
 import net.survivalboom.sbds.core.database.users.UserRepositoryHandler;
 import org.jetbrains.annotations.NotNull;
@@ -24,23 +25,31 @@ public class Messages extends Manager implements IMessages {
 
     private final ITranslationManager translationManager;
 
-    private final UserRepositoryHandler repository;
+    private final Database database;
+
+    private UserRepositoryHandler repository;
 
 
     public Messages(@NotNull SBDS sbds) {
-        this.repository = sbds.getDatabase().getRepositoryHandler("sbds:users", UserRepositoryHandler.class);
         this.translationManager = sbds.getTranslationManager();
+        this.database = sbds.getDatabase();
     }
 
     @Override
-    protected void init0() {}
+    protected void init0() {
+        this.repository = database.getRepositoryHandler("sbds:users", UserRepositoryHandler.class);
+    }
 
     @Override
-    protected void shutdown0() {}
+    protected void shutdown0() {
+        this.repository = null;
+    }
 
 
     @Override
     public @Nullable IMessage getMessage(@NotNull String name, @Nullable IUserData userData, boolean fallback) {
+
+        checkValid();
 
         if (userData == null) return getMessage0(name, null, fallback);
         ITranslation translation = userData.translation();
@@ -51,6 +60,8 @@ public class Messages extends Manager implements IMessages {
 
     @Override
     public @Nullable IMessage getMessage(@NotNull String name, @Nullable User user, boolean fallback) {
+
+        checkValid();
 
         if (user == null) return getMessage(name, (IUserData) null, fallback);
 

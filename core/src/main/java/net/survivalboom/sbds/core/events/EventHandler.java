@@ -65,7 +65,7 @@ public class EventHandler {
 
             catch (InvocationTargetException e) {
                 Throwable t = e.getTargetException();
-                logger.error("Could not pass {} to {}. ({}.{}())", clazz.getName(), module, listener.getClass().getName(), method.getName(), t);
+                logger.error("Could not pass {} to {}. ({}.{}())", clazz.getName(), module != null ? module : listener.getClass().getName(), listener.getClass().getName(), method.getName(), t);
             }
 
             catch (IllegalAccessException ignored) {}

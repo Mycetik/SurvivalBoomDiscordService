@@ -10,3 +10,4 @@ rootProject.name = "SurvivalBoom Discord Service"
 include("api")
 include("core")
 include("test-module")
+include("music-module")

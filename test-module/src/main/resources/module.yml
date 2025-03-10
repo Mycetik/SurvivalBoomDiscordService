@@ -14,9 +14,3 @@ dependencies:
     join-classpath: true
     required: true
     load: BEFORE
-
-
-libraries:
-
-  test:
-    gradle: "net.datafaker:datafaker:1.7.0"

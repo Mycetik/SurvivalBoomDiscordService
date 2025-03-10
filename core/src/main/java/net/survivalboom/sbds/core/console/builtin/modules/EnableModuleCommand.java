@@ -16,7 +16,7 @@ public class EnableModuleCommand extends CommandBase implements ConsoleCommand {
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        IModule module = info.arguments().getByName("module", IModule.class);
+        IModule module = info.arguments().get("module", IModule.class);
         assert module != null;
 
         info.sbds().getModuleManager().enableModule(module);

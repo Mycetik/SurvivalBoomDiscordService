@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.modules;
 
 import net.survivalboom.sbds.api.ISBDS;
+import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -17,9 +18,14 @@ public interface IModule {
 
     @NotNull File getFile();
 
+    @NotNull File getDataFolder();
+
     @NotNull JarFile getJar();
 
     @NotNull IModuleManager getModuleManager();
+
+
+    @NotNull YamlConfiguration getConfig();
 
 
     @NotNull Logger getLogger();

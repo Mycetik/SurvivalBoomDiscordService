@@ -39,11 +39,11 @@ public class SlashExecutionInfo extends ExecutionInfo {
         return this.interaction.getUser();
     }
 
-    public @Nullable ReplyCallbackAction reply(@NotNull String name, @Nullable Placeholders placeholders) {
+    public @NotNull ReplyCallbackAction reply(@NotNull String name, @Nullable Placeholders placeholders) {
         return messages().reply(interaction, placeholders, name, user());
     }
 
-    public @Nullable ReplyCallbackAction reply(@NotNull String name) {
+    public @NotNull ReplyCallbackAction reply(@NotNull String name) {
         return messages().reply(interaction, null, name, user());
     }
 

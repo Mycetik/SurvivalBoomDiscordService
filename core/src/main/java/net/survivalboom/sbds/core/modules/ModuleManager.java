@@ -92,7 +92,7 @@ public class ModuleManager extends Manager implements IModuleManager {
         }
 
         catch (Throwable t) {
-            logger.error("Failed to load {}", file.getName(), t);
+            logger.error("Failed to load `{}`.", file.getName(), t);
             return null;
         }
 
@@ -105,7 +105,9 @@ public class ModuleManager extends Manager implements IModuleManager {
         }
 
         catch (Throwable t) {
-            logger.error("Failed to load {}", module.getMeta().getName(), t);
+            module.closeOrReport(logger);
+            modules.values().remove(module);
+            logger.error("Failed to load `{}`.", module.getFile().getName(), t);
             return null;
         }
 
@@ -120,17 +122,18 @@ public class ModuleManager extends Manager implements IModuleManager {
         Module module = new Module(this, file);
         module.readMeta();
 
-        if (!IModuleManager.checkNameValid(module.getMeta().getName())) throw new InvalidModuleMetaException("Module name contains illegal characters. Allowed characters: " + String.join(" ", IModuleManager.ALLOWED_CHARACTERS));
-
         return loadModule1(module);
 
     }
 
-    private synchronized @NotNull Module loadModule1(@NotNull Module module) throws InvalidModuleException {
+    private synchronized @NotNull Module loadModule1(@NotNull Module module) throws InvalidModuleException, InvalidModuleMetaException {
 
         checkValid();
 
         ModuleMeta meta = module.getMeta();
+
+        if (module.getDataFolder().isFile()) throw new IllegalStateException("Data folder is a file, you broke everything!");
+        if (!IModuleManager.checkNameValid(meta.getName())) throw new InvalidModuleMetaException("Module name contains illegal characters. Allowed characters: " + String.join(" ", IModuleManager.ALLOWED_CHARACTERS));
 
         if (modules.containsKey(meta.getName())) throw new IllegalArgumentException("Module with name " + meta.getName() + "already loaded");
 
@@ -164,7 +167,7 @@ public class ModuleManager extends Manager implements IModuleManager {
         }
 
         catch (Throwable t) {
-            logger.error("Error occurred while unloading {}.", moduleName);
+            logger.error("An error occurred while unloading {}.", moduleName);
         }
 
         module.closeOrReport(logger);

@@ -1,6 +1,17 @@
 package net.survivalboom.sbds.api.modules;
 
+import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.utils.CommonUtils;
+import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
+import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Objects;
+import java.util.jar.JarFile;
 
 public abstract class ModuleMain {
 
@@ -29,8 +40,79 @@ public abstract class ModuleMain {
     }
 
 
-    public @NotNull IModule getModule() {
+    public final @NotNull IModule getModule() {
         return module;
+    }
+
+    //
+    // GETTER
+    //
+
+    public @NotNull String getName() {
+        return getModule().getName();
+    }
+
+    public @NotNull File getFile() {
+        return getModule().getFile();
+    }
+
+    public @NotNull File getDataFolder() {
+        return getModule().getDataFolder();
+    }
+
+    public @NotNull JarFile getJar() {
+        return getModule().getJar();
+    }
+
+    public @NotNull IModuleManager getModuleManager() {
+        return getModule().getModuleManager();
+    }
+
+    public @NotNull YamlConfiguration getConfig() {
+        return getModule().getConfig();
+    }
+
+    public @NotNull Logger getLogger() {
+        return getModule().getLogger();
+    }
+
+    public @NotNull IModuleMeta getMeta() {
+        return getModule().getMeta();
+    }
+
+    public @NotNull ISBDS getSbds() {
+        return getModule().getSbds();
+    }
+
+    //
+    // CONFIG
+    //
+
+    public @NotNull YamlConfiguration saveDefaultConfig() {
+        return saveDefaultConfig("config.yml");
+    }
+
+    public @NotNull YamlConfiguration saveDefaultConfig(@NotNull String fileName) {
+
+        Objects.requireNonNull(fileName, "filename == null");
+
+        File configFile = new File(getModule().getDataFolder(), fileName);
+        try {
+            checkFiles(Map.of(fileName, fileName));
+            getConfig().load(configFile);
+        }
+
+        catch (IOException | InvalidConfigurationException e) {
+            getLogger().warn("Failed to load configuration file `{}`", fileName, e);
+        }
+
+        return getConfig();
+
+    }
+
+    public void checkFiles(@NotNull Map<String, String> map) {
+        Objects.requireNonNull(map, "map == null");
+        CommonUtils.checkFiles(this.getClass(), getModule().getDataFolder(), map, null);
     }
 
 }

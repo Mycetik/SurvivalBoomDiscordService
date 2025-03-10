@@ -8,8 +8,10 @@ import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.*;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.List;
 
 public class EmbedTemplate implements IEmbedTemplate {
 
@@ -24,6 +26,8 @@ public class EmbedTemplate implements IEmbedTemplate {
     // BODY //
 
     @Nullable private final String title;
+
+    @Nullable private final Color color;
 
     @Nullable private final String description;
 
@@ -58,6 +62,14 @@ public class EmbedTemplate implements IEmbedTemplate {
         url = section.getString("url");
         thumbnailUrl = section.getString("thumbnail");
 
+        String colorRaw = section.getString("color");
+        if (colorRaw != null) {
+            color = color(colorRaw);
+            if (color == null) throw new InvalidEmbedException("Invalid color `" + colorRaw + "`");
+        }
+
+        else color = null;
+
         footer = section.getString("footer");
         footIconUrl = section.getString("footer-icon");
 
@@ -83,6 +95,15 @@ public class EmbedTemplate implements IEmbedTemplate {
         description = toString(section.get("description"));
         url = toString(section.get("url"));
         thumbnailUrl = toString(section.get("thumbnail"));
+
+        String colorRaw = toString(section.get("color"));
+        if (colorRaw != null) {
+            color = color(colorRaw);
+            if (color == null) throw new InvalidEmbedException("Invalid color `" + colorRaw + "`");
+        }
+
+        else color = null;
+
 
         footer = toString(section.get("footer"));
         footIconUrl = toString(section.get("footer-icon"));
@@ -135,17 +156,18 @@ public class EmbedTemplate implements IEmbedTemplate {
 
         EmbedBuilder builder = new EmbedBuilder();
 
-        builder.setAuthor(author, authorUrl, authorIconUrl);
+        builder.setAuthor(author != null ? placeholders.parse(author) : null, authorUrl != null ? placeholders.parse(authorUrl) : null, authorIconUrl != null ? placeholders.parse(authorIconUrl) : null);
 
-        builder.setTitle(title, url);
-        builder.setDescription(description);
-        builder.setThumbnail(thumbnailUrl);
+        builder.setTitle(title != null ? placeholders.parse(title) : null, url != null ? placeholders.parse(url) : null);
+        builder.setColor(color);
+        builder.setDescription(description != null ? placeholders.parse(description) : null);
+        builder.setThumbnail(thumbnailUrl != null ? placeholders.parse(thumbnailUrl) : null);
 
-        builder.setFooter(footer, footIconUrl);
+        builder.setFooter(footer != null ? placeholders.parse(footer) : null, footIconUrl != null ? placeholders.parse(footIconUrl) : null);
 
         if (timestamp != null) builder.setTimestamp(LocalDateTime.parse(timestamp));
 
-        fields.forEach(f -> builder.addField(f.name(), f.value(), f.inline()));
+        fields.forEach(f -> builder.addField(placeholders.parse(f.name()), placeholders.parse(f.value()), f.inline()));
 
         return builder;
 
@@ -181,6 +203,23 @@ public class EmbedTemplate implements IEmbedTemplate {
         if (o instanceof String s) return s;
 
         return o.toString();
+
+    }
+
+    private @Nullable Color color(@NotNull String hex) {
+
+        int resultRed, resultGreen, resultBlue;
+        try {
+            resultRed = Integer.valueOf(hex.substring(0, 2), 16);
+            resultGreen = Integer.valueOf(hex.substring(2, 4), 16);
+            resultBlue = Integer.valueOf(hex.substring(4, 6), 16);
+        }
+
+        catch (NumberFormatException e) {
+            return null;
+        }
+
+        return new Color(resultRed, resultGreen, resultBlue);
 
     }
 

@@ -1,0 +1,79 @@
+#
+#  Music Bot  | SBDS
+#  Українська | By TIMURishche
+#
+
+$name: "ukrainian"
+
+commands:
+
+  music-module:
+
+    not-in-voice:
+      $embed:
+        description: <:9752barrierblockmc:1013463226752696392> Ви не знаходитесь у голосовому каналі.
+        color: ff0000
+
+    no-free-bot:
+      $embed:
+        description: |
+          :no_mobile_phones: Вільного музичного бота не знайдено!
+          :t_rex: Спробуйте ще раз трішки пізніше...
+        color: ff0000
+
+    no-bot-in-voice:
+      $embed:
+        description: <:9752barrierblockmc:1013463226752696392> У вашому голосовому каналі немає музичного бота.
+        color: ff0000
+
+    no-tracks-found:
+      $embed:
+        description: <:google_dinosaur:1077358570091319337> Результатів за запитом `{QUERY}` не знайдено!
+        color: ff0000
+
+    added-to-playlist:
+      $embed:
+        description: |
+          <:blurple_verified:1024732810667364414> Пісню додано у чергу! 
+          
+          :ticket: Назва: {NAME}
+            
+          :clock4: Тривалість: {DURATION} 
+            
+          :robot: Бот: {BOT}
+        color: 09ff00
+
+    added-tracks-to-playlist:
+      $embed:
+        description: |
+          <:blurple_verified:1024732810667364414> Додано `{COUNT}` пісень у плейліст! 
+
+          :robot: Бот: {BOT}
+        color: 09ff00
+
+    bot-connected:
+      $embed:
+        description: |
+          <:blurple_verified:1024732810667364414> Підключено {BOT} до {CHANNEL}
+          
+          :ticket: Зараз грає: `{NAME}` 
+          
+          :clock4: Тривалість: `{DURATION}`
+        color: 09ff00
+
+    bot-stopped:
+      $embed:
+        description: <:blurple_verified:1024732810667364414> Стоп! Музичного бота {BOT} зупинено!
+        color: 1eff00
+
+    song-skipped:
+      $embed:
+        description: |
+          <:blurple_verified:1024732810667364414> Пропущено `{SKIPPED_SONG_NAME}`. 
+          
+          :ticket: Зараз грає: `{PLAYING_SONG_NAME}` 
+          
+          :clock4: Тривалість: `{PLAYING_SONG_DURATION}` 
+          
+          :robot: Бот: {BOT}
+        color: 09ff00

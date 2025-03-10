@@ -3,10 +3,6 @@ package net.survivalboom.sbds.api.commands.base;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.ExecutionInfo;
 import net.survivalboom.sbds.api.commands.argument.Argument;
-import net.survivalboom.sbds.api.commands.slash.SlashCommand;
-import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.commands.string.StringCommand;
-import net.survivalboom.sbds.api.console.ConsoleCommand;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,7 +128,7 @@ public abstract class CommandBase implements CommandExecutor {
 
     private void subcommandProxy(@NotNull ExecutionInfo info) {
 
-        net.survivalboom.sbds.api.commands.Command command = Objects.requireNonNull(info.arguments().getByName("subcommand", net.survivalboom.sbds.api.commands.Command.class));
+        net.survivalboom.sbds.api.commands.Command command = Objects.requireNonNull(info.arguments().get("subcommand", net.survivalboom.sbds.api.commands.Command.class));
 
 
     }

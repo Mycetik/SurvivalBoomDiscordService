@@ -1,16 +1,23 @@
 package net.survivalboom.sbds.core.translations;
 
+import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
+import net.survivalboom.sbds.api.translations.MessageLoadException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.core.modules.Module;
+import net.survivalboom.sbds.core.modules.ModuleManager;
+import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
+import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class TranslationManager extends Manager implements ITranslationManager {
@@ -143,6 +150,46 @@ public class TranslationManager extends Manager implements ITranslationManager {
         this.fallbackTranslation = translation;
     }
 
+
+    @Override
+    public void addModuleTranslations(@NotNull IModule imodule) {
+
+        Module module = sbds.getModuleManager().checkModuleEnabled(imodule, "Disabled module attempted to add translations");
+
+        File file = new File(module.getDataFolder(), "translations");
+        File[] files = file.listFiles();
+        if (files == null) return;
+
+        for (File f : files) {
+
+            try {
+                addModuleTranslation(module, f);
+            }
+
+            catch (Throwable t) {
+                log.error("[{}] Failed to load module translation `{}`.", module.getName(), f.getName());
+            }
+
+        }
+
+    }
+
+    private void addModuleTranslation(@NotNull Module module, @NotNull File file) throws IOException, InvalidConfigurationException, MessageLoadException {
+
+        YamlConfiguration yamlConfiguration = new YamlConfiguration();
+        yamlConfiguration.load(file);
+
+        String translationName = yamlConfiguration.getString("$name");
+        if (translationName == null) throw new IllegalStateException("Yaml file does not contain `$name` key");
+
+        Translation translation = getTranslation0(translationName);
+        if (translation == null) throw new IllegalStateException("Unknown translation `" + translationName + "`");
+
+        translation.addModuleTranslation(module, yamlConfiguration);
+
+        module.getRegistration().add("ModuleTranslation-" + translationName, () -> translation.removeModuleTranslation(module));
+
+    }
 
 
     public static @NotNull Translation convert(@NotNull ITranslation translation) {

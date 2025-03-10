@@ -11,6 +11,7 @@ import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.Listener;
+import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.builtin.StatusCommand;
@@ -108,8 +109,8 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
         }
 
         catch (Throwable t) {
-            logger.error("[{}:{}] An internal error occurred while attempting to perform slash command /{}.", event.getGuild().getName(), event.getUser().getName(), commandName, t);
-            event.reply("An internal error occurred. Check console for details. " + t).queue();
+            logger.error("[{}] An internal error occurred while attempting to perform slash command /{}.", event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName(), commandName, t);
+            event.reply(sbds.getMessages().getMessageDataFallback("commands.error", Placeholders.of("{EXCEPTION}", t.toString()), event.getUser())).queue();
         }
 
     }

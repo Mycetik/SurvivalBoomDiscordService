@@ -28,7 +28,7 @@ public class TestCommand extends CommandBase implements SlashCommand {
 
         IUserData userData = repository.createUser(info.user());
 
-        ITranslation translation = info.arguments().getByName("translation", ITranslation.class);
+        ITranslation translation = info.arguments().get("translation", ITranslation.class);
         if (translation == null) {
             ITranslation current = userData.translation();
             String str = current != null ? current.getName() : "null";

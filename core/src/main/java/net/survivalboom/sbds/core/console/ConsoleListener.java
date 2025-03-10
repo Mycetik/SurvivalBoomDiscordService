@@ -106,7 +106,7 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
 
         if (command.hasSubcommands()) {
 
-            SubCommandArgument.SubCommand subcommand = parser.getArguments().getByName("subcommand", SubCommandArgument.SubCommand.class);
+            SubCommandArgument.SubCommand subcommand = parser.getArguments().get("subcommand", SubCommandArgument.SubCommand.class);
 
             Objects.requireNonNull(subcommand);
 

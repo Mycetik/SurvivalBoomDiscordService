@@ -14,6 +14,17 @@ lang:
 
 commands:
 
+  error:
+    $embed:
+      title: ":bangbang: Ой-ой! :bangbang:"
+      color: ff0000
+      description: |
+        Сталась невідома помилка у SBDS при спробі виконати команду!
+        Інформацію про помилку надіслано у консоль. Спробуйте виконати команду пізніше або зв'яжіться з розробником.
+      fields:
+        - name: "Помилка:"
+          value: "{EXCEPTION}"
+
   builtin:
 
     status:

@@ -1,6 +1,5 @@
 package net.survivalboom.sbds.api.utils;
 
-import org.bspfsystems.yamlconfiguration.configuration.Configuration;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -298,6 +297,15 @@ public class CommonUtils {
     //
     // YAML
     //
+
+    @SuppressWarnings("unchecked")
+    public static @NotNull List<TypeMap> typeMap(@NotNull List<Map<?, ?>> map) {
+
+        List<TypeMap> out = new ArrayList<>();
+        map.forEach(m -> out.add(new TypeMap((Map<String, Object>) m)));
+
+        return out;
+    }
 
     public static @NotNull ConfigurationSection getOrCreateSection(@NotNull ConfigurationSection configuration, @NotNull String path) {
 

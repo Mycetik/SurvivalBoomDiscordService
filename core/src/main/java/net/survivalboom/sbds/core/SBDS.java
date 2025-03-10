@@ -125,6 +125,7 @@ public class SBDS implements ISBDS {
         consoleListener.init();
 
         translationManager.init();
+        messages.init();
 
         moduleManager.init();
 
@@ -164,6 +165,7 @@ public class SBDS implements ISBDS {
         moduleManager.shutdown();
 
         translationManager.shutdown();
+        messages.shutdown();
 
         consoleListener.shutdown();
         slashCommandManager.shutdown();
