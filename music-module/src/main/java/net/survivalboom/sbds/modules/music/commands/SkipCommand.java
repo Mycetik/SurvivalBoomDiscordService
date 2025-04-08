@@ -3,8 +3,6 @@ package net.survivalboom.sbds.modules.music.commands;
 import dev.arbjerg.lavalink.client.player.Track;
 import dev.arbjerg.lavalink.protocol.v4.TrackInfo;
 import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
@@ -27,7 +25,7 @@ public class SkipCommand extends AbstractPlayerCommand {
         if (player == null) return;
 
         if (!player.skip(1)) {
-            info.reply("command.music-module.bot-stopped").queue();
+            info.reply("commands.music-module.bot-stopped").queue();
             return;
         }
 

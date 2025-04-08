@@ -5,8 +5,11 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
+import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
@@ -158,6 +161,30 @@ public class Messages extends Manager implements IMessages {
     public @NotNull MessageCreateAction reply(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, userData);
         return message.reply(data);
+    }
+
+    @Override
+    public @NotNull MessageEditAction edit(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
+        MessageCreateData data = getMessageDataFallback(name, placeholders, user);
+        return message.editMessage(MessageEditData.fromCreateData(data));
+    }
+
+    @Override
+    public @NotNull MessageEditAction edit(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user) {
+        MessageCreateData data = getMessageDataFallback(name, placeholders, user);
+        return message.editMessage(MessageEditData.fromCreateData(data));
+    }
+
+    @Override
+    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
+        MessageCreateData data = getMessageDataFallback(name, placeholders, user);
+        return interaction.getHook().editOriginal(MessageEditData.fromCreateData(data));
+    }
+
+    @Override
+    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user) {
+        MessageCreateData data = getMessageDataFallback(name, placeholders, user);
+        return interaction.getHook().editOriginal(MessageEditData.fromCreateData(data));
     }
 
 

@@ -2,8 +2,10 @@ package net.survivalboom.sbds.api.commands.slash;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
+import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
@@ -45,6 +47,15 @@ public class SlashExecutionInfo extends ExecutionInfo {
 
     public @NotNull ReplyCallbackAction reply(@NotNull String name) {
         return messages().reply(interaction, null, name, user());
+    }
+
+
+    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull String name, @Nullable Placeholders placeholders) {
+        return messages().edit(interaction, placeholders, name, user());
+    }
+
+    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull String name) {
+        return messages().edit(interaction, null, name, user());
     }
 
 }

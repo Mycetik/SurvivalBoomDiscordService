@@ -31,6 +31,25 @@ commands:
         description: <:google_dinosaur:1077358570091319337> Результатів за запитом `{QUERY}` не знайдено!
         color: ff0000
 
+    searching-tracks:
+      $embed:
+        description: <a:loading:1086970461549756536> Шукаю треки за запитом `{QUERY}`...
+        color: ffce47
+
+    loading-tracks:
+      $embed:
+        description: <a:loading:1086970461549756536> Завантажую треки за посиланням `{URL}`...
+        color: ffce47
+
+    track-failed:
+      $embed:
+        description: |
+          <:9752barrierblockmc:1013463226752696392> Сталась помилка при спробі завантажити трек. Можливо неправильне посилання або динозаврик усе зламав.
+          ```
+          {ERROR}
+          ```
+        color: ff0000
+
     added-to-playlist:
       $embed:
         description: |

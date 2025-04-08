@@ -22,7 +22,7 @@ public class StopCommand extends AbstractPlayerCommand {
 
         player.stop();
 
-        info.reply("command.music-module.bot-stopped", Placeholders.of("{BOT}", player.getBot().getBot().getSelfUser().getAsMention())).queue();
+        info.reply("commands.music-module.bot-stopped", Placeholders.of("{BOT}", player.getBot().getBot().getSelfUser().getAsMention())).queue();
 
     }
 

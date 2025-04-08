@@ -169,7 +169,14 @@ public class BotManager extends Manager {
     public @Nullable GuildPlayer findCurrentPlayer(@NotNull AudioChannelUnion channel) {
         Objects.requireNonNull(channel, "channel == null");
         Guild guild = channel.getGuild();
-        return musicBots.stream().map(bot -> bot.getPlayer(guild)).filter(Objects::nonNull).findFirst().orElse(null);
+        return musicBots
+                .stream()
+                .map(bot -> bot.getPlayer(guild))
+                .filter(Objects::nonNull)
+                .filter(GuildPlayer::isActive)
+                .filter(p -> channel.getIdLong() == Objects.requireNonNull(p.getChannel()).getIdLong())
+                .findFirst()
+                .orElse(null);
     }
 
     public @NotNull List<MusicBot> findBotsInGuild(@NotNull Guild guild) {

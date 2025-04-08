@@ -1,6 +1,5 @@
 package net.survivalboom.sbds.modules.music.commands;
 
-import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
 import dev.arbjerg.lavalink.client.player.Track;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
@@ -16,8 +15,11 @@ import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
 import net.survivalboom.sbds.modules.music.bots.MusicBot;
+import net.survivalboom.sbds.modules.music.bots.TrackLoadException;
 import org.jetbrains.annotations.NotNull;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,7 +48,12 @@ public class PlayCommand extends CommandBase implements SlashCommand {
         String query = info.arguments().get("query", String.class);
         Objects.requireNonNull(query);
 
+        //
+        // FIND PLAYER
+        //
+
         GuildPlayer player = botManager.findCurrentPlayer(channel);
+
         if (player == null) {
 
             List<MusicBot> freeBots = botManager.findFreeBots(channel);
@@ -60,9 +67,27 @@ public class PlayCommand extends CommandBase implements SlashCommand {
 
         }
 
-        List<Track> tracks = player.searchTracks(query);
+        //
+        // ADD TRACKS
+        //
+
+        boolean isUrl = isUrl(query);
+
+        if (isUrl) info.reply("commands.music-module.loading-tracks", Placeholders.of("{URL}", query)).queue();
+        else info.reply("commands.music-module.searching-tracks", Placeholders.of("{QUERY}", query)).queue();
+
+        List<Track> tracks;
+        try {
+            tracks = player.searchTracks(query);
+        }
+
+        catch (TrackLoadException e) {
+            info.reply("commands.music-module.track-failed", Placeholders.of("{ERROR}", e.toString())).queue();
+            return;
+        }
+
         if (tracks.isEmpty()) {
-            info.reply("commands.music-module.no-tracks-found", Placeholders.of("{QUERY}", query)).queue();
+            info.edit("commands.music-module.no-tracks-found", Placeholders.of("{QUERY}", query)).queue();
             return;
         }
 
@@ -70,6 +95,10 @@ public class PlayCommand extends CommandBase implements SlashCommand {
         if (newBot) player.connect(channel);
 
         player.addTracks(tracks);
+
+        //
+        // SEARCH TRACKS
+        //
 
         Placeholders placeholders = new Placeholders();
         placeholders.add("{BOT}", info.sbds().getBot().getSelfUser().getAsMention());
@@ -83,14 +112,14 @@ public class PlayCommand extends CommandBase implements SlashCommand {
             placeholders.add("{DURATION}", track.getInfo().getLength());
             placeholders.add("{COUNT}", tracks.size());
 
-            info.reply("commands.music-module.bot-connected", placeholders).queue();
+            info.edit("commands.music-module.bot-connected", placeholders).queue();
 
         }
 
         else {
 
             if (tracks.size() > 1) {
-                info.reply("commands.music-module.added-tracks-to-playlist", placeholders).queue();
+                info.edit("commands.music-module.added-tracks-to-playlist", placeholders).queue();
             }
 
             else {
@@ -100,7 +129,7 @@ public class PlayCommand extends CommandBase implements SlashCommand {
                 placeholders.add("{NAME}", track.getInfo().getSourceName());
                 placeholders.add("{DURATION}", track.getInfo().getLength());
 
-                info.reply("commands.music-module.added-to-playlist", placeholders).queue();
+                info.edit("commands.music-module.added-to-playlist", placeholders).queue();
 
             }
 
@@ -109,6 +138,18 @@ public class PlayCommand extends CommandBase implements SlashCommand {
 
     }
 
+    private boolean isUrl(@NotNull String string) {
+
+        try {
+            new URI(string);
+            return true;
+        }
+
+        catch (URISyntaxException e) {
+            return false;
+        }
+
+    }
 
     @CommandArgument(name = "query")
     public Argument<?> song() {

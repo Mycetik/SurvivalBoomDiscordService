@@ -98,31 +98,25 @@ public class GuildPlayer {
 
     // TRACKS //
 
-    public @NotNull List<Track> searchTracks(@NotNull String query) {
+    public @NotNull List<Track> searchTracks(@NotNull String query) throws TrackLoadException {
 
         LavalinkLoadResult result = link.loadItem(query).block();
         Objects.requireNonNull(result);
 
-        if (result instanceof TrackLoaded trackLoaded) {
-            return new ArrayList<>(List.of(trackLoaded.getTrack()));
-        }
+        return switch (result) {
 
-        if (result instanceof PlaylistLoaded playlistLoaded) {
-            return playlistLoaded.getTracks();
-        }
+            case TrackLoaded trackLoaded -> new ArrayList<>(List.of(trackLoaded.getTrack()));
 
-        if (result instanceof NoMatches noMatches) {
-            log.warn("No matches: {}", noMatches);
-        }
+            case PlaylistLoaded playlistLoaded -> playlistLoaded.getTracks();
 
-        if (result instanceof LoadFailed loadFailed) {
-            TrackException e = loadFailed.getException();
-            throw new RuntimeException(e.toString());
-        }
+            case NoMatches ignored -> new ArrayList<>();
 
-        log.warn(result.toString());
+            case LoadFailed loadFailed -> throw new TrackLoadException(loadFailed.getException().toString());
 
-        return new ArrayList<>();
+            default -> throw new IllegalStateException("Unknown LavalinkLoadResult `" + result + "`");
+
+        };
+
 
     }
 
@@ -143,7 +137,6 @@ public class GuildPlayer {
 
         if (loop == Loop.TRACK) loop = Loop.NO;
 
-        this.playingIndex += steps;
         if (playingIndex >= playlist.size()) {
 
             if (loop != Loop.PLAYLIST) {
@@ -155,6 +148,8 @@ public class GuildPlayer {
 
         }
 
+        this.playingIndex += steps;
+
         update();
 
         return true;
@@ -164,13 +159,14 @@ public class GuildPlayer {
     public boolean back(int steps) {
         if (task == null) throw new IllegalStateException("not running");
 
-        this.playingIndex -= steps;
         if (playingIndex < 1) {
 
             if (loop != Loop.PLAYLIST && !playlist.isEmpty()) playingIndex = playlist.size() - 1;
             else return false;
 
         }
+
+        this.playingIndex -= steps;
 
         update();
 
@@ -271,6 +267,10 @@ public class GuildPlayer {
     //
     // INFO GETTERS
     //
+
+    public @Nullable AudioChannelUnion getChannel() {
+        return channel;
+    }
 
     public @NotNull Guild getGuild() {
         return guild;
