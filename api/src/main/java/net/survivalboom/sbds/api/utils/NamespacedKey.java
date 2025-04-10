@@ -3,11 +3,14 @@ package net.survivalboom.sbds.api.utils;
 import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
+import java.util.*;
 
 public class NamespacedKey {
 
-    public static String ALLOWED_CHARACTERS = "abcdefghijklmnopqrstuvwxyz_1234567890";
+    public static final String ALLOWED_CHARACTERS = "abcdefghijklmnopqrstuvwxyz_1234567890";
+
+    private static final WeakHashMap<String, NamespacedKey> keys = new WeakHashMap<>();
+
 
     private final String prefix;
 
@@ -47,6 +50,18 @@ public class NamespacedKey {
         return Objects.hash(prefix, key);
     }
 
+
+    public static @NotNull NamespacedKey create(@NotNull String prefix, @NotNull String key) {
+
+        Objects.requireNonNull(prefix, "prefix == null");
+        Objects.requireNonNull(key, "key == null");
+
+        String plus = prefix + ":" + key;
+
+        return keys.computeIfAbsent(plus, k -> new NamespacedKey(prefix, key));
+
+    }
+
     public static @NotNull NamespacedKey fromModule(@NotNull IModule module, @NotNull String key) {
 
         Objects.requireNonNull(module, "module == null");
@@ -56,7 +71,7 @@ public class NamespacedKey {
 
         String prefix = module.getName().toLowerCase();
 
-        return new NamespacedKey(prefix, key);
+        return create(prefix, key);
 
     }
 
@@ -66,7 +81,7 @@ public class NamespacedKey {
 
         if (!checkFormat(key)) throw new IllegalArgumentException("Key contains illegal characters. Allowed characters: " + String.join(" ", ALLOWED_CHARACTERS));
 
-        return new NamespacedKey("sbds", key);
+        return create("sbds", key);
 
     }
 
@@ -85,7 +100,7 @@ public class NamespacedKey {
         if (!checkFormat(prefix)) throw new IllegalArgumentException("Prefix contains illegal characters. Allowed characters: " + String.join(" ", ALLOWED_CHARACTERS));
         if (!checkFormat(key)) throw new IllegalArgumentException("Key contains illegal characters. Allowed characters: " + String.join(" ", ALLOWED_CHARACTERS));
 
-        return new NamespacedKey(prefix, key);
+        return create(prefix, key);
 
     }
 
