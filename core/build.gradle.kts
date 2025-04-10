@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":api"))
+    compileOnly(project(":api"))
     compileOnly("ch.qos.logback:logback-classic:1.5.6") // logging
 }
 
@@ -30,9 +30,13 @@ tasks {
 
     shadowJar {
 
+        dependsOn(":api:jar")
+
         archiveBaseName.set("SBDS")
         archiveVersion.set(rootProject.version.toString())
         archiveClassifier.set("")
+
+        from(zipTree(project(":api").tasks.jar.get().archiveFile.get()))
 
     }
 
@@ -66,8 +70,8 @@ tasks {
     create<Exec>("runApp") {
 
         dependsOn(copyToRun)
-        commandLine("cd", "run")
-        commandLine("java", "-jar", runFile.path)
+        workingDir = runDir
+        commandLine("java", "-jar", runFile.name)
 
     }
 
