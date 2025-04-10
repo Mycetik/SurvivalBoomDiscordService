@@ -100,6 +100,7 @@ public class Messages extends Manager implements IMessages {
         MessageCreateData createData = getMessageData(name, placeholders, userData, true);
         if (createData != null) return createData;
 
+        if (placeholders != null) name = placeholders.parse(name);
         return MessageCreateData.fromContent(name);
 
     }
@@ -110,6 +111,7 @@ public class Messages extends Manager implements IMessages {
         MessageCreateData createData = getMessageData(name, placeholders, user, true);
         if (createData != null) return createData;
 
+        if (placeholders != null) name = placeholders.parse(name);
         return MessageCreateData.fromContent(name);
 
     }
