@@ -3,19 +3,19 @@ package net.survivalboom.sbds.api.utils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class TypeMap {
+public class TypeMap implements Map<String, Object> {
 
-    private final Map<String, Object> map = new HashMap<>();
+    private final Map<String, Object> map;
 
-    public TypeMap(@NotNull Map<String, Object> map) {
-        this.map.putAll(map);
+    private final boolean allowModification;
+
+    private TypeMap(@NotNull Map<String, Object> map, boolean allowModification) {
+        this.map = map;
+        this.allowModification = allowModification;
     }
-
-    public TypeMap() {}
 
     public @Nullable Object get(@NotNull String name) {
         Objects.requireNonNull(name, "name == null");
@@ -56,21 +56,101 @@ public class TypeMap {
         return get(name, clazz);
     }
 
+    /*
+        STATIC
+     */
+
+    public static @NotNull TypeMap copyMap(@NotNull Map<String, Object> map, boolean allowModification) {
+        Objects.requireNonNull(map, "map == null");
+        return new TypeMap(new ConcurrentHashMap<>(map), allowModification);
+    }
+
+    public static @NotNull TypeMap ofMap(@NotNull Map<String, Object> map, boolean allowModification) {
+        Objects.requireNonNull(map, "map == null");
+        return new TypeMap(map, allowModification);
+    }
+
+    public static @NotNull TypeMap empty(boolean allowModification) {
+        return new TypeMap(new ConcurrentHashMap<>(), allowModification);
+    }
+
+
+    /*
+        MAP
+     */
+
+    @Override
     public int size() {
         return map.size();
     }
 
+    @Override
     public boolean isEmpty() {
         return map.isEmpty();
     }
 
-    public boolean contains(@NotNull String name) {
-        return map.containsKey(name);
+    @Override
+    public boolean containsKey(Object o) {
+        return map.containsKey(o);
     }
 
+    @Override
+    public boolean containsValue(Object o) {
+        return map.containsValue(o);
+    }
+
+    @Override
+    public Object get(Object o) {
+        return map.get(o);
+    }
+
+    @Override
+    public @Nullable Object put(String s, Object o) {
+        if (!allowModification) throw new UnsupportedOperationException("Modification of this TypeMap is not allowed");
+        return map.put(s, o);
+    }
+
+    @Override
+    public Object remove(Object o) {
+        if (!allowModification) throw new UnsupportedOperationException("Modification of this TypeMap is not allowed");
+        return map.remove(o);
+    }
+
+    @Override
+    public void putAll(@NotNull Map<? extends String, ?> map) {
+        if (!allowModification) throw new UnsupportedOperationException("Modification of this TypeMap is not allowed");
+        this.map.putAll(map);
+    }
+
+    @Override
+    public void clear() {
+        if (!allowModification) throw new UnsupportedOperationException("Modification of this TypeMap is not allowed");
+        map.clear();
+    }
+
+    @Override
+    public @NotNull Set<String> keySet() {
+        return new HashSet<>(map.keySet());
+    }
+
+    @Override
+    public @NotNull Collection<Object> values() {
+        return new ArrayList<>(map.values());
+    }
+
+    @Override
+    public @NotNull Set<Entry<String, Object>> entrySet() {
+        return new HashSet<>(map.entrySet());
+    }
 
     public @NotNull Map<String, Object> map() {
         return new HashMap<>(map);
+    }
+
+
+    @Override
+    public String toString() {
+        return "TypeMap" + this.map;
     }
 
 }

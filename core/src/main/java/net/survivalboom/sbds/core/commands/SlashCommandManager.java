@@ -92,7 +92,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         try {
 
-            ArgumentResources resources = new ArgumentResources(sbds, new TypeMap());
+            ArgumentResources resources = new ArgumentResources(sbds, TypeMap.empty(false));
 
             SlashCommandParser parser = new SlashCommandParser(command, resources, event.getInteraction());
 

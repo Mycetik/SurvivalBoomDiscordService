@@ -69,7 +69,7 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
 
         try {
 
-            ArgumentResources resources = new ArgumentResources(sbds, new TypeMap());
+            ArgumentResources resources = new ArgumentResources(sbds, TypeMap.empty(false));
 
             String string = input.substring(prefix.length()).strip();
 

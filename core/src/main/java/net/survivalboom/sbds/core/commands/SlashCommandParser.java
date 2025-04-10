@@ -36,7 +36,7 @@ public class SlashCommandParser {
 
         List<CommandArgument> requiredArguments = command.requiredArguments();
 
-        return requiredArguments.stream().allMatch(a -> arguments.contains(a.name()));
+        return requiredArguments.stream().allMatch(a -> arguments.containsKey(a.name()));
 
     }
 
@@ -55,7 +55,7 @@ public class SlashCommandParser {
 
         }
 
-        arguments = new TypeMap(map);
+        arguments = TypeMap.ofMap(map, false);
 
     }
 

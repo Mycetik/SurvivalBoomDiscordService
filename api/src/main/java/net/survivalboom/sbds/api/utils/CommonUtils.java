@@ -302,7 +302,7 @@ public class CommonUtils {
     public static @NotNull List<TypeMap> typeMap(@NotNull List<Map<?, ?>> map) {
 
         List<TypeMap> out = new ArrayList<>();
-        map.forEach(m -> out.add(new TypeMap((Map<String, Object>) m)));
+        map.forEach(m -> out.add(TypeMap.ofMap((Map<String, Object>) m, true)));
 
         return out;
     }

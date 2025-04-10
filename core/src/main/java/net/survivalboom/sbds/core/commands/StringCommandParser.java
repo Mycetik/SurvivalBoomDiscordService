@@ -38,7 +38,7 @@ public class StringCommandParser {
     public void parse() throws ArgumentParseException {
 
         if (input.isBlank()) {
-            this.arguments = new TypeMap();
+            this.arguments = TypeMap.empty(false);
             return;
         }
 
@@ -54,7 +54,7 @@ public class StringCommandParser {
 
         List<CommandArgument> requiredArguments = command.requiredArguments();
 
-        return requiredArguments.stream().allMatch(a -> arguments.contains(a.name()));
+        return requiredArguments.stream().allMatch(a -> arguments.containsKey(a.name()));
 
     }
     
@@ -112,7 +112,7 @@ public class StringCommandParser {
 
         }
 
-        return new TypeMap(out);
+        return TypeMap.ofMap(out, false);
 
     }
 
