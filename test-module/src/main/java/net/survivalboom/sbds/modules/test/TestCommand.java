@@ -1,19 +1,17 @@
 package net.survivalboom.sbds.modules.test;
 
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.misc.TranslationArgument;
 import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.database.users.IUserData;
-import net.survivalboom.sbds.api.database.users.IUserRepositoryHandler;
-import net.survivalboom.sbds.api.translations.ITranslation;
-import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.database.guilds.IGuildData;
+import net.survivalboom.sbds.api.database.guilds.IGuildRepositoryHandler;
+import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Objects;
 
 @Command(name = "test", description = "Рисует большой жЫрный член.")
 public class TestCommand extends CommandBase implements SlashCommand {
@@ -21,30 +19,32 @@ public class TestCommand extends CommandBase implements SlashCommand {
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
-        NamespacedKey key = NamespacedKey.fromString("sbds:users");
-        IUserRepositoryHandler repository = info.sbds().getDatabase().getRepositoryHandler(key, IUserRepositoryHandler.class);
+        IGuildRepositoryHandler repository = info.sbds().getDatabase().getRepositoryHandler("sbds:guilds", IGuildRepositoryHandler.class);
+        IGuildData guildData = repository.createGuildData(info.guild());
 
-        Objects.requireNonNull(repository);
+        String key = info.arguments().get("key", String.class);
+        String value = info.arguments().get("value", String.class);
 
-        IUserData userData = repository.createUser(info.user());
-
-        ITranslation translation = info.arguments().get("translation", ITranslation.class);
-        if (translation == null) {
-            ITranslation current = userData.translation();
-            String str = current != null ? current.getName() : "null";
-            info.interaction().reply("Ваш поточний переклад: " + str).queue();
+        if (value == null || key == null) {
+            info.reply(guildData.data().toString()).queue();
+            return;
         }
 
-        else {
-            userData.translation(translation);
-            info.interaction().reply("Переклад встановлено! " + translation.getName()).queue();
-        }
+        TypeMap typeMap = guildData.data();
+        typeMap.put(key, value);
+
+        info.reply("Set `{A}` to `{B}`.", Placeholders.of("{A}", key, "{B}", value)).queue();
 
     }
 
-    @CommandArgument(name = "translation", description = "A translation", required = false)
-    public Argument<?> translation() {
-        return new TranslationArgument();
+    @CommandArgument(name = "key", required = false)
+    public Argument<?> key() {
+        return new StringArgument();
+    }
+
+    @CommandArgument(name = "value", required = false)
+    public Argument<?> value() {
+        return new StringArgument();
     }
 
 }

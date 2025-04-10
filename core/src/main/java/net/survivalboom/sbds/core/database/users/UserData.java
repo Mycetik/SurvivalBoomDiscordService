@@ -19,26 +19,24 @@ import java.util.Map;
 public class UserData extends DataRecord implements IUserData {
 
     @Id
-    private final long id;
+    @Column(nullable = false)
+    private long id;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
-    private final Map<String, Object> json;
+    private Map<String, Object> data;
 
     @Column
     @Convert(converter = TranslationConverter.class)
-    @Nullable private ITranslation translation;
+    @Nullable
+    private ITranslation translation;
 
 
-    protected UserData() {
-        this.id = 0L;
-        this.json = null;
-        this.translation = null;
-    }
+    protected UserData() {}
 
     public UserData(long id) {
         this.id = id;
-        this.json = new HashMap<>();
+        this.data = new HashMap<>();
         this.translation = null;
     }
 

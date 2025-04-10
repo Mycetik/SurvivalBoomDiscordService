@@ -8,6 +8,7 @@ import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
+import net.survivalboom.sbds.core.database.guilds.GuildRepositoryHandler;
 import net.survivalboom.sbds.core.database.users.UserRepositoryHandler;
 import net.survivalboom.sbds.core.modules.Module;
 import org.bspfsystems.yamlconfiguration.configuration.Configuration;
@@ -51,6 +52,7 @@ public class Database extends Manager implements IDatabase {
         reloadHibernate();
 
         createRepository0(null, NamespacedKey.sbds("users"), new UserRepositoryHandler(), false);
+        createRepository0(null, NamespacedKey.sbds("guilds"), new GuildRepositoryHandler(), false);
 
         try {
             rebuildSessionFactory();
