@@ -122,7 +122,7 @@ public class Database extends Manager implements IDatabase {
 
         Configuration config = sbds.getConfiguration();
 
-        String jdbcUrl = config.getString("database.jdbc", "null");
+        String jdbcUrl = config.getString("database.jdbc", "null").replace("{SBDS-DIR}", sbds.getWorkingDir().getAbsolutePath());
         String driver = config.getString("database.driver", "null");
         String dialect = config.getString("database.dialect");
         String tableModifier = config.getString("database.table-modify", "none");
