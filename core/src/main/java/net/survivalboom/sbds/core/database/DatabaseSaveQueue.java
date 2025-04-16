@@ -71,6 +71,8 @@ public class DatabaseSaveQueue extends Manager {
                     break;
                 }
 
+                database.checkRepository(entity.record);
+
                 try {
                     session.merge(entity.record);
                 }

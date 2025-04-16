@@ -326,6 +326,14 @@ public class Database extends Manager implements IDatabase {
     // UTILS
     //
 
+    public void checkRepository(@NotNull DataRecord record) {
+
+        if (repositoryMap.values().stream().noneMatch(r -> r.getHandler().getDataRecordClass().equals(record.getClass()))) {
+            throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");
+        }
+
+    }
+
     private void checkRepository(@NotNull Repository repository) {
 
         if (!repositoryMap.containsValue(repository)) throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");
