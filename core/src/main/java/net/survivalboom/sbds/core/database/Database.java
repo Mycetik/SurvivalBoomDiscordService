@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.database;
 
+import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
@@ -36,9 +37,12 @@ public class Database extends Manager implements IDatabase {
 
     private final Map<NamespacedKey, Repository> repositoryMap = new HashMap<>();
 
+    private final DatabaseSaveQueue saveQueue;
+
 
     public Database(@NotNull SBDS sbds) {
         this.sbds = sbds;
+        this.saveQueue = new DatabaseSaveQueue(this, sbds);
     }
 
 
@@ -63,13 +67,16 @@ public class Database extends Manager implements IDatabase {
             throw t;
         }
 
+        saveQueue.init0();
+
     }
 
     @Override
     protected void shutdown0() {
         log.info("Shutting down database...");
-        if (sessionFactory != null) sessionFactory.close();
         repositoryMap.clear();
+        saveQueue.shutdown0();
+        if (sessionFactory != null) sessionFactory.close();
     }
 
     //
@@ -287,7 +294,7 @@ public class Database extends Manager implements IDatabase {
 
 
     //
-    // CONNECTION
+    // SESSIONS
     //
 
     public @NotNull Session requestSession(@NotNull Repository repository) {
@@ -296,10 +303,23 @@ public class Database extends Manager implements IDatabase {
         checkRepository(repository);
         checkDatabase();
 
-        assert sessionFactory != null;
+        return createSession();
 
+    }
+
+    public @NotNull Session createSession() {
+        Objects.requireNonNull(sessionFactory, "sessionFactory == null, something went wrong");
         return sessionFactory.openSession();
+    }
 
+
+    //
+    // SAVE QUEUE
+    //
+
+    @Override
+    public void queueSave(@NotNull DataRecord record) {
+        saveQueue.queue(record);
     }
 
     //

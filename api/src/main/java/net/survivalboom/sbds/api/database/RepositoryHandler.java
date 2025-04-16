@@ -5,12 +5,13 @@ import org.hibernate.Transaction;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public abstract class RepositoryHandler<T extends DataRecord> {
 
-    protected final Map<Object, T> cache = new HashMap<>();
+    protected final Map<Object, T> cache = new ConcurrentHashMap<>();
 
     protected final Class<T> dataRecordClass;
 
@@ -60,13 +61,25 @@ public abstract class RepositoryHandler<T extends DataRecord> {
 
     }
 
-    protected void save(@NotNull T record) {
+    protected void create(@NotNull T record) {
 
         Objects.requireNonNull(record, "record == null");
 
         session(session -> {
             Transaction transaction = session.beginTransaction();
             session.persist(record);
+            transaction.commit();
+        });
+
+    }
+
+    protected void save(@NotNull T record) {
+
+        Objects.requireNonNull(record, "record == null");
+
+        session(session -> {
+            Transaction transaction = session.beginTransaction();
+            session.merge(record);
             transaction.commit();
         });
 
