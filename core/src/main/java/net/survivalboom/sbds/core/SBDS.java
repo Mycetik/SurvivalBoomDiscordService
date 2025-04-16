@@ -40,9 +40,9 @@ public class SBDS implements ISBDS {
     private final LibrariesManager librariesManager;
 
 
-    private final Database database;
-
     private final Scheduler scheduler;
+
+    private final Database database;
 
     private final ModuleManager moduleManager;
 
@@ -101,6 +101,8 @@ public class SBDS implements ISBDS {
 
         librariesManager.configure(this);
 
+        scheduler.init();
+
         database.init();
 
         try {
@@ -117,8 +119,6 @@ public class SBDS implements ISBDS {
         logger.info("Logged successfully! ({}#{})", bot.getSelfUser().getName(), bot.getSelfUser().getDiscriminator());
 
         bot.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.customStatus("Starting SBDS v" + BuildConstants.VERSION + "..."));
-
-        scheduler.init();
 
         eventManager.init();
         slashCommandManager.init();
