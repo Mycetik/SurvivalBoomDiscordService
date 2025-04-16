@@ -12,12 +12,7 @@ import net.survivalboom.sbds.api.database.guilds.IGuildRepositoryHandler;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
-import org.hibernate.annotations.ManyToAny;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Command(name = "test", description = "Рисует большой жЫрный член.")
 public class TestCommand extends CommandBase implements SlashCommand {

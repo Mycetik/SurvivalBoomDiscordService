@@ -7,15 +7,8 @@ import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.utils.NamespacedContainer;
-import net.survivalboom.sbds.api.utils.NamespacedKey;
-import net.survivalboom.sbds.core.database.guilds.GuildData;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Entity
 @Table(name = "sbds_users")
