@@ -1,7 +1,9 @@
 package net.survivalboom.sbds.api.commands;
 
+import net.dv8tion.jda.annotations.UnknownNullability;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.messages.IMessages;
+import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -34,6 +36,9 @@ public abstract class ExecutionInfo {
 
     }
 
+    public @UnknownNullability IModule module() {
+        return command.module();
+    }
 
     public @NotNull Command command() {
         return command;

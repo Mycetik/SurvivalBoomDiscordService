@@ -1,10 +1,12 @@
 package net.survivalboom.sbds.api.commands;
 
+import net.dv8tion.jda.annotations.UnknownNullability;
 import net.survivalboom.sbds.api.commands.argument.internal.SubCommandArgument;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.string.StringCommand;
 import net.survivalboom.sbds.api.console.ConsoleCommand;
+import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,6 +16,8 @@ import java.util.function.ToIntFunction;
 public class Command {
 
     private final String name;
+
+    private final IModule module;
 
 
     private final List<CommandArgument> arguments = new ArrayList<>();
@@ -31,9 +35,10 @@ public class Command {
     private CommandExecutor executor;
 
 
-    public Command(@NotNull String name) {
+    public Command(@NotNull String name, @Nullable IModule module) {
         Objects.requireNonNull(name, "name == null");
         this.name = name;
+        this.module = module;
     }
 
 
@@ -144,8 +149,8 @@ public class Command {
 
     }
 
-    public @NotNull Command withSubcommand(@NotNull CommandBase base) {
-        return withSubcommand(base.build());
+    public @NotNull Command withSubcommand(@NotNull CommandBase base, @Nullable IModule module) {
+        return withSubcommand(base.build(module));
     }
 
 
@@ -156,6 +161,10 @@ public class Command {
 
     public @NotNull String getName() {
         return name;
+    }
+
+    public @UnknownNullability IModule module() {
+        return module;
     }
 
     public @NotNull List<String> aliases() {

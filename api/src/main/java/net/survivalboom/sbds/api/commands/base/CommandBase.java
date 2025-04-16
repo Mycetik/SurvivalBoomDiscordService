@@ -3,6 +3,7 @@ package net.survivalboom.sbds.api.commands.base;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.ExecutionInfo;
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -103,16 +104,16 @@ public abstract class CommandBase implements CommandExecutor {
     }
 
 
-    public @NotNull net.survivalboom.sbds.api.commands.Command build() {
+    public @NotNull net.survivalboom.sbds.api.commands.Command build(@Nullable IModule module) {
 
-        net.survivalboom.sbds.api.commands.Command command = new net.survivalboom.sbds.api.commands.Command(name);
+        net.survivalboom.sbds.api.commands.Command command = new net.survivalboom.sbds.api.commands.Command(name, module);
 
         command.withDescription(description);
         command.withUsage(usage);
         command.withAliases(aliases);
 
         if (!subcommands.isEmpty()) {
-            subcommands.forEach(command::withSubcommand);
+            subcommands.forEach(c -> command.withSubcommand(c, module));
             command.executes(this::subcommandProxy);
             return command;
         }
@@ -136,7 +137,7 @@ public abstract class CommandBase implements CommandExecutor {
 
 
     @Override
-    public void execute(@NotNull ExecutionInfo info) {
+    public void execute(@NotNull ExecutionInfo info) throws Throwable {
 
         try {
 
@@ -151,7 +152,7 @@ public abstract class CommandBase implements CommandExecutor {
         }
 
         catch (InvocationTargetException e) {
-            throw new RuntimeException(e.getCause());
+            throw e.getCause();
         }
 
     }
