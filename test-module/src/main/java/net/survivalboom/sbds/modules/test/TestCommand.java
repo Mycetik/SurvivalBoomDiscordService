@@ -9,9 +9,15 @@ import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.database.guilds.IGuildData;
 import net.survivalboom.sbds.api.database.guilds.IGuildRepositoryHandler;
+import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
+import org.hibernate.annotations.ManyToAny;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Command(name = "test", description = "Рисует большой жЫрный член.")
 public class TestCommand extends CommandBase implements SlashCommand {
@@ -22,16 +28,18 @@ public class TestCommand extends CommandBase implements SlashCommand {
         IGuildRepositoryHandler repository = info.sbds().getDatabase().getRepositoryHandler("sbds:guilds", IGuildRepositoryHandler.class);
         IGuildData guildData = repository.createGuildData(info.guild());
 
+        TypeMap map = guildData.container().getOrCreate(NamespacedKey.fromModule(info, "test"));
+
         String key = info.arguments().get("key", String.class);
         String value = info.arguments().get("value", String.class);
 
         if (value == null || key == null) {
-            info.reply(guildData.data().toString()).queue();
+            info.reply(map + " | " + guildData.container()).queue();
             return;
         }
 
-        TypeMap typeMap = guildData.data();
-        typeMap.put(key, value);
+        map.put(key, value);
+        guildData.save();
 
         info.reply("Set `{A}` to `{B}`.", Placeholders.of("{A}", key, "{B}", value)).queue();
 

@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.utils;
 
+import net.survivalboom.sbds.api.commands.ExecutionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
 
@@ -73,6 +74,11 @@ public class NamespacedKey {
 
         return create(prefix, key);
 
+    }
+
+    public static @NotNull NamespacedKey fromModule(@NotNull ExecutionInfo info, @NotNull String key) {
+        Objects.requireNonNull(info, "info == null");
+        return fromModule(info.module(), key);
     }
 
     public static @NotNull NamespacedKey sbds(@NotNull String key) {

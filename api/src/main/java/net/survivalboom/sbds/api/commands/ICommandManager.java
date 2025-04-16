@@ -13,7 +13,7 @@ public interface ICommandManager {
     void registerCommand(@NotNull IModule module, @NotNull Command command);
 
     default void registerCommand(@NotNull IModule module, @NotNull CommandBase command) {
-        registerCommand(module, command.build());
+        registerCommand(module, command.build(module));
     }
 
     default void registerCommand(@NotNull ModuleMain main, @NotNull Command command) {
@@ -21,7 +21,7 @@ public interface ICommandManager {
     }
 
     default void registerCommand(@NotNull ModuleMain main, @NotNull CommandBase command) {
-        registerCommand(main, command.build());
+        registerCommand(main, command.build(main.getModule()));
     }
 
     void unregisterCommand(@NotNull Command command);

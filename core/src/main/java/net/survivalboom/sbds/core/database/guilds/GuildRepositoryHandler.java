@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
 import net.survivalboom.sbds.api.database.guilds.IGuildData;
 import net.survivalboom.sbds.api.database.guilds.IGuildRepositoryHandler;
+import org.hibernate.Transaction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -72,6 +73,17 @@ public class GuildRepositoryHandler extends RepositoryHandler<GuildData> impleme
     @Override
     public boolean deleteGuildData(@NotNull Guild guild) {
         return deleteGuildData(guild.getIdLong());
+    }
+
+    @Override
+    public void update(@NotNull IGuildData iGuildData) {
+        GuildData guildData = (GuildData) iGuildData;
+        session(session -> {
+            Transaction transaction = session.beginTransaction();
+            session.merge(guildData);
+            transaction.commit();
+            session.flush();
+        });
     }
 
 }

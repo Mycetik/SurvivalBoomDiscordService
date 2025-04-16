@@ -21,4 +21,7 @@ public interface IGuildRepositoryHandler {
     boolean deleteGuildData(@NotNull Guild guild);
 
 
+    void update(@NotNull IGuildData iGuildData);
+
+
 }

@@ -1,9 +1,11 @@
 package net.survivalboom.sbds.api.database.converters;
 
 import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.api.translations.ITranslation;
 
+@Converter(autoApply = true)
 public class TranslationConverter implements AttributeConverter<ITranslation, String> {
 
     @Override

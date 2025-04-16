@@ -8,12 +8,18 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TypeMap implements Map<String, Object> {
 
+    private final List<Class<?>> allowedTypes;
+
     private final Map<String, Object> map;
 
     private final boolean allowModification;
 
-    private TypeMap(@NotNull Map<String, Object> map, boolean allowModification) {
+    private final Callback callback;
+
+    private TypeMap(@Nullable List<Class<?>> allowedTypes, @NotNull Map<String, Object> map, @Nullable Callback callback, boolean allowModification) {
+        this.allowedTypes = allowedTypes;
         this.map = map;
+        this.callback = callback;
         this.allowModification = allowModification;
     }
 
@@ -57,21 +63,56 @@ public class TypeMap implements Map<String, Object> {
     }
 
     /*
+        CALLBACK
+     */
+
+    public interface Callback {
+
+        boolean putCallback(@NotNull TypeMap map, @NotNull String key, @Nullable Object value);
+
+    }
+
+    /*
         STATIC
      */
 
     public static @NotNull TypeMap copyMap(@NotNull Map<String, Object> map, boolean allowModification) {
         Objects.requireNonNull(map, "map == null");
-        return new TypeMap(new ConcurrentHashMap<>(map), allowModification);
+        return new TypeMap(null, new ConcurrentHashMap<>(map), null, allowModification);
+    }
+
+    public static @NotNull TypeMap copyMap(@NotNull Map<String, Object> map, @NotNull Callback callback, boolean allowModification) {
+        return new TypeMap(null, map, callback, allowModification);
+    }
+
+    public static @NotNull TypeMap ofMap(@NotNull Map<String, Object> map, @NotNull Callback callback, boolean allowModification) {
+        return new TypeMap(null, map, callback, allowModification);
     }
 
     public static @NotNull TypeMap ofMap(@NotNull Map<String, Object> map, boolean allowModification) {
         Objects.requireNonNull(map, "map == null");
-        return new TypeMap(map, allowModification);
+        return new TypeMap(null, map, null, allowModification);
     }
 
     public static @NotNull TypeMap empty(boolean allowModification) {
-        return new TypeMap(new ConcurrentHashMap<>(), allowModification);
+        return new TypeMap(null, new ConcurrentHashMap<>(), null, allowModification);
+    }
+
+    public static @NotNull TypeMap empty(@NotNull Callback callback, boolean allowModification) {
+        return new TypeMap(null, new ConcurrentHashMap<>(), callback, allowModification);
+    }
+
+    public static @NotNull TypeMap empty(@NotNull Callback callback, boolean allowModification, Class<?> @NotNull... allowedValues) {
+        return new TypeMap(List.of(allowedValues), new ConcurrentHashMap<>(), callback, allowModification);
+    }
+
+    public static @NotNull TypeMap emptyValuesArray(@Nullable Callback callback, boolean allowModification, @Nullable Class<?>[] allowedValues) {
+
+        @SuppressWarnings("NullableProblems")
+        List<Class<?>> classes = allowedValues != null ? List.of(allowedValues) : null;
+
+        return new TypeMap(classes, new ConcurrentHashMap<>(), callback, allowModification);
+
     }
 
 
@@ -105,9 +146,21 @@ public class TypeMap implements Map<String, Object> {
     }
 
     @Override
-    public @Nullable Object put(String s, Object o) {
+    public @Nullable Object put(@NotNull String s, Object o) {
+
         if (!allowModification) throw new UnsupportedOperationException("Modification of this TypeMap is not allowed");
+        Objects.requireNonNull(s, "key == null");
+
+        if (allowedTypes != null && !allowedTypes.contains(o.getClass())) {
+            throw new IllegalArgumentException("Unsupported type `" + o.getClass().getName() + "`");
+        }
+
+        if (callback != null && !callback.putCallback(this, s, o)) {
+            return o;
+        }
+
         return map.put(s, o);
+
     }
 
     @Override

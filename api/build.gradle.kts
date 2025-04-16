@@ -14,4 +14,7 @@ dependencies {
     api("org.json:json:20240303")
     api("org.jetbrains:annotations:15.0")
 
+    api("com.fasterxml.jackson.core:jackson-core:2.18.3")
+    api("com.fasterxml.jackson.core:jackson-databind:2.18.3")
+
 }
