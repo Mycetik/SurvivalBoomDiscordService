@@ -1,0 +1,11 @@
+$name: "russian"
+
+commands:
+
+  private-voice:
+
+    successful-setup:
+      $embed:
+        title: "Успех!"
+        description: "Установлено создаватель приватных голосовых каналов."
+        color: ff0000
