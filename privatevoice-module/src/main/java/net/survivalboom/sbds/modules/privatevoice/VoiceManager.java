@@ -93,7 +93,7 @@ public class VoiceManager extends Manager implements Listener {
                     .findFirst()
                     .orElse(null);
 
-            if (voiceChannel != null && voiceChannel.getChannel().getMembers().isEmpty()) {
+            if (voiceChannel != null && member.equals(voiceChannel.getOwner())) {
                 log.info("Deleting private channel {} owned by {}", leftChannel.getName(), member.getEffectiveName());
 
                 voiceSet.remove(voiceChannel);
