@@ -1,0 +1,8 @@
+name: "PrivateVoiceModule"
+main: "net.survivalboom.sbds.modules.privatevoice.PrivateVoiceModule"
+
+description: ""
+version: "1.0"
+
+author: dscss2
+website: "https://survivalboom.net"
