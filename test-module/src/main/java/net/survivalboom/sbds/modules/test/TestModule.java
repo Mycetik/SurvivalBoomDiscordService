@@ -19,7 +19,7 @@ public class TestModule extends ModuleMain {
         getModule().getSbds().getSlashCommandManager().registerCommand(this, new TestCommand());
         getModule().getSbds().getSlashCommandManager().registerCommand(this, new SayCommand());
 
-
+        getModule().getSbds().getSlashCommandManager().registerCommand(this, new TranslationCommand());
 
     }
 
