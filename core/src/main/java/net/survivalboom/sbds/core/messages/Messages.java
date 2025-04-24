@@ -3,6 +3,7 @@ package net.survivalboom.sbds.core.messages;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
@@ -198,6 +199,18 @@ public class Messages extends Manager implements IMessages {
 
     @Override
     public @NotNull MessageCreateAction sendMessage(@NotNull TextChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData) {
+        MessageCreateData data = getMessageDataFallback(name, placeholders, userData);
+        return channel.sendMessage(data);
+    }
+
+    @Override
+    public @NotNull MessageCreateAction sendMessage(@NotNull VoiceChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
+        MessageCreateData data = getMessageDataFallback(name, placeholders, user);
+        return channel.sendMessage(data);
+    }
+
+    @Override
+    public @NotNull MessageCreateAction sendMessage(@NotNull VoiceChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, userData);
         return channel.sendMessage(data);
     }
