@@ -1,27 +1,43 @@
 package net.survivalboom.sbds.modules.privatevoice;
 
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.managers.channel.concrete.VoiceChannelManager;
 import net.survivalboom.sbds.api.database.guilds.IGuildData;
 import net.survivalboom.sbds.api.database.guilds.IGuildRepositoryHandler;
 import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.database.users.IUserRepositoryHandler;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.Listener;
+import net.survivalboom.sbds.api.messages.IMessages;
+import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.utils.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.awt.*;
+import java.util.*;
 
 public class VoiceManager extends Manager implements Listener {
 
@@ -34,6 +50,7 @@ public class VoiceManager extends Manager implements Listener {
 
     private IGuildRepositoryHandler guildRepositoryHandler;
     private IUserRepositoryHandler userRepositoryHandler;
+    private IMessages messages;
 
 
     public VoiceManager(PrivateVoiceModule module) {
@@ -45,6 +62,7 @@ public class VoiceManager extends Manager implements Listener {
     protected void init0() {
         guildRepositoryHandler = module.getSbds().getDatabase().getRepositoryHandler("sbds:guilds", IGuildRepositoryHandler.class);
         userRepositoryHandler = module.getSbds().getDatabase().getRepositoryHandler("sbds:users", IUserRepositoryHandler.class);
+        messages = module.getSbds().getMessages();
     }
 
     @Override
@@ -95,7 +113,7 @@ public class VoiceManager extends Manager implements Listener {
 
             if (voiceChannel != null && voiceChannel.getChannel().getMembers().isEmpty()) {
                 log.info("Deleting private channel {} owned by {}", leftChannel.getName(), member.getEffectiveName());
-
+                IUserData userData = userRepositoryHandler.createUser(member.getUser());
                 voiceSet.remove(voiceChannel);
                 leftChannel.delete().queue();
             }
@@ -135,5 +153,148 @@ public class VoiceManager extends Manager implements Listener {
         privateVoice.setOwner(member);
 
         voiceSet.add(privateVoice);
+        privateVoice.setup(settingsMap);
+        sendPanel(privateVoice);
+    }
+
+    @EventHandler
+    public void onVoiceDeleted(ChannelDeleteEvent event) {
+        if (!(event.getChannel() instanceof VoiceChannel channel)) return;
+
+        voiceSet.removeIf(v -> v.getChannel() == channel);
+    }
+
+    @EventHandler
+    public void onVoiceTextMessage(MessageReceivedEvent event) {
+        if (event.getAuthor().isBot()) return;
+
+        Channel channel = event.getChannel();
+
+        Member member = event.getMember();
+        if (member == null) return;
+
+        PrivateVoice voice = getVoiceChannel(member);
+        if (voice == null || voice.getChannel().getIdLong() != channel.getIdLong()) return;
+
+        if (event.getMessage().getContentRaw().equals("+")) {
+            event.getMessage().delete().queue();
+            sendPanel(voice);
+        }
+    }
+
+
+
+    private void sendPanel(PrivateVoice voice) {
+        VoiceChannel channel = voice.getChannel();
+        Placeholders placeholders = new Placeholders();
+        placeholders.add("{CHANNEL}", channel.getName());
+        placeholders.add("{OWNER}", voice.getOwner());
+        placeholders.add("{MAX}", voice.getSettings().getCastOrDefault("max", Integer.class, 20));
+        placeholders.add("{VISIBLE}", voice.getSettings().getCastOrDefault("visible", Boolean.class, false) ? "Виден" : "Скрыт");
+        placeholders.add("{BLOCKED}", voice.getSettings().getCastOrDefault("blocked", Boolean.class, false) ? "Заблокирован" : "Разблокирован");
+
+        boolean isBlocked = voice.getSettings().getCastOrDefault("blocked", Boolean.class, false);
+        boolean isVisible = voice.getSettings().getCastOrDefault("visible", Boolean.class, false);
+
+        String lockOption = isBlocked ? "voice.unlock" : "voice.lock";
+        String visibilityOption = isVisible ? "voice.hide" : "voice.show";
+
+        StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("voice:settings")
+                .setPlaceholder(String.valueOf(Objects.requireNonNull(messages.getMessage("voice.placeholder", voice.getOwner().getUser(), true)).text()))
+                .addOption(String.valueOf(Objects.requireNonNull(messages.getMessage(lockOption, voice.getOwner().getUser(), true)).text()), isBlocked ? "unlock" : "lock")
+                .addOption(String.valueOf(Objects.requireNonNull(messages.getMessage(visibilityOption, voice.getOwner().getUser(), true)).text()), isVisible ? "hide" : "show")
+                .addOption(String.valueOf(Objects.requireNonNull(messages.getMessage("voice.set_limit", voice.getOwner().getUser(), true)).text()), "set_limit")
+                .addOption(String.valueOf(Objects.requireNonNull(messages.getMessage("voice.delete", voice.getOwner().getUser(), true)).text()), "delete");
+
+        messages.sendMessage(channel, placeholders, "voice.panel", voice.getOwner().getUser())
+                .addActionRow(menuBuilder.build())
+                .queue();
+    }
+
+    @EventHandler
+    public void onStringSelectInteraction(StringSelectInteractionEvent event) {
+        String componentId = event.getComponentId();
+        Member member = event.getMember();
+        if (member == null || member.getUser().isBot()) return;
+
+        if (!componentId.equals("voice:settings")) return;
+
+        String selected = event.getValues().get(0);
+        PrivateVoice voice = getVoiceChannel(member);
+        if (voice == null) {
+            return;
+        }
+
+        TypeMap settings = voice.getSettings();
+        VoiceChannel vc = voice.getChannel();
+
+        switch (selected) {
+            case "lock" -> {
+                settings.put("blocked", true);
+                event.reply("🔒 Канал заблокирован").setEphemeral(true).queue();
+            }
+            case "unlock" -> {
+                settings.put("blocked", false);
+                event.reply("🔓 Канал разблокирован").setEphemeral(true).queue();
+            }
+            case "hide" -> {
+                settings.put("visible", true);
+                event.reply("👁️ Канал скрыт").setEphemeral(true).queue();
+            }
+            case "show" -> {
+                settings.put("visible", false);
+                event.reply("👁️ Канал показан").setEphemeral(true).queue();
+            }
+            case "set_limit" -> {
+                Modal modal = Modal.create("voice:set_limit", "Установить лимит участников")
+                        .addActionRow(TextInput.create("limit", "Новый лимит", TextInputStyle.SHORT)
+                                .setPlaceholder("5")
+                                .setRequired(true)
+                                .build())
+                        .build();
+
+                event.replyModal(modal).queue();
+            }
+            case "delete" -> {
+                vc.delete().queue();
+                voiceSet.remove(voice);
+                event.reply("🧹 Канал удалён").setEphemeral(true).queue();
+            }
+            default -> {
+                event.reply("Неизвестное действие").setEphemeral(true).queue();
+            }
+        }
+
+        voice.setup(settings);
+        sendPanel(voice);
+    }
+
+    @EventHandler
+    public void onModalInteraction(ModalInteractionEvent event) {
+        if (!event.getModalId().equals("voice:set_limit")) return;
+
+        Member member = event.getMember();
+        if (member == null) return;
+
+        PrivateVoice voice = getVoiceChannel(member);
+        if (voice == null) {
+            event.reply("У тебя нет приватного канала").setEphemeral(true).queue();
+            return;
+        }
+
+        String input = event.getValue("limit").getAsString();
+        int limit;
+        try {
+            limit = Integer.parseInt(input);
+            if (limit < 0 || limit > 99) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            event.reply("❌ Укажи число от 0 до 99").setEphemeral(true).queue();
+            return;
+        }
+
+        voice.getSettings().put("max", limit);
+        voice.getChannel().getManager().setUserLimit(limit).queue();
+
+        event.reply("✅ Лимит установлен на **" + limit + "** человек").setEphemeral(true).queue();
     }
 }

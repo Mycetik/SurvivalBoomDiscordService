@@ -3,9 +3,23 @@ $name: "russian"
 commands:
 
   private-voice:
-
     successful-setup:
       $embed:
         title: "Успех!"
         description: "Установлено создаватель приватных голосовых каналов."
         color: ff0000
+
+voice:
+  panel:
+    $embed:
+      title: "Управление каналом **{CHANNEL}**"
+      description: ""
+      color: ff0000
+
+  lock: "Заблокировать канал 🔒"
+  unlock: "Разблокировать канал 🔓"
+  show: "Показать канал 👁️"
+  hide: "Скрыть канал 👁️‍🗨️"
+  delete: "Удалить канал 🧹"
+  set_limit: "Установить лимит участников 👤"
+  placeholder: "Выберите действие"
