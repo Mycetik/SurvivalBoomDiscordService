@@ -14,7 +14,7 @@ import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "test", description = "Рисует большой жЫрный член.")
+@Command(name = "test", description = "Рисует большой жЫрный член.", permission = "testmodule.command.testcommand")
 public class TestCommand extends CommandBase implements SlashCommand {
 
     @Override

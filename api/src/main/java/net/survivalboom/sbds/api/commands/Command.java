@@ -24,6 +24,9 @@ public class Command {
 
     private final List<String> aliases = new ArrayList<>();
 
+
+    private String permission;
+
     private String description;
 
     private String usage;
@@ -38,6 +41,10 @@ public class Command {
         this.module = module;
     }
 
+    public @NotNull Command withPermission(@Nullable String permission) {
+        this.permission = permission;
+        return this;
+    }
 
     public @NotNull Command withDescription(@Nullable String description) {
         this.description = description;
@@ -160,6 +167,8 @@ public class Command {
         return name;
     }
 
+
+
     public @UnknownNullability IModule module() {
         return module;
     }
@@ -194,6 +203,10 @@ public class Command {
 
     public @Nullable String description() {
         return description;
+    }
+
+    public @Nullable String permission() {
+        return permission;
     }
 
     public boolean hasSubcommands() {

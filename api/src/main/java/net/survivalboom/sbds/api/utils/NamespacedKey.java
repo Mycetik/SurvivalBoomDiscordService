@@ -2,6 +2,7 @@ package net.survivalboom.sbds.api.utils;
 
 import net.survivalboom.sbds.api.commands.ExecutionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.modules.ModuleMain;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -60,6 +61,14 @@ public class NamespacedKey {
         String plus = prefix + ":" + key;
 
         return keys.computeIfAbsent(plus, k -> new NamespacedKey(prefix, key));
+
+    }
+
+    public static @NotNull NamespacedKey fromModule(@NotNull ModuleMain moduleMain, @NotNull String key) {
+
+        Objects.requireNonNull(moduleMain, "moduleMain == null");
+
+        return fromModule(moduleMain.getModule(), key);
 
     }
 

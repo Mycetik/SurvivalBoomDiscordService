@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.messages;
 
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -148,6 +149,11 @@ public class Messages extends Manager implements IMessages {
     }
 
     @Override
+    public @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member) {
+        return reply(interaction, placeholders, name, member != null ? member.getUser() : null);
+    }
+
+    @Override
     public @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, userData);
         return interaction.reply(data);
@@ -157,6 +163,11 @@ public class Messages extends Manager implements IMessages {
     public @NotNull MessageCreateAction reply(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, user);
         return message.reply(data);
+    }
+
+    @Override
+    public @NotNull MessageCreateAction reply(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member) {
+        return reply(message, placeholders, name, member != null ? member.getUser() : null);
     }
 
     @Override
@@ -172,6 +183,11 @@ public class Messages extends Manager implements IMessages {
     }
 
     @Override
+    public @NotNull MessageEditAction edit(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member) {
+        return edit(message, placeholders, name, member != null ? member.getUser() : null);
+    }
+
+    @Override
     public @NotNull MessageEditAction edit(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, user);
         return message.editMessage(MessageEditData.fromCreateData(data));
@@ -181,6 +197,11 @@ public class Messages extends Manager implements IMessages {
     public @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, user);
         return interaction.getHook().editOriginal(MessageEditData.fromCreateData(data));
+    }
+
+    @Override
+    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member) {
+        return edit(interaction, placeholders, name, member != null ? member.getUser() : null);
     }
 
     @Override
@@ -194,6 +215,11 @@ public class Messages extends Manager implements IMessages {
     public @NotNull MessageCreateAction sendMessage(@NotNull TextChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, user);
         return channel.sendMessage(data);
+    }
+
+    @Override
+    public @NotNull MessageCreateAction sendMessage(@NotNull TextChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member) {
+        return sendMessage(channel, placeholders, name, member != null ? member.getUser() : null);
     }
 
     @Override

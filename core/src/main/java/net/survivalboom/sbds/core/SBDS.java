@@ -7,15 +7,15 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.core.commands.SlashCommandManager;
-import net.survivalboom.sbds.core.console.ConsoleListener;
+import net.survivalboom.sbds.core.commands.slash.SlashCommandManager;
+import net.survivalboom.sbds.core.commands.console.ConsoleListener;
 import net.survivalboom.sbds.core.database.Database;
 import net.survivalboom.sbds.core.events.EventManager;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
 import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.ModuleManager;
+import net.survivalboom.sbds.core.permissions.PermissionManager;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.core.translations.TranslationManager;
@@ -48,6 +48,8 @@ public class SBDS implements ISBDS {
 
     private final ConsoleListener consoleListener;
 
+    private final PermissionManager permissionManager;
+
     private final SlashCommandManager slashCommandManager;
 
 
@@ -73,15 +75,18 @@ public class SBDS implements ISBDS {
 
         this.librariesManager = librariesManager;
 
-        this.database = new Database(this);
         this.scheduler = new Scheduler(this);
-        this.moduleManager = new ModuleManager(this);
+        this.database = new Database(this);
+
         this.eventManager = new EventManager(this);
-        this.consoleListener = new ConsoleListener(this);
-        this.slashCommandManager = new SlashCommandManager(this);
+        this.moduleManager = new ModuleManager(this);
 
         this.translationManager = new TranslationManager(this);
         this.messages = new Messages(this);
+
+        this.consoleListener = new ConsoleListener(this);
+        this.permissionManager = new PermissionManager(this);
+        this.slashCommandManager = new SlashCommandManager(this);
 
         SbdsProvider.internal_internal_internal_internal_internal_internal_set(this);
 
@@ -118,15 +123,15 @@ public class SBDS implements ISBDS {
 
         bot.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.customStatus("Starting SBDS v" + BuildConstants.VERSION + "..."));
 
+        translationManager.init();
+        messages.init();
+
+        permissionManager.init();
         eventManager.init();
         slashCommandManager.init();
         consoleListener.init();
 
-        translationManager.init();
-        messages.init();
-
         moduleManager.init();
-
         consoleListener.startListener();
         slashCommandManager.updateCommands();
 
@@ -148,7 +153,9 @@ public class SBDS implements ISBDS {
         }
 
         catch (Throwable t) {
-            logger.info("Failed to shutdown SBDS properly! This may cause data loss.", t);
+            logger.error("Failed to shutdown SBDS properly! This may cause data loss.", t);
+            logger.error("Using System.exit() to shut down...");
+            Main.exit();
         }
 
         started = false;
@@ -162,11 +169,13 @@ public class SBDS implements ISBDS {
 
         moduleManager.shutdown();
 
+        consoleListener.shutdown();
+        slashCommandManager.shutdown();
+        permissionManager.shutdown();
+
         translationManager.shutdown();
         messages.shutdown();
 
-        consoleListener.shutdown();
-        slashCommandManager.shutdown();
         eventManager.shutdown();
 
         database.shutdown();
@@ -222,6 +231,11 @@ public class SBDS implements ISBDS {
     }
 
     @Override
+    public @NotNull PermissionManager getPermissionManager() {
+        return permissionManager;
+    }
+
+    @Override
     public @NotNull ConsoleListener getConsoleListener() {
         return consoleListener;
     }
@@ -242,7 +256,7 @@ public class SBDS implements ISBDS {
     }
 
     @Override
-    public @NotNull IMessages getMessages() {
+    public @NotNull Messages getMessages() {
         return messages;
     }
 

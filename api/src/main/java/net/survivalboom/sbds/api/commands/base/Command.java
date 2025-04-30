@@ -11,4 +11,5 @@ public @interface Command {
     @NotNull String[] aliases() default {};
     @NotNull String usage() default "";
     @NotNull String description() default "";
+    @NotNull String permission() default "";
 }

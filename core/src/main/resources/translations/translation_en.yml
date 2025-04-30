@@ -11,3 +11,25 @@ lang:
   ukrainian: "Ukrainian"
   russian: "Russian"
   english: "English"
+
+commands:
+
+  error:
+    $embed:
+      title: ":bangbang: Oops! :bangbang:"
+      color: ff0000
+      description: |
+        An internal error occurred while attempting to perform this command!
+        Information about the error sent to bot's console. Try again later or contact bot's developer.
+      fields:
+        - name: "Exception:"
+          value: "{EXCEPTION}"
+
+  no-permission:
+    $embed:
+      title: "You don't have a permission!"
+      color: ff0000
+      description: |
+        Looks like you don't have a permission required to use this command.  
+        Contact server admin, if you think that this is an error.
+        Permission: `{PERMISSION}`.

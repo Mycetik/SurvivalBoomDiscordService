@@ -8,6 +8,7 @@ import net.survivalboom.sbds.api.events.IEventManager;
 import net.survivalboom.sbds.api.libraries.ILibrariesManager;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.IModuleManager;
+import net.survivalboom.sbds.api.permissions.IPermissionManager;
 import net.survivalboom.sbds.api.scheduler.IScheduler;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
 import org.bspfsystems.yamlconfiguration.configuration.Configuration;
@@ -20,21 +21,27 @@ public interface ISBDS {
 
     @NotNull IScheduler getScheduler();
 
+
     @NotNull IModuleManager getModuleManager();
 
+    @NotNull ILibrariesManager getLibrariesManager();
+
+
     @NotNull IEventManager getEventManager();
+
+
+    @NotNull IPermissionManager getPermissionManager();
 
     @NotNull IConsoleListener getConsoleListener();
 
     @NotNull ISlashCommandManager getSlashCommandManager();
+
 
     @NotNull IDatabase getDatabase();
 
     @NotNull ITranslationManager getTranslationManager();
 
     @NotNull IMessages getMessages();
-
-    @NotNull ILibrariesManager getLibrariesManager();
 
 
     @NotNull File getWorkingDir();

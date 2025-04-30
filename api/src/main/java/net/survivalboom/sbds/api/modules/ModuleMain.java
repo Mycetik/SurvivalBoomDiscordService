@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.modules;
 
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
@@ -82,6 +83,18 @@ public abstract class ModuleMain {
 
     public @NotNull ISBDS getSbds() {
         return getModule().getSbds();
+    }
+
+    //
+    // REGISTRATIONS
+    //
+
+    public void registerSlashCommand(@NotNull CommandBase commandBase) {
+        getSbds().getSlashCommandManager().registerCommand(this, commandBase);
+    }
+
+    public void addModuleTranslation() {
+        getSbds().getTranslationManager().addModuleTranslations(this);
     }
 
     //

@@ -4,9 +4,11 @@ import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.core.SBDS;
+import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.Module;
 import net.survivalboom.sbds.core.modules.ModuleManager;
 import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.core.permissions.PermissionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -24,6 +26,10 @@ public abstract class AbstractCommandManager extends Manager implements ICommand
 
     protected final SBDS sbds;
 
+    protected final PermissionManager permissionManager;
+
+    protected final Messages messages;
+
 
     protected final Logger logger;
 
@@ -37,6 +43,9 @@ public abstract class AbstractCommandManager extends Manager implements ICommand
 
         this.name = name;
         this.sbds = sbds;
+
+        this.permissionManager = sbds.getPermissionManager();
+        this.messages = sbds.getMessages();
 
         this.rootLogger = sbds.getLogger();
         this.logger = LoggerFactory.getLogger(name);

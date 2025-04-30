@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.messages;
 
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -33,23 +34,33 @@ public interface IMessages {
 
     @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
 
+    @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
+
     @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData);
 
     @NotNull MessageCreateAction reply(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
+
+    @NotNull MessageCreateAction reply(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
 
     @NotNull MessageCreateAction reply(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData);
 
 
     @NotNull MessageEditAction edit(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
 
+    @NotNull MessageEditAction edit(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
+
     @NotNull MessageEditAction edit(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user);
 
     @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
+
+    @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
 
     @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user);
 
 
     @NotNull MessageCreateAction sendMessage(@NotNull TextChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
+
+    @NotNull MessageCreateAction sendMessage(@NotNull TextChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
 
     @NotNull MessageCreateAction sendMessage(@NotNull TextChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData);
 

@@ -25,7 +25,16 @@ commands:
         - name: "Помилка:"
           value: "{EXCEPTION}"
 
-  builtin:
+  no-permission:
+    $embed:
+      title: "У вас немає доступу!"
+      color: ff0000
+      description: |
+        Отакої! Схоже, що вам бракує дозволів для використання цієї команди!
+        Спробуйте звернутись до адміністратора, якщо ви думаєте що це помилка.
+        Необхідний дозвіл: `{PERMISSION}`.
+
+  sbds:
 
     status:
       $embed:

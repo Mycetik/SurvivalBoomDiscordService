@@ -19,6 +19,8 @@ public abstract class CommandBase implements CommandExecutor {
 
     private final String usage;
 
+    private final String permission;
+
     private final List<String> aliases = new ArrayList<>();
 
     private final List<net.survivalboom.sbds.api.commands.CommandArgument> arguments = new ArrayList<>();
@@ -33,6 +35,7 @@ public abstract class CommandBase implements CommandExecutor {
         this.name = info.name();
         this.description = info.description().isEmpty() ? null : info.description();
         this.usage = info.usage().isEmpty() ? null : info.usage();
+        this.permission = info.permission().isEmpty() ? null : info.permission();
 
         Objects.requireNonNull(info.aliases(), "aliases == null");
         Objects.requireNonNull(name, "name == null");
@@ -111,6 +114,7 @@ public abstract class CommandBase implements CommandExecutor {
         command.withDescription(description);
         command.withUsage(usage);
         command.withAliases(aliases);
+        command.withPermission(permission);
 
         if (!subcommands.isEmpty()) {
             subcommands.forEach(c -> command.withSubcommand(c, module));
@@ -165,6 +169,10 @@ public abstract class CommandBase implements CommandExecutor {
 
     public final @Nullable String getDescription() {
         return description;
+    }
+
+    public final @Nullable String getPermission() {
+        return permission;
     }
 
     public final @Nullable String getUsage() {
