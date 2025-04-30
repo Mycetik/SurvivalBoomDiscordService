@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.core.commands;
+package net.survivalboom.sbds.core.commands.string;
 
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;

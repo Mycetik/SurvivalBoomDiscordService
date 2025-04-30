@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.core.console.builtin;
+package net.survivalboom.sbds.core.commands.builtin.console;
 
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.ICommandManager;

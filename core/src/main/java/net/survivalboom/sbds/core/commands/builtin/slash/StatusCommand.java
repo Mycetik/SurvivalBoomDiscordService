@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.core.commands.builtin;
+package net.survivalboom.sbds.core.commands.builtin.slash;
 
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.commands.argument.Argument;

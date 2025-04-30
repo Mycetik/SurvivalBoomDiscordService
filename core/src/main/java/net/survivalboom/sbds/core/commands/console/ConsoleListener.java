@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.core.console;
+package net.survivalboom.sbds.core.commands.console;
 
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
@@ -10,10 +10,10 @@ import net.survivalboom.sbds.api.console.IConsoleListener;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
-import net.survivalboom.sbds.core.commands.StringCommandParser;
-import net.survivalboom.sbds.core.console.builtin.HelpCommand;
-import net.survivalboom.sbds.core.console.builtin.ShutdownCommand;
-import net.survivalboom.sbds.core.console.builtin.modules.ModulesCommand;
+import net.survivalboom.sbds.core.commands.string.StringCommandParser;
+import net.survivalboom.sbds.core.commands.builtin.console.HelpCommand;
+import net.survivalboom.sbds.core.commands.builtin.console.ShutdownCommand;
+import net.survivalboom.sbds.core.commands.builtin.console.modules.ModulesCommand;
 import net.survivalboom.sbds.core.scheduler.SchedulerTask;
 import org.jetbrains.annotations.NotNull;
 

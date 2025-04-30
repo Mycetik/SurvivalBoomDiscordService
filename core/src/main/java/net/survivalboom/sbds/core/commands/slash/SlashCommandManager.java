@@ -1,5 +1,7 @@
-package net.survivalboom.sbds.core.commands;
+package net.survivalboom.sbds.core.commands.slash;
 
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -14,7 +16,8 @@ import net.survivalboom.sbds.api.events.Listener;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.core.commands.builtin.StatusCommand;
+import net.survivalboom.sbds.core.commands.AbstractCommandManager;
+import net.survivalboom.sbds.core.commands.builtin.slash.StatusCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -84,7 +87,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         RegisteredCommand registeredCommand = findByAlias(commandName);
         if (registeredCommand == null) {
-            logger.error("Something went wrong! Slash command with name {} does not exist in SlashCommandManager!", commandName);
+            logger.warn("Something went wrong! Slash command with name {} does not exist in SlashCommandManager!", commandName);
             return;
         }
 
@@ -92,8 +95,24 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         try {
 
-            ArgumentResources resources = new ArgumentResources(sbds, TypeMap.empty(false));
+            String permission = command.permission();
+            if (event.isFromGuild() && permission != null) {
 
+                Guild guild = event.getGuild();
+                Member member = event.getMember();
+
+                assert member != null;
+                assert guild != null;
+
+                boolean hasPermission = permissionManager.hasPermission(guild, event.getMember(), permission);
+                if (!hasPermission) {
+                    messages.reply(event.getInteraction(), Placeholders.of("{PERMISSION}", permission), "commands.no-permission", event.getMember()).queue();
+                    return;
+                }
+
+            }
+
+            ArgumentResources resources = new ArgumentResources(sbds, TypeMap.empty(false));
             SlashCommandParser parser = new SlashCommandParser(command, resources, event.getInteraction());
 
             parser.parse();

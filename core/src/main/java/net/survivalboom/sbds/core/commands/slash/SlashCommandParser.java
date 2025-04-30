@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.core.commands;
+package net.survivalboom.sbds.core.commands.slash;
 
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
