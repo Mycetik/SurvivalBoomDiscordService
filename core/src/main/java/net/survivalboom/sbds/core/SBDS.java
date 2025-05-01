@@ -108,6 +108,8 @@ public class SBDS implements ISBDS {
 
         database.init();
 
+        logger.info("Logging in...");
+
         try {
             bot = jdaBuilder.build();
         }
