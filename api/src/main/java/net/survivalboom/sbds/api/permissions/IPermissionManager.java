@@ -1,53 +1,56 @@
 package net.survivalboom.sbds.api.permissions;
 
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.survivalboom.sbds.api.database.guilds.IGuildData;
-import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 
 public interface IPermissionManager {
 
-    boolean hasPermission(long guildId, long userId, @NotNull String permission);
+    //
+    // PERMISSIONS
+    //
 
-    boolean hasPermission(@NotNull Guild guild, @NotNull Member member, @NotNull String permission);
+    boolean hasPermission(long guildId, long userId, @NotNull String permission, boolean defaultAllow);
 
-    boolean hasPermission(@NotNull IGuildData guild, @NotNull IUserData user, @NotNull String permission);
+    @NotNull IGuildUserPermissions createUserPermissions(long guildId, long userId);
 
+    @Nullable IGuildUserPermissions getUserPermissions(long guildId, long userId);
 
-    void setUserPermission(long guildId, long userId, @NotNull String permission, boolean value);
+    //
+    // GROUPS
+    //
 
-    void setUserPermission(long guildId, long userId, @NotNull Permission permission);
+    @NotNull Set<IGuildGroup> getGuildGroups(long guildId);
 
-    void setUserPermissions(long guildId, long userId, @NotNull Set<Permission> permissions);
+    @Nullable IGuildGroup getGuildGroup(long guildId, @NotNull String group);
 
-    void unsetUserPermission(long guildId, long userId, @NotNull Permission permission);
-
-    void unsetUserPermission(long guildId, long userId, @NotNull String permission);
-
-    void unsetUserPermissions(long guildId, long userId, @NotNull Set<Permission> permissions);
-
-
-    void setGroupPermission(long guildId, @NotNull String group, @NotNull String permission, boolean value);
-
-    void setGroupPermission(long guildId, @NotNull String group, @NotNull Permission permission);
-
-    void setGroupPermissions(long guildId, @NotNull String group, @NotNull Set<Permission> permissions);
-
-    void unsetGroupPermission(long guildId, @NotNull String group, @NotNull String permission);
-
-    void unsetGroupPermission(long guildId, @NotNull String group, @NotNull Permission permission);
-
-    void unsetGroupPermissions(long guildId, @NotNull String group, @NotNull Set<Permission> permissions);
-
-
-    void createGroup(long guildId, @NotNull String group);
+    @NotNull IGuildGroup createGroup(long guildId, @NotNull String group);
 
     void removeGroup(long guildId, @NotNull String group);
 
+    //
+    // PRE-DEFINED GROUPS
+    //
+
+    void registerPredefinedGroup(@NotNull IModule module, @NotNull String name);
+
+    void unregisterPredefinedGroup(@NotNull IModule module, @NotNull String name);
+
+    //
+    // PRE-DEFINED PERMISSIONS
+    //
+
+    void addPredefinedPermission(@NotNull IModule module, @NotNull String group, @NotNull Permission permission);
+
+    void removePredefinedPermission(@NotNull IModule module, @NotNull String group, @NotNull String permission);
+
+    void removePredefinedPermission(@NotNull IModule module, @NotNull String group, @NotNull Permission permission);
+
+    //
+    // MISC
+    //
 
     void reload(@NotNull IModule module);
 

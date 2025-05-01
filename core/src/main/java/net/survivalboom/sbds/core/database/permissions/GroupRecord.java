@@ -1,22 +1,30 @@
-package net.survivalboom.sbds.core.database.permissions.groups;
+package net.survivalboom.sbds.core.database.permissions;
 
 import jakarta.persistence.*;
 import net.survivalboom.sbds.api.database.DataRecord;
 import org.jetbrains.annotations.NotNull;
 
 @Entity
-@Table(name = "sbds_permission_groups")
-public class GroupData extends DataRecord {
+@Table(name = "sbds_pg")
+public class GroupRecord extends DataRecord {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private long id;
 
     @Column(nullable = false)
     private long guildId;
 
     @Column(nullable = false)
     private String name;
+
+
+    public GroupRecord() {}
+
+    public GroupRecord(long guildId, @NotNull String name) {
+        this.guildId = guildId;
+        this.name = name;
+    }
 
 
     public @NotNull String name() {

@@ -27,6 +27,9 @@ public class Command {
 
     private String permission;
 
+    private boolean defaultPermission;
+
+
     private String description;
 
     private String usage;
@@ -41,8 +44,9 @@ public class Command {
         this.module = module;
     }
 
-    public @NotNull Command withPermission(@Nullable String permission) {
+    public @NotNull Command withPermission(@Nullable String permission, boolean defaultPermission) {
         this.permission = permission;
+        this.defaultPermission = defaultPermission;
         return this;
     }
 
@@ -197,6 +201,7 @@ public class Command {
         return arguments().stream().filter(a -> !a.required()).toList();
     }
 
+
     public @Nullable String usage() {
         return usage;
     }
@@ -205,8 +210,13 @@ public class Command {
         return description;
     }
 
+
     public @Nullable String permission() {
         return permission;
+    }
+
+    public boolean defaultPermission() {
+        return defaultPermission;
     }
 
     public boolean hasSubcommands() {

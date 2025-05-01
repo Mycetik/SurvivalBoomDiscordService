@@ -15,11 +15,16 @@ public abstract class CommandBase implements CommandExecutor {
 
     private final String name;
 
+
     private final String description;
 
     private final String usage;
 
+
     private final String permission;
+
+    private final boolean defaultPermission;
+
 
     private final List<String> aliases = new ArrayList<>();
 
@@ -33,11 +38,14 @@ public abstract class CommandBase implements CommandExecutor {
         Command info = getInfoAnnotation();
 
         this.name = info.name();
+
         this.description = info.description().isEmpty() ? null : info.description();
         this.usage = info.usage().isEmpty() ? null : info.usage();
-        this.permission = info.permission().isEmpty() ? null : info.permission();
 
-        Objects.requireNonNull(info.aliases(), "aliases == null");
+        this.permission = info.permission().isEmpty() ? null : info.permission();
+        this.defaultPermission = info.defaultPermission();
+
+                Objects.requireNonNull(info.aliases(), "aliases == null");
         Objects.requireNonNull(name, "name == null");
 
         aliases.addAll(List.of(info.aliases()));
@@ -114,7 +122,7 @@ public abstract class CommandBase implements CommandExecutor {
         command.withDescription(description);
         command.withUsage(usage);
         command.withAliases(aliases);
-        command.withPermission(permission);
+        command.withPermission(permission, defaultPermission);
 
         if (!subcommands.isEmpty()) {
             subcommands.forEach(c -> command.withSubcommand(c, module));

@@ -8,7 +8,7 @@ public class Permission {
 
     private final String permission;
 
-    private boolean value;
+    private final boolean value;
 
 
     public Permission(@NotNull String permission, boolean value) {
@@ -25,20 +25,22 @@ public class Permission {
         return value;
     }
 
-    public void value(boolean v) {
-        this.value = v;
-    }
-
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof Permission permission)) return false;
-        return this.permission.equals(permission.permission) && this.value == permission.value;
+        return permission.value == this.value && permission.permission.equals(this.permission);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(permission, value);
     }
+
+    @Override
+    public String toString() {
+        return "Permission{permission=" + permission + ",value=" + value + "}";
+    }
+
 
 }

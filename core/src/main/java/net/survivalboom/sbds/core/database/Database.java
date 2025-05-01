@@ -1,5 +1,7 @@
 package net.survivalboom.sbds.core.database;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
@@ -199,6 +201,16 @@ public class Database extends Manager implements IDatabase {
     public synchronized @NotNull Repository createRepository0(@Nullable IModule iModule, @NotNull NamespacedKey namespacedKey, @NotNull RepositoryHandler<?> handler, boolean rebuiltSessionFactory) {
 
         if (repositoryMap.containsKey(namespacedKey)) throw new IllegalArgumentException("Repository with name `" + namespacedKey + "` already exists");
+
+        if (!handler.getDataRecordClass().isAnnotationPresent(Entity.class)) throw new IllegalArgumentException("RepositoryHandler's DataRecord class must have jakarta.persistence.Entity annotation");
+
+        Table table = handler.getDataRecordClass().getAnnotation(Table.class);
+        if (table == null) throw new IllegalArgumentException("RepositoryHandler's DataRecord class must have jakarta.persistence.Table annotation");
+
+        String tableName = table.name();
+        if (repositoryMap.values().stream().anyMatch(r -> r.getHandler().getDataRecordClass().getAnnotation(Table.class).name().equals(tableName))) {
+            throw new IllegalArgumentException("DataRecord with table name `" + tableName + "` already exist");
+        }
 
         Repository repository;
         if (iModule != null) {

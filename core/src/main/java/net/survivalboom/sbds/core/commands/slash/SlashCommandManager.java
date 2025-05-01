@@ -104,7 +104,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
                 assert member != null;
                 assert guild != null;
 
-                boolean hasPermission = permissionManager.hasPermission(guild, event.getMember(), permission);
+                boolean hasPermission = permissionManager.hasPermission(guild.getIdLong(), member.getIdLong(), permission, command.defaultPermission());
                 if (!hasPermission) {
                     messages.reply(event.getInteraction(), Placeholders.of("{PERMISSION}", permission), "commands.no-permission", event.getMember()).queue();
                     return;

@@ -1,20 +1,18 @@
 package net.survivalboom.sbds.core.permissions;
 
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
-import net.survivalboom.sbds.api.database.guilds.IGuildData;
-import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.permissions.IGuildGroup;
 import net.survivalboom.sbds.api.permissions.IPermissionManager;
 import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.utils.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.database.Database;
-import net.survivalboom.sbds.core.database.permissions.group_permission.GroupPermissionRepositoryHandler;
-import net.survivalboom.sbds.core.database.permissions.groups.GroupData;
-import net.survivalboom.sbds.core.database.permissions.groups.GroupRepositoryHandler;
-import net.survivalboom.sbds.core.database.permissions.user.UserPermissionRepositoryHandler;
+import net.survivalboom.sbds.core.database.permissions.GroupPermissionRepositoryHandler;
+import net.survivalboom.sbds.core.database.permissions.GroupRecord;
+import net.survivalboom.sbds.core.database.permissions.GroupRepositoryHandler;
+import net.survivalboom.sbds.core.database.permissions.UserPermissionRepositoryHandler;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -25,21 +23,23 @@ import java.util.stream.Collectors;
 
 public class PermissionManager extends Manager implements IPermissionManager {
 
+
     private static final Logger log = LoggerFactory.getLogger("PermissionManager");
 
     private final SBDS sbds;
 
 
-    private final Map<Integer, Group> cachedGroups = new HashMap<>();
+    private final Set<PredefinedGroup> predefinedGroups = new HashSet<>();
 
-    private final Map<Integer, PermissionUser> cachedUsers = new HashMap<>();
+    private final Map<Integer, GuildGroup> groupMap = new HashMap<>();
+
+    private final Map<Integer, GuildUserPermissions> usersMap = new HashMap<>();
 
 
-    private UserPermissionRepositoryHandler userPermissionRepository;
+    private final UserPermissionRepositoryHandler userPermissionRepository = new UserPermissionRepositoryHandler();
+    private final GroupPermissionRepositoryHandler groupPermissionRepository = new GroupPermissionRepositoryHandler();
+    private final GroupRepositoryHandler groupRepository = new GroupRepositoryHandler();
 
-    private GroupPermissionRepositoryHandler groupPermissionRepository;
-
-    private GroupRepositoryHandler groupRepository;
 
     public PermissionManager(@NotNull SBDS sbds) {
         this.sbds = sbds;
@@ -48,149 +48,155 @@ public class PermissionManager extends Manager implements IPermissionManager {
     @Override
     protected void init0() {
 
-        userPermissionRepository = new UserPermissionRepositoryHandler();
-        groupPermissionRepository = new GroupPermissionRepositoryHandler();
-        groupRepository = new GroupRepositoryHandler();
+        loadPredefinedGroupsFromConfig();
 
         Database database = sbds.getDatabase();
-        database.createRepository0(null, NamespacedKey.sbds("user_permissions"), userPermissionRepository, false);
-        database.createRepository0(null, NamespacedKey.sbds("group_permissions"), groupPermissionRepository, false);
-        database.createRepository0(null, NamespacedKey.sbds("permission_groups"), groupRepository, true);
+        database.createRepository0(null, NamespacedKey.sbds("up"), userPermissionRepository, false);
+        database.createRepository0(null, NamespacedKey.sbds("gp"), groupPermissionRepository, false);
+        database.createRepository0(null, NamespacedKey.sbds("pg"), groupRepository, true);
 
     }
 
     @Override
     protected void shutdown0() {
 
-    }
-
-    @Override
-    public boolean hasPermission(long guildId, long userId, @NotNull String permission) {
-        Objects.requireNonNull(permission, "permission == null");
-        checkValid();
-
-        PermissionUser user = createPermissionUser(guildId, userId);
-
-        return user.hasPermission(permission);
-
-    }
-
-    @Override
-    public boolean hasPermission(@NotNull Guild guild, @NotNull Member member, @NotNull String permission) {
-        Objects.requireNonNull(guild, "guild == null");
-        Objects.requireNonNull(member, "user == null");
-        return hasPermission(guild.getIdLong(), member.getIdLong(), permission);
-    }
-
-    @Override
-    public boolean hasPermission(@NotNull IGuildData guild, @NotNull IUserData user, @NotNull String permission) {
-        Objects.requireNonNull(guild, "guild == null");
-        Objects.requireNonNull(user, "user == null");
-        return hasPermission(guild.getId(), user.getID(), permission);
-    }
-
-
-    @Override
-    public void setUserPermission(long guildId, long userId, @NotNull String permission, boolean value) {
-        setUserPermission(guildId, userId, new Permission(permission, value));
-    }
-
-    @Override
-    public void setUserPermission(long guildId, long userId, @NotNull Permission permission) {
-
-        PermissionUser user = createPermissionUser(guildId, userId);
-        user.addUserPermission(permission);
-
-        user.rebuildPermissionCache();
-
-    }
-
-    @Override
-    public void setUserPermissions(long guildId, long userId, @NotNull Set<Permission> permissions) {
-
-        PermissionUser user = createPermissionUser(guildId, userId);
-        permissions.forEach(user::addUserPermission);
-
-        user.rebuildPermissionCache();
+        predefinedGroups.clear();
+        groupMap.clear();
+        usersMap.clear();
 
     }
 
 
     @Override
-    public void unsetUserPermission(long guildId, long userId, @NotNull Permission permission) {
-        unsetUserPermission(guildId, userId, permission.permission());
-    }
+    public boolean hasPermission(long guildId, long userId, @NotNull String permission, boolean defaultAllow) {
 
-    @Override
-    public void unsetUserPermission(long guildId, long userId, @NotNull String permission) {
+        GuildUserPermissions user = createUserPermissions(guildId, userId);
 
-        if (!cachedUsers.containsKey(Objects.hash(guildId, userId))) return;
-
-        PermissionUser user = createPermissionUser(guildId, userId);
-        user.unsetUserPermission(permission);
-
-        user.rebuildPermissionCache();
-
-    }
-
-    @Override
-    public void unsetUserPermissions(long guildId, long userId, @NotNull Set<Permission> permissions) {
-
-        if (!cachedUsers.containsKey(Objects.hash(guildId, userId))) return;
-
-        PermissionUser user = createPermissionUser(guildId, userId);
-        permissions.forEach(p -> user.unsetUserPermission(p.permission()));
-
-        user.rebuildPermissionCache();
+        return user.hasPermission(permission, defaultAllow);
 
     }
 
 
     @Override
-    public void setGroupPermission(long guildId, @NotNull String group, @NotNull String permission, boolean value) {
+    public @NotNull GuildUserPermissions createUserPermissions(long guildId, long userId) {
 
-    }
+        int hash = Objects.hash(guildId, userId);
+        return usersMap.computeIfAbsent(hash, k -> {
 
-    @Override
-    public void setGroupPermission(long guildId, @NotNull String group, @NotNull Permission permission) {
+            Set<GuildGroup> groups = getGuildGroups0(guildId);
+            Set<Permission> permissions = userPermissionRepository.getUserPermissions(guildId, userId);
 
-    }
+            GuildUserPermissions user = new GuildUserPermissions(this, userId, guildId, groups, permissions);
 
-    @Override
-    public void setGroupPermissions(long guildId, @NotNull String group, @NotNull Set<Permission> permissions) {
+            user.rebuildPermissionCache();
 
-    }
+            return user;
 
-
-    @Override
-    public void unsetGroupPermission(long guildId, @NotNull String group, @NotNull String permission) {
-
-    }
-
-    @Override
-    public void unsetGroupPermission(long guildId, @NotNull String group, @NotNull Permission permission) {
+        });
 
     }
 
 
     @Override
-    public void unsetGroupPermissions(long guildId, @NotNull String group, @NotNull Set<Permission> permissions) {
+    public @Nullable GuildUserPermissions getUserPermissions(long guildId, long userId) {
+        return usersMap.get(Objects.hash(userId, guildId));
+    }
 
+
+    public @NotNull Set<GuildGroup> getGuildGroups0(long guildId) {
+
+        Set<GuildGroup> groups = groupMap.values().stream().filter(g -> g.getGuildId() == guildId).collect(Collectors.toSet());
+        if (!groups.isEmpty()) return groups;
+
+        List<GroupRecord> records = groupRepository.getGuildGroups(guildId);
+        records.forEach(r -> {
+
+            Set<Permission> permissions = groupPermissionRepository.getGroupPermissions(guildId, r.name());
+
+            GuildGroup group = new GuildGroup(r.id(), r.guildId(), r.name(), permissions, this);
+
+            groups.add(group);
+
+            int hash = Objects.hash(r.id(), r.guildId());
+
+            groupMap.put(hash, group);
+
+        });
+
+        return groups;
+
+    }
+
+    @Override
+    public @NotNull Set<IGuildGroup> getGuildGroups(long guildId) {
+        return new HashSet<>(getGuildGroups0(guildId));
+    }
+
+    @Override
+    public @Nullable GuildGroup getGuildGroup(long guildId, @NotNull String group) {
+        return getGuildGroups0(guildId).stream().filter(g -> g.getName().equals(group)).findAny().orElse(null);
     }
 
 
     @Override
-    public void createGroup(long guildId, @NotNull String group) {
+    public @NotNull GuildGroup createGroup(long guildId, @NotNull String group) {
 
+        GroupRecord record = groupRepository.createGuildGroup(guildId, group);
 
+        GuildGroup g = new GuildGroup(record.id(), record.guildId(), group, new HashSet<>(), this);
+
+        groupMap.put(Objects.hash(g.getId(), g.getGuildId()), g);
+
+        groupRepository.createGuildGroup(guildId, group);
+
+        return g;
 
     }
 
     @Override
     public void removeGroup(long guildId, @NotNull String group) {
 
+        groupMap.values().removeIf(g -> g.getName().equals(group) && g.getGuildId() == guildId);
+        usersMap.values().removeIf(gp -> gp.getGuildId() == guildId);
+
+        groupRepository.removeGuildGroup(guildId, group);
+
     }
 
+
+    @Override
+    public void registerPredefinedGroup(@NotNull IModule module, @NotNull String name) {
+
+    }
+
+    @Override
+    public void unregisterPredefinedGroup(@NotNull IModule module, @NotNull String name) {
+
+    }
+
+
+    @Override
+    public void addPredefinedPermission(@NotNull IModule module, @NotNull String group, @NotNull Permission permission) {
+
+    }
+
+    @Override
+    public void removePredefinedPermission(@NotNull IModule module, @NotNull String group, @NotNull String permission) {
+
+    }
+
+    @Override
+    public void removePredefinedPermission(@NotNull IModule module, @NotNull String group, @NotNull Permission permission) {
+
+    }
+
+    public @NotNull Set<PredefinedGroup> getPredefinedGroups() {
+        return new HashSet<>(predefinedGroups);
+    }
+
+    //
+    // RELOAD
+    //
 
     @Override
     public void reload(@NotNull IModule module) {
@@ -209,8 +215,8 @@ public class PermissionManager extends Manager implements IPermissionManager {
 
             log.info("Purging cache...");
 
-            cachedGroups.clear();
-            cachedUsers.clear();
+            groupMap.clear();
+            usersMap.clear();
 
             userPermissionRepository.reload();
             groupPermissionRepository.reload();
@@ -227,56 +233,53 @@ public class PermissionManager extends Manager implements IPermissionManager {
 
     }
 
+    private void loadPredefinedGroupsFromConfig() {
 
-    private @NotNull PermissionUser createPermissionUser(long guildId, long userId) {
+        predefinedGroups.clear();
 
-        int hash = Objects.hash(guildId, userId);
+        ConfigurationSection section = sbds.getConfiguration().getConfigurationSection("predefined-permissions");
+        if (section == null) return;
 
-        return cachedUsers.computeIfAbsent(hash, k -> {
+        Set<PredefinedGroup> predefinedGroupSet = new HashSet<>();
+        for (String s : section.getKeys(false)) {
 
-            Set<Permission> userPermissions = resolveUserPermissions(guildId, userId);
+            ConfigurationSection ss = section.getConfigurationSection(s);
+            if (ss == null) continue;
 
-            PermissionUser out = new PermissionUser(guildId, userId);
-            userPermissions.forEach(out::addUserPermission);
+            int weight = ss.getInt("weight");
+            List<String> permissionsRaw = ss.getStringList("permissions");
 
-            Set<Group> groups = resolveGuildGroups(guildId);
-            groups.removeIf(g -> userPermissions.stream().noneMatch(p -> p.permission().equals("group." + g.name())));
+            Set<Permission> permissions = new HashSet<>();
+            for (String permissionRaw : permissionsRaw) {
 
-            out.addGroups(groups);
+                String[] args = permissionRaw.split(":");
+                if (args.length != 2) {
+                    log.warn("Invalid permission syntax `{}` in predefined group `{}`.", permissionRaw, s);
+                    continue;
+                }
 
-            out.rebuildPermissionCache();
+                String p = args[0];
+                boolean v = args[1].equals("true");
 
-            return out;
+                Permission permission = new Permission(p, v);
 
-        });
+                permissions.add(permission);
+
+            }
+
+            PredefinedGroup group = new PredefinedGroup(null, weight);
+            permissions.forEach(group::addPermission);
+
+            predefinedGroupSet.add(group);
+
+        }
+
+        predefinedGroups.addAll(predefinedGroupSet);
 
     }
 
-    private @NotNull Set<Permission> resolveUserPermissions(long guildId, long userId) {
-        return userPermissionRepository.getUserPermissions(guildId, userId);
-    }
-
-    private @NotNull Set<Group> resolveGuildGroups(long guildId) {
-
-        Set<Group> groupSet = cachedGroups.values().stream().filter(g -> g.guildId() == guildId).collect(Collectors.toSet());
-        if (!groupSet.isEmpty()) return groupSet;
-
-        List<GroupData> groupData = groupRepository.getGuildGroups(guildId);
-        groupData.forEach(gd -> {
-
-            String name = gd.name();
-
-            Set<Permission> permissions = groupPermissionRepository.getGroupPermissions(guildId, name);
-            Group group = new Group(name, gd.id(), guildId, permissions);
-
-            groupSet.add(group);
-
-        });
-
-        groupSet.forEach(g -> cachedGroups.put(g.hashCode(), g));
-
-        return groupSet;
-
+    public void purgeUserCache(long guildId) {
+        usersMap.values().removeIf(u -> u.getUserId() == guildId);
     }
 
 

@@ -61,7 +61,7 @@ public abstract class RepositoryHandler<T extends DataRecord> {
 
     }
 
-    protected void create(@NotNull T record) {
+    protected @NotNull T create(@NotNull T record) {
 
         Objects.requireNonNull(record, "record == null");
 
@@ -71,9 +71,11 @@ public abstract class RepositoryHandler<T extends DataRecord> {
             transaction.commit();
         });
 
+        return record;
+
     }
 
-    protected void save(@NotNull T record) {
+    protected @NotNull T save(@NotNull T record) {
 
         Objects.requireNonNull(record, "record == null");
 
@@ -82,6 +84,8 @@ public abstract class RepositoryHandler<T extends DataRecord> {
             session.merge(record);
             transaction.commit();
         });
+
+        return record;
 
     }
 
