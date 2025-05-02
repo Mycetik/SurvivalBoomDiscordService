@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
@@ -63,5 +64,10 @@ public interface IMessages {
     @NotNull MessageCreateAction sendMessage(@NotNull TextChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
 
     @NotNull MessageCreateAction sendMessage(@NotNull TextChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData);
+
+
+    @NotNull MessageCreateAction sendMessage(@NotNull VoiceChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
+
+    @NotNull MessageCreateAction sendMessage(@NotNull VoiceChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData);
 
 }
