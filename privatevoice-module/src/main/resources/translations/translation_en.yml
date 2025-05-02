@@ -1,1 +1,28 @@
 $name: "english"
+
+commands:
+
+  private-voice:
+    successful-setup:
+      $embed:
+        title: "Success!"
+        description: "Private voice channel creator has been set up."
+        color: ff0000
+
+voice:
+  panel:
+    $embed:
+      title: "Managing channel **{CHANNEL}**"
+      description: ""
+      color: ff0000
+
+  lock: "Lock channel 🔒"
+  unlock: "Unlock channel 🔓"
+  show: "Show channel 👁️"
+  hide: "Hide channel 👁️‍🗨️"
+  delete: "Delete channel 🧹"
+  set_limit: "Set user limit 👤"
+  placeholder: "Select an action"
+  blacklist: "Blacklist"
+  whitelist: "Whitelist"
+  rename: "✏️ Rename channel"

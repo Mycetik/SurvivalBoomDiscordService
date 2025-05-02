@@ -2,6 +2,7 @@ package net.survivalboom.sbds.modules.privatevoice;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Entitlement;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -115,7 +116,6 @@ public class VoiceManager extends Manager implements Listener {
                     .orElse(null);
 
             if (voiceChannel != null && voiceChannel.getChannel().getMembers().isEmpty()) {
-                log.info("Deleting private channel {} owned by {}", leftChannel.getName(), member.getEffectiveName());
                 IUserData userData = userRepositoryHandler.createUser(member.getUser());
                 voiceSet.remove(voiceChannel);
                 leftChannel.delete().queue();
@@ -124,8 +124,6 @@ public class VoiceManager extends Manager implements Listener {
 
         if (joined == null || joined.getIdLong() != channelCreators.get(guildId)) return;
         if (!(joined instanceof VoiceChannel creatorChannel)) return;
-
-        log.info("Voice joined creator channel: {}", creatorChannel.getIdLong());
 
         PrivateVoice existing = getVoiceChannel(member);
         if (existing != null) {
@@ -152,7 +150,7 @@ public class VoiceManager extends Manager implements Listener {
 
         guild.moveVoiceMember(member, tempVoice).complete();
 
-        PrivateVoice privateVoice = new PrivateVoice(tempVoice);
+        PrivateVoice privateVoice = new PrivateVoice(tempVoice, module);
         privateVoice.setOwner(member);
         privateVoice.setUserData(userData);
 
@@ -204,17 +202,17 @@ public class VoiceManager extends Manager implements Listener {
         String visibilityOption = isVisible ? "voice.hide" : "voice.show";
 
         StringSelectMenu.Builder menuBuilder = StringSelectMenu.create("voice:settings");
-        menuBuilder.addOption(String.valueOf(Objects.requireNonNull(messages.getMessage("voice.rename", voice.getOwner().getUser(), true)).text()), "rename");
-        menuBuilder.setPlaceholder(String.valueOf(Objects.requireNonNull(messages.getMessage("voice.placeholder", voice.getOwner().getUser(), true)).text()));
-        menuBuilder.addOption(String.valueOf(Objects.requireNonNull(messages.getMessage(lockOption, voice.getOwner().getUser(), true)).text()), isBlocked ? "unlock" : "lock");
-        menuBuilder.addOption(String.valueOf(Objects.requireNonNull(messages.getMessage(visibilityOption, voice.getOwner().getUser(), true)).text()), isVisible ? "hide" : "show");
-        menuBuilder.addOption(String.valueOf(Objects.requireNonNull(messages.getMessage("voice.set_limit", voice.getOwner().getUser(), true)).text()), "set_limit");
-        menuBuilder.addOption(String.valueOf(Objects.requireNonNull(messages.getMessage("voice.delete", voice.getOwner().getUser(), true)).text()), "delete");
+        menuBuilder.addOption(messages.getMessage("voice.rename", voice.getOwner().getUser(), true).text(), "rename");
+        menuBuilder.setPlaceholder(messages.getMessage("voice.placeholder", voice.getOwner().getUser(), true).text());
+        menuBuilder.addOption(messages.getMessage(lockOption, voice.getOwner().getUser(), true).text(), isBlocked ? "unlock" : "lock");
+        menuBuilder.addOption(messages.getMessage(visibilityOption, voice.getOwner().getUser(), true).text(), isVisible ? "hide" : "show");
+        menuBuilder.addOption(messages.getMessage("voice.set_limit", voice.getOwner().getUser(), true).text(), "set_limit");
+        menuBuilder.addOption(messages.getMessage("voice.delete", voice.getOwner().getUser(), true).text(), "delete");
 
-        StringSelectMenu.Builder lists = StringSelectMenu.create("voice:lists")
-                        .setPlaceholder(Objects.requireNonNull(messages.getMessage("voice.placeholder", voice.getOwner().getUser(), true)).text())
-                        .addOption(String.valueOf(Objects.requireNonNull(messages.getMessage("voice.blacklist", voice.getOwner().getUser(), true)).text()), "blacklist")
-                        .addOption(String.valueOf(Objects.requireNonNull(messages.getMessage("voice.whitelist", voice.getOwner().getUser(), true)).text()), "whitelist");
+        StringSelectMenu.Builder lists = StringSelectMenu.create("voice:lists");
+        lists.setPlaceholder(messages.getMessage("voice.placeholder", voice.getOwner().getUser(), true).text());
+        lists.addOption(messages.getMessage("voice.blacklist", voice.getOwner().getUser(), true).text(), "blacklist");
+        lists.addOption(messages.getMessage("voice.whitelist", voice.getOwner().getUser(), true).text(), "whitelist");
 
         channel.getHistory().getRetrievedHistory().forEach(history -> {
             history.delete().queue();
@@ -386,17 +384,19 @@ public class VoiceManager extends Manager implements Listener {
             return;
         }
 
-        String listKey = componentId.contains("blacklist") ? "blacklist" : "whitelist";
         TypeMap settings = voice.getSettings();
 
-        List<String> userIds = event.getEntitlements().stream()
-                .map(entity -> entity.getId())
+        List<String> selectedIds = event.getValues().stream()
+                .map(user -> user.getId())
                 .toList();
 
-        settings.put(listKey, userIds);
+        String key = componentId.contains("blacklist") ? "blacklist" : "whitelist";
+        settings.put(key, selectedIds);
+        String message = componentId.contains("blacklist") ? messages.getMessage("voice.blacklist", member.getUser(), true).text() : messages.getMessage("voice.whitelist", member.getUser(), true).text();
 
-        event.reply("✅ Участники обновлены в " + (listKey.equals("blacklist") ? "чёрном" : "белом") + " списке").setEphemeral(true).queue();
+        event.reply("✅"+ message + " обновлён: " + member.getUser().getName()).setEphemeral(true).queue();
 
         voice.setup(settings);
+        sendPanel(voice);
     }
 }

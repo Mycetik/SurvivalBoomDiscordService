@@ -5,7 +5,9 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.managers.channel.concrete.VoiceChannelManager;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.database.users.IUserData;
+import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,13 +20,16 @@ import java.util.List;
 public class PrivateVoice {
     private static final Logger log = LoggerFactory.getLogger(PrivateVoice.class);
     private final VoiceChannel channel;
+    private final PrivateVoiceModule module;
     private Member owner;
 
     private TypeMap settings;
     private IUserData userData;
 
-    public PrivateVoice(VoiceChannel channel) {
+    public PrivateVoice(VoiceChannel channel, PrivateVoiceModule module) {
         this.channel = channel;
+
+        this.module = module;
     }
 
     public void setup(TypeMap map) {
@@ -40,18 +45,25 @@ public class PrivateVoice {
                 .map(Long::parseLong)
                 .toList();
         Guild guild = getChannel().getGuild();
-        log.info(String.valueOf(blacklist));
 
         for (Long userId : blacklist) {
             if (userId == null) continue;
 
-            Member member = guild.getMemberById(userId);
-            log.info(String.valueOf(member.getIdLong()));
+            Member member = guild.retrieveMemberById(userId).complete();
             if (member != null) {
                 getChannel().upsertPermissionOverride(member)
-                        .deny(Permission.VOICE_CONNECT)
+                        .setDenied(EnumSet.of(Permission.VOICE_CONNECT))
                         .queue();
             }
+
+            module.getSbds().getScheduler().schedule(module.getModule(), () -> {
+                getChannel().getMembers().forEach(m -> {
+                    if (member.equals(m)) {
+                        guild.moveVoiceMember(member, null);
+                    }
+                });
+            }, 0, 0);
+
         }
 
         List<Long> whitelist = ((List<?>) map.getOrDefault("whitelist", Collections.emptyList()))
@@ -59,13 +71,11 @@ public class PrivateVoice {
                 .map(Object::toString)
                 .map(Long::parseLong)
                 .toList();
-        log.info(String.valueOf(whitelist));
         for (Long userId : whitelist) {
             if (userId == null) continue;
 
-            Member m = guild.getMemberById(userId);
-            log.info(String.valueOf(m.getIdLong()));
-            if (m != null) {
+            Member m = guild.retrieveMemberById(userId).complete();
+            if (m != null || m.equals(owner)) {
                 getChannel().upsertPermissionOverride(m)
                         .setAllowed(EnumSet.of(Permission.VOICE_CONNECT))
                         .queue();
@@ -74,6 +84,7 @@ public class PrivateVoice {
                         .setAllowed(Permission.VIEW_CHANNEL)
                         .queue();
             }
+
         }
 
         boolean invisible = map.getCastOrDefault("visible", Boolean.class, false);
