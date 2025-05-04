@@ -14,7 +14,7 @@ public class PrivateVoiceModule extends ModuleMain {
         getLogger().info("Private Voice Module enabling");
         voiceManager.init0();
 
-        checkFiles(Map.of("translations/translation_ru.yml", "translations/translation_ru.yml"));
+        checkFiles(Map.of("translations/translation_ru.yml", "translations/translation_en.yml"));
         getSbds().getTranslationManager().addModuleTranslations(this);
 
         getSbds().getEventManager().registerEvents(this, voiceManager);

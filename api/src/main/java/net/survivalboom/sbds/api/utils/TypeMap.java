@@ -62,6 +62,21 @@ public class TypeMap implements Map<String, Object> {
         return get(name, clazz);
     }
 
+    public @NotNull <T> T getCastOrDefault(@NotNull String name, @NotNull Class<T> clazz, @NotNull T defaultValue) {
+        Objects.requireNonNull(name, "name == null");
+        Objects.requireNonNull(clazz, "clazz == null");
+        Objects.requireNonNull(defaultValue, "defaultValue == null");
+
+        Object value = get(name);
+        if (value == null) return defaultValue;
+
+        try {
+            return clazz.cast(value);
+        } catch (ClassCastException e) {
+            return defaultValue;
+        }
+    }
+
     /*
         CALLBACK
      */
