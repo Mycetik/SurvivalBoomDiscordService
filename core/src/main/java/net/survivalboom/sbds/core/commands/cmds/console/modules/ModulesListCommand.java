@@ -1,9 +1,9 @@
-package net.survivalboom.sbds.core.commands.builtin.console.modules;
+package net.survivalboom.sbds.core.commands.cmds.console.modules;
 
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.console.ConsoleCommand;
-import net.survivalboom.sbds.api.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
 

@@ -1,9 +1,9 @@
-package net.survivalboom.sbds.core.commands.builtin.console;
+package net.survivalboom.sbds.core.commands.cmds.console;
 
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.console.ConsoleCommand;
-import net.survivalboom.sbds.api.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import org.jetbrains.annotations.NotNull;
 
 @Command(name = "shutdown", aliases = {"stop", "end"}, description = "Stops SurvivalBoom Discord Service.", usage = "stop")

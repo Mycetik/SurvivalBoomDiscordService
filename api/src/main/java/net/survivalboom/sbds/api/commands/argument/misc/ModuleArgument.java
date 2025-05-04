@@ -1,5 +1,6 @@
-package net.survivalboom.sbds.api.commands.misc;
+package net.survivalboom.sbds.api.commands.argument.misc;
 
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
@@ -34,7 +35,20 @@ public class ModuleArgument extends SimpleArgument<IModule> {
 
         }
 
-        throw new ArgumentParseException();
+        else if (input instanceof OptionMapping mapping) {
+
+            String s = mapping.getAsString();
+
+            IModule module = resources.sbds().getModuleManager().getModule(s);
+            if (module == null) throw new ArgumentParseException("Invalid module `" + s + "`");
+
+            if (enabled != null && module.isEnabled() != enabled) throw new ArgumentParseException("Invalid module `" + s + "`");
+
+            return module;
+
+        }
+
+        throw new ArgumentParseException("Invalid object `" + input + "`");
 
     }
 

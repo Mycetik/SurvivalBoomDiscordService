@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.console;
+package net.survivalboom.sbds.api.commands.console;
 
 
 import net.survivalboom.sbds.api.commands.ICommandManager;

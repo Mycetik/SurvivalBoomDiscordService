@@ -1,11 +1,11 @@
-package net.survivalboom.sbds.core.commands.builtin.console;
+package net.survivalboom.sbds.core.commands.cmds.console;
 
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.console.ConsoleCommand;
-import net.survivalboom.sbds.api.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 

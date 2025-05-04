@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.commands.misc;
+package net.survivalboom.sbds.api.commands.argument.misc;
 
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;

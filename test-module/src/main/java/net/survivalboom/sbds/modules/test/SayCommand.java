@@ -9,8 +9,8 @@ import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.console.ConsoleCommand;
-import net.survivalboom.sbds.api.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import org.jetbrains.annotations.NotNull;
 
 @Command(name = "say", description = "Надсилає повідомлення у канал від імені головного бота.", usage = "say <Канал> <Повідомлення>")

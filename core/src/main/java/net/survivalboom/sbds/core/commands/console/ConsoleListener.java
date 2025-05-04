@@ -1,19 +1,19 @@
 package net.survivalboom.sbds.core.commands.console;
 
 import net.survivalboom.sbds.api.commands.Command;
-import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
 import net.survivalboom.sbds.api.commands.argument.internal.SubCommandArgument;
-import net.survivalboom.sbds.api.console.ConsoleCommand;
-import net.survivalboom.sbds.api.console.ConsoleExecutionInfo;
-import net.survivalboom.sbds.api.console.IConsoleListener;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.console.IConsoleListener;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
+import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
 import net.survivalboom.sbds.core.commands.string.StringCommandParser;
-import net.survivalboom.sbds.core.commands.builtin.console.HelpCommand;
-import net.survivalboom.sbds.core.commands.builtin.console.ShutdownCommand;
-import net.survivalboom.sbds.core.commands.builtin.console.modules.ModulesCommand;
+import net.survivalboom.sbds.core.commands.cmds.console.HelpCommand;
+import net.survivalboom.sbds.core.commands.cmds.console.ShutdownCommand;
+import net.survivalboom.sbds.core.commands.cmds.console.modules.ModulesCommand;
 import net.survivalboom.sbds.core.scheduler.SchedulerTask;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,6 +37,8 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
         registerCommand0(null, new ShutdownCommand().build(null));
         registerCommand0(null, new HelpCommand().build(null));
         registerCommand0(null, new ModulesCommand().build(null));
+
+        registerCommand0(null, new StatusCommand(sbds).build(null));
 
     }
 
@@ -85,7 +87,7 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
     }
 
 
-    private void processSubcommand(@NotNull String prefix, @NotNull String input, @NotNull String fullInput, @NotNull Command command, @NotNull ArgumentResources resources) throws ArgumentParseException {
+    private void processSubcommand(@NotNull String prefix, @NotNull String input, @NotNull String fullInput, @NotNull Command command, @NotNull ArgumentResources resources) throws Throwable {
 
         StringCommandParser parser = new StringCommandParser(input, command, resources);
 
