@@ -154,7 +154,7 @@ predefined-permissions:
   # Має пріоритет 0.
   default:
     permissions:
-      - "testmodule.command.testcommand"
+      - "testmodule.command.testcommand:true"
 
 #
 # Бібліотеки на яких працює SBDS.
