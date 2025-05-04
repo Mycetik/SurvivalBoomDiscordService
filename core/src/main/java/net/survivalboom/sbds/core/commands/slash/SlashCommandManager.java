@@ -3,9 +3,7 @@ package net.survivalboom.sbds.core.commands.slash;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import net.dv8tion.jda.api.interactions.commands.build.*;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
@@ -17,7 +15,8 @@ import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
-import net.survivalboom.sbds.core.commands.builtin.slash.StatusCommand;
+import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
+import net.survivalboom.sbds.core.commands.cmds.console.modules.ModulesCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ import java.util.Objects;
 public class SlashCommandManager extends AbstractCommandManager implements Listener, ISlashCommandManager {
 
     public SlashCommandManager(@NotNull SBDS sbds) {
-        super("SlashCommandManager", sbds, false);
+        super("SlashCommandManager", sbds, true);
     }
 
     @Override
@@ -35,7 +34,8 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         sbds.getEventManager().registerEvents0(null, this);
 
-        registerCommand0(null, new StatusCommand().build(null));
+        registerCommand0(null, new StatusCommand(sbds).build(null));
+
     }
 
     @Override
@@ -68,15 +68,53 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
         String description = Objects.requireNonNullElse(command.description(), "Command has no description.");
         SlashCommandData commandData = Commands.slash(command.getName(), description);
 
-        for (CommandArgument argument : command.arguments()) {
+        if (!command.hasSubcommands()) {
+            commandData.addOptions(createCommandOptions(command));
+        }
 
-            OptionData optionData = new OptionData(argument.argument().getOptionType(), argument.name(), Objects.requireNonNullElse(argument.description(), "Option has no description."), argument.required());
-
-            commandData.addOptions(optionData);
-
+        else {
+            addSlashSubCommands(commandData, command);
         }
 
         return commandData;
+
+    }
+
+    private List<OptionData> createCommandOptions(@NotNull Command command) {
+
+        List<OptionData> out = new ArrayList<>();
+        for (CommandArgument argument : command.arguments()) {
+
+            OptionData optionData = new OptionData(argument.argument().getOptionType(), argument.name(), Objects.requireNonNullElse(argument.description(), "Option has no description."), argument.required());
+            out.add(optionData);
+
+        }
+
+        return out;
+
+    }
+
+    private void addSlashSubCommands(@NotNull SlashCommandData slash, @NotNull Command command) {
+
+        for (Command subcommand : command.subcommands()) {
+
+            String name = subcommand.getName();
+            String description = Objects.requireNonNullElse(subcommand.description(), "Subcommand has no description.");
+
+            if (!subcommand.hasSubcommands()) {
+                slash.addSubcommands(new SubcommandData(name, description).addOptions(createCommandOptions(subcommand)));
+                continue;
+            }
+
+
+            SubcommandGroupData subcommandGroup = new SubcommandGroupData(name, description);
+            for (Command subsubcommand : subcommand.subcommands()) {
+                subcommandGroup.addSubcommands(new SubcommandData(subsubcommand.getName(), Objects.requireNonNullElse(subsubcommand.description(), "Subcommand has no description.")).addOptions(createCommandOptions(subsubcommand)));
+            }
+
+            slash.addSubcommandGroups(subcommandGroup);
+
+        }
 
     }
 
@@ -87,30 +125,17 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         RegisteredCommand registeredCommand = findByAlias(commandName);
         if (registeredCommand == null) {
-            logger.warn("Something went wrong! Slash command with name {} does not exist in SlashCommandManager!", commandName);
+            logger.warn("Something went wrong! Slash command with name `{}` does not exist in SlashCommandManager!", commandName);
             return;
         }
 
-        Command command = registeredCommand.command();
+        Command baseCommand = registeredCommand.command();
 
         try {
 
-            String permission = command.permission();
-            if (event.isFromGuild() && permission != null) {
+            Command command = getCommand(baseCommand, event);
 
-                Guild guild = event.getGuild();
-                Member member = event.getMember();
-
-                assert member != null;
-                assert guild != null;
-
-                boolean hasPermission = permissionManager.hasPermission(guild.getIdLong(), member.getIdLong(), permission, command.defaultPermission());
-                if (!hasPermission) {
-                    messages.reply(event.getInteraction(), Placeholders.of("{PERMISSION}", permission), "commands.no-permission", event.getMember()).queue();
-                    return;
-                }
-
-            }
+            if (!permissionCheck(command, event)) return;
 
             ArgumentResources resources = new ArgumentResources(sbds, TypeMap.empty(false));
             SlashCommandParser parser = new SlashCommandParser(command, resources, event.getInteraction());
@@ -131,6 +156,50 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
             logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName(), commandName, t);
             event.reply(sbds.getMessages().getMessageDataFallback("commands.error", Placeholders.of("{EXCEPTION}", t.toString()), event.getUser())).queue();
         }
+
+    }
+
+    private @NotNull Command getCommand(@NotNull Command baseCommand, @NotNull SlashCommandInteractionEvent event) {
+
+        if (!baseCommand.hasSubcommands()) return baseCommand;
+
+        String fullInput = event.getFullCommandName().substring(event.getName().length()).trim();
+        String[] parts = fullInput.split(" ");
+
+        Command command = baseCommand;
+        for (String part : parts) {
+
+             Command subcommand = command.subcommands().stream().filter(sc -> sc.getName().equals(part) || sc.aliases().contains(part)).findAny().orElse(null);
+             if (subcommand == null) break;
+
+             command = subcommand;
+
+        }
+
+        return command;
+
+    }
+
+    private boolean permissionCheck(@NotNull Command command, @NotNull SlashCommandInteractionEvent event) {
+
+        String permission = command.permission();
+        if (event.isFromGuild() && permission != null) {
+
+            Guild guild = event.getGuild();
+            Member member = event.getMember();
+
+            assert member != null;
+            assert guild != null;
+
+            boolean hasPermission = permissionManager.hasPermission(guild.getIdLong(), member.getIdLong(), permission, command.defaultPermission());
+            if (!hasPermission) {
+                messages.reply(event.getInteraction(), Placeholders.of("{PERMISSION}", permission), "commands.no-permission", event.getMember()).queue();
+                return false;
+            }
+
+        }
+
+        return true;
 
     }
 

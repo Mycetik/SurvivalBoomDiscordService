@@ -4,6 +4,6 @@ import org.jetbrains.annotations.NotNull;
 
 public interface SlashCommand {
 
-    default void executes(@NotNull SlashExecutionInfo info) {}
+    default void executes(@NotNull SlashExecutionInfo info) throws Throwable {}
 
 }

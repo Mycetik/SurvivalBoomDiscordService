@@ -6,35 +6,22 @@ import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
 import net.survivalboom.sbds.api.utils.TypeMap;
+import net.survivalboom.sbds.core.commands.AbstractCommandParser;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
-public class StringCommandParser {
+public class StringCommandParser extends AbstractCommandParser {
 
     private final String input;
 
-    private final Command command;
-
-    private final ArgumentResources resources;
-
-    private TypeMap arguments;
-
     public StringCommandParser(@NotNull String input, @NotNull Command command, @NotNull ArgumentResources resources) {
-
-        Objects.requireNonNull(input, "input == null");
-        Objects.requireNonNull(command, "command == null");
-
+        super(command, resources);
         this.input = input;
-        this.command = command;
-        this.resources = resources;
-
     }
     
-    
+    @Override
     public void parse() throws ArgumentParseException {
 
         if (input.isBlank()) {
@@ -47,23 +34,6 @@ public class StringCommandParser {
         
     }
 
-
-    public boolean checkCount() {
-
-        Objects.requireNonNull(arguments, "arguments == null");
-
-        List<CommandArgument> requiredArguments = command.requiredArguments();
-
-        return requiredArguments.stream().allMatch(a -> arguments.containsKey(a.name()));
-
-    }
-    
-
-
-    public @NotNull TypeMap getArguments() {
-        Objects.requireNonNull(arguments, "input wasn't parsed yet");
-        return arguments;
-    }
 
     public @NotNull String getInput() {
         return input;

@@ -160,7 +160,7 @@ public abstract class CommandBase implements CommandExecutor {
         }
 
         catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new InvalidCommandException("Executor for " + info.getClass().getName() + "not found");
+            throw new InvalidCommandException("Executor for " + info.getClass().getName() + " not found");
         }
 
         catch (InvocationTargetException e) {

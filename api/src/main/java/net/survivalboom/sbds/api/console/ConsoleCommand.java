@@ -4,6 +4,6 @@ import org.jetbrains.annotations.NotNull;
 
 public interface ConsoleCommand {
 
-    default void executes(@NotNull ConsoleExecutionInfo info) {}
+    default void executes(@NotNull ConsoleExecutionInfo info) throws Throwable {}
 
 }
