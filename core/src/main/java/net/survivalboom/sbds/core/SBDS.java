@@ -15,6 +15,7 @@ import net.survivalboom.sbds.core.events.EventManager;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
 import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.ModuleManager;
+import net.survivalboom.sbds.core.monitor.SystemMonitor;
 import net.survivalboom.sbds.core.permissions.PermissionManager;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.api.SbdsProvider;
@@ -39,6 +40,9 @@ public class SBDS implements ISBDS {
 
 
     private final Scheduler scheduler;
+
+    private final SystemMonitor systemMonitor;
+
 
     private final Database database;
 
@@ -76,6 +80,8 @@ public class SBDS implements ISBDS {
         this.librariesManager = librariesManager;
 
         this.scheduler = new Scheduler(this);
+        this.systemMonitor = new SystemMonitor(scheduler);
+
         this.database = new Database(this);
 
         this.eventManager = new EventManager(this);
@@ -105,6 +111,7 @@ public class SBDS implements ISBDS {
         librariesManager.configure(this);
 
         scheduler.init();
+        systemMonitor.init();
 
         database.init();
 
@@ -181,6 +188,8 @@ public class SBDS implements ISBDS {
         eventManager.shutdown();
 
         database.shutdown();
+
+        systemMonitor.shutdown();
 
         scheduler.shutdown();
 
@@ -263,8 +272,18 @@ public class SBDS implements ISBDS {
     }
 
     @Override
+    public @NotNull String getVersion() {
+        return BuildConstants.VERSION;
+    }
+
+    @Override
     public @NotNull Scheduler getScheduler() {
         return scheduler;
+    }
+
+    @Override
+    public @NotNull SystemMonitor getSystemMonitor() {
+        return systemMonitor;
     }
 
     @Override

@@ -1,0 +1,162 @@
+package net.survivalboom.sbds.core.commands.cmds.common;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.commands.slash.SlashCommand;
+import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.core.BuildConstants;
+import net.survivalboom.sbds.core.SBDS;
+import net.survivalboom.sbds.core.modules.ModuleManager;
+import net.survivalboom.sbds.core.monitor.SystemMonitor;
+import net.survivalboom.sbds.core.monitor.cpu.CpuInfo;
+import net.survivalboom.sbds.core.monitor.cpu.CpuMonitor;
+import net.survivalboom.sbds.core.monitor.memory.MemoryInfo;
+import net.survivalboom.sbds.core.monitor.os.OperatingSystemInfo;
+import net.survivalboom.sbds.core.scheduler.Scheduler;
+import org.jetbrains.annotations.NotNull;
+
+import java.awt.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
+import java.util.List;
+
+@Command(name = "status", description = "Shows a status of the discord bot.", permission = "sbds.commands.status", defaultPermission = true)
+public class StatusCommand extends CommandBase implements SlashCommand, ConsoleCommand {
+
+    private final SystemMonitor systemMonitor;
+
+    private final ModuleManager moduleManager;
+
+    private final Scheduler scheduler;
+
+    private final JDA jda;
+
+
+    public StatusCommand(@NotNull SBDS sbds) {
+        this.systemMonitor = sbds.getSystemMonitor();
+        this.moduleManager = sbds.getModuleManager();
+        this.scheduler = sbds.getScheduler();
+        this.jda = sbds.getBot();
+    }
+
+
+    @Override
+    public void executes(@NotNull SlashExecutionInfo info) {
+
+        Placeholders placeholders = placeholders();
+
+        EmbedBuilder builder = new EmbedBuilder();
+        builder.setTitle("Rawr!!! \uD83E\uDD96");
+
+        builder.setDescription(placeholders.parse(
+                """
+                
+                *{bot}* is running on __SBDS__ v{version}
+                Serving `{servers}` servers.
+                
+                **System**
+                - Runtime: `{runtime}`
+                - Memory: `{usedMemory}`**/**`{maxMemory}` *({freeMemory} free)*
+                - CPU: `Process: {cpuLoadProcess}% | System: {cpuLoadSystem}% / {threadCount} Threads` *({cpuModel})*
+                - Active tasks: `{tasks}`
+                - Ping: `{ping}ms` *(to Discord API server)*
+                
+                **Loaded modules**
+                - {modules}
+                
+                """
+        ));
+
+        builder.setColor(Color.MAGENTA);
+
+        builder.setFooter("SurvivalBoom Network 2025 | By TIMURishche", "https://cdn.discordapp.com/avatars/1102984687179276288/852ae72b5e79b3df573c8b67b7baada4.webp?size=1024&format=webp");
+
+        info.interaction().reply(MessageCreateData.fromEmbeds(builder.build())).queue();
+
+    }
+
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
+
+        Placeholders placeholders = placeholders();
+
+        List<String> lines = new ArrayList<>();
+
+        lines.add("--- Current Status ---");
+
+        lines.add("{bot} is running on SBDS v{version}");
+        lines.add("Serving {servers} servers.");
+        lines.add(" ");
+        lines.add("> System <");
+        lines.add("Runtime: {runtime}");
+        lines.add("Memory: {usedMemory}/{maxMemory} ({freeMemory} free)");
+        lines.add("CPU: {cpuModel}");
+        lines.add("  Process: {cpuLoadProcess}%");
+        lines.add("  System: {cpuLoadSystem}%");
+        lines.add("  Active threads: {threadCount}");
+        lines.add(" ");
+        lines.add("> Loaded modules <");
+        lines.addAll(moduleManager.getModules0().stream().map(m -> "- " + m.getName() + " v" + m.getMeta().getVersion() + " ~ " + (m.isEnabled() ? "Enabled" : "Disabled")).toList());
+
+        lines = placeholders.parseAll(lines);
+
+        lines.add("--- ---- ---- ---- ---");
+
+        lines.forEach(l -> info.logger().info(l));
+
+    }
+
+    private Placeholders placeholders() {
+
+        OperatingSystemInfo osInfo = systemMonitor.getOperatingSystemInfo();
+        MemoryInfo memoryInfo = systemMonitor.getMemoryInfo();
+        CpuInfo cpuInfo = systemMonitor.getCpuInfo();
+        CpuMonitor cpuMonitor = systemMonitor.getCpuMonitor();
+
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        int threadCount = threadMXBean.getThreadCount();
+
+        return Placeholders.of(
+                "{version}", BuildConstants.VERSION,
+                "{bot}", jda.getSelfUser().getName() + "#" + jda.getSelfUser().getDiscriminator(),
+                "{servers}", jda.getGuilds().size(),
+                "{runtime}", osInfo.fullName(),
+                "{threadCount}", threadCount,
+                "{usedMemory}", formatBytes(memoryInfo.getUsedPhysicalMemory()),
+                "{freeMemory}", formatBytes(memoryInfo.getAvailablePhysicalMemory()),
+                "{maxMemory}", formatBytes(memoryInfo.getTotalPhysicalMemory()),
+                "{cpuModel}", cpuInfo.model(),
+                "{cpuLoadProcess}", Math.floor(cpuMonitor.processLoad()),
+                "{cpuLoadSystem}", Math.floor(cpuMonitor.systemLoad()),
+                "{ping}", jda.getGatewayPing(),
+                "{tasks}", scheduler.getTasks().size(),
+                "{modules}", modulesString()
+        );
+
+    }
+
+    private String modulesString() {
+        return String.join("\n", moduleManager.getModules0().stream().map(m -> "- " + m.getName() + " v" + m.getMeta().getVersion()).toList());
+    }
+
+    private int toMB(double v) {
+        return (int) Math.floor(v / 1024 / 1024);
+    }
+
+    private int toGB(double v) {
+        return (int) Math.floor((double) toMB(v) / 1024);
+    }
+
+    private String formatBytes(double v) {
+        int i = toMB(v);
+        return i > 1024 ? toGB(v) + "GB" : i + "MB";
+    }
+
+}
