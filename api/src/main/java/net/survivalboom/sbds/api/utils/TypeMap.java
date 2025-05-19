@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.utils;
 
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -90,6 +91,18 @@ public class TypeMap implements Map<String, Object> {
     /*
         STATIC
      */
+
+    public static @NotNull TypeMap ofMappings(@NotNull List<OptionMapping> mappings) {
+
+        Map<String, Object> map = new ConcurrentHashMap<>();
+
+        for (OptionMapping mapping : mappings) {
+            map.put(mapping.getName(), CommonUtils.getValueFromMapping(mapping));
+        }
+
+        return new TypeMap(null, map, null, false);
+
+    }
 
     public static @NotNull TypeMap copyMap(@NotNull Map<String, Object> map, boolean allowModification) {
         Objects.requireNonNull(map, "map == null");

@@ -5,6 +5,9 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
@@ -33,11 +36,11 @@ public interface IMessages {
     @NotNull MessageCreateData getMessageDataFallback(@NotNull String name, @Nullable Placeholders placeholders, @Nullable User user);
 
 
-    @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
+    @NotNull ReplyCallbackAction reply(@NotNull IReplyCallback interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
 
-    @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
+    @NotNull ReplyCallbackAction reply(@NotNull IReplyCallback interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
 
-    @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData);
+    @NotNull ReplyCallbackAction reply(@NotNull IReplyCallback interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData);
 
     @NotNull MessageCreateAction reply(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
 
@@ -52,11 +55,11 @@ public interface IMessages {
 
     @NotNull MessageEditAction edit(@NotNull Message message, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user);
 
-    @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
+    @NotNull WebhookMessageEditAction<Message> edit(@NotNull InteractionHook interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);
 
-    @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
+    @NotNull WebhookMessageEditAction<Message> edit(@NotNull InteractionHook interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member);
 
-    @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user);
+    @NotNull WebhookMessageEditAction<Message> edit(@NotNull InteractionHook interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user);
 
 
     @NotNull MessageCreateAction sendMessage(@NotNull TextChannel channel, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user);

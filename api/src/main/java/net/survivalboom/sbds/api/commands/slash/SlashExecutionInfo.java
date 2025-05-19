@@ -51,11 +51,11 @@ public class SlashExecutionInfo extends ExecutionInfo {
 
 
     public @NotNull WebhookMessageEditAction<Message> edit(@NotNull String name, @Nullable Placeholders placeholders) {
-        return messages().edit(interaction, placeholders, name, user());
+        return messages().edit(interaction.getHook(), placeholders, name, user());
     }
 
     public @NotNull WebhookMessageEditAction<Message> edit(@NotNull String name) {
-        return messages().edit(interaction, null, name, user());
+        return messages().edit(interaction.getHook(), null, name, user());
     }
 
 }

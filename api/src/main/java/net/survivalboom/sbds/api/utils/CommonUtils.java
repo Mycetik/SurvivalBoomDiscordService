@@ -1,5 +1,7 @@
 package net.survivalboom.sbds.api.utils;
 
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -212,6 +214,39 @@ public class CommonUtils {
         waitUntil(supplier, 0, null);
     }
 
+    //
+    // Option Mapping
+    //
+
+    public static @NotNull Object getValueFromMapping(@NotNull OptionMapping mapping) {
+
+        OptionType type = mapping.getType();
+
+        return switch (type) {
+
+            case STRING -> mapping.getAsString();
+
+            case INTEGER -> mapping.getAsInt();
+
+            case BOOLEAN -> mapping.getAsBoolean();
+
+            case USER -> mapping.getAsUser();
+
+            case CHANNEL -> mapping.getAsChannel();
+
+            case ROLE -> mapping.getAsRole();
+
+            case MENTIONABLE -> mapping.getAsMentionable();
+
+            case NUMBER -> mapping.getAsDouble();
+
+            case ATTACHMENT -> mapping.getAsAttachment();
+
+            default -> throw new RuntimeException("Invalid object type `" + type + "`");
+
+        };
+
+    }
 
     //
     // ENUM

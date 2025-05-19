@@ -5,6 +5,9 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
@@ -144,18 +147,18 @@ public class Messages extends Manager implements IMessages {
 
 
     @Override
-    public @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
+    public @NotNull ReplyCallbackAction reply(@NotNull IReplyCallback interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, user);
         return interaction.reply(data);
     }
 
     @Override
-    public @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member) {
+    public @NotNull ReplyCallbackAction reply(@NotNull IReplyCallback interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member) {
         return reply(interaction, placeholders, name, member != null ? member.getUser() : null);
     }
 
     @Override
-    public @NotNull ReplyCallbackAction reply(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData) {
+    public @NotNull ReplyCallbackAction reply(@NotNull IReplyCallback interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData userData) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, userData);
         return interaction.reply(data);
     }
@@ -195,20 +198,20 @@ public class Messages extends Manager implements IMessages {
     }
 
     @Override
-    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
+    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull InteractionHook interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable User user) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, user);
-        return interaction.getHook().editOriginal(MessageEditData.fromCreateData(data));
+        return interaction.editOriginal(MessageEditData.fromCreateData(data));
     }
 
     @Override
-    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member) {
+    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull InteractionHook interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable Member member) {
         return edit(interaction, placeholders, name, member != null ? member.getUser() : null);
     }
 
     @Override
-    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull SlashCommandInteraction interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user) {
+    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull InteractionHook interaction, @Nullable Placeholders placeholders, @NotNull String name, @Nullable IUserData user) {
         MessageCreateData data = getMessageDataFallback(name, placeholders, user);
-        return interaction.getHook().editOriginal(MessageEditData.fromCreateData(data));
+        return interaction.editOriginal(MessageEditData.fromCreateData(data));
     }
 
 
