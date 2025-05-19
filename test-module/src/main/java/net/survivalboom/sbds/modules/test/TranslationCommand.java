@@ -1,10 +1,10 @@
 package net.survivalboom.sbds.modules.test;
 
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.misc.TranslationArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.misc.TranslationArgument;
 import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.database.users.IUserData;
