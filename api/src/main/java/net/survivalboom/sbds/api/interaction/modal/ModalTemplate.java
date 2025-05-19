@@ -1,11 +1,9 @@
 package net.survivalboom.sbds.api.interaction.modal;
 
-import net.dv8tion.jda.api.interactions.components.Component;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.survivalboom.sbds.api.messages.IMessages;
-import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

@@ -3,7 +3,6 @@ package net.survivalboom.sbds.core.interaction.modal;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
 import net.dv8tion.jda.api.interactions.modals.Modal;
-import net.dv8tion.jda.api.interactions.modals.ModalInteraction;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.Listener;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
@@ -18,15 +17,13 @@ import net.survivalboom.sbds.core.events.EventManager;
 import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.Module;
 import net.survivalboom.sbds.core.modules.ModuleManager;
+import net.survivalboom.sbds.core.scheduler.SchedulerTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
@@ -43,9 +40,13 @@ public class ModalInteractionManager extends Manager implements Listener, IModal
 
     private final ModuleManager moduleManager;
 
-    private final Map<String, CompletableFuture<ModalInteractionInfo>> pendingModals = new ConcurrentHashMap<>();
 
     private final Map<NamespacedKey, RegisteredModal> registeredModalMap = new HashMap<>();
+
+
+    private final Map<String, PendingModal> pendingModals = new ConcurrentHashMap<>();
+
+    private SchedulerTask cleanerTask;
 
 
     public ModalInteractionManager(@NotNull SBDS sbds) {
@@ -57,13 +58,31 @@ public class ModalInteractionManager extends Manager implements Listener, IModal
 
     @Override
     protected void init0() {
+
+        cleanerTask = sbds.getScheduler().schedule0(null, "ModalInteractionManager-Cleaner", task -> cleanup(), 300000, 300000);
         eventManager.registerEvents0(null, this);
+
     }
 
     @Override
     protected void shutdown0() {
         pendingModals.clear();
         eventManager.unregisterEvents(this);
+        cleanerTask.cancelAndWait(1000, true);
+    }
+
+    private void cleanup() {
+
+        long currentTime = System.currentTimeMillis();
+
+        Collection<PendingModal> modals = pendingModals.values();
+        List<PendingModal> expired = modals.stream().filter(modal -> modal.timestamp() + 300000 < currentTime).toList();
+
+        expired.forEach(modal -> {
+            modal.future.completeExceptionally(new TimeoutException("Modal time out"));
+            modals.remove(modal);
+        });
+
     }
 
     //
@@ -129,6 +148,26 @@ public class ModalInteractionManager extends Manager implements Listener, IModal
     }
 
     //
+    // OPEN MODAL
+    //
+
+    private @NotNull CompletableFuture<ModalInteractionInfo> replyModal(@NotNull IModalCallback interaction, @NotNull RegisteredModal registeredModal, @Nullable Placeholders placeholders) {
+
+        UUID uuid = UUID.randomUUID();
+        Modal modal = registeredModal.template().create(uuid, messages, placeholders);
+        String uuidStr = uuid.toString();
+
+        CompletableFuture<ModalInteractionInfo> future = new CompletableFuture<>();
+
+        interaction.replyModal(modal).queue();
+
+        pendingModals.put(uuidStr, new PendingModal(future, System.currentTimeMillis()));
+
+        return future;
+
+    }
+
+    //
     // HANDLER
     //
 
@@ -138,43 +177,26 @@ public class ModalInteractionManager extends Manager implements Listener, IModal
         String customId = event.getModalId();
         ModalInteractionInfo info = new ModalInteractionInfo(sbds, event.getInteraction());
 
-        CompletableFuture<ModalInteractionInfo> future = pendingModals.get(customId);
-        if (future == null) {
+        if (!pendingModals.containsKey(customId)) {
             event.reply("Error: Modal with id `" + customId + "` not found.").queue();
             log.error("Modal with id `{}` not found. Possibly timeout.", customId);
             return;
         }
+
+        CompletableFuture<ModalInteractionInfo> future = pendingModals.get(customId).future;
 
         future.complete(info);
         pendingModals.remove(customId);
 
     }
 
+    private record PendingModal(@NotNull CompletableFuture<ModalInteractionInfo> future, long timestamp) {}
 
     public record RegisteredModal(@NotNull ModalInteractionManager manager, @Nullable IModule registrar, @NotNull NamespacedKey name, @NotNull ModalTemplate template) implements IRegisteredModal {
 
         @Override
         public @NotNull CompletableFuture<ModalInteractionInfo> open(@NotNull IModalCallback interaction, @Nullable Placeholders placeholders) {
-
-            UUID uuid = UUID.randomUUID();
-            Modal modal = template.create(uuid, manager.messages, placeholders);
-
-            String uuidStr = uuid.toString();
-
-            CompletableFuture<ModalInteractionInfo> future = new CompletableFuture<>();
-
-            manager.sbds.getScheduler().schedule0(null, null, task -> {
-                if (future.isDone()) return;
-                future.completeExceptionally(new TimeoutException("Modal timeout"));
-                manager.pendingModals.remove(uuidStr);
-//            }, 300000, 0);
-            }, 10000, 0);
-
-            manager.pendingModals.put(uuidStr, future);
-            interaction.replyModal(modal).complete();
-
-            return future;
-
+            return manager.replyModal(interaction, this, placeholders);
         }
 
     }
