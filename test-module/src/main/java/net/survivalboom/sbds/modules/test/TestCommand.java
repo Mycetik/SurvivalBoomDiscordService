@@ -36,7 +36,7 @@ public class TestCommand extends CommandBase implements SlashCommand {
 
         modal.open(info.interaction(), null).thenAccept(modal -> {
             modal.reply(modal.values().toString()).queue();
-        });
+        }).get;
 
     }
 

@@ -69,7 +69,7 @@ public class ModalTemplate {
         }
 
         public @NotNull ModalTemplate build() {
-            return new ModalTemplate(title, components);
+            return new ModalTemplate(title, new ArrayList<>(components));
         }
 
     }
