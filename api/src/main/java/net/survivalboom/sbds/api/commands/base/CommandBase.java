@@ -117,7 +117,7 @@ public abstract class CommandBase implements CommandExecutor {
 
     public @NotNull net.survivalboom.sbds.api.commands.Command build(@Nullable IModule module) {
 
-        net.survivalboom.sbds.api.commands.Command command = new net.survivalboom.sbds.api.commands.Command(name, module);
+        net.survivalboom.sbds.api.commands.Command command = new net.survivalboom.sbds.api.commands.Command(name, module, this);
 
         command.withDescription(description);
         command.withUsage(usage);

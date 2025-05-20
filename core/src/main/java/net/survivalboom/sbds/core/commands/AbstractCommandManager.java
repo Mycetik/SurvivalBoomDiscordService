@@ -5,6 +5,7 @@ import net.survivalboom.sbds.api.commands.ExecutionInfo;
 import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.internal.SubCommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.messages.Messages;
@@ -107,6 +108,12 @@ public abstract class AbstractCommandManager extends Manager implements ICommand
     public @Nullable RegisteredCommand findByAlias(@NotNull String alias) {
         checkValid();
         return commands.stream().filter(rc -> rc.command().getName().equals(alias) || rc.command().aliases().contains(alias)).findFirst().orElse(null);
+    }
+
+    @Override
+    public @Nullable RegisteredCommand findByBase(@NotNull CommandBase base) {
+        checkValid();
+        return commands.stream().filter(rc -> base.equals(rc.command().origin())).findAny().orElse(null);
     }
 
     @Override

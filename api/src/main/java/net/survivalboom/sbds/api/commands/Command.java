@@ -17,6 +17,9 @@ public class Command {
     private final IModule module;
 
 
+    @Nullable private final CommandBase origin;
+
+
     private final List<CommandArgument> arguments = new ArrayList<>();
 
     private final List<Command> subcommands = new ArrayList<>();
@@ -38,10 +41,20 @@ public class Command {
     private CommandExecutor executor;
 
 
-    public Command(@NotNull String name, @Nullable IModule module) {
+    public Command(@NotNull String name, @Nullable IModule module, @Nullable CommandBase origin) {
         Objects.requireNonNull(name, "name == null");
         this.name = name;
+        this.origin = origin;
         this.module = module;
+    }
+
+    public static @NotNull Command create(@NotNull String name, @NotNull IModule module) {
+
+        Objects.requireNonNull(module, "module == null");
+        Objects.requireNonNull(name, "name == null");
+
+        return new Command(name, module, null);
+
     }
 
     public @NotNull Command withPermission(@Nullable String permission, boolean defaultPermission) {
@@ -175,6 +188,10 @@ public class Command {
 
     public @UnknownNullability IModule module() {
         return module;
+    }
+
+    public @Nullable CommandBase origin() {
+        return origin;
     }
 
     public @NotNull List<String> aliases() {

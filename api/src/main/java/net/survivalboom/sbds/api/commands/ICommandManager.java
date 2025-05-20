@@ -33,6 +33,8 @@ public interface ICommandManager {
 
     @Nullable RegisteredCommand findByAlias(@NotNull String alias);
 
+    @Nullable RegisteredCommand findByBase(@NotNull CommandBase base);
+
 
     record RegisteredCommand(@Nullable IModule registrar, @NotNull Command command) {}
 
