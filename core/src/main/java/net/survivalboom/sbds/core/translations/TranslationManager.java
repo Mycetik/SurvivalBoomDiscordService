@@ -71,11 +71,11 @@ public class TranslationManager extends Manager implements ITranslationManager {
         // Завантажуємо стандартний та резервний переклади.
 
         String defaultTranslationName = sbds.getConfiguration().getString("translations.default", "null");
-        defaultTranslation = getTranslation0(defaultTranslationName);
+        defaultTranslation = getTranslation(defaultTranslationName);
         if (defaultTranslation == null) log.warn("Default translation with name `{}` not found.", defaultTranslationName);
 
         String fallbackTranslationName = sbds.getConfiguration().getString("translations.fallback", "null");
-        fallbackTranslation = getTranslation0(fallbackTranslationName);
+        fallbackTranslation = getTranslation(fallbackTranslationName);
         if (fallbackTranslation == null) log.warn("Fallback translation with name `{}` not found.", fallbackTranslationName);
 
     }
@@ -117,11 +117,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
     //
 
     @Override
-    public @Nullable ITranslation getTranslation(@NotNull String name) {
-        return getTranslation0(name);
-    }
-
-    public @Nullable Translation getTranslation0(@NotNull String name) {
+    public @Nullable Translation getTranslation(@NotNull String name) {
         checkValid();
         return translationMap.get(name);
     }
@@ -182,7 +178,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
         String translationName = yamlConfiguration.getString("$name");
         if (translationName == null) throw new IllegalStateException("Yaml file does not contain `$name` key");
 
-        Translation translation = getTranslation0(translationName);
+        Translation translation = getTranslation(translationName);
         if (translation == null) throw new IllegalStateException("Unknown translation `" + translationName + "`");
 
         translation.addModuleTranslation(module, yamlConfiguration);

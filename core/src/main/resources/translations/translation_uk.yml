@@ -37,9 +37,27 @@ commands:
   sbds:
 
     status:
+      $content: "Я тебе крякну, хрюшка."
       $embed:
         title: "О холеро! Чи то фреді фазбер???"
         description: "ЕУ ЕУ ЕВАЕ ЕУ УЕ УЕ"
         fields:
           - name: "Хрюкі"
             value: "Хрюкнеш, хохліна?"
+      $components:
+
+        - type: BUTTON
+          name: "hruk"
+          label: "Хрюкнути"
+          row: 1
+          emoji: "🐖"
+          style: PRIMARY
+
+#        - type: MEMBER_SELECT
+#          id: "hruk_member"
+#
+#        - type: ROLE_SELECT
+#          id: "hruk_role"
+#
+#        - type: CHANNEL_SELECT
+#          id: "hruk_channel"

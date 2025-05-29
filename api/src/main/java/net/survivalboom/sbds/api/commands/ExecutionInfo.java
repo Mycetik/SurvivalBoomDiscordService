@@ -2,6 +2,7 @@ package net.survivalboom.sbds.api.commands;
 
 import net.dv8tion.jda.annotations.UnknownNullability;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.TypeMap;
@@ -10,18 +11,18 @@ import org.slf4j.Logger;
 
 public abstract class ExecutionInfo {
 
-    private final Command command;
+    protected final Command command;
 
-    private final String alias;
+    protected final String alias;
 
-    private final TypeMap arguments;
+    protected final TypeMap arguments;
 
 
-    private final Logger logger;
+    protected final Logger logger;
 
-    private final ISBDS sbds;
+    protected final ISBDS sbds;
 
-    private final IMessages messages;
+    protected final IMessages messages;
 
 
     public ExecutionInfo(@NotNull Command command, @NotNull String alias, @NotNull TypeMap arguments, @NotNull Logger logger, @NotNull ISBDS sbds) {

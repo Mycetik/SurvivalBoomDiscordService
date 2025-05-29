@@ -8,8 +8,10 @@ import net.dv8tion.jda.api.interactions.modals.ModalInteraction;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.messages.IMessages;
+import net.survivalboom.sbds.api.messages.MessageActionBuilder;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -68,21 +70,20 @@ public class ModalInteractionInfo {
     }
 
 
-    public @NotNull ReplyCallbackAction reply(@NotNull String name, @Nullable Placeholders placeholders) {
-        return messages().reply(modal, placeholders, name, user());
+    public @NotNull ReplyCallbackAction replyRaw(@NotNull String text) {
+        return modal.reply(text);
     }
 
-    public @NotNull ReplyCallbackAction reply(@NotNull String name) {
-        return messages().reply(modal, null, name, user());
+    public @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull String key) {
+        return MessageActionBuilder.create(messages(), key, user(), modal::reply);
     }
 
-
-    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull String name, @Nullable Placeholders placeholders) {
-        return messages().edit(modal.getHook(), placeholders, name, user());
+    public @NotNull WebhookMessageEditAction<Message> editRaw(@NotNull String text) {
+        return modal.getHook().editOriginal(text);
     }
 
-    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull String name) {
-        return messages().edit(modal.getHook(), null, name, user());
+    public @NotNull MessageActionBuilder<WebhookMessageEditAction<Message>> edit(@NotNull String key) {
+        return MessageActionBuilder.create(messages(), key, user(), d -> modal.getHook().editOriginal(MessageEditData.fromCreateData(d)));
     }
 
     public @NotNull ReplyCallbackAction deferReply() {

@@ -7,18 +7,23 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.ExecutionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.messages.IMessage;
+import net.survivalboom.sbds.api.messages.MessageActionBuilder;
+import net.survivalboom.sbds.api.messages.MessageBuilder;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
+import java.util.Objects;
+
 public class SlashExecutionInfo extends ExecutionInfo {
 
-    private final SlashCommandInteraction interaction;
+    protected final SlashCommandInteraction interaction;
 
     public SlashExecutionInfo(@NotNull Command command, @NotNull SlashCommandInteraction interaction, @NotNull String alias, @NotNull TypeMap arguments, @NotNull Logger logger, @NotNull ISBDS sbds) {
         super(command, alias, arguments, logger, sbds);
@@ -41,21 +46,25 @@ public class SlashExecutionInfo extends ExecutionInfo {
         return this.interaction.getUser();
     }
 
-    public @NotNull ReplyCallbackAction reply(@NotNull String name, @Nullable Placeholders placeholders) {
-        return messages().reply(interaction, placeholders, name, user());
+
+    public @NotNull ReplyCallbackAction replyRaw(@NotNull String text) {
+        return interaction.reply(text);
     }
 
-    public @NotNull ReplyCallbackAction reply(@NotNull String name) {
-        return messages().reply(interaction, null, name, user());
+    public @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull String key) {
+        return MessageActionBuilder.create(messages, key, user(), interaction::reply);
     }
 
-
-    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull String name, @Nullable Placeholders placeholders) {
-        return messages().edit(interaction.getHook(), placeholders, name, user());
+    public @NotNull WebhookMessageEditAction<Message> editRaw(@NotNull String text) {
+        return interaction.getHook().editOriginal(MessageEditData.fromContent(text));
     }
 
-    public @NotNull WebhookMessageEditAction<Message> edit(@NotNull String name) {
-        return messages().edit(interaction.getHook(), null, name, user());
+    public @NotNull MessageActionBuilder<WebhookMessageEditAction<Message>> edit(@NotNull String key) {
+        return MessageActionBuilder.create(messages, key, user(), d -> interaction.getHook().editOriginal(MessageEditData.fromCreateData(d)));
+    }
+
+    protected @NotNull IMessage getMessage(@NotNull String key) {
+        return Objects.requireNonNull(messages.getMessage(key, user(), true));
     }
 
 }

@@ -3,7 +3,7 @@ package net.survivalboom.sbds.core.libraries;
 import net.survivalboom.sbds.api.libraries.*;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.Placeholders;
-import net.survivalboom.sbds.api.utils.json.JsonConfiguration;
+import net.survivalboom.sbds.api.utils.configuration.json.JsonConfiguration;
 import net.survivalboom.sbds.core.SBDS;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;

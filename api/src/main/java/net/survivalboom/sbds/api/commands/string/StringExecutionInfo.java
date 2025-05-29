@@ -8,8 +8,7 @@ import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.ExecutionInfo;
-import net.survivalboom.sbds.api.messages.IMessages;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.messages.MessageActionBuilder;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,12 +39,8 @@ public class StringExecutionInfo extends ExecutionInfo {
         return this.message.getAuthor();
     }
 
-    public @Nullable MessageCreateAction reply(@NotNull String name, @Nullable Placeholders placeholders) {
-        return messages().reply(message, placeholders, name, user());
-    }
-
-    public @Nullable MessageCreateAction reply(@NotNull String name) {
-        return messages().reply(message, null, name, user());
+    public @NotNull MessageActionBuilder<MessageCreateAction> reply(@NotNull String name) {
+        return messages.createActionMessage(name, user(), d -> message().reply(d));
     }
 
 }

@@ -92,6 +92,11 @@ public class TypeMap implements Map<String, Object> {
         STATIC
      */
 
+    @SuppressWarnings("unchecked")
+    public static @NotNull List<TypeMap> ofMapList(@NotNull List<Map<?, ?>> mapList) {
+        return mapList.stream().map(l -> TypeMap.ofMap((Map<String, Object>) l, false)).toList();
+    }
+
     public static @NotNull TypeMap ofMappings(@NotNull List<OptionMapping> mappings) {
 
         Map<String, Object> map = new ConcurrentHashMap<>();

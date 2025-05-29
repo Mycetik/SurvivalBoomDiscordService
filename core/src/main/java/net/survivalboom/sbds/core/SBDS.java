@@ -13,6 +13,7 @@ import net.survivalboom.sbds.core.commands.slash.SlashCommandManager;
 import net.survivalboom.sbds.core.commands.console.ConsoleListener;
 import net.survivalboom.sbds.core.database.Database;
 import net.survivalboom.sbds.core.events.EventManager;
+import net.survivalboom.sbds.core.interaction.button.ButtonInteractionManager;
 import net.survivalboom.sbds.core.interaction.modal.ModalInteractionManager;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
 import net.survivalboom.sbds.core.messages.Messages;
@@ -58,6 +59,9 @@ public class SBDS implements ISBDS {
 
     private final SlashCommandManager slashCommandManager;
 
+
+    private final ButtonInteractionManager buttonInteractionManager;
+
     private final ModalInteractionManager modalInteractionManager;
 
 
@@ -98,6 +102,7 @@ public class SBDS implements ISBDS {
         this.permissionManager = new PermissionManager(this);
         this.slashCommandManager = new SlashCommandManager(this);
 
+        this.buttonInteractionManager = new ButtonInteractionManager(this);
         this.modalInteractionManager = new ModalInteractionManager(this);
 
         SbdsProvider.internal_internal_internal_internal_internal_internal_set(this);
@@ -146,6 +151,7 @@ public class SBDS implements ISBDS {
         slashCommandManager.init();
         consoleListener.init();
 
+        buttonInteractionManager.init();
         modalInteractionManager.init();
 
         moduleManager.init();
@@ -190,6 +196,7 @@ public class SBDS implements ISBDS {
         slashCommandManager.shutdown();
         permissionManager.shutdown();
 
+        buttonInteractionManager.shutdown();
         modalInteractionManager.shutdown();
 
         translationManager.shutdown();
@@ -266,9 +273,16 @@ public class SBDS implements ISBDS {
         return slashCommandManager;
     }
 
+
+
     @Override
     public @NotNull ModalInteractionManager getModalInteractionManager() {
         return modalInteractionManager;
+    }
+
+    @Override
+    public @NotNull ButtonInteractionManager getButtonInteractionManager() {
+        return buttonInteractionManager;
     }
 
     @Override

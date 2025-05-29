@@ -73,8 +73,8 @@ public class PlayCommand extends CommandBase implements SlashCommand {
 
         boolean isUrl = isUrl(query);
 
-        if (isUrl) info.reply("commands.music-module.loading-tracks", Placeholders.of("{URL}", query)).queue();
-        else info.reply("commands.music-module.searching-tracks", Placeholders.of("{QUERY}", query)).queue();
+        if (isUrl) info.reply("commands.music-module.loading-tracks").withPlaceholders(Placeholders.of("{URL}", query)).queue();
+        else info.reply("commands.music-module.searching-tracks").withPlaceholders(Placeholders.of("{QUERY}", query)).queue();
 
         List<Track> tracks;
         try {
@@ -82,12 +82,12 @@ public class PlayCommand extends CommandBase implements SlashCommand {
         }
 
         catch (TrackLoadException e) {
-            info.reply("commands.music-module.track-failed", Placeholders.of("{ERROR}", e.toString())).queue();
+            info.reply("commands.music-module.track-failed").withPlaceholders(Placeholders.of("{ERROR}", e.toString())).queue();
             return;
         }
 
         if (tracks.isEmpty()) {
-            info.edit("commands.music-module.no-tracks-found", Placeholders.of("{QUERY}", query)).queue();
+            info.edit("commands.music-module.no-tracks-found").withPlaceholders(Placeholders.of("{QUERY}", query)).queue();
             return;
         }
 
@@ -112,14 +112,14 @@ public class PlayCommand extends CommandBase implements SlashCommand {
             placeholders.add("{DURATION}", track.getInfo().getLength());
             placeholders.add("{COUNT}", tracks.size());
 
-            info.edit("commands.music-module.bot-connected", placeholders).queue();
+            info.edit("commands.music-module.bot-connected").withPlaceholders(placeholders).queue();
 
         }
 
         else {
 
             if (tracks.size() > 1) {
-                info.edit("commands.music-module.added-tracks-to-playlist", placeholders).queue();
+                info.edit("commands.music-module.added-tracks-to-playlist").withPlaceholders(placeholders).queue();
             }
 
             else {
@@ -129,7 +129,7 @@ public class PlayCommand extends CommandBase implements SlashCommand {
                 placeholders.add("{NAME}", track.getInfo().getSourceName());
                 placeholders.add("{DURATION}", track.getInfo().getLength());
 
-                info.edit("commands.music-module.added-to-playlist", placeholders).queue();
+                info.edit("commands.music-module.added-to-playlist").withPlaceholders(placeholders).queue();
 
             }
 
