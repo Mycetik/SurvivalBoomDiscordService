@@ -17,6 +17,7 @@ import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
 import net.survivalboom.sbds.core.commands.cmds.console.modules.ModulesCommand;
+import net.survivalboom.sbds.core.commands.cmds.slash.TestCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
         sbds.getEventManager().registerEvents0(null, this);
 
         registerCommand0(null, new StatusCommand(sbds).build(null));
+        registerCommand0(null, new TestCommand().build(null));
 
     }
 
@@ -154,7 +156,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         catch (Throwable t) {
             logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName(), commandName, t);
-            event.reply(sbds.getMessages().getMessageDataFallback("commands.error", Placeholders.of("{EXCEPTION}", t.toString()), event.getUser())).queue();
+            messages.reply(event, "commands.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
         }
 
     }
@@ -193,7 +195,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
             boolean hasPermission = permissionManager.hasPermission(guild.getIdLong(), member.getIdLong(), permission, command.defaultPermission());
             if (!hasPermission) {
-                messages.reply(event.getInteraction(), Placeholders.of("{PERMISSION}", permission), "commands.no-permission", event.getMember()).queue();
+                messages.reply(event.getInteraction(),"commands.no-permission", event.getUser()).withPlaceholders(Placeholders.of("{PERMISSION}", permission)).queue();
                 return false;
             }
 
