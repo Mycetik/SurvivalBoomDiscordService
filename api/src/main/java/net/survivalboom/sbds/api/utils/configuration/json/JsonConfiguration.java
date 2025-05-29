@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.utils.json;
+package net.survivalboom.sbds.api.utils.configuration.json;
 
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.bspfsystems.yamlconfiguration.configuration.MemorySection;

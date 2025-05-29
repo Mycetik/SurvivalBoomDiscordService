@@ -228,5 +228,12 @@ public class Placeholders {
     }
 
 
+    public static @NotNull String parse(@NotNull String s, @Nullable Placeholders placeholders) {
+        Objects.requireNonNull(s, "string == null");
+        if (placeholders == null) return s;
+        return placeholders.parse(s);
+    }
+
+
 
 }
