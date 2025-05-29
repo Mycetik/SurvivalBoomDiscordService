@@ -7,21 +7,22 @@ import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.function.Function;
 
 public interface IMessage {
 
-    @Nullable String key();
+    @NotNull String key();
 
-    @Nullable String text();
-
-    @Nullable List<IEmbedTemplate> embeds();
-
-    @Nullable ITranslation translation();
-
-    @NotNull MessageCreateData messageData(@Nullable Placeholders placeholders);
+    @NotNull ITranslation translation();
 
 
-    void dump(@NotNull ConfigurationSection cfg);
+    void dump(@NotNull ConfigurationSection section);
+
+
+    @NotNull MessageTemplate template();
+
+    @NotNull MessageCreateData build(@Nullable Function<Component, String> componentIdCreator, @NotNull IMessages messages, @Nullable Placeholders placeholders);
+
+    @NotNull String buildString(@Nullable Placeholders placeholders);
 
 }

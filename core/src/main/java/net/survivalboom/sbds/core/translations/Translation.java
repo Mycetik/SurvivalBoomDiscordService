@@ -1,6 +1,8 @@
 package net.survivalboom.sbds.core.translations;
 
 import net.survivalboom.sbds.api.messages.IMessage;
+import net.survivalboom.sbds.api.messages.InvalidComponentException;
+import net.survivalboom.sbds.api.messages.MessageTemplate;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.InvalidTranslationException;
 import net.survivalboom.sbds.api.translations.MessageLoadException;
@@ -157,10 +159,10 @@ public class Translation extends Valid implements ITranslation {
             if (section.contains("$embed") || section.contains("$embeds")) {
 
                 try {
-                    map.put(path, new Message(this, path, section));
+                    map.put(path, new Message(path, this, MessageTemplate.fromSection(section)));
                 }
 
-                catch (InvalidEmbedException e) {
+                catch (InvalidEmbedException | InvalidComponentException e) {
                     throw new MessageLoadException(path, e);
                 }
 
@@ -175,7 +177,7 @@ public class Translation extends Valid implements ITranslation {
 
         }
 
-        map.put(path, new Message(this, path, configuration.getString(path, "Value of `" + path + "` is null")));
+        map.put(path, new Message(path, this, MessageTemplate.fromContent(configuration.getString(path, "Value of `" + path + "` is null"))));
 
     }
 
