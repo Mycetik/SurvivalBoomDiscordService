@@ -20,6 +20,8 @@ public interface Component {
 
     @Nullable String name();
 
+    boolean isStatic();
+
 
     static @NotNull List<Component> createComponents(@NotNull List<TypeMap> mapList) throws InvalidComponentException {
 

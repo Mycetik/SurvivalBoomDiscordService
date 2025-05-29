@@ -55,19 +55,31 @@ public abstract class AbstractMessageBuilder<T> {
     }
 
 
-    @SuppressWarnings("unchecked")
     protected @NotNull String componentIdCreator(@NotNull Component component) {
 
-        String id = UUID.randomUUID().toString();
+        boolean isStatic = component.isStatic();
+        String name = component.name();
+        String id = isStatic && name != null ? name : UUID.randomUUID().toString();
+
+        if (isStatic) {
+            return id;
+        }
 
         ComponentCallback<?> callback = callbacks.stream()
                 .filter(c -> c.name.equals(component.name()))
                 .findAny()
                 .orElse(null);
 
-        if (callback == null) {
-            return id;
-        }
+        registerComponentCallback(id, callback);
+
+        return id;
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void registerComponentCallback(@NotNull String id, @Nullable ComponentCallback<?> callback) {
+
+        if (callback == null) return;
 
         Consumer<?> onSuccess = callback.onSuccess;
         Runnable onFail = Objects.requireNonNullElse(callback.onFail, () -> {});
@@ -102,8 +114,6 @@ public abstract class AbstractMessageBuilder<T> {
             default -> throw new RuntimeException("Invalid component type " + callback.type);
 
         }
-
-        return id;
 
     }
 

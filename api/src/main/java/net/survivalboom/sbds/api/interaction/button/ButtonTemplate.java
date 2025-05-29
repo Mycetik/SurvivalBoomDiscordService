@@ -29,6 +29,8 @@ public class ButtonTemplate implements Component {
 
     private final int priority;
 
+    private final boolean isStatic;
+
 
     private ButtonTemplate(
             @Nullable String name,
@@ -36,7 +38,8 @@ public class ButtonTemplate implements Component {
             @Nullable Emoji emoji,
             @NotNull ButtonStyle style,
             int row,
-            int priority
+            int priority,
+            boolean isStatic
     ) {
 
         this.name = name;
@@ -45,6 +48,7 @@ public class ButtonTemplate implements Component {
         this.style = style;
         this.row = row;
         this.priority = priority;
+        this.isStatic = isStatic;
 
     }
 
@@ -74,6 +78,11 @@ public class ButtonTemplate implements Component {
         return name;
     }
 
+    @Override
+    public boolean isStatic() {
+        return isStatic;
+    }
+
 
     public static class Builder {
 
@@ -89,13 +98,16 @@ public class ButtonTemplate implements Component {
 
         private int priority;
 
+        private boolean isStatic;
+
         private Builder(
                 @Nullable String name,
                 @Nullable String label,
                 @Nullable Emoji emoji,
                 @Nullable ButtonStyle style,
                 int row,
-                int priority
+                int priority,
+                boolean isStatic
         ) {
 
             this.name = name;
@@ -105,6 +117,8 @@ public class ButtonTemplate implements Component {
 
             this.row = row;
             this.priority = priority;
+
+            this.isStatic = isStatic;
 
         }
 
@@ -139,31 +153,37 @@ public class ButtonTemplate implements Component {
             return this;
         }
 
+        public @NotNull Builder setStatic(boolean isStatic) {
+            this.isStatic = isStatic;
+            return this;
+        }
+
 
         public @NotNull ButtonTemplate build() {
 
             Objects.requireNonNull(label, "label == null");
             Objects.requireNonNull(style, "style == null");
 
-            return new ButtonTemplate(name, label, emoji, style, row, priority);
+            return new ButtonTemplate(name, label, emoji, style, row, priority, isStatic);
 
         }
 
         public @NotNull Builder copy() {
-            return new Builder(name, label, emoji, style, row, priority);
+            return new Builder(name, label, emoji, style, row, priority, isStatic);
         }
 
     }
 
     public static @NotNull Builder builder() {
-        return new Builder(null, null, null, null, 1, 1);
+        return new Builder(null, null, null, null, 1, 1, false);
     }
 
     public static @NotNull ButtonTemplate create(@NotNull TypeMap typeMap) throws InvalidComponentException {
 
         String name = typeMap.get("name", String.class);
-        String label = typeMap.get("label", String.class);
+        boolean isStatic = Boolean.TRUE.equals(typeMap.get("static", Boolean.class));
 
+        String label = typeMap.get("label", String.class);
         if (label == null) throw new InvalidComponentException("Button label is null!");
 
         String emojiRaw = typeMap.get("emoji", String.class);
@@ -181,6 +201,7 @@ public class ButtonTemplate implements Component {
                 .setLabel(label)
                 .setRow(row)
                 .setPriority(priority)
+                .setStatic(isStatic)
                 .setEmoji(emoji)
                 .setStyle(style)
                 .build();
