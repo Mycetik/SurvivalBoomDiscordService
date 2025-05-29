@@ -14,8 +14,6 @@ import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.core.scheduler.SchedulerTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -24,8 +22,6 @@ import java.util.function.Consumer;
 
 // TODO: Зробити нормальну абстракцію. В нас тут 3 класи з одним і тим же функціоналом й одним тим же кодом.
 public class ButtonInteractionManager extends Manager implements IButtonInteractionManager, Listener {
-
-    private static final Logger log = LoggerFactory.getLogger(ButtonInteractionManager.class.getSimpleName());
 
     private final SBDS sbds;
 
