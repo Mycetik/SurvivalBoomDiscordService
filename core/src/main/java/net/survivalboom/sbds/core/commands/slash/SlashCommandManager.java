@@ -16,8 +16,6 @@ import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
-import net.survivalboom.sbds.core.commands.cmds.console.modules.ModulesCommand;
-import net.survivalboom.sbds.core.commands.cmds.slash.TestCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -36,7 +34,6 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
         sbds.getEventManager().registerEvents0(null, this);
 
         registerCommand0(null, new StatusCommand(sbds).build(null));
-        registerCommand0(null, new TestCommand().build(null));
 
     }
 
