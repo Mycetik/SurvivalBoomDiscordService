@@ -1,7 +1,10 @@
 package net.survivalboom.sbds.api.messages;
 
+import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
+import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
+import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownInteractionInfo;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,12 +21,15 @@ public abstract class AbstractMessageBuilder<T> {
 
     protected final ISBDS sbds;
 
+    private final User user;
+
     protected final List<ComponentCallback<?>> callbacks = new ArrayList<>();
 
     protected Placeholders placeholders;
 
-    public AbstractMessageBuilder(@NotNull ISBDS sbds) {
+    public AbstractMessageBuilder(@NotNull ISBDS sbds, @Nullable User user) {
         this.sbds = sbds;
+        this.user = user;
     }
 
     //
@@ -47,6 +53,34 @@ public abstract class AbstractMessageBuilder<T> {
 
     public @NotNull T buttonCallback(@NotNull String name, @NotNull Consumer<ButtonInteractionInfo> onSuccess, int timeout) {
         return buttonCallback(name, onSuccess, null, timeout);
+    }
+
+    //
+    // DROPDOWNS
+    //
+
+    // ENTITY SELECT //
+
+    public @NotNull T entityDropdownCallback(@NotNull String name, @NotNull Consumer<EntityDropdownInteractionInfo> onSuccess, @Nullable Runnable onFail, int timeout) {
+        ComponentCallback<EntityDropdownInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.interactions.components.Component.Type.MENTIONABLE_SELECT, onSuccess, onFail, timeout);
+        callbacks.add(callback);
+        return This();
+    }
+
+    public @NotNull T entityDropdownCallback(@NotNull String name, @NotNull Consumer<EntityDropdownInteractionInfo> onSuccess, int timeout) {
+        return entityDropdownCallback(name, onSuccess, null, timeout);
+    }
+
+    // STRING SELECT //
+
+    public @NotNull T stringDropdownCallback(@NotNull String name, @NotNull Consumer<StringDropdownInteractionInfo> onSuccess, @Nullable Runnable onFail, int timeout) {
+        ComponentCallback<StringDropdownInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.interactions.components.Component.Type.STRING_SELECT, onSuccess, onFail, timeout);
+        callbacks.add(callback);
+        return This();
+    }
+
+    public @NotNull T stringDropdownCallback(@NotNull String name, @NotNull Consumer<StringDropdownInteractionInfo> onSuccess, int timeout) {
+        return stringDropdownCallback(name, onSuccess, null, timeout);
     }
 
     @SuppressWarnings("unchecked")
@@ -82,33 +116,21 @@ public abstract class AbstractMessageBuilder<T> {
         if (callback == null) return;
 
         Consumer<?> onSuccess = callback.onSuccess;
-        Runnable onFail = Objects.requireNonNullElse(callback.onFail, () -> {});
+        Runnable onFail = callback.onFail;
         int timeout = callback.timeout;
 
         switch (callback.type) {
 
-            case BUTTON -> sbds.getButtonInteractionManager().registerPendingInteraction(id, (Consumer<ButtonInteractionInfo>) onSuccess, onFail, timeout);
-
-            // TODO: Implement all handlers for all types of Dropdowns.
+            case BUTTON -> {
+                sbds.getButtonInteractionManager().registerPendingInteraction(id, user, (Consumer<ButtonInteractionInfo>) onSuccess, onFail, timeout);
+            }
 
             case STRING_SELECT -> {
-
+                sbds.getStringDropdownInteractionManager().registerPendingInteraction(id, user, (Consumer<StringDropdownInteractionInfo>) onSuccess, onFail, timeout);
             }
 
-            case USER_SELECT -> {
-
-            }
-
-            case ROLE_SELECT -> {
-
-            }
-
-            case MENTIONABLE_SELECT -> {
-
-            }
-
-            case CHANNEL_SELECT -> {
-
+            case USER_SELECT, ROLE_SELECT, MENTIONABLE_SELECT, CHANNEL_SELECT -> {
+                sbds.getEntityDropdownInteractionManager().registerPendingInteraction(id, user, (Consumer<EntityDropdownInteractionInfo>) onSuccess, onFail, timeout);
             }
 
             default -> throw new RuntimeException("Invalid component type " + callback.type);

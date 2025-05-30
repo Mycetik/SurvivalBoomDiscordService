@@ -1,10 +1,7 @@
 package net.survivalboom.sbds.core.commands;
 
 import net.survivalboom.sbds.api.commands.Command;
-import net.survivalboom.sbds.api.commands.ExecutionInfo;
 import net.survivalboom.sbds.api.commands.ICommandManager;
-import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
-import net.survivalboom.sbds.api.commands.argument.internal.SubCommandArgument;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.core.SBDS;
@@ -19,8 +16,6 @@ import org.slf4j.LoggerFactory;
 
 
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public abstract class AbstractCommandManager extends Manager implements ICommandManager {
 
@@ -61,12 +56,12 @@ public abstract class AbstractCommandManager extends Manager implements ICommand
 
 
     @Override
-    public void registerCommand(@NotNull IModule module, @NotNull Command command) {
+    public @NotNull RegisteredCommand registerCommand(@NotNull IModule module, @NotNull Command command) {
         Objects.requireNonNull(module, "module == null");
-        registerCommand0(module, command);
+        return registerCommand0(module, command);
     }
 
-    public void registerCommand0(@Nullable IModule imodule, @NotNull Command command) {
+    public @NotNull RegisteredCommand registerCommand0(@Nullable IModule imodule, @NotNull Command command) {
 
         checkValid();
 
@@ -76,16 +71,22 @@ public abstract class AbstractCommandManager extends Manager implements ICommand
 
         if (!subcommandsAllowed && command.hasSubcommands()) throw new IllegalArgumentException(name + "does not support subcommands");
 
+        RegisteredCommand registeredCommand;
         if (imodule != null) {
             Module module = sbds.getModuleManager().checkModuleEnabled(imodule, "Disabled module attempted to register a command");
             module.getRegistration().add(name + "-" + command.getName(), () -> unregisterCommand(command));
 
-            commands.add(new RegisteredCommand(module, command));
+            registeredCommand = new RegisteredCommand(module, command);
+
         }
 
         else {
-            commands.add(new RegisteredCommand(null, command));
+            registeredCommand = new RegisteredCommand(null, command);
         }
+
+        commands.add(registeredCommand);
+
+        return registeredCommand;
 
     }
 

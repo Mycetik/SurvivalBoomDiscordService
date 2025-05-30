@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.commands;
 
 import net.dv8tion.jda.annotations.UnknownNullability;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.argument.internal.SubCommandArgument;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.modules.IModule;
@@ -170,8 +171,8 @@ public class Command {
 
     }
 
-    public @NotNull Command withSubcommand(@NotNull CommandBase base, @Nullable IModule module) {
-        return withSubcommand(base.build(module));
+    public @NotNull Command withSubcommand(@NotNull CommandBase base, @NotNull ISBDS sbds, @Nullable IModule module) {
+        return withSubcommand(base.build(sbds, module));
     }
 
 

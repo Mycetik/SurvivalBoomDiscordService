@@ -6,6 +6,8 @@ import net.survivalboom.sbds.api.commands.console.IConsoleListener;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.events.IEventManager;
 import net.survivalboom.sbds.api.interaction.button.IButtonInteractionManager;
+import net.survivalboom.sbds.api.interaction.dropdown.entity.IEntityDropdownInteractionManager;
+import net.survivalboom.sbds.api.interaction.dropdown.string.IStringDropdownInteractionManager;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
 import net.survivalboom.sbds.api.libraries.ILibrariesManager;
 import net.survivalboom.sbds.api.messages.IMessages;
@@ -46,6 +48,10 @@ public interface ISBDS {
 
 
     @NotNull IModalInteractionManager getModalInteractionManager();
+
+    @NotNull IStringDropdownInteractionManager getStringDropdownInteractionManager();
+
+    @NotNull IEntityDropdownInteractionManager getEntityDropdownInteractionManager();
 
     @NotNull IButtonInteractionManager getButtonInteractionManager();
 

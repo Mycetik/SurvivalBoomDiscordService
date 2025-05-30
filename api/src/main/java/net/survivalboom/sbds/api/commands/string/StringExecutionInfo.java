@@ -7,14 +7,14 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
-import net.survivalboom.sbds.api.commands.ExecutionInfo;
+import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.messages.MessageActionBuilder;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-public class StringExecutionInfo extends ExecutionInfo {
+public class StringExecutionInfo extends CommandExecutionInfo {
 
     private final Message message;
 
@@ -40,7 +40,7 @@ public class StringExecutionInfo extends ExecutionInfo {
     }
 
     public @NotNull MessageActionBuilder<MessageCreateAction> reply(@NotNull String name) {
-        return messages.createActionMessage(name, user(), d -> message().reply(d));
+        return messages().createActionMessage(name, user(), d -> message().reply(d));
     }
 
 }

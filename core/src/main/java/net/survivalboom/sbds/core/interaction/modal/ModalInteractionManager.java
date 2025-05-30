@@ -3,91 +3,46 @@ package net.survivalboom.sbds.core.interaction.modal;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
 import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.requests.restaction.interactions.ModalCallbackAction;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.events.Listener;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
+import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
 import net.survivalboom.sbds.api.interaction.modal.ModalInteractionInfo;
 import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
+import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.core.events.EventManager;
-import net.survivalboom.sbds.core.messages.Messages;
+import net.survivalboom.sbds.core.interaction.AbstractInteractionHandler;
 import net.survivalboom.sbds.core.modules.Module;
-import net.survivalboom.sbds.core.modules.ModuleManager;
-import net.survivalboom.sbds.core.scheduler.SchedulerTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
-public class ModalInteractionManager extends Manager implements Listener, IModalInteractionManager {
-
-    private static final Logger log = LoggerFactory.getLogger(ModalInteractionManager.class.getSimpleName());
-
-    private final SBDS sbds;
-
-    private final Messages messages;
-
-    private final EventManager eventManager;
-
-    private final ModuleManager moduleManager;
-
+public class ModalInteractionManager extends AbstractInteractionHandler<ModalInteractionInfo, ModalInteractionEvent> implements IModalInteractionManager {
 
     private final Map<NamespacedKey, RegisteredModal> registeredModalMap = new HashMap<>();
 
-
-    private final Map<String, PendingModal> pendingModals = new ConcurrentHashMap<>();
-
-    private SchedulerTask cleanerTask;
-
-
     public ModalInteractionManager(@NotNull SBDS sbds) {
-        this.sbds = sbds;
-        this.messages = sbds.getMessages();
-        this.moduleManager = sbds.getModuleManager();
-        this.eventManager = sbds.getEventManager();
+        super("Modal", sbds);
     }
 
     @Override
-    protected void init0() {
-
-        cleanerTask = sbds.getScheduler().schedule0(null, "ModalInteractionManager-Cleaner", task -> cleanup(), 300000, 300000);
-        eventManager.registerEvents0(null, this);
-
+    protected @Nullable String getIdFromEvent(ModalInteractionEvent event) {
+        return event.getModalId();
     }
 
     @Override
-    protected void shutdown0() {
-        pendingModals.clear();
-        eventManager.unregisterEvents(this);
-        cleanerTask.cancelAndWait(1000, true);
+    protected @NotNull ModalInteractionInfo createInteractionInfo(ModalInteractionEvent event) {
+        return new ModalInteractionInfo(sbds, logger, event);
     }
-
-    private void cleanup() {
-
-        long currentTime = System.currentTimeMillis();
-
-        Collection<PendingModal> modals = pendingModals.values();
-        List<PendingModal> expired = modals.stream().filter(modal -> modal.timestamp() + 300000 < currentTime).toList();
-
-        expired.forEach(modal -> {
-            modal.future.completeExceptionally(new TimeoutException("Modal time out"));
-            modals.remove(modal);
-        });
-
-    }
-
-    //
-    // REGISTERING
-    //
 
     @Override
     public @NotNull IRegisteredModal registerModal(@NotNull IModule iModule, @NotNull String name, @NotNull ModalTemplate modal) {
@@ -103,7 +58,7 @@ public class ModalInteractionManager extends Manager implements Listener, IModal
         Objects.requireNonNull(name, "name == null");
         Objects.requireNonNull(modal, "modal == null");
 
-        Module module = moduleManager.checkModuleEnabled(imodule, "Disabled module `" + imodule.getName() + "` tried to register a modal");
+        Module module = sbds.getModuleManager().checkModuleEnabled(imodule, "Disabled module `" + imodule.getName() + "` tried to register a modal");
 
         NamespacedKey key = NamespacedKey.fromModule(imodule, name);
         if (registeredModalMap.containsKey(key)) throw new IllegalArgumentException("Modal with key `" + key + "` already exists");
@@ -118,13 +73,12 @@ public class ModalInteractionManager extends Manager implements Listener, IModal
     }
 
 
-
     @Override
     public void unregisterModal(@NotNull IModule iModule, @NotNull String name) {
 
         Objects.requireNonNull(name, "name == null");
 
-        moduleManager.checkModuleEnabled(iModule, "Disabled module `" + iModule.getName() + "` tried unregister a modal");
+        sbds.getModuleManager().checkModuleEnabled(iModule, "Disabled module `" + iModule.getName() + "` tried unregister a modal");
 
         NamespacedKey key = NamespacedKey.fromModule(iModule, name);
         registeredModalMap.remove(key);
@@ -143,28 +97,19 @@ public class ModalInteractionManager extends Manager implements Listener, IModal
     }
 
     @Override
-    public @Nullable IRegisteredModal getModal(@NotNull NamespacedKey key) {
+    public @NotNull ModalActionBuilder createModal(@NotNull IModalCallback callback, @NotNull String name) {
+        NamespacedKey key = NamespacedKey.fromString(name);
+        return new ModalActionBuilder(this, callback, key);
+    }
+
+    @Override
+    public @Nullable RegisteredModal getModal(@NotNull NamespacedKey key) {
         return registeredModalMap.get(key);
     }
 
-    //
-    // OPEN MODAL
-    //
-
-    private @NotNull CompletableFuture<ModalInteractionInfo> replyModal(@NotNull IModalCallback interaction, @NotNull RegisteredModal registeredModal, @Nullable Placeholders placeholders) {
-
-        UUID uuid = UUID.randomUUID();
-        Modal modal = registeredModal.template().create(uuid, messages, placeholders);
-        String uuidStr = uuid.toString();
-
-        CompletableFuture<ModalInteractionInfo> future = new CompletableFuture<>();
-
-        interaction.replyModal(modal).queue();
-
-        pendingModals.put(uuidStr, new PendingModal(future, System.currentTimeMillis()));
-
-        return future;
-
+    @Override
+    public @NotNull IMessages getMessages() {
+        return sbds.getMessages();
     }
 
     //
@@ -173,30 +118,20 @@ public class ModalInteractionManager extends Manager implements Listener, IModal
 
     @EventHandler
     public void onModal(@NotNull ModalInteractionEvent event) {
-
-        String customId = event.getModalId();
-        ModalInteractionInfo info = new ModalInteractionInfo(sbds, event.getInteraction());
-
-        if (!pendingModals.containsKey(customId)) {
-            event.reply("Error: Modal with id `" + customId + "` not found.").queue();
-            log.error("Modal with id `{}` not found. Possibly timeout.", customId);
-            return;
-        }
-
-        CompletableFuture<ModalInteractionInfo> future = pendingModals.get(customId).future;
-
-        future.complete(info);
-        pendingModals.remove(customId);
-
+        onEvent(event);
     }
 
-    private record PendingModal(@NotNull CompletableFuture<ModalInteractionInfo> future, long timestamp) {}
-
-    public record RegisteredModal(@NotNull ModalInteractionManager manager, @Nullable IModule registrar, @NotNull NamespacedKey name, @NotNull ModalTemplate template) implements IRegisteredModal {
+    // TODO Зробити так, щоби кожен раз при відкритті Modal, ми не шукали його ще раз по назві.
+    public record RegisteredModal(
+            @NotNull ModalInteractionManager manager,
+            @Nullable IModule registrar,
+            @NotNull NamespacedKey name,
+            @NotNull ModalTemplate template
+    ) implements IRegisteredModal {
 
         @Override
-        public @NotNull CompletableFuture<ModalInteractionInfo> open(@NotNull IModalCallback interaction, @Nullable Placeholders placeholders) {
-            return manager.replyModal(interaction, this, placeholders);
+        public @NotNull ModalActionBuilder createModal(@NotNull IModalCallback callback) {
+            return manager.createModal(callback, name.toString());
         }
 
     }

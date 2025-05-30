@@ -1,7 +1,14 @@
 package net.survivalboom.sbds.api.modules;
 
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.interaction.InteractionManager;
+import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
+import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
+import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownInteractionInfo;
+import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
+import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
@@ -12,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.jar.JarFile;
 
 public abstract class ModuleMain {
@@ -89,8 +97,28 @@ public abstract class ModuleMain {
     // REGISTRATIONS
     //
 
-    public void registerSlashCommand(@NotNull CommandBase commandBase) {
-        getSbds().getSlashCommandManager().registerCommand(this, commandBase);
+    public @NotNull ICommandManager.RegisteredCommand registerSlashCommand(@NotNull CommandBase commandBase) {
+        return getSbds().getSlashCommandManager().registerCommand(this, commandBase);
+    }
+
+    public @NotNull ICommandManager.RegisteredCommand registerConsoleCommand(@NotNull CommandBase commandBase) {
+        return getSbds().getConsoleListener().registerCommand(this, commandBase);
+    }
+
+    public @NotNull IModalInteractionManager.IRegisteredModal registerModal(@NotNull String name, @NotNull ModalTemplate template) {
+        return getSbds().getModalInteractionManager().registerModal(this, name, template);
+    }
+
+    public @NotNull InteractionManager.IRegisteredListener registerButton(@NotNull String name, @NotNull Consumer<ButtonInteractionInfo> consumer) {
+        return getSbds().getButtonInteractionManager().registerListener(this, name, consumer);
+    }
+
+    public @NotNull InteractionManager.IRegisteredListener registerStringDropdown(@NotNull String name, @NotNull Consumer<StringDropdownInteractionInfo> consumer) {
+        return getSbds().getStringDropdownInteractionManager().registerListener(this, name, consumer);
+    }
+
+    public @NotNull InteractionManager.IRegisteredListener registerEntityDropdown(@NotNull String name, @NotNull Consumer<EntityDropdownInteractionInfo> consumer) {
+        return getSbds().getEntityDropdownInteractionManager().registerListener(this, name, consumer);
     }
 
     public void addModuleTranslation() {

@@ -1,23 +1,21 @@
 package net.survivalboom.sbds.modules.test;
 
 import net.survivalboom.sbds.api.modules.ModuleMain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.survivalboom.sbds.modules.test.commands.TestCommand;
+
+import java.util.Map;
 
 public class TestModule extends ModuleMain {
-
-    private static final Logger log = LoggerFactory.getLogger(TestModule.class);
 
     @Override
     public void onEnable() {
 
-        getModule().getLogger().info("Я ЖИВИИИИЙЙЙ!!!!!!");
-        getModule().getSbds().getConsoleListener().registerCommand(this, new SayCommand());
+        getLogger().info("Я ЖИВИИИИЙЙЙ!!!!!!");
 
-        getModule().getSbds().getSlashCommandManager().registerCommand(this, new TestCommand(this));
-        getModule().getSbds().getSlashCommandManager().registerCommand(this, new SayCommand());
+        checkFiles(Map.of("translations/translation_uk.yml", "translations/translation_uk.yml"));
+        addModuleTranslation();
 
-        getModule().getSbds().getSlashCommandManager().registerCommand(this, new TranslationCommand());
+        registerSlashCommand(new TestCommand());
 
     }
 

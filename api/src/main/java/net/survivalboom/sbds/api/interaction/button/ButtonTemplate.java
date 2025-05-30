@@ -83,6 +83,11 @@ public class ButtonTemplate implements Component {
         return isStatic;
     }
 
+    @Override
+    public net.dv8tion.jda.api.interactions.components.Component.@NotNull Type type() {
+        return net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON;
+    }
+
 
     public static class Builder {
 
@@ -208,7 +213,7 @@ public class ButtonTemplate implements Component {
 
     }
 
-    private static @NotNull Emoji emoji(@NotNull String str) throws InvalidComponentException {
+    public static @NotNull Emoji emoji(@NotNull String str) throws InvalidComponentException {
 
         if (!str.contains(":")) {
 

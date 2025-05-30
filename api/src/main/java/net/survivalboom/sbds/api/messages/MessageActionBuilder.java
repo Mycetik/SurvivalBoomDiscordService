@@ -17,10 +17,11 @@ public class MessageActionBuilder<T extends FluentRestAction<?, ?>> extends Abst
 
     private MessageActionBuilder(
             @NotNull ISBDS sbds,
+            @Nullable User user,
             @NotNull Function<MessageActionBuilder<T>, MessageCreateData> messageDataSupplier,
             @NotNull Function<MessageCreateData, T> action
     ) {
-        super(sbds);
+        super(sbds, user);
 
         this.messageDataSupplier = messageDataSupplier;
         this.action = action;
@@ -55,7 +56,7 @@ public class MessageActionBuilder<T extends FluentRestAction<?, ?>> extends Abst
 
         };
 
-        return new MessageActionBuilder<>(messages.getSbds(), supplier, action);
+        return new MessageActionBuilder<>(messages.getSbds(), user, supplier, action);
 
     }
 

@@ -1,7 +1,10 @@
 package net.survivalboom.sbds.api.messages;
 
 import net.dv8tion.jda.api.interactions.components.ItemComponent;
+import net.dv8tion.jda.api.interactions.components.Component.Type;
 import net.survivalboom.sbds.api.interaction.button.ButtonTemplate;
+import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownTemplate;
+import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownTemplate;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,6 +24,8 @@ public interface Component {
     @Nullable String name();
 
     boolean isStatic();
+
+    @NotNull Type type();
 
 
     static @NotNull List<Component> createComponents(@NotNull List<TypeMap> mapList) throws InvalidComponentException {
@@ -42,6 +47,10 @@ public interface Component {
         return switch (type.toLowerCase()) {
 
             case "button" -> ButtonTemplate.create(typeMap);
+
+            case "string_select" -> StringDropdownTemplate.create(typeMap);
+
+            case "entity_select" -> EntityDropdownTemplate.create(typeMap);
 
             default -> throw new InvalidComponentException("Invalid component type `" + type + "`");
 

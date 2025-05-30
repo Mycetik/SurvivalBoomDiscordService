@@ -2,12 +2,12 @@ package net.survivalboom.sbds.api.commands.console;
 
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
-import net.survivalboom.sbds.api.commands.ExecutionInfo;
+import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-public class ConsoleExecutionInfo extends ExecutionInfo {
+public class ConsoleExecutionInfo extends CommandExecutionInfo {
 
     private final String input;
 

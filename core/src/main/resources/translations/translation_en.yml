@@ -12,14 +12,14 @@ lang:
   russian: "Russian"
   english: "English"
 
-commands:
+common:
 
   error:
     $embed:
       title: ":bangbang: Oops! :bangbang:"
       color: ff0000
       description: |
-        An internal error occurred while attempting to perform this command!
+        An internal error occurred while attempting to process your request!
         Information about the error sent to bot's console. Try again later or contact bot's developer.
       fields:
         - name: "Exception:"
@@ -30,6 +30,15 @@ commands:
       title: "You don't have a permission!"
       color: ff0000
       description: |
-        Looks like you don't have a permission required to use this command.  
+        Looks like you don't have a permission required to use this.  
         Contact server admin, if you think that this is an error.
         Permission: `{PERMISSION}`.
+
+  invalid-interaction:
+    $embed:
+      title: "Invalid interaction!"
+      color: ff0000
+      description: |
+        Looks like this interaction was expired or does not exist!
+        Try again or contact bot's developer.
+      footer: "Interaction id: {ID}"

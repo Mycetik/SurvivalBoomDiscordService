@@ -34,11 +34,11 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
     @Override
     protected void init0() {
 
-        registerCommand0(null, new ShutdownCommand().build(null));
-        registerCommand0(null, new HelpCommand().build(null));
-        registerCommand0(null, new ModulesCommand().build(null));
+        registerCommand0(null, new ShutdownCommand().build(sbds, null));
+        registerCommand0(null, new HelpCommand().build(sbds, null));
+        registerCommand0(null, new ModulesCommand().build(sbds, null));
 
-        registerCommand0(null, new StatusCommand(sbds).build(null));
+        registerCommand0(null, new StatusCommand(sbds).build(sbds, null));
 
     }
 

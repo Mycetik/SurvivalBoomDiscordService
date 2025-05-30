@@ -2,14 +2,14 @@ package net.survivalboom.sbds.api.commands;
 
 import net.dv8tion.jda.annotations.UnknownNullability;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.messages.IMessage;
+import net.survivalboom.sbds.api.interaction.ExecutionInfo;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-public abstract class ExecutionInfo {
+public abstract class CommandExecutionInfo extends ExecutionInfo {
 
     protected final Command command;
 
@@ -18,22 +18,13 @@ public abstract class ExecutionInfo {
     protected final TypeMap arguments;
 
 
-    protected final Logger logger;
+    public CommandExecutionInfo(@NotNull Command command, @NotNull String alias, @NotNull TypeMap arguments, @NotNull Logger logger, @NotNull ISBDS sbds) {
 
-    protected final ISBDS sbds;
-
-    protected final IMessages messages;
-
-
-    public ExecutionInfo(@NotNull Command command, @NotNull String alias, @NotNull TypeMap arguments, @NotNull Logger logger, @NotNull ISBDS sbds) {
+        super(sbds, logger);
 
         this.command = command;
         this.alias = alias;
         this.arguments = arguments;
-
-        this.logger = logger;
-        this.sbds = sbds;
-        this.messages = sbds.getMessages();
 
     }
 
@@ -51,18 +42,6 @@ public abstract class ExecutionInfo {
 
     public @NotNull TypeMap arguments() {
         return arguments;
-    }
-
-    public @NotNull Logger logger() {
-        return logger;
-    }
-
-    public @NotNull ISBDS sbds() {
-        return sbds;
-    }
-
-    public @NotNull IMessages messages() {
-        return messages;
     }
 
 }

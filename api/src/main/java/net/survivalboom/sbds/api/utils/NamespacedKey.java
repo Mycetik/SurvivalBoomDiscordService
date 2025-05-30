@@ -2,7 +2,7 @@ package net.survivalboom.sbds.api.utils;
 
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.SbdsProvider;
-import net.survivalboom.sbds.api.commands.ExecutionInfo;
+import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.modules.IModule;
@@ -115,7 +115,7 @@ public class NamespacedKey {
 
     }
 
-    public static @NotNull NamespacedKey fromModule(@NotNull ExecutionInfo info, @NotNull String key) {
+    public static @NotNull NamespacedKey fromModule(@NotNull CommandExecutionInfo info, @NotNull String key) {
         Objects.requireNonNull(info, "info == null");
         return fromModule(info.module(), key);
     }
@@ -134,7 +134,7 @@ public class NamespacedKey {
 
         Objects.requireNonNull(str, "str == null");
 
-        if (!str.contains(":")) throw new IllegalArgumentException("Invalid format. Example: `testmodule:my_key`");
+        if (!str.contains(":")) throw new IllegalArgumentException("Invalid format. Example: `testmodule:my_key`. Got `" + str + "`");
 
         String[] args = str.split(":");
         if (args.length != 2) throw new IllegalArgumentException("Invalid format. Example: `testmodule:my_key`");

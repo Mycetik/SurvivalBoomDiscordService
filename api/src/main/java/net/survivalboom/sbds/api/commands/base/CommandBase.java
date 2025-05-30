@@ -1,11 +1,15 @@
 package net.survivalboom.sbds.api.commands.base;
 
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
-import net.survivalboom.sbds.api.commands.ExecutionInfo;
+import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.modules.ModuleMain;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -13,6 +17,7 @@ import java.util.*;
 
 public abstract class CommandBase implements CommandExecutor {
 
+    private static final Logger log = LoggerFactory.getLogger(CommandBase.class);
     private final String name;
 
 
@@ -115,7 +120,15 @@ public abstract class CommandBase implements CommandExecutor {
     }
 
 
-    public @NotNull net.survivalboom.sbds.api.commands.Command build(@Nullable IModule module) {
+    public @NotNull net.survivalboom.sbds.api.commands.Command build(@NotNull ISBDS sbds, @Nullable IModule module) {
+
+        try {
+            init(sbds, module);
+        }
+
+        catch (Throwable t) {
+            log.error("Exception was thrown in CommandBase init(). Command may not work.", t);
+        }
 
         net.survivalboom.sbds.api.commands.Command command = new net.survivalboom.sbds.api.commands.Command(name, module, this);
 
@@ -125,7 +138,7 @@ public abstract class CommandBase implements CommandExecutor {
         command.withPermission(permission, defaultPermission);
 
         if (!subcommands.isEmpty()) {
-            subcommands.forEach(c -> command.withSubcommand(c, module));
+            subcommands.forEach(c -> command.withSubcommand(c, sbds, module));
             command.executes(this::subcommandProxy);
             return command;
         }
@@ -138,8 +151,10 @@ public abstract class CommandBase implements CommandExecutor {
 
     }
 
+    protected void init(@NotNull ISBDS sbds, @Nullable IModule module) {}
 
-    private void subcommandProxy(@NotNull ExecutionInfo info) {
+
+    private void subcommandProxy(@NotNull CommandExecutionInfo info) {
 
         net.survivalboom.sbds.api.commands.Command command = Objects.requireNonNull(info.arguments().get("subcommand", net.survivalboom.sbds.api.commands.Command.class));
 
@@ -149,7 +164,7 @@ public abstract class CommandBase implements CommandExecutor {
 
 
     @Override
-    public void execute(@NotNull ExecutionInfo info) throws Throwable {
+    public void execute(@NotNull CommandExecutionInfo info) throws Throwable {
 
         try {
 

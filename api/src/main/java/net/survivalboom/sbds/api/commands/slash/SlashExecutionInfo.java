@@ -6,14 +6,17 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
+import net.dv8tion.jda.api.requests.restaction.interactions.ModalCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
-import net.survivalboom.sbds.api.commands.ExecutionInfo;
+import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
+import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
 import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.MessageActionBuilder;
-import net.survivalboom.sbds.api.messages.MessageBuilder;
+import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,7 +24,7 @@ import org.slf4j.Logger;
 
 import java.util.Objects;
 
-public class SlashExecutionInfo extends ExecutionInfo {
+public class SlashExecutionInfo extends CommandExecutionInfo {
 
     protected final SlashCommandInteraction interaction;
 
@@ -52,7 +55,7 @@ public class SlashExecutionInfo extends ExecutionInfo {
     }
 
     public @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull String key) {
-        return MessageActionBuilder.create(messages, key, user(), interaction::reply);
+        return MessageActionBuilder.create(messages(), key, user(), interaction::reply);
     }
 
     public @NotNull WebhookMessageEditAction<Message> editRaw(@NotNull String text) {
@@ -60,11 +63,15 @@ public class SlashExecutionInfo extends ExecutionInfo {
     }
 
     public @NotNull MessageActionBuilder<WebhookMessageEditAction<Message>> edit(@NotNull String key) {
-        return MessageActionBuilder.create(messages, key, user(), d -> interaction.getHook().editOriginal(MessageEditData.fromCreateData(d)));
+        return MessageActionBuilder.create(messages(), key, user(), d -> interaction.getHook().editOriginal(MessageEditData.fromCreateData(d)));
+    }
+
+    public @NotNull ModalActionBuilder replyModal(@NotNull String key) {
+        return new ModalActionBuilder(sbds.getModalInteractionManager(), interaction, NamespacedKey.fromString(key));
     }
 
     protected @NotNull IMessage getMessage(@NotNull String key) {
-        return Objects.requireNonNull(messages.getMessage(key, user(), true));
+        return Objects.requireNonNull(messages().getMessage(key, user(), true));
     }
 
 }

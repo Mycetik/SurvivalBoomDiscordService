@@ -14,6 +14,8 @@ import net.survivalboom.sbds.core.commands.console.ConsoleListener;
 import net.survivalboom.sbds.core.database.Database;
 import net.survivalboom.sbds.core.events.EventManager;
 import net.survivalboom.sbds.core.interaction.button.ButtonInteractionManager;
+import net.survivalboom.sbds.core.interaction.dropdown.entity.EntityDropdownInteractionManager;
+import net.survivalboom.sbds.core.interaction.dropdown.string.StringDropdownInteractionManager;
 import net.survivalboom.sbds.core.interaction.modal.ModalInteractionManager;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
 import net.survivalboom.sbds.core.messages.Messages;
@@ -62,6 +64,10 @@ public class SBDS implements ISBDS {
 
     private final ButtonInteractionManager buttonInteractionManager;
 
+    private final StringDropdownInteractionManager stringDropdownInteractionManager;
+
+    private final EntityDropdownInteractionManager entityDropdownInteractionManager;
+
     private final ModalInteractionManager modalInteractionManager;
 
 
@@ -103,6 +109,8 @@ public class SBDS implements ISBDS {
         this.slashCommandManager = new SlashCommandManager(this);
 
         this.buttonInteractionManager = new ButtonInteractionManager(this);
+        this.stringDropdownInteractionManager = new StringDropdownInteractionManager(this);
+        this.entityDropdownInteractionManager = new EntityDropdownInteractionManager(this);
         this.modalInteractionManager = new ModalInteractionManager(this);
 
         SbdsProvider.internal_internal_internal_internal_internal_internal_set(this);
@@ -152,6 +160,8 @@ public class SBDS implements ISBDS {
         consoleListener.init();
 
         buttonInteractionManager.init();
+        stringDropdownInteractionManager.init();
+        entityDropdownInteractionManager.init();
         modalInteractionManager.init();
 
         moduleManager.init();
@@ -197,6 +207,8 @@ public class SBDS implements ISBDS {
         permissionManager.shutdown();
 
         buttonInteractionManager.shutdown();
+        entityDropdownInteractionManager.shutdown();
+        stringDropdownInteractionManager.shutdown();
         modalInteractionManager.shutdown();
 
         translationManager.shutdown();
@@ -283,6 +295,16 @@ public class SBDS implements ISBDS {
     @Override
     public @NotNull ButtonInteractionManager getButtonInteractionManager() {
         return buttonInteractionManager;
+    }
+
+    @Override
+    public @NotNull StringDropdownInteractionManager getStringDropdownInteractionManager() {
+        return stringDropdownInteractionManager;
+    }
+
+    @Override
+    public @NotNull EntityDropdownInteractionManager getEntityDropdownInteractionManager() {
+        return entityDropdownInteractionManager;
     }
 
     @Override

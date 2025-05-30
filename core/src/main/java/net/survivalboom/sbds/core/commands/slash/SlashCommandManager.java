@@ -33,7 +33,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         sbds.getEventManager().registerEvents0(null, this);
 
-        registerCommand0(null, new StatusCommand(sbds).build(null));
+        registerCommand0(null, new StatusCommand(sbds).build(sbds, null));
 
     }
 
@@ -153,7 +153,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         catch (Throwable t) {
             logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName(), commandName, t);
-            messages.reply(event, "commands.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
+            messages.reply(event, "common.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
         }
 
     }

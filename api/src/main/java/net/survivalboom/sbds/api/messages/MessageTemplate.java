@@ -229,4 +229,13 @@ public class MessageTemplate {
 
     }
 
+    // TODO: Зробити перевірку на правильність кількості компонентів на повідомленні.
+    private static void checkComponentValidation(@NotNull List<Component> componentList) throws InvalidComponentException {
+
+        if (componentList.stream().anyMatch(c -> c.type() == net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON) && componentList.stream().anyMatch(c -> c.type() != net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON)) {
+            throw new InvalidComponentException("");
+        }
+
+    }
+
 }

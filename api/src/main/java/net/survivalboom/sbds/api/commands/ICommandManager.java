@@ -10,18 +10,18 @@ import java.util.List;
 
 public interface ICommandManager {
 
-    void registerCommand(@NotNull IModule module, @NotNull Command command);
+    @NotNull RegisteredCommand registerCommand(@NotNull IModule module, @NotNull Command command);
 
-    default void registerCommand(@NotNull IModule module, @NotNull CommandBase command) {
-        registerCommand(module, command.build(module));
+    default @NotNull RegisteredCommand registerCommand(@NotNull IModule module, @NotNull CommandBase command) {
+        return registerCommand(module, command.build(module.getSbds(), module));
     }
 
-    default void registerCommand(@NotNull ModuleMain main, @NotNull Command command) {
-        registerCommand(main.getModule(), command);
+    default @NotNull RegisteredCommand registerCommand(@NotNull ModuleMain main, @NotNull Command command) {
+        return registerCommand(main.getModule(), command);
     }
 
-    default void registerCommand(@NotNull ModuleMain main, @NotNull CommandBase command) {
-        registerCommand(main, command.build(main.getModule()));
+    default @NotNull RegisteredCommand registerCommand(@NotNull ModuleMain main, @NotNull CommandBase command) {
+        return registerCommand(main, command.build(main.getSbds(), main.getModule()));
     }
 
     void unregisterCommand(@NotNull Command command);

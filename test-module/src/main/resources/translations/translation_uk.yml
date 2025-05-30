@@ -1,0 +1,27 @@
+
+$name: "ukrainian"
+
+test:
+
+  modal:
+
+    msg:
+      $embed:
+        title: "Тест Modal"
+        description: |
+          Це перевірка роботи Modal вікон в SurvivalBoom Discord Service!
+          Натисність кнопку нижче, щоб викликати вікно!
+      $components:
+        - type: BUTTON
+          name: modal
+          label: "Тиць"
+          emoji: "🦖"
+          style: PRIMARY
+
+    title: "Це - вікно"
+
+    input.short.title: "Мале поле"
+    input.short.placeholder: "хрю..."
+
+    input.long.title: "Велике поле"
+    input.long.placeholder: "хрю..."

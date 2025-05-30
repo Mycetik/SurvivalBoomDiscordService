@@ -185,7 +185,7 @@ public class Messages extends Manager implements IMessages {
 
         matcher.appendTail(parsedText);
 
-        return parsedText.toString();
+        return Placeholders.parse(parsedText.toString(), placeholders);
 
     }
 
