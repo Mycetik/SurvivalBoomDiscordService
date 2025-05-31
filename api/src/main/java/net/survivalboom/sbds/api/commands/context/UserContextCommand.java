@@ -18,7 +18,7 @@ public interface UserContextCommand extends ContextCommandExecutor {
 
     @Override
     default @NotNull Command.Type type() {
-        return Command.Type.MESSAGE;
+        return Command.Type.USER;
     }
 
     @Override
