@@ -31,6 +31,11 @@ public abstract class CommandBase implements CommandExecutor {
     private final boolean defaultPermission;
 
 
+    private final boolean global;
+
+    private final boolean guild;
+
+
     private final List<String> aliases = new ArrayList<>();
 
     private final List<net.survivalboom.sbds.api.commands.CommandArgument> arguments = new ArrayList<>();
@@ -50,7 +55,10 @@ public abstract class CommandBase implements CommandExecutor {
         this.permission = info.permission().isEmpty() ? null : info.permission();
         this.defaultPermission = info.defaultPermission();
 
-                Objects.requireNonNull(info.aliases(), "aliases == null");
+        this.global = info.global();
+        this.guild = info.guild();
+
+        Objects.requireNonNull(info.aliases(), "aliases == null");
         Objects.requireNonNull(name, "name == null");
 
         aliases.addAll(List.of(info.aliases()));

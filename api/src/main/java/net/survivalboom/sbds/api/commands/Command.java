@@ -39,6 +39,11 @@ public class Command {
     private String usage;
 
 
+    private boolean global = false;
+
+    private boolean guild = true;
+
+
     private CommandExecutor executor;
 
 
@@ -98,6 +103,16 @@ public class Command {
     }
 
 
+
+    public @NotNull Command setGlobal(boolean v) {
+        this.global = v;
+        return this;
+    }
+
+    public @NotNull Command setGuild(boolean v) {
+        this.guild = v;
+        return this;
+    }
 
 
 
@@ -226,6 +241,15 @@ public class Command {
 
     public @Nullable String description() {
         return description;
+    }
+
+
+    public boolean global() {
+        return global;
+    }
+
+    public boolean guild() {
+        return guild;
     }
 
 

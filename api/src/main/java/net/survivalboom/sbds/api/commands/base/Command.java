@@ -17,4 +17,7 @@ public @interface Command {
     @NotNull String permission() default "";
     boolean defaultPermission() default false;
 
+    boolean global() default false;
+    boolean guild() default true;
+
 }
