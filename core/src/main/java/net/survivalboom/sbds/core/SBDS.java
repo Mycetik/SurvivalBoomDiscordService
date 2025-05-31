@@ -7,8 +7,8 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
 import net.survivalboom.sbds.api.utils.CommonUtils;
+import net.survivalboom.sbds.core.commands.context.ContextCommandManager;
 import net.survivalboom.sbds.core.commands.slash.SlashCommandManager;
 import net.survivalboom.sbds.core.commands.console.ConsoleListener;
 import net.survivalboom.sbds.core.database.Database;
@@ -63,6 +63,8 @@ public class SBDS implements ISBDS {
 
     private final SlashCommandManager slashCommandManager;
 
+    private final ContextCommandManager contextCommandManager;
+
     private final PermissionManager permissionManager;
 
 
@@ -111,6 +113,7 @@ public class SBDS implements ISBDS {
         this.consoleListener = new ConsoleListener(this);
         this.permissionManager = new PermissionManager(this);
         this.commandInteractionManager = new CommandInteractionManager(this);
+        this.contextCommandManager = new ContextCommandManager(this);
         this.slashCommandManager = new SlashCommandManager(this);
 
         this.buttonInteractionManager = new ButtonInteractionManager(this);
@@ -164,6 +167,7 @@ public class SBDS implements ISBDS {
 
         commandInteractionManager.init();
         slashCommandManager.init();
+        contextCommandManager.init();
         consoleListener.init();
 
         buttonInteractionManager.init();
@@ -212,6 +216,7 @@ public class SBDS implements ISBDS {
         consoleListener.shutdown();
         slashCommandManager.shutdown();
         permissionManager.shutdown();
+        contextCommandManager.shutdown();
         commandInteractionManager.shutdown();
 
         buttonInteractionManager.shutdown();
@@ -293,6 +298,10 @@ public class SBDS implements ISBDS {
         return slashCommandManager;
     }
 
+    @Override
+    public @NotNull ContextCommandManager getContextCommandManager() {
+        return contextCommandManager;
+    }
 
 
     @Override

@@ -15,6 +15,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+// TODO Багато дебілізму, переглянути увесь код й виправити.
 public abstract class CommandBase implements CommandExecutor {
 
     private static final Logger log = LoggerFactory.getLogger(CommandBase.class);

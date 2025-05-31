@@ -3,6 +3,9 @@ package net.survivalboom.sbds.api.modules;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.commands.base.ContextCommandBase;
+import net.survivalboom.sbds.api.commands.context.ContextInteractionInfo;
+import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
 import net.survivalboom.sbds.api.interaction.InteractionManager;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
 import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
@@ -119,6 +122,10 @@ public abstract class ModuleMain {
 
     public @NotNull InteractionManager.IRegisteredListener registerEntityDropdown(@NotNull String name, @NotNull Consumer<EntityDropdownInteractionInfo> consumer) {
         return getSbds().getEntityDropdownInteractionManager().registerListener(this, name, consumer);
+    }
+
+    public @NotNull IContextCommandManager.RegisteredContextCommand registeredContextCommand(@NotNull ContextCommandBase base) {
+        return getSbds().getContextCommandManager().registerContextCommand(this, base);
     }
 
     public void addModuleTranslation() {

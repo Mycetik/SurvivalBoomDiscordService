@@ -2,6 +2,7 @@ package net.survivalboom.sbds.modules.test;
 
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.modules.test.commands.TestCommand;
+import net.survivalboom.sbds.modules.test.commands.context.TestMessageContext;
 
 import java.util.Map;
 
@@ -16,6 +17,7 @@ public class TestModule extends ModuleMain {
         addModuleTranslation();
 
         registerSlashCommand(new TestCommand());
+        registeredContextCommand(new TestMessageContext());
 
     }
 
