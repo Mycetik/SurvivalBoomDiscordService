@@ -13,7 +13,7 @@ public class TestModule extends ModuleMain {
     public void onEnable() {
 
         checkFiles(Map.of("translations/translation_uk.yml", "translations/translation_uk.yml"));
-        addModuleTranslation();
+        addModuleTranslations();
 
         registerSlashCommand(new TestCommand());
 

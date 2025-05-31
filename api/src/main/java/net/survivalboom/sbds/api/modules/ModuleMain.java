@@ -4,7 +4,6 @@ import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.ContextCommandBase;
-import net.survivalboom.sbds.api.commands.context.ContextInteractionInfo;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
 import net.survivalboom.sbds.api.interaction.InteractionManager;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
@@ -128,7 +127,7 @@ public abstract class ModuleMain {
         return getSbds().getContextCommandManager().registerContextCommand(this, base);
     }
 
-    public void addModuleTranslation() {
+    public void addModuleTranslations() {
         getSbds().getTranslationManager().addModuleTranslations(this);
     }
 
