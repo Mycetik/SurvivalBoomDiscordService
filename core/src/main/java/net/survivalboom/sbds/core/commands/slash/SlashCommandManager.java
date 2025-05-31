@@ -16,6 +16,7 @@ import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
+import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -24,14 +25,20 @@ import java.util.Objects;
 
 public class SlashCommandManager extends AbstractCommandManager implements Listener, ISlashCommandManager {
 
+    private final CommandInteractionManager commandInteractionManager;
+
     public SlashCommandManager(@NotNull SBDS sbds) {
         super("SlashCommandManager", sbds, true);
+        this.commandInteractionManager = sbds.getCommandInteractionManager();
     }
 
     @Override
     protected void init0() {
 
         sbds.getEventManager().registerEvents0(null, this);
+
+        commandInteractionManager.putGlobal(this::prepareGlobalCommandData);
+        commandInteractionManager.putGuild(this::prepareGuildCommandData);
 
         registerCommand0(null, new StatusCommand(sbds).build(sbds, null));
 
@@ -45,24 +52,20 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
     @Override
     public void updateCommands() {
-        sbds.getBot().getGuilds().forEach(guild -> guild.updateCommands().addCommands(prepareCommandData()).queue());
+        commandInteractionManager.update();
     }
 
 
-    private @NotNull List<SlashCommandData> prepareCommandData() {
+    private @NotNull List<CommandData> prepareGlobalCommandData() {
+        return getRegisteredCommands().stream().filter(c -> c.command().global()).map(c -> createCommandData(c.command())).toList();
+    }
 
-        List<SlashCommandData> out = new ArrayList<>();
-
-        for (RegisteredCommand registeredCommand : getRegisteredCommands()) {
-            out.add(createCommandData(registeredCommand.command()));
-        }
-
-        return out;
-
+    private @NotNull List<CommandData> prepareGuildCommandData() {
+        return getRegisteredCommands().stream().filter(c -> c.command().guild()).map(c -> createCommandData(c.command())).toList();
     }
 
 
-    private @NotNull SlashCommandData createCommandData(@NotNull Command command) {
+    private @NotNull CommandData createCommandData(@NotNull Command command) {
 
         String description = Objects.requireNonNullElse(command.description(), "Command has no description.");
         SlashCommandData commandData = Commands.slash(command.getName(), description);
