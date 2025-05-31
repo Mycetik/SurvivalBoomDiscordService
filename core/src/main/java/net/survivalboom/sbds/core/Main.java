@@ -26,6 +26,8 @@ public class Main {
         checkInitialLibraries(workingDir, jarLoader);
         launch(workingDir, jarLoader);
 
+        System.exit(0);
+
     }
 
     private static void checkInitialLibraries(@NotNull File workingDir, @NotNull JarLoader jarLoader) {
