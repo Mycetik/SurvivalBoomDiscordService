@@ -1,23 +1,22 @@
 package net.survivalboom.sbds.core.messages;
 
-import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.FluentRestAction;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
-import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.database.users.IUserData;
-import net.survivalboom.sbds.api.messages.AbstractMessageBuilder;
 import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.messages.MessageActionBuilder;
+import net.survivalboom.sbds.api.messages.MessageBuilder;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.utils.Manager;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.database.Database;
+import net.survivalboom.sbds.core.database.guilds.GuildRepositoryHandler;
 import net.survivalboom.sbds.core.database.users.UserRepositoryHandler;
 import net.survivalboom.sbds.core.translations.Translation;
 import net.survivalboom.sbds.core.translations.TranslationManager;
@@ -36,7 +35,9 @@ public class Messages extends Manager implements IMessages {
 
     private final Database database;
 
-    private UserRepositoryHandler repository;
+    private UserRepositoryHandler userRepository;
+
+    private GuildRepositoryHandler guildRepository;
 
 
     public Messages(@NotNull SBDS sbds) {
@@ -47,12 +48,13 @@ public class Messages extends Manager implements IMessages {
 
     @Override
     protected void init0() {
-        this.repository = database.getRepositoryHandler("sbds:users", UserRepositoryHandler.class);
+        this.userRepository = database.getRepositoryHandler("sbds:users", UserRepositoryHandler.class);
+        this.guildRepository = database.getRepositoryHandler("sbds:guilds", GuildRepositoryHandler.class);
     }
 
     @Override
     protected void shutdown0() {
-        this.repository = null;
+        this.userRepository = null;
     }
 
 
@@ -111,13 +113,33 @@ public class Messages extends Manager implements IMessages {
 
     }
 
+    @Override
+    public @Nullable IMessage getMessage(@NotNull String name, @Nullable Guild guild, boolean fallback) {
+
+        IMessage message = null;
+        if (guild != null) {
+            ITranslation translation = guildRepository.createGuildData(guild).translation();
+            if (translation != null) message = translation.getMessage(name);
+        }
+
+        if (!fallback || message != null) return message;
+
+        message = getMessage1(name, translationManager.defaultTranslation());
+        if (message != null) return message;
+
+        message = getMessage1(name, translationManager.fallbackTranslation());
+
+        return message;
+
+    }
+
     private @Nullable IMessage getMessage1(@NotNull String name, @Nullable ITranslation translation) {
         if (translation == null) return null;
         return translation.getMessage(name);
     }
 
     private @NotNull IUserData getUserData(@NotNull User user) {
-        return repository.createUser(user);
+        return userRepository.createUser(user);
     }
 
     //

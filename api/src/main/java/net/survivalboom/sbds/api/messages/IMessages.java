@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.messages;
 
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.FluentRestAction;
@@ -27,6 +28,8 @@ public interface IMessages {
     @Nullable IMessage getMessage(@NotNull String name, @Nullable User user, boolean fallback);
 
     @Nullable IMessage getMessage(@NotNull String name, @Nullable ITranslation translation, boolean fallback);
+
+    @Nullable IMessage getMessage(@NotNull String name, @Nullable Guild guild, boolean fallback);
 
     //
     // MESSAGE CREATORS

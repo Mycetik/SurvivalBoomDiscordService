@@ -3,10 +3,13 @@ package net.survivalboom.sbds.core.database.guilds;
 import jakarta.persistence.*;
 import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.converters.NamespacedContainerConverter;
+import net.survivalboom.sbds.api.database.converters.TranslationConverter;
 import net.survivalboom.sbds.api.database.guilds.IGuildData;
+import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.utils.NamespacedContainer;
 import org.hibernate.annotations.DynamicUpdate;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Entity
 @Table(name = "sbds_guilds")
@@ -19,7 +22,11 @@ public class GuildData extends DataRecord implements IGuildData {
 
     @Column(columnDefinition = "jsonb", nullable = false)
     @Convert(converter = NamespacedContainerConverter.class)
-    public NamespacedContainer data;
+    private NamespacedContainer data;
+
+    @Column
+    @Convert(converter = TranslationConverter.class)
+    private ITranslation translation;
 
 
     protected GuildData() {}
@@ -34,8 +41,14 @@ public class GuildData extends DataRecord implements IGuildData {
         return guildId;
     }
 
+    @Override
     public @NotNull NamespacedContainer container() {
         return data;
+    }
+
+    @Override
+    public @Nullable ITranslation translation() {
+        return translation;
     }
 
 
