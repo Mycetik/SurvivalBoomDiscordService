@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.messages;
 
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.FluentRestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
@@ -11,25 +12,20 @@ import java.util.function.Function;
 
 public class MessageActionBuilder<T extends FluentRestAction<?, ?>> extends AbstractMessageBuilder<MessageActionBuilder<T>> {
 
-    private final Function<MessageActionBuilder<T>, MessageCreateData> messageDataSupplier;
-
     private final Function<MessageCreateData, T> action;
 
     private MessageActionBuilder(
             @NotNull ISBDS sbds,
             @Nullable User user,
-            @NotNull Function<MessageActionBuilder<T>, MessageCreateData> messageDataSupplier,
+            @NotNull Function<AbstractMessageBuilder<MessageActionBuilder<T>>, MessageCreateData> messageDataSupplier,
             @NotNull Function<MessageCreateData, T> action
     ) {
-        super(sbds, user);
-
-        this.messageDataSupplier = messageDataSupplier;
+        super(sbds, user, messageDataSupplier);
         this.action = action;
-
     }
 
     public T send() {
-        MessageCreateData messageCreateData = messageDataSupplier.apply(this);
+        MessageCreateData messageCreateData = createMessage();
         return action.apply(messageCreateData);
     }
 
@@ -45,7 +41,7 @@ public class MessageActionBuilder<T extends FluentRestAction<?, ?>> extends Abst
 
     public static @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> create(@NotNull IMessages messages, @NotNull String key, @Nullable User user, @NotNull Function<MessageCreateData, T> action) {
 
-        Function<MessageActionBuilder<T>, MessageCreateData> supplier = b -> {
+        Function<AbstractMessageBuilder<MessageActionBuilder<T>>, MessageCreateData> supplier = b -> {
 
             IMessage message = messages.getMessage(key, user, true);
             if (message == null) {
@@ -57,6 +53,23 @@ public class MessageActionBuilder<T extends FluentRestAction<?, ?>> extends Abst
         };
 
         return new MessageActionBuilder<>(messages.getSbds(), user, supplier, action);
+
+    }
+
+    public static @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> create(@NotNull IMessages messages, @NotNull String key, @Nullable Guild guild, @NotNull Function<MessageCreateData, T> action) {
+
+        Function<AbstractMessageBuilder<MessageActionBuilder<T>>, MessageCreateData> supplier = b -> {
+
+            IMessage message = messages.getMessage(key, guild, true);
+            if (message == null) {
+                return MessageCreateData.fromContent(key);
+            }
+
+            return message.build(b::componentIdCreator, messages, b.placeholders);
+
+        };
+
+        return new MessageActionBuilder<>(messages.getSbds(), null, supplier, action);
 
     }
 

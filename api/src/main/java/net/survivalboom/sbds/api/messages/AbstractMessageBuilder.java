@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.messages;
 
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
 import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
@@ -16,20 +17,24 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public abstract class AbstractMessageBuilder<T> {
 
     protected final ISBDS sbds;
 
-    private final User user;
+    protected final User user;
 
     protected final List<ComponentCallback<?>> callbacks = new ArrayList<>();
 
+    private final Function<AbstractMessageBuilder<T>, MessageCreateData> messageDataSupplier;
+
     protected Placeholders placeholders;
 
-    public AbstractMessageBuilder(@NotNull ISBDS sbds, @Nullable User user) {
+    public AbstractMessageBuilder(@NotNull ISBDS sbds, @Nullable User user, @NotNull Function<AbstractMessageBuilder<T>, MessageCreateData> messageDataSupplier) {
         this.sbds = sbds;
         this.user = user;
+        this.messageDataSupplier = messageDataSupplier;
     }
 
     //
@@ -88,6 +93,10 @@ public abstract class AbstractMessageBuilder<T> {
         return (T) this;
     }
 
+
+    protected @NotNull MessageCreateData createMessage() {
+        return messageDataSupplier.apply(this);
+    }
 
     protected @NotNull String componentIdCreator(@NotNull Component component) {
 

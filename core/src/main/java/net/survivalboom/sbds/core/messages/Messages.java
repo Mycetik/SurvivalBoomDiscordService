@@ -129,6 +129,21 @@ public class Messages extends Manager implements IMessages {
         return MessageActionBuilder.create(this, name, user, function);
     }
 
+    @Override
+    public @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> createActionMessage(@NotNull String name, @Nullable Guild guild, @NotNull Function<MessageCreateData, T> function) {
+        return MessageActionBuilder.create(this, name, guild, function);
+    }
+
+    @Override
+    public @NotNull MessageBuilder createMessageBuilder(@NotNull String name, @Nullable User user) {
+        return MessageBuilder.create(this, name, user);
+    }
+
+    @Override
+    public @NotNull MessageBuilder createMessageBuilder(@NotNull String name, @Nullable Guild guild) {
+        return MessageBuilder.create(this, name, guild);
+    }
+
     //
     // MESSAGE OPERATIONS
     //

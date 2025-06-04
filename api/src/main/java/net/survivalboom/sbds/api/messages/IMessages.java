@@ -34,6 +34,12 @@ public interface IMessages {
 
     @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> createActionMessage(@NotNull String name, @Nullable User user, @NotNull Function<MessageCreateData, T> function);
 
+    @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> createActionMessage(@NotNull String name, @Nullable Guild user, @NotNull Function<MessageCreateData, T> function);
+
+    @NotNull MessageBuilder createMessageBuilder(@NotNull String name, @Nullable User user);
+
+    @NotNull MessageBuilder createMessageBuilder(@NotNull String name, @Nullable Guild guild);
+
     //
     // MESSAGE OPERATIONS
     //
