@@ -126,8 +126,6 @@ public class WebHookListener {
             eventType = json.getString("action", "null");
         }
 
-        log.info("[{}] {} -> {}", id, eventType, str);
-
         GuildMessageChannel channel = webhook.channel(sbds.getBot());
         MessageCreateData messageCreateData = switch (eventType) {
 

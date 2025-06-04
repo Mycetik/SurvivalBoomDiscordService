@@ -3,6 +3,7 @@ package net.survivalboom.sbds.modules.github.storage;
 import jakarta.persistence.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.survivalboom.sbds.api.database.DataRecord;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,8 +35,8 @@ public class WebhookData extends DataRecord {
         return channelId;
     }
 
-    public @NotNull TextChannel channel(@NotNull JDA jda) {
-        return Objects.requireNonNull(jda.getChannelById(TextChannel.class, channelId));
+    public @NotNull GuildMessageChannel channel(@NotNull JDA jda) {
+        return Objects.requireNonNull(jda.getChannelById(GuildMessageChannel.class, channelId));
     }
 
 }
