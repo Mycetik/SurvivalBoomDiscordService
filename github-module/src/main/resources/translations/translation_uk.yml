@@ -1,0 +1,91 @@
+#
+# SURVIVALBOOM DISCORD SERVICE | SURVIVALBOOM NETWORK 2025
+#                 Message File | Github Integration
+#
+
+$name: "ukrainian"
+
+
+github:
+
+  commit-format: "- {MESSAGE} **[{FILES} файлів змінено]**\n"
+
+  notifications:
+
+    push:
+      $embed:
+
+        author: "{AUTHOR}"
+        author-url: "{AUTHOR-PROFILE}"
+        author-icon: "{AUTHOR-AVATAR}"
+
+        title: "Нові зміни на GitHub"
+        color: 00ff9c
+        description: |
+          Помічено `{COMMITS-COUNT}` нових змін у репозиторії.
+          **Репозиторій:** `{REPOSITORY}`
+          **Гілка:** `{BRANCH}`
+          
+          **Список змін:**
+          {COMMITS}
+
+    delete:
+      $embed:
+        author: "{AUTHOR}"
+        author-url: "{AUTHOR-PROFILE}"
+        author-icon: "{AUTHOR-AVATAR}"
+
+        title: "Репозиторій видалено!"
+        color: a82d2d
+        description: "Репозиторій `{REPOSITORY}` було видалено."
+
+    create:
+      $embed:
+        author: "{AUTHOR}"
+        author-url: "{AUTHOR-PROFILE}"
+        author-icon: "{AUTHOR-AVATAR}"
+
+        title: "Репозиторій створено!"
+        color: 67a82d
+        description: "Репозиторій `{REPOSITORY}` було створено."
+
+  command:
+
+    list:
+
+      success:
+        $embed:
+          color: 39b36a
+          description: |
+            **Github вебхуки в каналі {CHANNEL}**
+            {WEBHOOKS}
+
+      no-results:
+        $embed:
+          color: 39b36a
+          description: "У каналі {CHANNEL} немає **Github** вебхуків."
+
+      webhook-format: "`{ID}` -> *https://github-hook.survivalboom.net/{ID}*"
+
+    create:
+      $embed:
+        description: |
+          Вебхук Github `{ID}` успішно створено у {CHANNEL}.
+          Щоб бот отримував сповіщення від Github, створіть вебхук із посиланням:
+          `https://github-hook.survivalboom.net/{ID}`
+        color: 00ff2a
+
+    remove:
+
+      success:
+        $embed:
+          description: "Вебхук Github `{ID}` видалено з {CHANNEL}."
+          color: 00ff2a
+
+      not-found:
+        $embed:
+          description: "Вебхук Github з id `{ID}` не знайдено на цьому сервері."
+          color: ff0000
+
+        
+      

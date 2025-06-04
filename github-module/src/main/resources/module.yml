@@ -1,0 +1,13 @@
+#
+# SURVIVALBOOM DISCORD SERVICE | SURVIVALBOOM NETWORK 2025
+#                Github Module | By TIMURishche
+#
+
+name: "GithubIntegrations"
+version: 1.0
+main: net.survivalboom.sbds.modules.github.GithubModule
+
+
+description: "Інтеграції та сповіщення про зміни з Github"
+author: "TIMURishche"
+website: "https://survivalboom.net"

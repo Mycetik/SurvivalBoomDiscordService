@@ -1,0 +1,8 @@
+#
+# SURVIVALBOOM DISCORS SERVICE | SURVIVALBOOM NETWORK 2025
+#
+
+webhook-host: "0.0.0.0"
+webhook-port: 8081
+
+commit-name-length: 128

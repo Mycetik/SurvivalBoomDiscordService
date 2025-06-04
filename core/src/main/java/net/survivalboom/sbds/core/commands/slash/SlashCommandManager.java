@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.commands.slash;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -193,9 +194,13 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
             assert member != null;
             assert guild != null;
 
+            if (member.hasPermission(Permission.ADMINISTRATOR)) {
+                return true;
+            }
+
             boolean hasPermission = permissionManager.hasPermission(guild.getIdLong(), member.getIdLong(), permission, command.defaultPermission());
             if (!hasPermission) {
-                messages.reply(event.getInteraction(),"commands.no-permission", event.getUser()).withPlaceholders(Placeholders.of("{PERMISSION}", permission)).queue();
+                messages.reply(event.getInteraction(),"common.no-permission", event.getUser()).withPlaceholders(Placeholders.of("{PERMISSION}", permission)).queue();
                 return false;
             }
 
