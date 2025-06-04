@@ -163,7 +163,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
             }
 
             catch (Throwable t) {
-                log.error("[{}] Failed to load module translation `{}`.", module.getName(), f.getName());
+                log.error("[{}] Failed to load module translation `{}`.", module.getName(), f.getName(), t);
             }
 
         }
