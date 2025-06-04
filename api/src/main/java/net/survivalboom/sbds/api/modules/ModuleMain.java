@@ -5,6 +5,9 @@ import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.ContextCommandBase;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
+import net.survivalboom.sbds.api.database.IDatabase;
+import net.survivalboom.sbds.api.database.IRepository;
+import net.survivalboom.sbds.api.database.RepositoryHandler;
 import net.survivalboom.sbds.api.interaction.InteractionManager;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
 import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
@@ -56,7 +59,7 @@ public abstract class ModuleMain {
     }
 
     //
-    // GETTER
+    // GETTERS
     //
 
     public @NotNull String getName() {
@@ -77,6 +80,10 @@ public abstract class ModuleMain {
 
     public @NotNull IModuleManager getModuleManager() {
         return getModule().getModuleManager();
+    }
+
+    public @NotNull IDatabase getDatabase() {
+        return getSbds().getDatabase();
     }
 
     public @NotNull YamlConfiguration getConfig() {
@@ -129,6 +136,10 @@ public abstract class ModuleMain {
 
     public void addModuleTranslations() {
         getSbds().getTranslationManager().addModuleTranslations(this);
+    }
+
+    public @NotNull IRepository createRepository(@NotNull String name, @NotNull RepositoryHandler<?> handler) {
+        return getDatabase().createRepository(getModule(), name, handler);
     }
 
     //
