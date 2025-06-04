@@ -32,14 +32,14 @@ public abstract class ModuleMain {
     // LIFECYCLE (will be overridden in module's class)
     //
 
-    public void onLoad() {}
+    public void onLoad() throws Throwable {}
 
-    public void onUnload() {}
+    public void onUnload() throws Throwable {}
 
 
-    public void onEnable() {}
+    public void onEnable() throws Throwable {}
 
-    public void onDisable() {}
+    public void onDisable() throws Throwable {}
 
     //
     // INIT

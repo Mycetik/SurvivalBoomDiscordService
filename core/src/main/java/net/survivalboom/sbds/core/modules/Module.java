@@ -196,7 +196,7 @@ public class Module extends Valid implements IModule {
 
     }
 
-    public void setEnabled(boolean v) {
+    public void setEnabled(boolean v) throws Throwable {
 
         if (v == enabled) return;
         this.enabled = v;
