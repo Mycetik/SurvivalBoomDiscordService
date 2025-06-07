@@ -2,10 +2,14 @@ package net.survivalboom.sbds.core.messages;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.FluentRestAction;
+import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
+import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
@@ -173,6 +177,11 @@ public class Messages extends Manager implements IMessages {
     @Override
     public @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull IReplyCallback callback, @NotNull String name, @Nullable User user) {
         return MessageActionBuilder.create(this, name, user, callback::reply);
+    }
+
+    @Override
+    public @NotNull MessageActionBuilder<MessageEditCallbackAction> edit(@NotNull IMessageEditCallback callback, @NotNull String name, @Nullable User user) {
+        return MessageActionBuilder.create(this, name, user, d -> callback.editMessage(MessageEditData.fromCreateData(d)));
     }
 
     //

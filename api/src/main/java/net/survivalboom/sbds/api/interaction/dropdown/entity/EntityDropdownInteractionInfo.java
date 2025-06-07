@@ -18,6 +18,4 @@ public class EntityDropdownInteractionInfo extends ComponentInteractionInfo<Enti
         return event.getMentions();
     }
 
-
-
 }

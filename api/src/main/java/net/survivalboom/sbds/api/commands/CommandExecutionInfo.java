@@ -2,7 +2,7 @@ package net.survivalboom.sbds.api.commands;
 
 import net.dv8tion.jda.annotations.UnknownNullability;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.interaction.ExecutionInfo;
+import net.survivalboom.sbds.api.interaction.*;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.TypeMap;
