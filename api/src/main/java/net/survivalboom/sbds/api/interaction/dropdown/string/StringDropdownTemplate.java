@@ -4,7 +4,6 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.ItemComponent;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
-import net.survivalboom.sbds.api.interaction.button.ButtonTemplate;
 import net.survivalboom.sbds.api.messages.Component;
 import net.survivalboom.sbds.api.messages.InvalidComponentException;
 import net.survivalboom.sbds.api.utils.TypeMap;
@@ -260,7 +259,7 @@ public class StringDropdownTemplate implements Component {
         String description = typeMap.get("description", String.class);
 
         String emojiRaw = typeMap.get("emoji", String.class);
-        Emoji emoji = emojiRaw != null ? ButtonTemplate.emoji(emojiRaw) : null;
+        Emoji emoji = emojiRaw != null ? Emoji.fromFormatted(emojiRaw) : null;
 
         boolean isDefault = Boolean.TRUE.equals(typeMap.getOrDefault("default", "false"));
 
