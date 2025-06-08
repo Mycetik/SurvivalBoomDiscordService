@@ -27,6 +27,7 @@ import net.survivalboom.sbds.core.translations.TranslationManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -190,6 +191,8 @@ public class Messages extends Manager implements IMessages {
 
     @Override
     public @NotNull String parse(@NotNull String in, @NotNull Function<String, IMessage> supplier, @Nullable Placeholders placeholders) {
+
+        Objects.requireNonNull(in, "in == null");
 
         checkValid();
 
