@@ -17,12 +17,12 @@ public class StopCommand extends AbstractPlayerCommand {
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
-        GuildPlayer player = getPlayer(info);
+        GuildPlayer player = getPlayer(info, false);
         if (player == null) return;
 
         player.stop();
 
-        info.reply("commands.music-module.bot-stopped", Placeholders.of("{BOT}", player.getBot().getBot().getSelfUser().getAsMention())).queue();
+        info.reply("music.command.stop").withPlaceholders(Placeholders.of("{BOT}", player.getBot().getBot().getSelfUser().getAsMention())).queue();
 
     }
 

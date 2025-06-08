@@ -21,11 +21,11 @@ public class SkipCommand extends AbstractPlayerCommand {
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
-        GuildPlayer player = getPlayer(info);
+        GuildPlayer player = getPlayer(info, false);
         if (player == null) return;
 
         if (!player.skip(1)) {
-            info.reply("commands.music-module.bot-stopped").queue();
+            info.reply("music.command.stop").queue();
             return;
         }
 
@@ -38,7 +38,7 @@ public class SkipCommand extends AbstractPlayerCommand {
         placeholders.add("{PLAYING_SONG_DURATION}", trackInfo.getLength());
         placeholders.add("{BOT}", info.sbds().getBot().getSelfUser().getAsMention());
 
-        info.reply("commands.music-module.song-skipped", placeholders).queue();
+        info.reply("music.command.skip").withPlaceholders(placeholders).queue();
 
     }
 

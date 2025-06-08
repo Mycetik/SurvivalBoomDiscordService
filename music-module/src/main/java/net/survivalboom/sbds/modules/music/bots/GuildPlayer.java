@@ -69,7 +69,7 @@ public class GuildPlayer {
     }
 
     private void launchTask() {
-        task = module.getSbds().getScheduler().schedule(module, bot.getName() + guild.getId() + "-Player", this::task, 1000, 1000);
+        task = module.getSbds().getScheduler().schedule(module, bot.getName() + guild.getId() + "-MusicPlayer", this::task, 1000, 1000);
     }
 
     private void task() {
@@ -113,6 +113,8 @@ public class GuildPlayer {
 
             case LoadFailed loadFailed -> throw new TrackLoadException(loadFailed.getException().toString());
 
+            case SearchResult searchResult -> searchResult.getTracks();
+
             default -> throw new IllegalStateException("Unknown LavalinkLoadResult `" + result + "`");
 
         };
@@ -133,6 +135,7 @@ public class GuildPlayer {
     }
 
     public boolean skip(int steps) {
+
         if (task == null) throw new IllegalStateException("not running");
 
         if (loop == Loop.TRACK) loop = Loop.NO;
@@ -261,6 +264,10 @@ public class GuildPlayer {
 
     public boolean isActive() {
         return task != null;
+    }
+
+    public @NotNull List<Track> getPlaylist() {
+        return new ArrayList<>(playlist);
     }
 
 

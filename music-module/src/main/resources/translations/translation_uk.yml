@@ -1,0 +1,312 @@
+#
+#  Music Bot  | SBDS
+#  Українська | By TIMURishche
+#
+
+$name: "ukrainian"
+
+music:
+
+  command:
+
+    not-in-voice:
+      $embed:
+        description: <:9752barrierblockmc:1013463226752696392> Ви не знаходитесь у голосовому каналі.
+        color: ff0000
+
+    no-bot-in-voice:
+      $embed:
+        description: <:9752barrierblockmc:1013463226752696392> У вашому голосовому каналі немає музичного бота.
+        color: ff0000
+
+    #
+    # /PLAY
+    #
+
+    play:
+
+      no-free-bot:
+        $embed:
+          title: "Вільного бота не знайдено!"
+          description: |
+            Вільного музичного бота не знайдено!
+            Можливо, вам варто спробувати ще раз пізніше.
+          color: ff0000
+
+      no-tracks-found:
+        $embed:
+          description: <:google_dinosaur:1077358570091319337> Результатів за запитом `{QUERY}` не знайдено!
+          color: ff0000
+
+      searching-tracks:
+        $embed:
+          description: <a:loading:1086970461549756536> Шукаю треки за запитом `{QUERY}`...
+          color: ffce47
+
+      loading-tracks:
+        $embed:
+          description: <a:loading:1086970461549756536> Завантажую треки за посиланням `{URL}`...
+          color: ffce47
+
+      load-failed:
+        $embed:
+          description: |
+            <:9752barrierblockmc:1013463226752696392> Сталась помилка при спробі завантажити трек. Можливо неправильне посилання або динозаврик усе зламав.
+            ```
+            {ERROR}
+            ```
+          color: ff0000
+
+      playlist-added-single:
+        $embed:
+
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Додано у плейліст!"
+          color: 8f00ff
+          description: |
+            Додано у плейліст:
+            - `{ADDED-NAME}`
+            Зараз грає:
+            - `{PLAYING-NAME}`
+
+          fields:
+
+            - name: "Тривалість"
+              value: "`{ADDED-DURATION}`"
+              inline: true
+
+            - name: "Джерело"
+              value: "[{ADDED-SOURCE}]({ADDED-LINK})"
+              inline: true
+
+            - name: "Пісень в плейлісті"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+
+          - name: "music_module:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+
+          - name: "music_module:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+
+          - name: "music_module:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+
+          - name: "music_module:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+
+          - name: "music_module:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+      playlist-added:
+        $embed:
+
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Додано `{TRACKS-COUNT}` треків у плейліст!"
+          color: 8f00ff
+          description: |
+            Додано:
+            {TRACKS}
+            
+            Зараз грає:
+            - `{PLAYING-NAME}`
+
+          fields:
+
+            - name: "Тривалість"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+
+            - name: "Джерело"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+
+            - name: "Пісень в плейлісті"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+
+          - name: "music_module:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+
+          - name: "music_module:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+
+          - name: "music_module:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+
+          - name: "music_module:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+
+          - name: "music_module:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+
+      connected:
+        $embed:
+
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Вільного бота знайдено!"
+          color: 8f00ff
+          description: |
+            Зараз грає:
+            - `{PLAYING-NAME}`
+
+          fields:
+
+            - name: "Тривалість"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+
+            - name: "Джерело"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+
+            - name: "Пісень в плейлісті"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+
+          - name: "music_module:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+
+          - name: "music_module:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+
+          - name: "music_module:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+
+          - name: "music_module:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+
+          - name: "music_module:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+
+    #
+    # /STOP
+    #
+
+    stop:
+      $embed:
+        author: "{BOT}"
+        author-icon: "{BOT-AVATAR}"
+        title: "Стоп! Музичного бота зупинено!"
+        color: 8f00ff
+
+    #
+    # /SKIP
+    #
+
+    skip:
+      $embed:
+
+        author: "{BOT}"
+        author-icon: "{BOT-AVATAR}"
+
+        title: "Пісню пропущено!"
+        color: 8f00ff
+        description: |
+          Зараз грає:
+          - `{PLAYING-NAME}`
+
+        fields:
+
+          - name: "Тривалість"
+            value: "`{PLAYING-DURATION}`"
+            inline: true
+
+          - name: "Джерело"
+            value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+            inline: true
+
+          - name: "Пісень в плейлісті"
+            value: "`{PLAYLIST-SIZE}`"
+            inline: true
+
+      $components:
+
+        - name: "music_module:back"
+          type: BUTTON
+          style: PRIMARY
+          static: true
+          emoji: "⏮"
+
+        - name: "music_module:pause"
+          type: BUTTON
+          style: SUCCESS
+          static: true
+          emoji: "⏯"
+
+        - name: "music_module:next"
+          type: BUTTON
+          style: PRIMARY
+          static: true
+          emoji: "⏭"
+
+        - name: "music_module:stop"
+          type: BUTTON
+          style: DANGER
+          static: true
+          emoji: "🛑"
+
+        - name: "music_module:lock"
+          type: BUTTON
+          style: SECONDARY
+          static: true
+          emoji: "🔒"

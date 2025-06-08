@@ -11,7 +11,11 @@ import dev.arbjerg.lavalink.libraries.jda.JDAVoiceUpdateListener;
 import dev.arbjerg.lavalink.protocol.v4.Message;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
+import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
+import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -22,6 +26,7 @@ import java.util.*;
 public class MusicBot {
 
     private static final Logger log = LoggerFactory.getLogger(MusicBot.class);
+
     private final JDABuilder jdaBuilder;
 
     private final BotManager manager;
@@ -44,7 +49,11 @@ public class MusicBot {
 
         lavalink.on(TrackEndEvent.class).subscribe(this::onTrackEnd);
 
-        jdaBuilder = JDABuilder.createLight(token).setVoiceDispatchInterceptor(new JDAVoiceUpdateListener(lavalink));
+        jdaBuilder = JDABuilder
+                .createLight(token)
+                .setVoiceDispatchInterceptor(new JDAVoiceUpdateListener(lavalink))
+                .setEventManager(new AnnotatedEventManager())
+                .addEventListeners(this);
 
     }
 
@@ -69,6 +78,9 @@ public class MusicBot {
             log.warn("[{}] Received TrackEndEvent but no GuildPlayer found that must receive that event!", event.getGuildId());
             return;
         }
+
+        String currPlaying = player.getCurrentPlaying() != null ? player.getCurrentPlaying().getInfo().getTitle() : "null";
+        log.warn("{}: {} - {} - {}", event.getEndReason(), player.getPlayingIndex(), currPlaying, String.join(", ", player.getPlaylist().stream().map(t -> t.getInfo().getTitle()).toList()));
 
         if (!player.isActive()) return;
 
@@ -109,6 +121,12 @@ public class MusicBot {
 
     public @NotNull BotManager getManager() {
         return manager;
+    }
+
+
+    @SubscribeEvent
+    public void onReady(ReadyEvent event) {
+        bot.getPresence().setStatus(OnlineStatus.INVISIBLE);
     }
 
 
