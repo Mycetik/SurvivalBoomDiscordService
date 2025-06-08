@@ -5,8 +5,10 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.*;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
+import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
@@ -151,13 +153,20 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
             SlashExecutionInfo info = new SlashExecutionInfo(command, event.getInteraction(), commandName, parser.getArguments(), rootLogger, sbds);
 
-            command.executor().execute(info);
+            CommandExecutor executor = command.executor();
+            executor.execute(info);
+
+            if (!event.isAcknowledged()) {
+                event.reply("Something went wrong. Looks like the executor `" + executor + "` refused to respond to the interaction.").queue();
+                logger.error("Command executor of command /`{}` did not respond to the interaction. Are you sure you did it right?", commandName);
+            }
 
         }
 
         catch (Throwable t) {
             logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName(), commandName, t);
-            messages.reply(event, "common.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
+            if (!event.isAcknowledged()) messages.reply(event, "common.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
+            else messages.createActionMessage("common.error", event.getUser(), d -> event.getHook().editOriginal(MessageEditData.fromCreateData(d))).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
         }
 
     }
