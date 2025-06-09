@@ -13,10 +13,19 @@ public interface InteractionManager<T> {
 
     void registerPendingInteraction(@NotNull String id, @Nullable User user, @NotNull Consumer<T> onSuccess, @Nullable Runnable onFail, long timeout);
 
-    @NotNull IRegisteredListener registerListener(@NotNull IModule iModule, @NotNull String name, @NotNull Consumer<T> consumer);
+    @NotNull IRegisteredListener registerListener(@NotNull IModule iModule, @NotNull String name, @NotNull Consumer<T> consumer, @Nullable String permission);
+
+    default @NotNull IRegisteredListener registerListener(@NotNull IModule iModule, @NotNull String name, @NotNull Consumer<T> consumer) {
+        return registerListener(iModule, name, consumer, null);
+    }
+
+
+    default @NotNull IRegisteredListener registerListener(@NotNull ModuleMain main, @NotNull String name, @NotNull Consumer<T> consumer, @Nullable String permission) {
+        return registerListener(main.getModule(), name, consumer, permission);
+    }
 
     default @NotNull IRegisteredListener registerListener(@NotNull ModuleMain main, @NotNull String name, @NotNull Consumer<T> consumer) {
-        return registerListener(main.getModule(), name, consumer);
+        return registerListener(main.getModule(), name, consumer, null);
     }
 
     void unregisterListener(@NotNull IModule module, @NotNull String name);
