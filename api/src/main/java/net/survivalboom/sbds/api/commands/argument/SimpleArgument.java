@@ -1,23 +1,24 @@
 package net.survivalboom.sbds.api.commands.argument;
 
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.survivalboom.sbds.api.commands.CommandArgument;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
 
 public abstract class SimpleArgument<T> extends Argument<T> {
 
+    public abstract @NotNull OptionType getOptionType();
+
     @Override
-    public int split(@NotNull String input) {
+    public @NotNull OptionData build(@NotNull CommandArgument argument) {
+        return createOptionData(getOptionType(), argument);
+    }
 
-        for (int i = 0; i < input.length(); i++) {
 
-            char c = input.charAt(i);
-            if (!Character.isSpaceChar(c)) continue;
-
-            return i;
-
-        }
-
-        return input.length();
-
+    public static @NotNull OptionData createOptionData(@NotNull OptionType type, @NotNull CommandArgument argument) {
+        return new OptionData(type, argument.name(), Objects.requireNonNullElse(argument.description(), "Option has no description."), argument.required());
     }
 
 }

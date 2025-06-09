@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.core.commands.console;
 
 import net.survivalboom.sbds.api.commands.Command;
-import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
+import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.internal.SubCommandArgument;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
@@ -71,7 +71,7 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
 
         try {
 
-            ArgumentResources resources = new ArgumentResources(sbds, TypeMap.empty(false));
+            Argument.ArgumentResources resources = new Argument.ArgumentResources(sbds, TypeMap.empty(false));
 
             String string = input.substring(prefix.length()).strip();
 
@@ -87,7 +87,7 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
     }
 
 
-    private void processSubcommand(@NotNull String prefix, @NotNull String input, @NotNull String fullInput, @NotNull Command command, @NotNull ArgumentResources resources) throws Throwable {
+    private void processSubcommand(@NotNull String prefix, @NotNull String input, @NotNull String fullInput, @NotNull Command command, @NotNull Argument.ArgumentResources resources) throws Throwable {
 
         StringCommandParser parser = new StringCommandParser(input, command, resources);
 

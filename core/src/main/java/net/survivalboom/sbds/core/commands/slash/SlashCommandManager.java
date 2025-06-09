@@ -9,7 +9,7 @@ import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
-import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
+import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.events.EventHandler;
@@ -90,7 +90,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
         List<OptionData> out = new ArrayList<>();
         for (CommandArgument argument : command.arguments()) {
 
-            OptionData optionData = new OptionData(argument.argument().getOptionType(), argument.name(), Objects.requireNonNullElse(argument.description(), "Option has no description."), argument.required());
+            OptionData optionData = argument.argument().build(argument);
             out.add(optionData);
 
         }
@@ -142,7 +142,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
             if (!permissionCheck(command, event)) return;
 
-            ArgumentResources resources = new ArgumentResources(sbds, TypeMap.empty(false));
+            Argument.ArgumentResources resources = new Argument.ArgumentResources(sbds, TypeMap.empty(false));
             SlashCommandParser parser = new SlashCommandParser(command, resources, event.getInteraction());
 
             parser.parse();
@@ -197,17 +197,11 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
         String permission = command.permission();
         if (event.isFromGuild() && permission != null) {
 
-            Guild guild = event.getGuild();
             Member member = event.getMember();
 
             assert member != null;
-            assert guild != null;
 
-            if (member.hasPermission(Permission.ADMINISTRATOR)) {
-                return true;
-            }
-
-            boolean hasPermission = permissionManager.hasPermission(guild.getIdLong(), member.getIdLong(), permission, command.defaultPermission());
+            boolean hasPermission = permissionManager.hasPermission(member, permission, command.defaultPermission());
             if (!hasPermission) {
                 messages.reply(event.getInteraction(),"common.no-permission", event.getUser()).withPlaceholders(Placeholders.of("{PERMISSION}", permission)).queue();
                 return false;

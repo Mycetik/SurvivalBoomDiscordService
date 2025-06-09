@@ -3,7 +3,6 @@ package net.survivalboom.sbds.api.commands.argument.misc;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
-import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
 import net.survivalboom.sbds.api.commands.argument.SimpleArgument;
 import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
