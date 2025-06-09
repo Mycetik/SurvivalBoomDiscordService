@@ -18,7 +18,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -155,7 +154,7 @@ public class AutoSetup extends Manager {
         }
 
         try {
-            CommonUtils.waitUntil(this::checkLavalink, 10000);
+            CommonUtils.waitUntil(this::checkLavalink, 30000);
         }
 
         catch (RuntimeException e) {
