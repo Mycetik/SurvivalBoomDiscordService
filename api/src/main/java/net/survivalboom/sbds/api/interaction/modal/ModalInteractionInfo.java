@@ -2,7 +2,7 @@ package net.survivalboom.sbds.api.interaction.modal;
 
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.interaction.InteractionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionInfoImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ModalInteractionInfo extends InteractionInfo<ModalInteractionEvent> {
+public class ModalInteractionInfo extends InteractionInfoImpl<ModalInteractionEvent> {
 
     private final Map<String, String> map = new HashMap<>();
 

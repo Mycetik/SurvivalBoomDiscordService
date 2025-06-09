@@ -4,32 +4,32 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
-import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.messages.IMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.util.Objects;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
-public abstract class InteractionInfo<E extends GenericInteractionCreateEvent> extends ExecutionInfo implements MessageReplyable, MessageEditable, ModalReplyable {
+public abstract class InteractionInfoImpl<E extends GenericInteractionCreateEvent> extends ExecutionInfo implements IInteractionInfo {
 
     protected final E event;
 
     protected final IReplyCallback replyCallback;
 
-    protected final IMessageEditCallback editCallback;
+//    protected final IMessageEditCallback editCallback;
 
     protected final IModalCallback modalCallback;
 
-    public InteractionInfo(@NotNull E event, @NotNull ISBDS sbds, @NotNull Logger logger) {
+    public InteractionInfoImpl(@NotNull E event, @NotNull ISBDS sbds, @NotNull Logger logger) {
         super(sbds, logger);
         this.event = event;
         this.replyCallback = (IReplyCallback) event;
-        this.editCallback = (IMessageEditCallback) event;
+//        this.editCallback = (IMessageEditCallback) event;
         this.modalCallback = (IModalCallback) event;
     }
 
@@ -54,9 +54,16 @@ public abstract class InteractionInfo<E extends GenericInteractionCreateEvent> e
         return replyCallback;
     }
 
+//    @Override
+//    public @NotNull IMessageEditCallback editCallback() {
+//        return editCallback;
+//    }
+
+
+    @SuppressWarnings("NonAsciiCharacters")
     @Override
-    public @NotNull IMessageEditCallback editCallback() {
-        return editCallback;
+    public @NotNull InteractionHook hook() {
+        return яЕбалЕбаннуюJDA_СуперДуперАнусКостыль_ИдитеНахуй();
     }
 
     @Override
@@ -64,8 +71,19 @@ public abstract class InteractionInfo<E extends GenericInteractionCreateEvent> e
         return modalCallback;
     }
 
-    protected @NotNull IMessage getMessage(@NotNull String key) {
-        return Objects.requireNonNull(messages().getMessage(key, user(), true));
+
+    @SuppressWarnings("NonAsciiCharacters")
+    private @NotNull InteractionHook яЕбалЕбаннуюJDA_СуперДуперАнусКостыль_ИдитеНахуй() {
+
+        try {
+            Method method = event.getClass().getMethod("getHook");
+            return (InteractionHook) method.invoke(event);
+        }
+
+        catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
 }
