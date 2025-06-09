@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.modules.music.commands;
 
+import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
@@ -14,17 +15,17 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "stop")
-public class StopCommand extends AbstractPlayerCommand {
+@Command(name = "pause", description = "Pause or resume current track")
+public class PauseCommand extends AbstractPlayerCommand {
 
-    public StopCommand(@NotNull BotManager botManager) {
+    public PauseCommand(@NotNull BotManager botManager) {
         super(botManager);
     }
 
     @Override
     protected void init(@NotNull ISBDS sbds, @Nullable IModule module) {
         Objects.requireNonNull(module);
-        sbds.getButtonInteractionManager().registerListener(module, "stop", this::onButtonClick);
+        sbds.getButtonInteractionManager().registerListener(module, "pause", this::onButtonClick);
     }
 
     public void onButtonClick(@NotNull ButtonInteractionInfo info) {
@@ -37,16 +38,26 @@ public class StopCommand extends AbstractPlayerCommand {
     }
 
 
-    private void executes0(@NotNull IInteractionInfo info, boolean ephemeral) {
+    public void executes0(@NotNull IInteractionInfo info, boolean ephemeral) {
 
         GuildPlayer player = getPlayer(info, false, ephemeral);
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
 
         if (checkBannedOrLocked(info, player, ephemeral)) return;
 
-        player.stop();
-        info.reply("music.command.stop")
-                .withPlaceholders(Placeholders.of("{BOT}", player.getBot().getBot().getSelfUser().getAsMention()))
+        boolean state = !player.isPaused();
+        player.setPaused(state);
+
+        User botUser = player.getBot().getBot().getSelfUser();
+        Placeholders placeholders = new Placeholders()
+                .add("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator())
+                .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl());
+
+        String str = state ? "music.command.pause.paused" : "music.command.pause.resumed";
+        info.reply(str)
+                .withPlaceholders(placeholders)
                 .send()
                 .setEphemeral(ephemeral)
                 .queue();

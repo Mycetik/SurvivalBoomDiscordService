@@ -10,6 +10,8 @@ import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -17,6 +19,7 @@ import java.util.function.Function;
 
 public class ButtonTemplate implements Component {
 
+    private static final Logger log = LoggerFactory.getLogger(ButtonTemplate.class);
     private final String name;
 
     private final String label;
@@ -34,7 +37,7 @@ public class ButtonTemplate implements Component {
 
     private ButtonTemplate(
             @Nullable String name,
-            @NotNull String label,
+            @Nullable String label,
             @Nullable Emoji emoji,
             @NotNull ButtonStyle style,
             int row,
@@ -50,6 +53,10 @@ public class ButtonTemplate implements Component {
         this.priority = priority;
         this.isStatic = isStatic;
 
+        if (label == null && emoji == null) {
+            throw new IllegalArgumentException("Emoji and label == null");
+        }
+
     }
 
     @Override
@@ -58,7 +65,7 @@ public class ButtonTemplate implements Component {
         return Button.of(
                 style,
                 id,
-                parser.apply(label),
+                label != null ? parser.apply(label) : null,
                 emoji
         );
     }
@@ -132,7 +139,7 @@ public class ButtonTemplate implements Component {
             return this;
         }
 
-        public @NotNull Builder setLabel(@NotNull String label) {
+        public @NotNull Builder setLabel(@Nullable String label) {
             this.label = label;
             return this;
         }
@@ -165,12 +172,7 @@ public class ButtonTemplate implements Component {
 
 
         public @NotNull ButtonTemplate build() {
-
-            Objects.requireNonNull(label, "label == null");
-            Objects.requireNonNull(style, "style == null");
-
             return new ButtonTemplate(name, label, emoji, style, row, priority, isStatic);
-
         }
 
         public @NotNull Builder copy() {
@@ -189,7 +191,6 @@ public class ButtonTemplate implements Component {
         boolean isStatic = Boolean.TRUE.equals(typeMap.get("static", Boolean.class));
 
         String label = typeMap.get("label", String.class);
-        if (label == null) throw new InvalidComponentException("Button label is null!");
 
         String emojiRaw = typeMap.get("emoji", String.class);
 
@@ -197,7 +198,10 @@ public class ButtonTemplate implements Component {
         int priority = typeMap.get("priority", 1);
         String styleRaw = typeMap.get("style", String.class);
 
-        Emoji emoji = emojiRaw == null ? null : emoji(emojiRaw);
+        Emoji emoji = emojiRaw == null ? null : Emoji.fromFormatted(emojiRaw);
+
+        if (label == null && emoji == null) throw new InvalidComponentException("Button label and button emoji are null!");
+
         ButtonStyle style = CommonUtils.getEnumValue(ButtonStyle.class, styleRaw);
         if (style == null) throw new InvalidComponentException("Invalid button style `" + styleRaw + "`");
 
@@ -210,41 +214,6 @@ public class ButtonTemplate implements Component {
                 .setEmoji(emoji)
                 .setStyle(style)
                 .build();
-
-    }
-
-    public static @NotNull Emoji emoji(@NotNull String str) throws InvalidComponentException {
-
-        if (!str.contains(":")) {
-
-            try {
-                return Emoji.fromFormatted(str);
-            }
-
-            catch (Throwable t) {
-                throw new InvalidComponentException("Invalid emoji symbol `" + str + "`");
-            }
-
-        }
-
-        String[] args = str.split(":");
-
-        if (args.length != 3) throw new InvalidComponentException("Invalid emoji format `" + str + "`");
-
-        String name = args[0];
-
-        long id;
-        try {
-            id = Long.parseLong(args[1]);
-        }
-
-        catch (NumberFormatException e) {
-            throw new InvalidComponentException("Invalid emoji id");
-        }
-
-        boolean animated = Boolean.parseBoolean(args[2]);
-
-        return Emoji.fromCustom(name, id, animated);
 
     }
 

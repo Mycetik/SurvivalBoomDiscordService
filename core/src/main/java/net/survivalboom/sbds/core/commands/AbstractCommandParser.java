@@ -2,8 +2,8 @@ package net.survivalboom.sbds.core.commands;
 
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
+import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
-import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,12 +14,12 @@ public abstract class AbstractCommandParser {
 
     protected final Command command;
 
-    protected final ArgumentResources resources;
+    protected final Argument.ArgumentResources resources;
 
     protected TypeMap arguments;
 
 
-    public AbstractCommandParser(@NotNull Command command, @NotNull ArgumentResources resources) {
+    public AbstractCommandParser(@NotNull Command command, @NotNull Argument.ArgumentResources resources) {
         this.command = command;
         this.resources = resources;
     }

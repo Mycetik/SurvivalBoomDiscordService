@@ -2,14 +2,12 @@ package net.survivalboom.sbds.modules.music.bots;
 
 import dev.arbjerg.lavalink.client.NodeOptions;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.GuildVoiceState;
-import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
-import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.api.utils.Manager;
-import net.survivalboom.sbds.api.utils.TypeMap;
+import net.survivalboom.sbds.api.database.guilds.IGuildData;
+import net.survivalboom.sbds.api.database.guilds.IGuildRepositoryHandler;
+import net.survivalboom.sbds.api.utils.*;
 import net.survivalboom.sbds.modules.music.MusicModule;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -28,14 +26,26 @@ public class BotManager extends Manager {
 
     private final File botsFolder;
 
+
+    private final IGuildRepositoryHandler guildRepository;
+
+    private final NamespacedKey key;
+
+
     private final Set<MusicBot> musicBots = new HashSet<>();
 
     private final Set<NodeOptions> nodeInfos = new HashSet<>();
 
+
     public BotManager(@NotNull MusicModule module) {
+
         this.module = module;
         this.logger = module.getModule().getLogger();
         this.botsFolder = new File(module.getModule().getDataFolder(), "bots");
+
+        this.guildRepository = module.getSbds().getDatabase().getRepositoryHandler("sbds:guilds", IGuildRepositoryHandler.class);
+        this.key = NamespacedKey.fromModule(module, "music_module");
+
     }
 
     @Override
@@ -45,8 +55,6 @@ public class BotManager extends Manager {
 
         loadNodes();
         loadBots();
-
-
 
     }
 
@@ -185,6 +193,24 @@ public class BotManager extends Manager {
         Collections.shuffle(bots);
 
         return bots;
+
+    }
+
+
+    public boolean isMusicBanned(@NotNull Guild guild, @NotNull User user) {
+        IGuildData guildData = guildRepository.createGuildData(guild);
+        return Objects.requireNonNullElse((Boolean) guildData.container().getOrCreate(key).get(user.getId()), false);
+    }
+
+    public void setMusicBanned(@NotNull Guild guild, @NotNull User user, boolean state) {
+
+        IGuildData guildData = guildRepository.createGuildData(guild);
+        TypeMap map = guildData.container().getOrCreate(key);
+
+        if (state) map.put(user.getId(), true);
+        else map.remove(user.getId());
+
+        guildData.save();
 
     }
 

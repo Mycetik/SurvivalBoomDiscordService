@@ -9,6 +9,7 @@ import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.interaction.IInteractionInfo;
+import net.survivalboom.sbds.api.interaction.MessageReplyable;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.Placeholders;
@@ -19,28 +20,28 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "skip", description = "Skip the current song")
-public class SkipCommand extends AbstractPlayerCommand {
+@Command(name = "back")
+public class BackCommand extends AbstractPlayerCommand {
 
-    public SkipCommand(@NotNull BotManager botManager) {
+    public BackCommand(@NotNull BotManager botManager) {
         super(botManager);
     }
 
     @Override
     protected void init(@NotNull ISBDS sbds, @Nullable IModule module) {
         Objects.requireNonNull(module);
-        sbds.getButtonInteractionManager().registerListener(module, "next", this::onButtonClick);
+        sbds.getButtonInteractionManager().registerListener(module, "back", this::onButtonClick);
     }
 
     public void onButtonClick(@NotNull ButtonInteractionInfo info) {
         executes0(info, true);
     }
 
+
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
         executes0(info, false);
     }
-
 
     private void executes0(@NotNull IInteractionInfo info, boolean ephemeral) {
 
@@ -49,14 +50,8 @@ public class SkipCommand extends AbstractPlayerCommand {
 
         if (checkBannedOrLocked(info, player, ephemeral)) return;
 
-        if (player.isLastTrack()) {
-            player.stop();
-            info.reply("music.command.stop").send().setEphemeral(ephemeral).queue();
-            return;
-        }
-
         int steps = info instanceof SlashExecutionInfo slashExecutionInfo ? slashExecutionInfo.arguments().getCastOrDefault("count", Integer.class, 1) : 1;
-        int allowedSteps = player.getPlaylistSize() - player.getPlayingIndex();
+        int allowedSteps = player.getPlayingIndex();
 
         if (steps < 1) {
             info.reply("music.command.skip.invalid-index").withPlaceholders("{PLAYLIST-SIZE}", allowedSteps).send().setEphemeral(ephemeral).queue();
@@ -66,7 +61,7 @@ public class SkipCommand extends AbstractPlayerCommand {
         TrackInfo skippedTrack = Objects.requireNonNull(player.getCurrentPlaying()).getInfo();
 
         try {
-            player.changePlayingIndex(steps);
+            player.changePlayingIndex(-steps);
         }
 
         catch (IllegalArgumentException e) {
@@ -97,7 +92,7 @@ public class SkipCommand extends AbstractPlayerCommand {
                 .add("{PLAYLIST-SIZE}", player.getPlaylist().size())
                 .add("{PLAYLIST}", createTracksString(player.getPlaylist(), true, 10));
 
-        info.reply(steps == 1 ? "music.command.skip.single" : "music.command.skip.multiple")
+        info.reply(steps == 1 ? "music.command.back.single" : "music.command.back.multiple")
                 .withPlaceholders(placeholders)
                 .send()
                 .setEphemeral(ephemeral)

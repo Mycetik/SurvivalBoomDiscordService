@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.interaction;
 
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.survivalboom.sbds.api.events.Listener;
@@ -98,25 +99,25 @@ public abstract class AbstractInteractionHandler<T, E extends IReplyCallback> ex
     }
 
     @Override
-    public @NotNull RegisteredInteractionListener<T> registerListener(@NotNull IModule iModule, @NotNull String name, @NotNull Consumer<T> consumer) {
+    public @NotNull RegisteredInteractionListener<T> registerListener(@NotNull IModule iModule, @NotNull String name, @NotNull Consumer<T> consumer, @Nullable String permission) {
 
         Objects.requireNonNull(iModule, "module == null");
 
-        return registerListener0(iModule, name, consumer);
+        return registerListener0(iModule, name, consumer, permission);
 
     }
 
-    public @NotNull RegisteredInteractionListener<T> registerListener0(@Nullable IModule iModule, @NotNull String name, @NotNull Consumer<T> consumer) {
+    public @NotNull RegisteredInteractionListener<T> registerListener0(@Nullable IModule iModule, @NotNull String name, @NotNull Consumer<T> consumer, @Nullable String permission) {
 
         Objects.requireNonNull(name, "name == null");
 
         NamespacedKey key = iModule != null ? NamespacedKey.fromModule(iModule, name) : NamespacedKey.sbds(name);
 
-        return registerListener1(iModule, key, consumer);
+        return registerListener1(iModule, key, consumer, permission);
 
     }
 
-    public @NotNull RegisteredInteractionListener<T> registerListener1(@Nullable IModule imodule, @NotNull NamespacedKey key, @NotNull Consumer<T> consumer) {
+    public @NotNull RegisteredInteractionListener<T> registerListener1(@Nullable IModule imodule, @NotNull NamespacedKey key, @NotNull Consumer<T> consumer, @Nullable String permission) {
 
         checkValid();
 
@@ -129,7 +130,7 @@ public abstract class AbstractInteractionHandler<T, E extends IReplyCallback> ex
             throw new IllegalArgumentException("Interaction listener with name `" + key + "` already exists");
         }
 
-        RegisteredInteractionListener<T> button = new RegisteredInteractionListener<>(module, key, consumer);
+        RegisteredInteractionListener<T> button = new RegisteredInteractionListener<>(module, key, consumer, permission);
         registeredInteractionListeners.add(button);
 
         if (module != null) {
@@ -205,6 +206,12 @@ public abstract class AbstractInteractionHandler<T, E extends IReplyCallback> ex
             return;
         }
 
+        Member member = event.getMember();
+        if (button.permission != null && member != null && !sbds.getPermissionManager().hasPermission(member, button.permission, false)) {
+            sbds.getMessages().reply(event, "common.no-permission", event.getUser()).withPlaceholders("{PERMISSION}", button.permission).send().setEphemeral(true).queue();
+            return;
+        }
+
         button.consumer.accept(createInteractionInfo(event));
 
     }
@@ -240,7 +247,8 @@ public abstract class AbstractInteractionHandler<T, E extends IReplyCallback> ex
     public record RegisteredInteractionListener<T>(
             @Nullable Module module,
             @NotNull NamespacedKey key,
-            @NotNull Consumer<T> consumer
+            @NotNull Consumer<T> consumer,
+            @Nullable String permission
     ) implements IRegisteredListener {}
 
 }

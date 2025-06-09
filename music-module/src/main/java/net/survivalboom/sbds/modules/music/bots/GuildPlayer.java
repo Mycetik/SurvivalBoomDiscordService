@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.modules.music.bots;
 
 import dev.arbjerg.lavalink.client.Link;
+import dev.arbjerg.lavalink.client.event.TrackEndEvent;
 import dev.arbjerg.lavalink.client.player.*;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -21,25 +22,31 @@ import java.util.Objects;
 public class GuildPlayer {
 
     private static final Logger log = LoggerFactory.getLogger(GuildPlayer.class);
+    private final MusicModule musicModule;
+
+    private final MusicBot bot;
+
     private final Guild guild;
 
     private final LavalinkPlayer lavalinkPlayer;
 
-    private final Link link;
-
-    private final MusicBot bot;
-
-    private final MusicModule module;
+    private final Link lavalink;
 
 
     private final List<Track> playlist = new ArrayList<>();
 
     private int playingIndex = 0;
 
+    private boolean playing = false;
 
-    private Loop loop = Loop.NO;
+    private boolean paused = false;
+
+
+    private LoopMode loop = LoopMode.NO;
 
     private boolean idleDisconnect = true;
+
+    private boolean adminLock = false;
 
 
     private ISchedulerTask task;
@@ -47,71 +54,40 @@ public class GuildPlayer {
     private AudioChannelUnion channel = null;
 
 
-    public GuildPlayer(@NotNull MusicBot bot, @NotNull Guild guild, @NotNull Link link, @NotNull LavalinkPlayer lavalinkPlayer) {
-
-        Objects.requireNonNull(guild);
-        Objects.requireNonNull(link);
-        Objects.requireNonNull(lavalinkPlayer);
-        Objects.requireNonNull(bot);
+    public GuildPlayer(@NotNull MusicBot bot, @NotNull Guild guild, @NotNull Link lavalink, @NotNull LavalinkPlayer lavalinkPlayer) {
 
         this.guild = guild;
         this.bot = bot;
 
-        this.link = link;
+        this.lavalink = lavalink;
         this.lavalinkPlayer = lavalinkPlayer;
 
-        this.module = bot.getManager().getModule();
+        this.musicModule = bot.getManager().getModule();
 
     }
 
-    private void updateChannel() {
-        this.channel = Objects.requireNonNull(Objects.requireNonNull(bot.getBot().getGuildById(guild.getId())).getSelfMember().getVoiceState()).getChannel();
-    }
-
-    private void launchTask() {
-        task = module.getSbds().getScheduler().schedule(module, bot.getName() + guild.getId() + "-Player", this::task, 1000, 1000);
-    }
-
-    private void task() {
-
-        updateChannel();
-
-        if (channel == null) {
-            stop();
-            return;
-        }
-
-        if (getMembers().stream().allMatch(u -> u.getUser().isBot())) {
-            stop();
-            return;
-        }
-
-    }
-
-    private List<Member> getMembers() {
-        return Objects.requireNonNull(getBot().getManager().getModule().getSbds().getBot().getChannelById(AudioChannel.class, channel.getId())).getMembers();
-    }
-
-    //
-    // PLAYER
-    //
-
-    // TRACKS //
 
     public @NotNull List<Track> searchTracks(@NotNull String query) throws TrackLoadException {
 
-        LavalinkLoadResult result = link.loadItem(query).block();
+        LavalinkLoadResult result = lavalink.loadItem(query).block();
         Objects.requireNonNull(result);
 
         return switch (result) {
 
+            // Трек завантажено з прямого посилання //
             case TrackLoaded trackLoaded -> new ArrayList<>(List.of(trackLoaded.getTrack()));
 
+            // Декілька треків знайдено за цим запитом //
             case PlaylistLoaded playlistLoaded -> playlistLoaded.getTracks();
 
+            // Нічого не знайдено //
             case NoMatches ignored -> new ArrayList<>();
 
+            // Сталась помилка при спробі завантажити треки //
             case LoadFailed loadFailed -> throw new TrackLoadException(loadFailed.getException().toString());
+
+            // Знайдено треки на якійсь платформі //
+            case SearchResult searchResult -> searchResult.getTracks();
 
             default -> throw new IllegalStateException("Unknown LavalinkLoadResult `" + result + "`");
 
@@ -120,108 +96,69 @@ public class GuildPlayer {
 
     }
 
+    //
+    // PLAYER
+    //
 
+    /**
+     * Підключає бота у вказаний канал.
+     * @param channel Канал куди потрібно підключити бота.
+     */
+    public void connect(@NotNull AudioChannelUnion channel) {
+
+        Objects.requireNonNull(channel, "channel == null");
+
+        if (!channel.getGuild().equals(guild)) throw new IllegalArgumentException("Invalid guild for this player");
+        if (channel.equals(this.channel)) throw new IllegalStateException("Already connected to this channel");
+
+        bot.getBot().getDirectAudioController().connect(channel);
+
+        CommonUtils.waitUntil(() -> {
+            updateCurrentChannel();
+            return this.channel != null;
+        }, 1000);
+
+    }
+
+    /**
+     * Запускає дискорд бота. Запускає усі необхідні tasks.
+     * Після виконання цього методу, бот може зупинитись якщо плейліст буде пустим.
+     * Тому потрібно <b>спочатку підключити бота й додати треки в плейліст</b>, а потім вже викликати цей метод.
+     */
+    public void launch() {
+
+        this.playing = true;
+        updateTrack();
+
+        task = musicModule.getSbds().getScheduler().schedule(musicModule, bot.getName() + "-" + guild.getName() + "-MusicPlayer", this::task, 1000, 1000);
+
+    }
+
+    /**
+     * Додає треки до плейлісту бота.
+     * @param tracks Список з треків.
+     */
     public void addTracks(@NotNull List<Track> tracks) {
-        if (channel == null) throw new IllegalStateException("not running");
-        playlist.addAll(tracks);
-
-        if (isActive()) return;
-
-        launchTask();
-        update();
-
+        Objects.requireNonNull(tracks, "tracks == null");
+        this.playlist.addAll(tracks);
     }
 
-    public boolean skip(int steps) {
-        if (task == null) throw new IllegalStateException("not running");
-
-        if (loop == Loop.TRACK) loop = Loop.NO;
-
-        if (playingIndex >= playlist.size()) {
-
-            if (loop != Loop.PLAYLIST) {
-                stop();
-                return false;
-            }
-
-            else playingIndex = 0;
-
-        }
-
-        this.playingIndex += steps;
-
-        update();
-
-        return true;
-
-    }
-
-    public boolean back(int steps) {
-        if (task == null) throw new IllegalStateException("not running");
-
-        if (playingIndex < 1) {
-
-            if (loop != Loop.PLAYLIST && !playlist.isEmpty()) playingIndex = playlist.size() - 1;
-            else return false;
-
-        }
-
-        this.playingIndex -= steps;
-
-        update();
-
-        return true;
-
-    }
-
-    // OPTIONS //
-
-    public void setPlayingIndex(int index) {
-        if (task == null) throw new IllegalStateException("not running");
-        if (index >= playlist.size()) throw new IllegalArgumentException("index >= playlist.size()");
-        this.playingIndex = index;
-        update();
-    }
-
-    public void setIdleDisconnect(boolean v) {
-        if (task == null) throw new IllegalStateException("not running");
-        this.idleDisconnect = v;
-    }
-
-    public void loop(@NotNull Loop loop) {
-        if (task == null) throw new IllegalStateException("not running");
-        Objects.requireNonNull(loop, "loop == null");
-        this.loop = loop;
-    }
-
-    public void pause(boolean v) {
-        if (task == null) throw new IllegalStateException("not running");
-        lavalinkPlayer.setPaused(v).subscribe();
-    }
-
-    // STATES //
-
-    public void update() {
-        lavalinkPlayer.setTrack(getCurrentPlaying()).subscribe();
-    }
-
-    public void stopIfRunning() {
-        if (!isActive()) return;
-        stop();
-    }
-
+    /**
+     * Повністю зупинити музчиного бота й відключити його від каналу.
+     */
     public void stop() {
 
-        if (task == null) throw new IllegalStateException("not running");
+        if (!isActive()) throw new IllegalStateException("not running");
 
-        task.cancel();
-
+        task.cancelAndWait(1000, true);
         bot.getBot().getDirectAudioController().disconnect(guild);
 
-        pause(false);
+        setPaused(false);
 
+        this.playing = false;
+        this.paused = false;
         this.channel = null;
-        this.loop = Loop.NO;
+        this.loop = LoopMode.NO;
         this.idleDisconnect = true;
         this.playingIndex = 0;
         this.playlist.clear();
@@ -230,60 +167,199 @@ public class GuildPlayer {
 
     }
 
-    public void connect(@NotNull AudioChannelUnion channel) {
-
-        if (this.channel != null) throw new IllegalStateException("Already connected");
-
-        if (!channel.getGuild().equals(guild)) throw new IllegalArgumentException("You tried to connect to a channel that is not from the guild used by this player");
-        bot.getBot().getDirectAudioController().connect(channel);
-
-        CommonUtils.waitUntil(() -> {
-            updateChannel();
-            return this.channel != null;
-        }, 1000);
-
+    public void stopIfRunning() {
+        if (!isActive()) return;
+        stop();
     }
 
-    // GETTERS //
+    /**
+     * Змістити індекс поточної пісні у плейлісті.
+     * @param steps Зміщення індексу. Має бути не більше і не менше за плейліст.
+     */
+    public void changePlayingIndex(int steps) {
+        int nextPlayingIndex = this.playingIndex + steps;
+        if (nextPlayingIndex >= playlist.size() || nextPlayingIndex < 0) throw new IllegalArgumentException("Invalid playing index `" + nextPlayingIndex + "`");
+        this.playingIndex += steps;
+        updateTrack();
+    }
+
+    /**
+     * Встановити індекс поточної пісні у плейлісті.
+     * @param index Новий індекс.
+     */
+    public void setPlayingIndex(int index) {
+        if (index >= playlist.size()) throw new IllegalArgumentException("index >= playlist.size()");
+        if (index < 0) throw new IllegalArgumentException("index is negative");
+        this.playingIndex = index;
+        updateTrack();
+    }
+
+    /**
+     * Зупинити/продовжити поточний трек.
+     * @param v true - зупинити, false - продовжити.
+     */
+    public void setPaused(boolean v) {
+        lavalinkPlayer.setPaused(v).subscribe();
+        paused = v;
+    }
+
+
+    //
+    // STATE
+    //
+
+    /**
+     * Перемкнути режим повторення треків.
+     * @param loop Режим повторення.
+     */
+    public void loop(@NotNull LoopMode loop) {
+        this.loop = loop;
+    }
+
+    /**
+     * @return Поточний встановлений режим повторення.
+     */
+    public @NotNull LoopMode loop() {
+        return loop;
+    }
+
+    /**
+     * Перемкнути зупинення музичного бота, при закінченні плейліста.
+     * @param v true - увімкнути, false - вимкнути.
+     */
+    public void idleDisconnect(boolean v) {
+        this.idleDisconnect = v;
+    }
+
+    public boolean idleDisconnect() {
+        return idleDisconnect;
+    }
+
+    /**
+     * Перемкнути доступ звичайних користувачів до музичного бота.
+     * @param v true - дозволити тільки адміністраторам, false - дозволити усім.
+     */
+    public void adminLock(boolean v) {
+        this.adminLock = v;
+    }
+
+    public boolean adminLock() {
+        return adminLock;
+    }
+
+
+    //
+    // GETTERS
+    //
+
+    public @Nullable Track getCurrentPlaying() {
+        if (playlist.isEmpty() || playingIndex >= playlist.size()) return null;
+        return playlist.get(playingIndex);
+    }
 
     public int getPlayingIndex() {
         return playingIndex;
     }
 
-    public @Nullable Track getCurrentPlaying() {
-        if (playingIndex >= playlist.size()) return null;
-        return playlist.get(playingIndex);
+    public @NotNull List<Track> getPlaylist() {
+        return new ArrayList<>(playlist);
     }
 
-    public boolean isPaused() {
-        return lavalinkPlayer.getPaused();
+    public int getPlaylistSize() {
+        return playlist.size();
     }
 
     public boolean isActive() {
         return task != null;
     }
 
+    public boolean isPlaying() {
+        return playing;
+    }
 
-    //
-    // INFO GETTERS
-    //
+    public boolean isLastTrack() {
+        return playingIndex + 1 >= playlist.size();
+    }
 
-    public @Nullable AudioChannelUnion getChannel() {
-        return channel;
+    public boolean isPaused() {
+        return paused;
+    }
+
+
+    public @NotNull MusicBot getBot() {
+        return bot;
     }
 
     public @NotNull Guild getGuild() {
         return guild;
     }
 
-    public @NotNull MusicBot getBot() {
-        return bot;
+    public @Nullable AudioChannelUnion getChannel() {
+        return channel;
     }
 
-    public enum Loop {
-        NO,
-        TRACK,
-        PLAYLIST,
+
+
+    //
+    // HANDLERS
+    //
+
+    public void onTrackEnd(@NotNull TrackEndEvent event) {
+        if (!event.getEndReason().getMayStartNext()) return;
+        playing = false;
+    }
+
+    private void updateCurrentChannel() {
+        this.channel = Objects.requireNonNull(Objects.requireNonNull(bot.getBot().getGuildById(guild.getId())).getSelfMember().getVoiceState()).getChannel();
+    }
+
+    private void updateTrack() {
+        lavalinkPlayer.setTrack(getCurrentPlaying()).subscribe();
+    }
+
+    private void task() {
+
+        updateCurrentChannel();
+
+        if (channel == null) {
+            stop();
+            return;
+        }
+
+        List<Member> members = getMembers();
+        if ((members.size() == 1 || members.stream().allMatch(m -> m.getUser().isBot())) && idleDisconnect) {
+            stop();
+            return;
+        }
+
+        if (!isPlaying()) {
+
+            if (isLastTrack()) {
+
+                if (loop == LoopMode.PLAYLIST || !idleDisconnect) {
+                    this.playingIndex = -1;
+                }
+
+                else if (loop == LoopMode.NO) {
+                    stop();
+                    return;
+                }
+
+            }
+
+            if (loop != LoopMode.TRACK) {
+                playingIndex++;
+            }
+
+            updateTrack();
+            this.playing = true;
+
+        }
+
+    }
+
+    private List<Member> getMembers() {
+        return Objects.requireNonNull(getBot().getManager().getModule().getSbds().getBot().getChannelById(AudioChannel.class, channel.getId())).getMembers();
     }
 
 }

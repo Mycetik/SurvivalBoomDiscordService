@@ -2,10 +2,14 @@ package net.survivalboom.sbds.core.messages;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.FluentRestAction;
+import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
+import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
@@ -23,6 +27,7 @@ import net.survivalboom.sbds.core.translations.TranslationManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -175,12 +180,19 @@ public class Messages extends Manager implements IMessages {
         return MessageActionBuilder.create(this, name, user, callback::reply);
     }
 
+    @Override
+    public @NotNull MessageActionBuilder<MessageEditCallbackAction> edit(@NotNull IMessageEditCallback callback, @NotNull String name, @Nullable User user) {
+        return MessageActionBuilder.create(this, name, user, d -> callback.editMessage(MessageEditData.fromCreateData(d)));
+    }
+
     //
     // PARSER
     //
 
     @Override
     public @NotNull String parse(@NotNull String in, @NotNull Function<String, IMessage> supplier, @Nullable Placeholders placeholders) {
+
+        Objects.requireNonNull(in, "in == null");
 
         checkValid();
 

@@ -1,5 +1,7 @@
 package net.survivalboom.sbds.api.permissions;
 
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,6 +15,8 @@ public interface IPermissionManager {
     //
 
     boolean hasPermission(long guildId, long userId, @NotNull String permission, boolean defaultAllow);
+
+    boolean hasPermission(@NotNull Member member, @NotNull String permission, boolean defaultAllow);
 
     @NotNull IGuildUserPermissions createUserPermissions(long guildId, long userId);
 

@@ -2,7 +2,6 @@ package net.survivalboom.sbds.api.commands.context;
 
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.interaction.InteractionInfo;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 

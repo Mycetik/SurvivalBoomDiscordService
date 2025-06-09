@@ -2,10 +2,14 @@ package net.survivalboom.sbds.api.messages;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.FluentRestAction;
+import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
+import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.translations.ITranslation;
@@ -48,6 +52,8 @@ public interface IMessages {
     //
 
     @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull IReplyCallback callback, @NotNull String name, @Nullable User user);
+
+    @NotNull MessageActionBuilder<MessageEditCallbackAction> edit(@NotNull IMessageEditCallback callback, @NotNull String name, @Nullable User user);
 
     //
     // PARSING

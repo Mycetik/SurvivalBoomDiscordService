@@ -3,11 +3,7 @@ package net.survivalboom.sbds.modules.music;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.commands.PlayCommand;
-import net.survivalboom.sbds.modules.music.commands.PlaylistCommand;
-import net.survivalboom.sbds.modules.music.commands.SkipCommand;
-import net.survivalboom.sbds.modules.music.commands.StopCommand;
-import org.slf4j.Logger;
+import net.survivalboom.sbds.modules.music.commands.*;
 
 import java.util.Map;
 
@@ -15,11 +11,8 @@ public class MusicModule extends ModuleMain {
 
     private BotManager botManager;
 
-    private Logger logger;
-
     @Override
     public void onLoad() {
-        logger = getModule().getLogger();
         botManager = new BotManager(this);
     }
 
@@ -29,9 +22,9 @@ public class MusicModule extends ModuleMain {
         saveDefaultConfig();
 
         Map<String, String> map = Map.of(
-                "translations/ukrainian.yml", "translations/ukrainian.yml",
-                "translations/russian.yml", "translations/russian.yml",
-                "translations/english.yml", "translations/english.yml"
+                "translations/translation_uk.yml", "translations/translation_uk.yml",
+                "translations/translation_ru.yml", "translations/translation_ru.yml",
+                "translations/translation_en.yml", "translations/translation_en.yml"
         );
         checkFiles(map);
 
@@ -43,7 +36,15 @@ public class MusicModule extends ModuleMain {
         commandManager.registerCommand(this, new PlayCommand(botManager));
         commandManager.registerCommand(this, new StopCommand(botManager));
         commandManager.registerCommand(this, new SkipCommand(botManager));
-        commandManager.registerCommand(this, new PlaylistCommand());
+        commandManager.registerCommand(this, new BackCommand(botManager));
+        commandManager.registerCommand(this, new PlaylistCommand(botManager));
+
+        commandManager.registerCommand(this, new LoopCommand(botManager));
+        commandManager.registerCommand(this, new PauseCommand(botManager));
+
+        commandManager.registerCommand(this, new Music247Command(botManager));
+        commandManager.registerCommand(this, new LockCommand(botManager));
+        commandManager.registerCommand(this, new MusicBanCommand(botManager));
 
     }
 

@@ -4,7 +4,6 @@ import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
-import net.survivalboom.sbds.api.commands.argument.ArgumentResources;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.core.commands.AbstractCommandParser;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +15,7 @@ public class StringCommandParser extends AbstractCommandParser {
 
     private final String input;
 
-    public StringCommandParser(@NotNull String input, @NotNull Command command, @NotNull ArgumentResources resources) {
+    public StringCommandParser(@NotNull String input, @NotNull Command command, @NotNull Argument.ArgumentResources resources) {
         super(command, resources);
         this.input = input;
     }

@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.modules.music.commands;
 
+import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
@@ -14,17 +15,17 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "stop")
-public class StopCommand extends AbstractPlayerCommand {
+@Command(name = "music-lock", description = "Lock current music bot for staff usage only", permission = "music.command.lock")
+public class LockCommand extends AbstractPlayerCommand {
 
-    public StopCommand(@NotNull BotManager botManager) {
+    public LockCommand(@NotNull BotManager botManager) {
         super(botManager);
     }
 
     @Override
     protected void init(@NotNull ISBDS sbds, @Nullable IModule module) {
         Objects.requireNonNull(module);
-        sbds.getButtonInteractionManager().registerListener(module, "stop", this::onButtonClick);
+        sbds.getButtonInteractionManager().registerListener(module, "lock", this::onButtonClick, getPermission());
     }
 
     public void onButtonClick(@NotNull ButtonInteractionInfo info) {
@@ -40,13 +41,23 @@ public class StopCommand extends AbstractPlayerCommand {
     private void executes0(@NotNull IInteractionInfo info, boolean ephemeral) {
 
         GuildPlayer player = getPlayer(info, false, ephemeral);
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
 
-        if (checkBannedOrLocked(info, player, ephemeral)) return;
+        boolean state = !player.adminLock();
 
-        player.stop();
-        info.reply("music.command.stop")
-                .withPlaceholders(Placeholders.of("{BOT}", player.getBot().getBot().getSelfUser().getAsMention()))
+        player.adminLock(state);
+
+        User botUser = player.getBot().getBot().getSelfUser();
+        Placeholders placeholders = new Placeholders()
+                .add("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator())
+                .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl());
+
+
+        String str = state ? "music.command.lock.locked" : "music.command.lock.unlocked";
+        info.reply(str)
+                .withPlaceholders(placeholders)
                 .send()
                 .setEphemeral(ephemeral)
                 .queue();
