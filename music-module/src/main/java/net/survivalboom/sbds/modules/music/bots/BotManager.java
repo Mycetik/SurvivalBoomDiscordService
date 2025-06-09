@@ -8,6 +8,7 @@ import net.survivalboom.sbds.api.database.guilds.IGuildData;
 import net.survivalboom.sbds.api.database.guilds.IGuildRepositoryHandler;
 import net.survivalboom.sbds.api.utils.*;
 import net.survivalboom.sbds.modules.music.MusicModule;
+import net.survivalboom.sbds.modules.music.lavalink.AutoSetup;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -21,6 +22,8 @@ public class BotManager extends Manager {
 
 
     private final MusicModule module;
+
+    private final AutoSetup autoSetup;
 
     private final Logger logger;
 
@@ -37,9 +40,11 @@ public class BotManager extends Manager {
     private final Set<NodeOptions> nodeInfos = new HashSet<>();
 
 
-    public BotManager(@NotNull MusicModule module) {
+    public BotManager(@NotNull MusicModule module, @NotNull AutoSetup autoSetup) {
 
         this.module = module;
+        this.autoSetup = autoSetup;
+
         this.logger = module.getModule().getLogger();
         this.botsFolder = new File(module.getModule().getDataFolder(), "bots");
 
@@ -59,6 +64,12 @@ public class BotManager extends Manager {
     }
 
     private void loadNodes() {
+
+        if (autoSetup.isEnabled()) {
+            nodeInfos.add(autoSetup.createNodes());
+            return;
+        }
+
         List<TypeMap> nodes = CommonUtils.typeMap(module.getConfig().getMapList("nodes"));
         for (TypeMap map : nodes) {
 
@@ -109,7 +120,13 @@ public class BotManager extends Manager {
 
         }
 
-        logger.info("Loaded {} music bots.", musicBots.size());
+        if (!musicBots.isEmpty()) {
+            logger.info("Loaded {} music bots.", musicBots.size());
+        }
+
+        else {
+            logger.warn("No music bots loaded.");
+        }
 
     }
 

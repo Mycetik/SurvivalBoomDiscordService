@@ -4,6 +4,7 @@ import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.commands.*;
+import net.survivalboom.sbds.modules.music.lavalink.AutoSetup;
 
 import java.util.Map;
 
@@ -11,13 +12,32 @@ public class MusicModule extends ModuleMain {
 
     private BotManager botManager;
 
+    private AutoSetup autoSetup;
+
     @Override
     public void onLoad() {
-        botManager = new BotManager(this);
+        autoSetup = new AutoSetup(this);
+        botManager = new BotManager(this, autoSetup);
     }
 
     @Override
     public void onEnable() {
+
+        registerModuleComponents();
+
+        autoSetup.init();
+        botManager.init();
+
+    }
+
+    @Override
+    public void onDisable() {
+        botManager.shutdown();
+        autoSetup.shutdown();
+    }
+
+
+    private void registerModuleComponents() {
 
         saveDefaultConfig();
 
@@ -29,8 +49,6 @@ public class MusicModule extends ModuleMain {
         checkFiles(map);
 
         getSbds().getTranslationManager().addModuleTranslations(this);
-
-        botManager.init();
 
         ISlashCommandManager commandManager = getSbds().getSlashCommandManager();
         commandManager.registerCommand(this, new PlayCommand(botManager));
@@ -46,11 +64,6 @@ public class MusicModule extends ModuleMain {
         commandManager.registerCommand(this, new LockCommand(botManager));
         commandManager.registerCommand(this, new MusicBanCommand(botManager));
 
-    }
-
-    @Override
-    public void onDisable() {
-        botManager.shutdown();
     }
 
 }
