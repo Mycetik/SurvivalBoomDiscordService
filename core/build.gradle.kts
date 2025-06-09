@@ -22,9 +22,7 @@ application {
     mainClass = "net.survivalboom.sbds.core.Main"
 }
 
-val outFile = File(project.layout.buildDirectory.asFile.orNull, "libs/SBDS-${version}.jar")
-val runDir = File(rootProject.projectDir, "run")
-val runFile = File(runDir, outFile.name)
+
 
 tasks {
 
@@ -42,37 +40,6 @@ tasks {
 
     build {
         dependsOn(shadowJar)
-    }
-
-    clean {
-
-        doLast {
-            Files.deleteIfExists(runFile.toPath())
-        }
-
-    }
-
-    val copyToRun = create("copyToRun") {
-
-        dependsOn(shadowJar)
-
-        doFirst {
-
-            runDir.mkdirs()
-
-            Files.deleteIfExists(runFile.toPath())
-            Files.copy(outFile.toPath(), runFile.toPath())
-
-        }
-
-    }
-
-    create<Exec>("runApp") {
-
-        dependsOn(copyToRun)
-        workingDir = runDir
-        commandLine("java", "-jar", runFile.name)
-
     }
 
 }
