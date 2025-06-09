@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.permissions;
 
+import net.dv8tion.jda.api.entities.Member;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.permissions.IGuildGroup;
 import net.survivalboom.sbds.api.permissions.IPermissionManager;
@@ -74,6 +75,13 @@ public class PermissionManager extends Manager implements IPermissionManager {
 
         return user.hasPermission(permission, defaultAllow);
 
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull Member member, @NotNull String permission, boolean defaultAllow) {
+        Objects.requireNonNull(member, "member == null");
+        if (member.hasPermission(net.dv8tion.jda.api.Permission.ADMINISTRATOR)) return true;
+        return hasPermission(member.getGuild().getIdLong(), member.getIdLong(), permission, defaultAllow);
     }
 
 
