@@ -7,17 +7,17 @@ $name: "ukrainian"
 
 music:
 
+  not-in-voice:
+    $embed:
+      description: <:9752barrierblockmc:1013463226752696392> Ви не знаходитесь у голосовому каналі.
+      color: ff0000
+
+  no-bot-in-voice:
+    $embed:
+      description: <:9752barrierblockmc:1013463226752696392> У вашому голосовому каналі немає музичного бота.
+      color: ff0000
+
   command:
-
-    not-in-voice:
-      $embed:
-        description: <:9752barrierblockmc:1013463226752696392> Ви не знаходитесь у голосовому каналі.
-        color: ff0000
-
-    no-bot-in-voice:
-      $embed:
-        description: <:9752barrierblockmc:1013463226752696392> У вашому голосовому каналі немає музичного бота.
-        color: ff0000
 
     #
     # /PLAY
@@ -50,6 +50,7 @@ music:
 
       load-failed:
         $embed:
+          title: "Помилка завантаження!"
           description: |
             <:9752barrierblockmc:1013463226752696392> Сталась помилка при спробі завантажити трек. Можливо неправильне посилання або динозаврик усе зламав.
             ```
@@ -87,31 +88,31 @@ music:
 
         $components:
 
-          - name: "music_module:back"
+          - name: "musicmodule:back"
             type: BUTTON
             style: PRIMARY
             static: true
             emoji: "⏮"
 
-          - name: "music_module:pause"
+          - name: "musicmodule:pause"
             type: BUTTON
             style: SUCCESS
             static: true
             emoji: "⏯"
 
-          - name: "music_module:next"
+          - name: "musicmodule:next"
             type: BUTTON
             style: PRIMARY
             static: true
             emoji: "⏭"
 
-          - name: "music_module:stop"
+          - name: "musicmodule:stop"
             type: BUTTON
             style: DANGER
             static: true
             emoji: "🛑"
 
-          - name: "music_module:lock"
+          - name: "musicmodule:lock"
             type: BUTTON
             style: SECONDARY
             static: true
@@ -148,31 +149,31 @@ music:
 
         $components:
 
-          - name: "music_module:back"
+          - name: "musicmodule:back"
             type: BUTTON
             style: PRIMARY
             static: true
             emoji: "⏮"
 
-          - name: "music_module:pause"
+          - name: "musicmodule:pause"
             type: BUTTON
             style: SUCCESS
             static: true
             emoji: "⏯"
 
-          - name: "music_module:next"
+          - name: "musicmodule:next"
             type: BUTTON
             style: PRIMARY
             static: true
             emoji: "⏭"
 
-          - name: "music_module:stop"
+          - name: "musicmodule:stop"
             type: BUTTON
             style: DANGER
             static: true
             emoji: "🛑"
 
-          - name: "music_module:lock"
+          - name: "musicmodule:lock"
             type: BUTTON
             style: SECONDARY
             static: true
@@ -207,31 +208,31 @@ music:
 
         $components:
 
-          - name: "music_module:back"
+          - name: "musicmodule:back"
             type: BUTTON
             style: PRIMARY
             static: true
             emoji: "⏮"
 
-          - name: "music_module:pause"
+          - name: "musicmodule:pause"
             type: BUTTON
             style: SUCCESS
             static: true
             emoji: "⏯"
 
-          - name: "music_module:next"
+          - name: "musicmodule:next"
             type: BUTTON
             style: PRIMARY
             static: true
             emoji: "⏭"
 
-          - name: "music_module:stop"
+          - name: "musicmodule:stop"
             type: BUTTON
             style: DANGER
             static: true
             emoji: "🛑"
 
-          - name: "music_module:lock"
+          - name: "musicmodule:lock"
             type: BUTTON
             style: SECONDARY
             static: true
@@ -244,9 +245,7 @@ music:
 
     stop:
       $embed:
-        author: "{BOT}"
-        author-icon: "{BOT-AVATAR}"
-        title: "Стоп! Музичного бота зупинено!"
+        description: "<:blurple_verified:1024732810667364414> Стоп! Музичного бота зупинено!"
         color: 8f00ff
 
     #
@@ -254,59 +253,380 @@ music:
     #
 
     skip:
-      $embed:
 
+      invalid-index:
+        $embed:
+          title: "Неправильний індекс"
+          color: ff0000
+          description: "Вкажіть правильний індекс від `0` до `{PLAYLIST-SIZE}`."
+
+      multiple:
+        $embed:
+
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Пропущено `{SKIP}` пісень!"
+          color: 8f00ff
+          description: |
+            Зараз грає:
+            - `{PLAYING-NAME}`
+
+          fields:
+
+            - name: "Тривалість"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+
+            - name: "Джерело"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+
+            - name: "Пісень в плейлісті"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+      single:
+        $embed:
+
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Пісню пропущено!"
+          color: 8f00ff
+          description: |
+            Пропущено:
+            - `{SKIPPED-NAME}`
+            Зараз грає:
+            - `{PLAYING-NAME}`
+
+          fields:
+
+            - name: "Тривалість"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+
+            - name: "Джерело"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+
+            - name: "Пісень в плейлісті"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+    #
+    # /BACK
+    #
+    back:
+
+      multiple:
+        $embed:
+
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Пропущено `{COUNT}` пісень!"
+          color: 8f00ff
+          description: |
+            Зараз грає:
+            - `{PLAYING-NAME}`
+
+          fields:
+
+            - name: "Тривалість"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+
+            - name: "Джерело"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+
+            - name: "Пісень в плейлісті"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+      single:
+        $embed:
+
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Пісню пропущено!"
+          color: 8f00ff
+          description: |
+            Пропущено:
+            - `{SKIPPED-NAME}`
+            Зараз грає:
+            - `{PLAYING-NAME}`
+
+          fields:
+
+            - name: "Тривалість"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+
+            - name: "Джерело"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+
+            - name: "Пісень в плейлісті"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+
+    #
+    # /PLAYLIST
+    #
+    playlist:
+      $embed:
+        title: "Плейліст з `{COUNT}` пісень."
+        description: "{PLAYLIST}"
+
+    #
+    # /LOOP
+    #
+    loop:
+      $embed:
         author: "{BOT}"
         author-icon: "{BOT-AVATAR}"
 
-        title: "Пісню пропущено!"
+        title: "Режим повторення"
         color: 8f00ff
-        description: |
-          Зараз грає:
-          - `{PLAYING-NAME}`
+        description: "Режим повторення змінено `{MODE}`."
 
-        fields:
+    #
+    # /LOCK
+    #
+    lock:
 
-          - name: "Тривалість"
-            value: "`{PLAYING-DURATION}`"
-            inline: true
+      denied:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
 
-          - name: "Джерело"
-            value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
-            inline: true
+          title: "Музичний бот заблокований!"
+          color: ff0000
+          description: "Тільки персонал може керувати ним."
 
-          - name: "Пісень в плейлісті"
-            value: "`{PLAYLIST-SIZE}`"
-            inline: true
+      locked:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
 
-      $components:
+          title: "Музичного бота заблоковано!"
+          color: 8f00ff
+          description: "Тепер тільки персонал зможе керувати ним."
 
-        - name: "music_module:back"
-          type: BUTTON
-          style: PRIMARY
-          static: true
-          emoji: "⏮"
+      unlocked:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
 
-        - name: "music_module:pause"
-          type: BUTTON
-          style: SUCCESS
-          static: true
-          emoji: "⏯"
+          title: "Музичного бота розблоковано!"
+          color: 8f00ff
+          description: "Тепер будь-хто зможе керувати ним."
 
-        - name: "music_module:next"
-          type: BUTTON
-          style: PRIMARY
-          static: true
-          emoji: "⏭"
+    #
+    # /MUSIC-BAN
+    #
+    music-ban:
 
-        - name: "music_module:stop"
-          type: BUTTON
-          style: DANGER
-          static: true
-          emoji: "🛑"
+      denied:
+        $embed:
+          title: "Ви заблоковані! Отакої!"
+          color: ff0000
+          description: |
+            Адміністратор заборонив вам використовувати музичного бота!
+            Можливо вам варто подумати над вашою поведінкою...
 
-        - name: "music_module:lock"
-          type: BUTTON
-          style: SECONDARY
-          static: true
-          emoji: "🔒"
+      banned:
+        $embed:
+          title: "Користувача заблоковано!"
+          color: 8f00ff
+          description: |
+            Ви заборонили доступ до музичного бота користувачу {USER}.
+            Тепер цей користувач не зможе використовувати музичного бота.
+
+      unbanned:
+        $embed:
+          title: "Користувача розблоковано!"
+          color: 8f00ff
+          description: |
+            Ви дозволили доступ до музичного бота користувачу {USER}.
+            Тепер цей користувач знову може використовувати музичного бота.
+    
+    
+
+    #
+    # /PAUSE
+    #
+    pause:
+
+      paused:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Пауза!"
+          color: 8f00ff
+          description: "Поточний трек призупинено."
+
+      resumed:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Продовжено!"
+          color: 8f00ff
+          description: "Програвання поточного треку продовжено."
+
+    #
+    # /music-24-7
+    #
+    24-7:
+
+      enable:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Режим 24/7 увімкнено!"
+          color: 8f00ff
+          description: "Тепер бот не буде виходити з цього каналу та повторювати плейлист."
+
+      disable:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Режим 24/7 вимкнено!"
+          color: 8f00ff
+          description: "Тепер бот буде виходити з цього каналу, при закінченні плейлісту."

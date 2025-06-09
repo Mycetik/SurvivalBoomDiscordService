@@ -3,10 +3,7 @@ package net.survivalboom.sbds.modules.music;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.commands.PlayCommand;
-import net.survivalboom.sbds.modules.music.commands.PlaylistCommand;
-import net.survivalboom.sbds.modules.music.commands.SkipCommand;
-import net.survivalboom.sbds.modules.music.commands.StopCommand;
+import net.survivalboom.sbds.modules.music.commands.*;
 
 import java.util.Map;
 
@@ -39,7 +36,15 @@ public class MusicModule extends ModuleMain {
         commandManager.registerCommand(this, new PlayCommand(botManager));
         commandManager.registerCommand(this, new StopCommand(botManager));
         commandManager.registerCommand(this, new SkipCommand(botManager));
-        commandManager.registerCommand(this, new PlaylistCommand());
+        commandManager.registerCommand(this, new BackCommand(botManager));
+        commandManager.registerCommand(this, new PlaylistCommand(botManager));
+
+        commandManager.registerCommand(this, new LoopCommand(botManager));
+        commandManager.registerCommand(this, new PauseCommand(botManager));
+
+        commandManager.registerCommand(this, new Music247Command(botManager));
+        commandManager.registerCommand(this, new LockCommand(botManager));
+        commandManager.registerCommand(this, new MusicBanCommand(botManager));
 
     }
 

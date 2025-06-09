@@ -6,9 +6,7 @@ import dev.arbjerg.lavalink.client.Link;
 import dev.arbjerg.lavalink.client.NodeOptions;
 import dev.arbjerg.lavalink.client.event.TrackEndEvent;
 import dev.arbjerg.lavalink.client.player.LavalinkPlayer;
-import dev.arbjerg.lavalink.client.player.Track;
 import dev.arbjerg.lavalink.libraries.jda.JDAVoiceUpdateListener;
-import dev.arbjerg.lavalink.protocol.v4.Message;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
@@ -21,7 +19,10 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class MusicBot {
 
@@ -79,12 +80,9 @@ public class MusicBot {
             return;
         }
 
-        String currPlaying = player.getCurrentPlaying() != null ? player.getCurrentPlaying().getInfo().getTitle() : "null";
-        log.warn("{}: {} - {} - {}", event.getEndReason(), player.getPlayingIndex(), currPlaying, String.join(", ", player.getPlaylist().stream().map(t -> t.getInfo().getTitle()).toList()));
-
         if (!player.isActive()) return;
 
-        player.skip(1);
+        player.onTrackEnd(event);
 
     }
 

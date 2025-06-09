@@ -10,13 +10,11 @@ import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
-import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
-import net.survivalboom.sbds.modules.music.bots.MusicBot;
 import net.survivalboom.sbds.modules.music.bots.TrackLoadException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,27 +34,26 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
-        Member member = info.guildMember();
+        Member member = info.member();
         Objects.requireNonNull(member);
 
         // Знаходимо канал в якому сидить користувач //
-
-        GuildVoiceState voiceState = member.getVoiceState();
-        AudioChannelUnion channel = Objects.requireNonNull(voiceState).getChannel();
-        if (channel == null) {
-            info.reply("music.command.not-in-voice").queue();
-            return;
-        }
 
         String query = info.arguments().get("query", String.class);
         Objects.requireNonNull(query);
 
         // Шукаємо плеєр, який відповідає за цей сервер. Якщо немає, створюємо новий //
 
-        GuildPlayer player = getPlayer(info, true);
+        GuildPlayer player = getPlayer(info, true, false);
         if (player == null) {
             return;
         }
+
+        if (checkBannedOrLocked(info, player, false)) return;
+
+        GuildVoiceState voiceState = member.getVoiceState();
+        AudioChannelUnion channel = Objects.requireNonNull(voiceState).getChannel();
+        Objects.requireNonNull(channel);
 
         // Шукаємо треки за запитом й завантажуємо у плеєр //
 
@@ -67,8 +64,12 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
 
         // Під'єднуємо бота, який відповідає на плеєр й підключаємо його до голосового каналу.
         boolean newBot = !player.isActive();
-        if (newBot) player.connect(channel);
         player.addTracks(tracks);
+
+        if (newBot) {
+            player.connect(channel);
+            player.launch();
+        }
 
         // Готуємо плейсхолдери та відправляємо повідомлення, відповідно до того що ми зробили //
 
@@ -86,7 +87,7 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
                 .add("{ADDED-LINK}", addedTrack.getUri())
 
                 .add("{TRACKS-COUNT}", tracks.size())
-                .add("{TRACKS}", createTracksString(tracks, false, 5))
+                .add("{TRACKS}", createTracksString(tracks, false, 10))
 
                 .add("{PLAYING-NAME}", playingTrack.getTitle())
                 .add("{PLAYING-DURATION}", "6:66:66")
@@ -94,7 +95,7 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
                 .add("{PLAYING-LINK}", playingTrack.getUri())
 
                 .add("{PLAYLIST-SIZE}", player.getPlaylist().size())
-                .add("{PLAYLIST}", createTracksString(tracks, true, 5));
+                .add("{PLAYLIST}", createTracksString(player.getPlaylist(), true, 10));
 
         if (newBot) info.editHook("music.command.play.connected").withPlaceholders(placeholders).queue();
 
@@ -160,40 +161,6 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
         }
 
         return tracks;
-
-    }
-
-    private @NotNull String createTracksString(@NotNull List<Track> tracks, boolean withIndex, int max) {
-
-        StringBuilder builder = new StringBuilder();
-        int i = 1;
-        for (Track ignored : tracks) {
-
-            if (i > tracks.size()) break;
-
-            if (i >= max && i < tracks.size()) {
-                builder.append("- `..").append(tracks.size() - max).append("..`\n");
-                i = tracks.size();
-                continue;
-            }
-
-            TrackInfo info = tracks.get(i - 1).getInfo();
-            Placeholders placeholders = new Placeholders();
-            placeholders
-                    .add("{INDEX}", i)
-                    .add("{NAME}", info.getTitle())
-                    .add("{DURATION}", info.getLength())
-                    .add("{SOURCE}", info.getSourceName())
-                    .add("{LINK}", info.getUri());
-
-            if (withIndex) builder.append(placeholders.parse("`{INDEX}.` **[{NAME}]({LINK})** `{DURATION}`\n"));
-            else builder.append(placeholders.parse("- **[{NAME}]({LINK})** `{DURATION}`\n"));
-
-            i++;
-
-        }
-
-        return builder.toString();
 
     }
 
