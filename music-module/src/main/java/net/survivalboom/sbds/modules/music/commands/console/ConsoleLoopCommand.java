@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "loop", description = "Set loop mode for a music bot in a specified channel")
+@Command(name = "music-loop", description = "Set loop mode for a music bot in a specified channel")
 public class ConsoleLoopCommand extends AbstractPlayerCommand implements ConsoleCommand {
 
     public ConsoleLoopCommand(@NotNull BotManager botManager) {
