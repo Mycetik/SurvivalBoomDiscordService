@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "playlist", description = "Print current playlist in the specified channel")
+@Command(name = "music-playlist", description = "Print current playlist in the specified channel")
 public class ConsolePlaylistCommand extends AbstractPlayerCommand implements ConsoleCommand {
 
     public ConsolePlaylistCommand(@NotNull BotManager botManager) {
