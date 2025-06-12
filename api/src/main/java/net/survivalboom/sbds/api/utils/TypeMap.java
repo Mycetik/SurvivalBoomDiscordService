@@ -60,7 +60,15 @@ public class TypeMap implements Map<String, Object> {
     }
 
     public @Nullable <T> T getCastOrNull(@NotNull String name, @NotNull Class<T> clazz) {
-        return get(name, clazz);
+
+        try {
+            return get(name, clazz);
+        }
+
+        catch (ClassCastException ignored) {
+            return null;
+        }
+
     }
 
     public @NotNull <T> T getCastOrDefault(@NotNull String name, @NotNull Class<T> clazz, @NotNull T defaultValue) {

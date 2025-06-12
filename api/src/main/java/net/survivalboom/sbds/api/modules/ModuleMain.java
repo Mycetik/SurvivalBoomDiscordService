@@ -8,6 +8,7 @@ import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
+import net.survivalboom.sbds.api.events.Listener;
 import net.survivalboom.sbds.api.interaction.InteractionManager;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
 import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
@@ -140,6 +141,10 @@ public abstract class ModuleMain {
 
     public @NotNull IRepository createRepository(@NotNull String name, @NotNull RepositoryHandler<?> handler) {
         return getDatabase().createRepository(getModule(), name, handler);
+    }
+
+    public void registerEvents(@NotNull Listener listener) {
+        getSbds().getEventManager().registerEvents(this, listener);
     }
 
     //

@@ -18,6 +18,11 @@ public abstract class Manager extends Valid {
         valid(false);
     }
 
+    public void shutdownIfNeeded() {
+        if (!valid()) return;
+        shutdown();
+    }
+
 
     protected abstract void init0();
 
