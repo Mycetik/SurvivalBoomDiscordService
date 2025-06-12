@@ -1,0 +1,230 @@
+#
+# SurvivalBoom Discord Service | SurvivalBoom Network 2025
+#         Private Voice Module | By TIMURishche
+#
+
+$name: "ukrainian"
+
+voice:
+
+  control:
+
+    not-in-voice:
+      $embed:
+        title: "Ви не знаходитесь у приватному каналі!"
+        color: ff0000
+        description: |
+          Ви не знаходитесь у приватному голосовому каналі!
+          Не втрачайте унікальну можливість та створіть свій власний вже зараз!
+
+    not-owner:
+      $embed:
+        title: "Ви не є власником!"
+        color: ff0000
+        description: |
+          Ви не є власником цього приватного каналу!
+          Не втрачайте унікальну можливість та створіть свій власний вже зараз!
+
+    panel:
+      $embed:
+        title: ":satellite_orbital: SurvivalBoom :satellite_orbital:"
+        color: 4188fa
+        description: |
+          :level_slider: Панель керування голосовим каналом.
+          
+          :loud_sound: Голосовий канал: {CHANNEL} 
+          :crown: Власник: {OWNER}
+          
+          :lock: Заблоковано: `{LOCKED}` 
+          :eyeglasses: Приховано: `{HIDDEN}`
+          
+          :white_check_mark: Дозволені користувачі: `{WHITELIST}`
+          :beginner: Заблоковані користувачі: `{BLACKLIST}` 
+          :microphone2: Замучені користувачі: `{MUTED}` 
+          
+          :eight_spoked_asterisk: Загубили панель? Напишіть `+` щоб відправити панель знову.
+      $components:
+
+        - name: privatevoicemodule:action
+          static: true
+          type: STRING_SELECT
+          options:
+
+            - name: "change-name"
+              label: "Назва каналу"
+              description: "Змінити назву каналу."
+              emoji: "📑"
+
+            - name: "set-limit"
+              label: "Ліміт користувачів"
+              description: "Змінити ліміт користувачів каналу."
+              emoji: "🪬"
+
+            - name: "lock"
+              label: "Заблокувати/Розблокувати"
+              description: "Керувати доступом до каналу."
+              emoji: "🔐"
+
+            - name: "hide"
+              label: "Сховати/Показати"
+              description: "Керувати видимістю вашого каналу."
+              emoji: "👁️"
+
+            - name: "blacklist"
+              label: "Чорний список"
+              description: "Керувати блокуванням користувачів."
+              emoji: "📕"
+
+            - name: "whitelist"
+              label: "Білий список"
+              description: "Керувати білим списком користувачів."
+              emoji: "📘"
+
+            - name: "delete"
+              label: "Видалити"
+              description: "Видалити приватний канал."
+              emoji: "🗑️"
+
+    rename:
+
+      modal:
+        title: "Змінити назву каналу"
+        input-name: "Нова назва"
+        input-placeholder: "Уведіть..."
+
+      success:
+        $embed:
+          title: "Назву змінено!"
+          color: 4188fa
+          description: "Ви змінили назву каналу на `{NAME}`."
+
+    set-limit:
+
+      modal:
+        title: "Максимум учасників"
+        input-name: "Кількість учасників"
+        input-placeholder: "Уведіть..."
+
+      success:
+        $embed:
+          title: "Кількість учасників змінено!"
+          color: 4188fa
+          description: "Ви змінили максимальну кількість учасників на `{LIMIT}`."
+
+      invalid:
+        $embed:
+          title: "Неправильне число!"
+          color: ff0000
+          description: |
+            Ви маєте вказати число від **1** до **50**.
+            Ваша відповідь `{INPUT}` неправильна, оскільки не є числом.
+
+    lock:
+
+      locked:
+        $embed:
+          title: "Канал заблоковано!"
+          color: 4188fa
+          description:  "Ви заблокували канал. Тепер ніхто не зможе зайти у цей канал."
+
+      unlocked:
+        $embed:
+          title: "Канал розблоковано!"
+          color: 4188fa
+          description: "Ви розблокували канал. Тепер будь-хто зможе зайти у цей канал."
+
+    hide:
+
+      hidden:
+        $embed:
+          title: "Канал сховано!"
+          color: 4188fa
+          description: "Ви сховали канал. Тепер ніхто не зможе побачити цей канал."
+
+      show:
+        $embed:
+          title: "Канал показано!"
+          color: 4188fa
+          description: "Ви показали канал. Тепер будь-хто зможе побачити цей канал."
+
+    blacklist:
+
+      select:
+        $content: "Оберіть учасника"
+        $components:
+          - name: member
+            type: ENTITY_SELECT
+            target: USER
+
+      bot:
+        $embed:
+          title: "Заблокувати бота?"
+          color: ff0000
+          description: |
+            Ви спробували заблокувати бота. Ви дебіл.
+            Живіть із цим.
+        
+          
+
+      added:
+        $embed:
+          title: "Користувача заблоковано!"
+          color: 4188fa
+          description: "Користувачf {MEMBER} заблоковано! Тепер він не зможе зайти у цей канал."
+
+      removed:
+        $embed:
+          title: "Користувача розблоковано!"
+          color: 4188fa
+          description: "Користувача {MEMBER} розблоковано! Тепер він зможе зайти у цей канал."
+
+    whitelist:
+
+      select:
+        $content: "Оберіть учасника"
+        $components:
+          - name: member
+            type: ENTITY_SELECT
+            target: USER
+
+      added:
+        $embed:
+          title: "Додано у білий список!"
+          color: 4188fa
+          description: "Користувача {MEMBER} додано до білого списку."
+
+      removed:
+        $embed:
+          title: "Видалено з білого списку!"
+          color: 4188fa
+          description: "Користувача {MEMBER} видалено з білого списку."
+        
+            
+    
+
+
+  command:
+
+    setup:
+
+      invalid-channel:
+        $embed:
+          title: "Неправильний канал!"
+          color: ff0000
+          description: "Будь ласка, оберіть **голосовий** канал."
+
+      set:
+        $embed:
+          title: "Приватні канали налаштовано!"
+          color: 00ff08
+          description: "Ви встановили канал для створення приватних голосових каналів. Вітаємо!"
+          fields:
+
+            - name: "Канал"
+              value: "{CHANNEL}"
+
+      remove:
+        $embed:
+          title: "Приватні канали вимкнено!"
+          color: 00ff08
+          description: "Ви видалили канал для створення приватних голосових каналів."

@@ -39,7 +39,13 @@ public class ModalTemplate {
         for (TextComponent component : components) {
             String inputTitle = parser.apply(component.title);
             String inputPlaceholder = parser.apply(component.placeholder);
-            builder.addActionRow(TextInput.create(component.id(), inputTitle, component.style()).setPlaceholder(inputPlaceholder).build());
+            builder.addActionRow(
+                    TextInput.create(component.id(), inputTitle, component.style())
+                            .setRequiredRange(component.min, component.max)
+                            .setRequired(component.required)
+                            .setPlaceholder(inputPlaceholder)
+                            .build()
+            );
         }
 
         return builder.build();
@@ -81,8 +87,8 @@ public class ModalTemplate {
             return this;
         }
 
-        public @NotNull Builder addInput(@NotNull String id, @NotNull String title, @NotNull String placeholder, @NotNull TextInputStyle type) {
-            components.add(new TextComponent(id, title, placeholder, type));
+        public @NotNull Builder addInput(@NotNull String id, @NotNull String title, @NotNull String placeholder, @NotNull TextInputStyle type, int min, int max, boolean required) {
+            components.add(new TextComponent(id, title, placeholder, type, min, max, required));
             return this;
         }
 
@@ -93,6 +99,14 @@ public class ModalTemplate {
     }
 
 
-    private record TextComponent(@NotNull String id, @NotNull String title, @NotNull String placeholder, @NotNull TextInputStyle style) {}
+    private record TextComponent(
+            @NotNull String id,
+            @NotNull String title,
+            @NotNull String placeholder,
+            @NotNull TextInputStyle style,
+            int min,
+            int max,
+            boolean required
+    ) {}
 
 }
