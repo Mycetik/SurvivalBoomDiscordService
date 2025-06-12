@@ -12,6 +12,11 @@ lang:
   russian: "Російська"
   english: "Англійська"
 
+values:
+  true: "Так"
+  false: "Ні"
+  none: "Немає"
+
 common:
 
   error:
