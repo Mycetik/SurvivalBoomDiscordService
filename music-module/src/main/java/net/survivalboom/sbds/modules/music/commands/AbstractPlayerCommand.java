@@ -7,8 +7,8 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommand;
-import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.interaction.IInteractionInfo;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
@@ -50,6 +50,31 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
             List<MusicBot> freeBots = botManager.findFreeBots(channel);
             if (freeBots.isEmpty()) {
                 info.reply("music.command.play.no-free-bot").send().setEphemeral(ephemeral).queue();
+                return null;
+            }
+
+            MusicBot bot = freeBots.getFirst();
+            player = bot.createPlayer(channel.getGuild());
+
+        }
+
+        return player;
+
+    }
+
+    protected @Nullable GuildPlayer getPlayer(@NotNull ConsoleExecutionInfo info, @NotNull AudioChannelUnion channel, boolean create) {
+
+        GuildPlayer player = botManager.findCurrentPlayer(channel);
+        if (player == null && !create) {
+            info.logger().info("There is no music bot in your voice channel.");
+            return null;
+        }
+
+        if (player == null) {
+
+            List<MusicBot> freeBots = botManager.findFreeBots(channel);
+            if (freeBots.isEmpty()) {
+                info.logger().info("No free bot found!");
                 return null;
             }
 
