@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "music-lock", description = "Lock or unlock music bot for staff-only usage")
+@Command(name = "lock", description = "Lock or unlock music bot for staff-only usage")
 public class ConsoleLockCommand extends AbstractPlayerCommand implements ConsoleCommand {
 
     public ConsoleLockCommand(@NotNull BotManager botManager) {

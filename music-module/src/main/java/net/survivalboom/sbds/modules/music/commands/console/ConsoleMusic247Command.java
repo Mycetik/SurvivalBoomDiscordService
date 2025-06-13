@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "music-24-7", description = "Toggle 24/7 mode for the music bot (disable idle disconnect)")
+@Command(name = "24-7", description = "Toggle 24/7 mode for the music bot (disable idle disconnect)")
 public class ConsoleMusic247Command extends AbstractPlayerCommand implements ConsoleCommand {
 
     public ConsoleMusic247Command(@NotNull BotManager botManager) {

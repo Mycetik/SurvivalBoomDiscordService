@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "music-back", description = "Go back N songs in the playlist")
+@Command(name = "back", description = "Go back N songs in the playlist")
 public class ConsoleBackCommand extends AbstractPlayerCommand implements ConsoleCommand {
 
     public ConsoleBackCommand(@NotNull BotManager botManager) {
@@ -64,7 +64,6 @@ public class ConsoleBackCommand extends AbstractPlayerCommand implements Console
         }
 
         TrackInfo playingTrack = Objects.requireNonNull(player.getCurrentPlaying()).getInfo();
-        User botUser = player.getBot().getBot().getSelfUser();
 
         info.logger().info("Went back {} track(s): {} -> {}", steps, skippedTrack.getTitle(), playingTrack.getTitle());
     }
