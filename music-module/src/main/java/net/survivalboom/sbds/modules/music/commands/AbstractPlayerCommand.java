@@ -107,7 +107,7 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
             placeholders
                     .add("{INDEX}", i)
                     .add("{NAME}", info.getTitle())
-                    .add("{DURATION}", info.getLength())
+                    .add("{DURATION}", formatTime(info.getLength()))
                     .add("{SOURCE}", info.getSourceName())
                     .add("{LINK}", info.getUri());
 
@@ -149,4 +149,18 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
 
     }
 
+    protected static String formatTime(long millis) {
+        long seconds = millis / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+
+        seconds %= 60;
+        minutes %= 60;
+
+        if (hours > 0) {
+            return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        } else {
+            return String.format("%02d:%02d", minutes, seconds);
+        }
+    }
 }

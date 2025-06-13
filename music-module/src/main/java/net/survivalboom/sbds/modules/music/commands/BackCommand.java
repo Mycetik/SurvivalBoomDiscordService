@@ -9,7 +9,6 @@ import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.interaction.IInteractionInfo;
-import net.survivalboom.sbds.api.interaction.MessageReplyable;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.Placeholders;
@@ -77,13 +76,13 @@ public class BackCommand extends AbstractPlayerCommand {
                 .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl())
 
                 .add("{SKIPPED-NAME}", skippedTrack.getTitle())
-                .add("{SKIPPED-DURATION}", "6:66:66")
+                .add("{SKIPPED-DURATION}", formatTime(skippedTrack.getLength()))
                 .add("{SKIPPED-SOURCE}", skippedTrack.getSourceName())
                 .add("{SKIPPED-LINK}", skippedTrack.getUri())
                 .add("{SKIPPED-COUNT}", steps)
 
                 .add("{PLAYING-NAME}", playingTrack.getTitle())
-                .add("{PLAYING-DURATION}", "6:66:66")
+                .add("{PLAYING-DURATION}", formatTime(playingTrack.getLength()))
                 .add("{PLAYING-SOURCE}", playingTrack.getSourceName())
                 .add("{PLAYING-LINK}", playingTrack.getUri())
 

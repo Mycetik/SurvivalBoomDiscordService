@@ -82,7 +82,7 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
                 .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl())
 
                 .add("{ADDED-NAME}", addedTrack.getTitle())
-                .add("{ADDED-DURATION}", "6:66:66")
+                .add("{ADDED-DURATION}", formatTime(addedTrack.getLength()))
                 .add("{ADDED-SOURCE}", addedTrack.getSourceName())
                 .add("{ADDED-LINK}", addedTrack.getUri())
 
@@ -90,7 +90,7 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
                 .add("{TRACKS}", createTracksString(tracks, false, 10))
 
                 .add("{PLAYING-NAME}", playingTrack.getTitle())
-                .add("{PLAYING-DURATION}", "6:66:66")
+                .add("{PLAYING-DURATION}", formatTime(playingTrack.getLength()))
                 .add("{PLAYING-SOURCE}", playingTrack.getSourceName())
                 .add("{PLAYING-LINK}", playingTrack.getUri())
 
