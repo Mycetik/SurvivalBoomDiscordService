@@ -156,7 +156,7 @@ public class Translation extends Valid implements ITranslation {
 
         if (section != null) {
 
-            if (section.contains("$embed") || section.contains("$embeds")) {
+            if (section.contains("$embed") || section.contains("$embeds") || section.contains("$content") || section.contains("$components")) {
 
                 try {
                     map.put(path, new Message(path, this, MessageTemplate.fromSection(section)));

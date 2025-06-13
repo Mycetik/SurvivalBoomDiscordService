@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.modules.privatevoice.commands;
+package net.survivalboom.sbds.modules.voice.commands;
 
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.survivalboom.sbds.api.commands.argument.Argument;
@@ -8,31 +8,36 @@ import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.modules.privatevoice.VoiceManager;
+import net.survivalboom.sbds.modules.voice.storage.VoiceCreatorChannels;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "private-voice-setup", description = "ХУЙ")
+@Command(name = "set", description = "Sets a voice for creator in this guild.", permission = "voice.command.setup")
 public class SetupCommand extends CommandBase implements SlashCommand {
 
-    private final VoiceManager voiceManager;
+    private final VoiceCreatorChannels voiceCreatorChannels;
 
-    public SetupCommand(VoiceManager voiceManager) {
-        this.voiceManager = voiceManager;
+    public SetupCommand(@NotNull VoiceCreatorChannels voiceCreatorChannels) {
+        this.voiceCreatorChannels = voiceCreatorChannels;
     }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
         VoiceChannel channel = info.arguments().getCastOrNull("channel", VoiceChannel.class);
+        if (channel == null) {
+            info.reply("voice.command.setup.invalid-channel").queue();
+            return;
+        }
 
-        assert channel != null;
-        voiceManager.setup(channel);
+        voiceCreatorChannels.setVoiceCreator(channel);
 
-        info.reply("commands.private-voice.successful-setup").queue();
+        info.reply("voice.command.setup.set").withPlaceholders("{CHANNEL}", channel.getAsMention()).queue();
+
     }
 
     @CommandArgument(name = "channel")
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }
+
 }

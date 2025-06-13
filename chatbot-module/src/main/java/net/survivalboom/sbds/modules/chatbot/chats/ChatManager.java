@@ -80,6 +80,8 @@ public class ChatManager extends Manager {
     @Override
     protected void init0() {
 
+        log.info("Using model: {}", MODEL);
+
         enabled = botTokenFile.exists();
         if (!enabled) {
 

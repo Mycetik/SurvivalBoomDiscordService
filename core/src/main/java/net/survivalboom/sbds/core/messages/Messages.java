@@ -1,12 +1,13 @@
 package net.survivalboom.sbds.core.messages;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.FluentRestAction;
+import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
-import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
@@ -26,14 +27,18 @@ import net.survivalboom.sbds.core.translations.Translation;
 import net.survivalboom.sbds.core.translations.TranslationManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Messages extends Manager implements IMessages {
 
+    private static final Logger log = LoggerFactory.getLogger(Messages.class);
     private final SBDS sbds;
 
     private final TranslationManager translationManager;
@@ -181,8 +186,13 @@ public class Messages extends Manager implements IMessages {
     }
 
     @Override
-    public @NotNull MessageActionBuilder<MessageEditCallbackAction> edit(@NotNull IMessageEditCallback callback, @NotNull String name, @Nullable User user) {
-        return MessageActionBuilder.create(this, name, user, d -> callback.editMessage(MessageEditData.fromCreateData(d)));
+    public @NotNull MessageActionBuilder<MessageEditAction> editMessage(@NotNull Message message, @NotNull String name, @Nullable User user) {
+        return MessageActionBuilder.create(this, name, user, d -> message.editMessage(MessageEditData.fromCreateData(d)));
+    }
+
+    @Override
+    public @NotNull MessageActionBuilder<MessageCreateAction> sendMessage(@NotNull MessageChannel channel, @NotNull String name, @Nullable User user) {
+        return MessageActionBuilder.create(this, name, user, channel::sendMessage);
     }
 
     //
@@ -195,6 +205,8 @@ public class Messages extends Manager implements IMessages {
         Objects.requireNonNull(in, "in == null");
 
         checkValid();
+
+        in = Placeholders.parse(in, placeholders);
 
         // Регулярное выражение для поиска плейсхолдеров вида [namespace.key] или [language:namespace.key]
         String regex = "\\[(.*?)]";
@@ -216,7 +228,9 @@ public class Messages extends Manager implements IMessages {
                 String key = args[1];
 
                 Translation translation = translationManager.getTranslation(namespace);
-                if (translation == null) continue;
+                if (translation == null) {
+                    continue;
+                }
 
                 translatedMessage = translation.getMessage(key);
 
