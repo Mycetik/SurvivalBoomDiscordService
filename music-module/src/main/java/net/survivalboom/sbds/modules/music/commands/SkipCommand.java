@@ -82,13 +82,13 @@ public class SkipCommand extends AbstractPlayerCommand {
                 .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl())
 
                 .add("{SKIPPED-NAME}", skippedTrack.getTitle())
-                .add("{SKIPPED-DURATION}", "6:66:66")
+                .add("{SKIPPED-DURATION}", formatTime(skippedTrack.getLength()))
                 .add("{SKIPPED-SOURCE}", skippedTrack.getSourceName())
                 .add("{SKIPPED-LINK}", skippedTrack.getUri())
                 .add("{SKIPPED-COUNT}", steps)
 
                 .add("{PLAYING-NAME}", playingTrack.getTitle())
-                .add("{PLAYING-DURATION}", "6:66:66")
+                .add("{PLAYING-DURATION}", formatTime(playingTrack.getLength()))
                 .add("{PLAYING-SOURCE}", playingTrack.getSourceName())
                 .add("{PLAYING-LINK}", playingTrack.getUri())
 

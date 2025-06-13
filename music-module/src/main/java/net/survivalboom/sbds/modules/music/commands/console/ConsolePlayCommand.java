@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
-import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
+import net.survivalboom.sbds.api.commands.argument.primitive.GreedyStringArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
@@ -162,13 +162,13 @@ public class ConsolePlayCommand extends AbstractPlayerCommand implements Console
 
     }
 
-    @CommandArgument(name = "query", description = "URL or search query")
-    public Argument<?> song() {
-        return new StringArgument();
-    }
-
     @CommandArgument(name = "channel", description = "123")
     public Argument<?> channel() {
         return new VoiceChannelArgument();
+    }
+
+    @CommandArgument(name = "query", description = "URL or search query")
+    public Argument<?> song() {
+        return new GreedyStringArgument();
     }
 }

@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "music-stop", description = "Stopping a music ")
+@Command(name = "stop", description = "Stopping a music ")
 public class ConsoleStopCommand extends AbstractPlayerCommand implements ConsoleCommand {
     public ConsoleStopCommand(@NotNull BotManager botManager) {
         super(botManager);

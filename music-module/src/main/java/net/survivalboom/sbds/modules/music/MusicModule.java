@@ -63,19 +63,7 @@ public class MusicModule extends ModuleMain {
         registerSlashCommand(new LockCommand(botManager));
         registerSlashCommand(new MusicBanCommand(botManager));
 
-        registerConsoleCommand(new ConsolePlayCommand(botManager));
-        registerConsoleCommand(new ConsoleStopCommand(botManager));
-        registerConsoleCommand(new ConsoleSkipCommand(botManager));
-        registerConsoleCommand(new ConsoleBackCommand(botManager));
-        registerConsoleCommand(new ConsolePlaylistCommand(botManager));
-
-        registerConsoleCommand(new ConsoleLoopCommand(botManager));
-        registerConsoleCommand(new ConsolePauseCommand(botManager));
-
-        registerConsoleCommand(new ConsoleMusic247Command(botManager));
-        registerConsoleCommand(new ConsoleLockCommand(botManager));
-        registerConsoleCommand(new ConsoleMusicBanCommand(botManager));
-
+        registerConsoleCommand(new ConsoleMusicCommand(botManager));
     }
 
 }

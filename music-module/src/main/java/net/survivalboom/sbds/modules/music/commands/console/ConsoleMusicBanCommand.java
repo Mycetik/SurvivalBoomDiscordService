@@ -13,7 +13,7 @@ import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "music-ban", description = "Ban or unban a user from using the music bot (console)")
+@Command(name = "ban", description = "Ban or unban a user from using the music bot (console)")
 public class ConsoleMusicBanCommand extends CommandBase implements ConsoleCommand {
 
     private final BotManager botManager;

@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "music-skip", description = "Skips one or more songs in the playlist")
+@Command(name = "skip", description = "Skips one or more songs in the playlist")
 public class ConsoleSkipCommand extends AbstractPlayerCommand implements ConsoleCommand {
 
     public ConsoleSkipCommand(@NotNull BotManager botManager) {
@@ -64,7 +64,6 @@ public class ConsoleSkipCommand extends AbstractPlayerCommand implements Console
         }
 
         TrackInfo playingTrack = Objects.requireNonNull(player.getCurrentPlaying()).getInfo();
-        User botUser = player.getBot().getBot().getSelfUser();
 
         info.logger().info("Skipped {} song(s): {} -> {}", steps, skippedTrack.getTitle(), playingTrack.getTitle());
     }
