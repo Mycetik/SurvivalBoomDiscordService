@@ -105,7 +105,7 @@ public class GuildEventsListener extends Manager implements Listener {
 
         Message message = event.getMessage();
 
-        if (message.getGuild().getIdLong() != 983845556407382057L) {
+        if (!chatManager.isGuildAllowed(message.getGuild())) {
             return;
         }
 

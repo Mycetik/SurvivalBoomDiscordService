@@ -5,6 +5,7 @@ import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.survivalboom.sbds.api.modules.ModuleMain;
@@ -45,6 +46,9 @@ public class ChatManager extends Manager {
     private final BannedUsers bannedUsers;
 
 
+    private final List<String> allowedGuilds = new ArrayList<>();
+
+
 
     private final Set<ChannelChat> chats = new HashSet<>();
 
@@ -81,6 +85,8 @@ public class ChatManager extends Manager {
     protected void init0() {
 
         log.info("Using model: {}", MODEL);
+
+        allowedGuilds.addAll(module.getConfig().getStringList("allowed-guilds"));
 
         enabled = botTokenFile.exists();
         if (!enabled) {
@@ -131,6 +137,8 @@ public class ChatManager extends Manager {
         if (bot == null) return;
         bot.shutdown();
         bot = null;
+
+        allowedGuilds.clear();
 
         allowedChannels.shutdown();
         bannedUsers.shutdown();
@@ -264,6 +272,11 @@ public class ChatManager extends Manager {
 
     public @NotNull List<TextChannel> toStop() {
         return toStop;
+    }
+
+    public boolean isGuildAllowed(@NotNull Guild guild) {
+        if (allowedGuilds.isEmpty()) return true;
+        return allowedGuilds.contains(guild.getId());
     }
 
 }
