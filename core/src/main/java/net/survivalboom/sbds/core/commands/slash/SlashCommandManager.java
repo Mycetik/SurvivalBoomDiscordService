@@ -126,6 +126,8 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
     @EventHandler
     public void onCommand(@NotNull SlashCommandInteractionEvent event) {
 
+        if (!sbds.isReady()) return;
+
         String commandName = event.getName();
 
         RegisteredCommand registeredCommand = findByAlias(commandName);

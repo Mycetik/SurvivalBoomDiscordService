@@ -81,6 +81,8 @@ public class EventManager extends Manager implements EventListener, IEventManage
     @Override
     public void onEvent(@NotNull GenericEvent event) {
 
+        if (!sbds.isReady()) return;
+
         for (EventHandler handler : new ArrayList<>(handlerList)) {
             handler.onEvent(event);
         }

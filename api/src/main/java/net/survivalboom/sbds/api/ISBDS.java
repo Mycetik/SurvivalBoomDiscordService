@@ -75,6 +75,10 @@ public interface ISBDS {
     @NotNull JDA getBot();
 
 
+    boolean isReady();
+
+    boolean isStarted();
+
 
     void shutdown();
 

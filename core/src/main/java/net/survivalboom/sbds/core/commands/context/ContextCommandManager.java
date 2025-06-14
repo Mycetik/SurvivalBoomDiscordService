@@ -118,6 +118,8 @@ public class ContextCommandManager extends Manager implements Listener, IContext
 
     public void onEvent(@NotNull GenericContextInteractionEvent<?> event) {
 
+        if (!sbds.isReady()) return;
+
         try {
 
             String name = event.getName();

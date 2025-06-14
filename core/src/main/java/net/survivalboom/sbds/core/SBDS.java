@@ -84,6 +84,8 @@ public class SBDS implements ISBDS {
 
     private boolean started = false;
 
+    private boolean ready = false;
+
 
     private final JDABuilder jdaBuilder;
 
@@ -176,7 +178,6 @@ public class SBDS implements ISBDS {
         modalInteractionManager.init();
 
         moduleManager.init();
-        consoleListener.startListener();
         slashCommandManager.updateCommands();
 
         bot.getPresence().setPresence(OnlineStatus.IDLE, Activity.customStatus("Running on SBDS v" + BuildConstants.VERSION + "🦖"));
@@ -185,12 +186,15 @@ public class SBDS implements ISBDS {
         logger.info("SurvivalBoom Discord Service successfully started!");
         logger.info("");
 
+        ready = true;
+
     }
 
     public synchronized void shutdown() {
 
         if (!started) return;
 
+        ready = false;
 
         try {
             shutdown0();
@@ -265,6 +269,16 @@ public class SBDS implements ISBDS {
     @Override
     public @NotNull JDA getBot() {
         return bot;
+    }
+
+    @Override
+    public boolean isReady() {
+        return ready;
+    }
+
+    @Override
+    public boolean isStarted() {
+        return started;
     }
 
     @Override

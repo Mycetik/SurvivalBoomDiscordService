@@ -40,6 +40,8 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
 
         registerCommand0(null, new StatusCommand(sbds).build(sbds, null));
 
+        task = sbds.getScheduler().schedule0(null, "ConsoleListener", task -> this.consoleListener(), 0, 50);
+
     }
 
     @Override
@@ -49,13 +51,10 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
         task = null;
     }
 
-    public void startListener() {
-        task = sbds.getScheduler().schedule0(null, "ConsoleListener", task -> this.consoleListener(), 0, 50);
-    }
-
 
     private void consoleListener() {
 
+        if (!sbds.isReady()) return;
         if (!scanner.hasNext()) return;
 
         String input = scanner.nextLine().strip();
