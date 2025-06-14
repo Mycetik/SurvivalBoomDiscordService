@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.commands.string;
 
+import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.argument.Argument;
@@ -15,8 +16,11 @@ public class StringCommandParser extends AbstractCommandParser {
 
     private final String input;
 
-    public StringCommandParser(@NotNull String input, @NotNull Command command, @NotNull Argument.ArgumentResources resources) {
+    private final ArgumentScope scope;
+
+    public StringCommandParser(@NotNull String input, @NotNull Command command, @NotNull ArgumentScope scope, @NotNull Argument.ArgumentResources resources) {
         super(command, resources);
+        this.scope = scope;
         this.input = input;
     }
     
@@ -74,6 +78,8 @@ public class StringCommandParser extends AbstractCommandParser {
 
             CommandArgument argument = entry.getKey();
             String raw = entry.getValue();
+
+            if (!argument.scopes().contains(scope)) continue;
 
             Object object = argument.argument().parse(raw, resources);
 

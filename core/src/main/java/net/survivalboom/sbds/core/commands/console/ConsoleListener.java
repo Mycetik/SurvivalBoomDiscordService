@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.commands.console;
 
+import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.internal.SubCommandArgument;
@@ -88,7 +89,7 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
 
     private void processSubcommand(@NotNull String prefix, @NotNull String input, @NotNull String fullInput, @NotNull Command command, @NotNull Argument.ArgumentResources resources) throws Throwable {
 
-        StringCommandParser parser = new StringCommandParser(input, command, resources);
+        StringCommandParser parser = new StringCommandParser(input, command, ArgumentScope.CONSOLE, resources);
 
         parser.parse();
 

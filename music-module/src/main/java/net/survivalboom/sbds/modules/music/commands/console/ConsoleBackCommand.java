@@ -34,6 +34,7 @@ public class ConsoleBackCommand extends AbstractPlayerCommand implements Console
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
+
         AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
         int steps = info.arguments().getCastOrDefault("count", Integer.class, 1);
 

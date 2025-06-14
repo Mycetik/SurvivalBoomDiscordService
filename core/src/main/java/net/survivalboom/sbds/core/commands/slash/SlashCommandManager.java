@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.*;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
@@ -89,6 +90,8 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         List<OptionData> out = new ArrayList<>();
         for (CommandArgument argument : command.arguments()) {
+
+            if (!argument.scopes().contains(ArgumentScope.SLASH)) continue;
 
             OptionData optionData = argument.argument().build(argument);
             out.add(optionData);

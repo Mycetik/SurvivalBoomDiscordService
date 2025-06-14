@@ -113,7 +113,7 @@ public abstract class CommandBase implements CommandExecutor {
 
             if (argument == null) throw InvalidCommandException.createInvalidArgumentException(method, "Method returned null", null);
 
-            out.add(new net.survivalboom.sbds.api.commands.CommandArgument(name, argumentInfo.description(), argument, argumentInfo.index(), argumentInfo.required()));
+            out.add(new net.survivalboom.sbds.api.commands.CommandArgument(name, argumentInfo.description(), List.of(argumentInfo.scope()), argument, argumentInfo.index(), argumentInfo.required()));
 
         }
 

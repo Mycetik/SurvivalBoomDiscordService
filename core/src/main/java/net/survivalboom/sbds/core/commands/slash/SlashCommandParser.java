@@ -2,6 +2,7 @@ package net.survivalboom.sbds.core.commands.slash;
 
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.argument.Argument;
@@ -28,7 +29,7 @@ public class SlashCommandParser extends AbstractCommandParser {
 
         Map<String, Object> map = new HashMap<>();
 
-        for (CommandArgument argument : command.arguments()) {
+        for (CommandArgument argument : command.arguments().stream().filter(a -> a.scopes().contains(ArgumentScope.SLASH)).toList()) {
 
             OptionMapping mapping = interaction.getOption(argument.name());
             if (mapping == null) continue;
