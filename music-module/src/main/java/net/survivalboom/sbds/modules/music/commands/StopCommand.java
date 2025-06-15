@@ -2,7 +2,11 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
+import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.interaction.IInteractionInfo;
@@ -70,6 +74,11 @@ public class StopCommand extends AbstractPlayerCommand {
         player.stop();
         info.logger().info("Stopping `{}`.", player.getBot().getBot().getSelfUser().getEffectiveName());
 
+    }
+
+    @CommandArgument(name = "channel", description = "A channel", scope = ArgumentScope.CONSOLE)
+    public Argument<?> channel() {
+        return new VoiceChannelArgument();
     }
 
 }
