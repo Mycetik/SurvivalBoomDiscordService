@@ -9,7 +9,7 @@ import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
-import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
+import net.survivalboom.sbds.api.commands.argument.primitive.GreedyStringArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
@@ -195,6 +195,7 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
 
         if (newBot) {
             player.connect(channel);
+            player.idleDisconnect(false);
             player.launch();
         }
 
@@ -258,7 +259,7 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
 
     @CommandArgument(name = "query", description = "URL or search query")
     public Argument<?> song() {
-        return new StringArgument();
+        return new GreedyStringArgument();
     }
 
 }
