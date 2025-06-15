@@ -19,7 +19,7 @@ public class StringCommandParser extends AbstractCommandParser {
     private final ArgumentScope scope;
 
     public StringCommandParser(@NotNull String input, @NotNull Command command, @NotNull ArgumentScope scope, @NotNull Argument.ArgumentResources resources) {
-        super(command, resources);
+        super(command, scope, resources);
         this.scope = scope;
         this.input = input;
     }

@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.commands;
 
+import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.argument.Argument;
@@ -16,10 +17,13 @@ public abstract class AbstractCommandParser {
 
     protected final Argument.ArgumentResources resources;
 
+    protected final ArgumentScope scope;
+
     protected TypeMap arguments;
 
 
-    public AbstractCommandParser(@NotNull Command command, @NotNull Argument.ArgumentResources resources) {
+    public AbstractCommandParser(@NotNull Command command, @NotNull ArgumentScope scope, @NotNull Argument.ArgumentResources resources) {
+        this.scope = scope;
         this.command = command;
         this.resources = resources;
     }
@@ -31,7 +35,7 @@ public abstract class AbstractCommandParser {
 
         Objects.requireNonNull(arguments, "arguments == null");
 
-        List<CommandArgument> requiredArguments = command.requiredArguments();
+        List<CommandArgument> requiredArguments = command.requiredArguments().stream().filter(a -> a.scopes().contains(scope)).toList();
 
         return requiredArguments.stream().allMatch(a -> arguments.containsKey(a.name()));
 

@@ -19,7 +19,7 @@ public class SlashCommandParser extends AbstractCommandParser {
     private final SlashCommandInteraction interaction;
 
     public SlashCommandParser(@NotNull Command command, @NotNull Argument.ArgumentResources resources, @NotNull SlashCommandInteraction interaction) {
-        super(command, resources);
+        super(command, ArgumentScope.SLASH, resources);
         this.interaction = interaction;
     }
 
@@ -29,7 +29,7 @@ public class SlashCommandParser extends AbstractCommandParser {
 
         Map<String, Object> map = new HashMap<>();
 
-        for (CommandArgument argument : command.arguments().stream().filter(a -> a.scopes().contains(ArgumentScope.SLASH)).toList()) {
+        for (CommandArgument argument : command.arguments().stream().filter(a -> a.scopes().contains(scope)).toList()) {
 
             OptionMapping mapping = interaction.getOption(argument.name());
             if (mapping == null) continue;
