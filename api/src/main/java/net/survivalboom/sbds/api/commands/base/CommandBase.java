@@ -37,6 +37,9 @@ public abstract class CommandBase implements CommandExecutor {
     private final boolean guild;
 
 
+    private boolean wasInitialized = false;
+
+
     private final List<String> aliases = new ArrayList<>();
 
     private final List<net.survivalboom.sbds.api.commands.CommandArgument> arguments = new ArrayList<>();
@@ -131,12 +134,18 @@ public abstract class CommandBase implements CommandExecutor {
 
     public @NotNull net.survivalboom.sbds.api.commands.Command build(@NotNull ISBDS sbds, @Nullable IModule module) {
 
-        try {
-            init(sbds, module);
-        }
+        if (!wasInitialized) {
 
-        catch (Throwable t) {
-            log.error("Exception was thrown in CommandBase init(). Command may not work.", t);
+            try {
+                init(sbds, module);
+            }
+
+            catch (Throwable t) {
+                log.error("Exception was thrown in CommandBase init(). Command may not work.", t);
+            }
+
+            wasInitialized = true;
+
         }
 
         net.survivalboom.sbds.api.commands.Command command = new net.survivalboom.sbds.api.commands.Command(name, module, this);
