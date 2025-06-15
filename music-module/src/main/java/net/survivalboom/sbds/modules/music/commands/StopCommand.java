@@ -1,7 +1,9 @@
 package net.survivalboom.sbds.modules.music.commands;
 
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.interaction.IInteractionInfo;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
@@ -50,6 +52,23 @@ public class StopCommand extends AbstractPlayerCommand {
                 .send()
                 .setEphemeral(ephemeral)
                 .queue();
+
+    }
+
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
+
+        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
+        Objects.requireNonNull(channel);
+
+        GuildPlayer player = getPlayer(info, channel, false);
+        if (player == null) {
+            info.logger().error("No player was found in that channel.");
+            return;
+        }
+
+        player.stop();
+        info.logger().info("Stopping `{}`.", player.getBot().getBot().getSelfUser().getEffectiveName());
 
     }
 

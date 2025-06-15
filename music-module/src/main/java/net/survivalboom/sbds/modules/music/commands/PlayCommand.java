@@ -6,10 +6,13 @@ import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.Placeholders;
@@ -162,6 +165,95 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
 
         return tracks;
 
+    }
+
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
+
+        String query = info.arguments().get("query", String.class);
+        Objects.requireNonNull(query);
+
+        // Шукаємо плеєр, який відповідає за цей сервер. Якщо немає, створюємо новий //
+        AudioChannelUnion channel = info.arguments().getCastOrNull("channel", AudioChannelUnion.class);
+        Objects.requireNonNull(channel);
+
+        GuildPlayer player = getPlayer(info, channel, true);
+        if (player == null) {
+            return;
+        }
+
+        // Шукаємо треки за запитом й завантажуємо у плеєр //
+
+        List<Track> tracks = searchTracks(info, query, player);
+        if (tracks == null) {
+            return;
+        }
+
+        // Під'єднуємо бота, який відповідає на плеєр й підключаємо його до голосового каналу.
+        boolean newBot = !player.isActive();
+        player.addTracks(tracks);
+
+        if (newBot) {
+            player.connect(channel);
+            player.launch();
+        }
+
+        // Готуємо плейсхолдери та відправляємо повідомлення, відповідно до того що ми зробили //
+
+        User botUser = player.getBot().getBot().getSelfUser();
+        TrackInfo addedTrack = tracks.getFirst().getInfo();
+
+        if (newBot) {
+            info.logger().info("Connected `{}` to `#{}`.", botUser.getEffectiveName(), channel.getName());
+        }
+
+        else {
+
+            if (tracks.size() > 1) {
+                info.logger().info("Added `{}` tracks to playlist!", tracks.size());
+            }
+
+            else {
+                info.logger().info("Added `{}` to playlist!", addedTrack.getTitle());
+            }
+
+        }
+
+
+    }
+
+    private @Nullable List<Track> searchTracks(@NotNull ConsoleExecutionInfo info, @NotNull String query, @NotNull GuildPlayer player) {
+
+        boolean isUrl = isUrl(query);
+
+        if (isUrl) info.logger().info("Loading tracks from link `{}`...", query);
+        else info.logger().info("Searching tracks for query `{}`...", query);
+
+        List<Track> tracks;
+        try {
+            tracks = player.searchTracks(isUrl ? query : "ytsearch:" + query);
+        }
+
+        catch (TrackLoadException e) {
+            return null;
+        }
+
+        if (tracks.isEmpty()) {
+            info.logger().error("No results found for `{}`.", query);
+            return null;
+        }
+
+        if (!isUrl) {
+            return List.of(tracks.getFirst());
+        }
+
+        return tracks;
+
+    }
+
+    @CommandArgument(name = "channel", description = "123", scope = ArgumentScope.CONSOLE)
+    public Argument<?> channel() {
+        return new VoiceChannelArgument();
     }
 
     @CommandArgument(name = "query", description = "URL or search query")

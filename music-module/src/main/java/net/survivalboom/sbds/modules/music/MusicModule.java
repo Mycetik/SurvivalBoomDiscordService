@@ -1,11 +1,14 @@
 package net.survivalboom.sbds.modules.music;
 
+import net.survivalboom.sbds.api.commands.Command;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.commands.*;
-import net.survivalboom.sbds.modules.music.commands.console.*;
 import net.survivalboom.sbds.modules.music.lavalink.AutoSetup;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class MusicModule extends ModuleMain {
@@ -50,20 +53,37 @@ public class MusicModule extends ModuleMain {
 
         addModuleTranslations();
 
-        registerSlashCommand(new PlayCommand(botManager));
-        registerSlashCommand( new StopCommand(botManager));
-        registerSlashCommand(new SkipCommand(botManager));
-        registerSlashCommand(new BackCommand(botManager));
-        registerSlashCommand(new PlaylistCommand(botManager));
+        List<CommandBase> commands = prepareCommands();
+        commands.forEach(this::registerSlashCommand);
 
-        registerSlashCommand(new LoopCommand(botManager));
-        registerSlashCommand(new PauseCommand(botManager));
+        Command command = Command.create("music", getModule());
+        commands.forEach(cmd -> command.withSubcommand(cmd, getSbds(), getModule()));
 
-        registerSlashCommand(new Music247Command(botManager));
-        registerSlashCommand(new LockCommand(botManager));
-        registerSlashCommand(new MusicBanCommand(botManager));
+        getSbds().getConsoleListener().registerCommand(this, command);
 
-        registerConsoleCommand(new ConsoleMusicCommand(botManager));
     }
+
+    private List<CommandBase> prepareCommands() {
+
+        List<CommandBase> list = new ArrayList<>();
+
+        list.add(new PlayCommand(botManager));
+        list.add(new StopCommand(botManager));
+        list.add(new SkipCommand(botManager));
+        list.add(new PlaylistCommand(botManager));
+
+        list.add(new LoopCommand(botManager));
+        list.add(new PauseCommand(botManager));
+
+        list.add(new Music247Command(botManager));
+        list.add(new LockCommand(botManager));
+        list.add(new MusicBanCommand(botManager));
+
+        return list;
+
+    }
+
+
+
 
 }

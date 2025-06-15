@@ -1,7 +1,13 @@
 package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
+import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
@@ -39,6 +45,33 @@ public class Music247Command extends AbstractPlayerCommand {
 
         info.reply(str).withPlaceholders(placeholders).queue();
 
+    }
+
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
+
+        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
+        if (channel == null) {
+            info.logger().error("Missing or invalid 'channel' argument.");
+            return;
+        }
+
+        GuildPlayer player = getPlayer(info, channel, false);
+        if (player == null) {
+            info.logger().error("No music player found for the specified channel.");
+            return;
+        }
+
+        boolean newState = !player.idleDisconnect();
+        player.idleDisconnect(newState);
+
+        info.logger().info("24/7 mode is now {}", newState ? "ENABLED (idle disconnect disabled)" : "DISABLED (idle disconnect enabled)");
+
+    }
+
+    @CommandArgument(name = "channel", description = "Voice channel where the bot is playing", scope = ArgumentScope.CONSOLE)
+    public Argument<?> channel() {
+        return new VoiceChannelArgument();
     }
 
 }

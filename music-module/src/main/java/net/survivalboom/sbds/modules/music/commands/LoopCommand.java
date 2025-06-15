@@ -1,10 +1,14 @@
 package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.misc.EnumSelectArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
@@ -46,8 +50,38 @@ public class LoopCommand extends AbstractPlayerCommand {
 
     }
 
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
 
-    @CommandArgument(name = "mode", description = "Loop mode")
+        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
+        if (channel == null) {
+            info.logger().error("Channel argument is missing or invalid.");
+            return;
+        }
+
+        GuildPlayer player = getPlayer(info, channel, false);
+        if (player == null) {
+            info.logger().error("No player found for the provided channel.");
+            return;
+        }
+
+        boolean newState = !player.adminLock(); // toggle lock
+        player.adminLock(newState);
+
+        if (newState) {
+            info.logger().info("Music bot is now **locked** for staff-only use.");
+        } else {
+            info.logger().info("Music bot is now **unlocked** for all users.");
+        }
+    }
+
+    @CommandArgument(name = "channel", description = "Voice channel with the bot", scope = ArgumentScope.CONSOLE)
+    public Argument<?> channel() {
+        return new VoiceChannelArgument();
+    }
+
+
+    @CommandArgument(name = "mode", description = "Loop mode", index = 1)
     public Argument<?> mode() {
         return new EnumSelectArgument<>(LoopMode.class);
     }

@@ -2,10 +2,13 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
+import net.survivalboom.sbds.api.commands.argument.primitive.IntegerArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import org.jetbrains.annotations.NotNull;
@@ -36,8 +39,34 @@ public class MusicBanCommand extends AbstractPlayerCommand {
 
     }
 
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
 
-    @CommandArgument(name = "target", description = "A member to ban/unban")
+        Integer guild_id = info.arguments().get("guild", Integer.class);
+        User user = info.arguments().get("target", User.class);
+
+        if (guild_id == null || user == null) {
+            info.logger().error("Missing required arguments: guild and/or user.");
+            return;
+        }
+        Guild guild = info.sbds().getBot().getGuildById(guild_id);
+        assert guild != null;
+
+        boolean banned = !botManager.isMusicBanned(guild, user);
+        botManager.setMusicBanned(guild, user, banned);
+
+        String result = banned ? "User has been music-banned" : "User has been unbanned from music";
+        info.logger().info("{}: {} ({})", result, user.getAsTag(), user.getId());
+
+    }
+
+    @CommandArgument(name = "guild", description = "The guild", scope = ArgumentScope.CONSOLE)
+    public Argument<?> guild() {
+        return new IntegerArgument();
+    }
+
+
+    @CommandArgument(name = "target", description = "A member to ban/unban", index = 1)
     public Argument<?> target() {
         return new UserArgument();
     }

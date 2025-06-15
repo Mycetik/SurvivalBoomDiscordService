@@ -1,8 +1,14 @@
 package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
+import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.interaction.IInteractionInfo;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
@@ -62,6 +68,36 @@ public class PauseCommand extends AbstractPlayerCommand {
                 .setEphemeral(ephemeral)
                 .queue();
 
+    }
+
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
+
+        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
+        if (channel == null) {
+            info.logger().warn("Voice channel not provided.");
+            return;
+        }
+
+        GuildPlayer player = getPlayer(info, channel, false);
+        if (player == null) {
+            info.logger().warn("No active player found for the given channel.");
+            return;
+        }
+
+        boolean newState = !player.isPaused();
+        player.setPaused(newState);
+
+        User botUser = player.getBot().getBot().getSelfUser();
+        String stateStr = newState ? "paused" : "resumed";
+
+        info.logger().info("Track has been {} by {}#{}", stateStr, botUser.getName(), botUser.getDiscriminator());
+
+    }
+
+    @CommandArgument(name = "channel", description = "The voice channel", scope = ArgumentScope.CONSOLE)
+    public Argument<?> channel() {
+        return new VoiceChannelArgument();
     }
 
 }

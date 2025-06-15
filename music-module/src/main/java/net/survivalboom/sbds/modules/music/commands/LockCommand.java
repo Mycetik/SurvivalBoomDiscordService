@@ -1,8 +1,14 @@
 package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
+import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.interaction.IInteractionInfo;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
@@ -62,6 +68,33 @@ public class LockCommand extends AbstractPlayerCommand {
                 .setEphemeral(ephemeral)
                 .queue();
 
+    }
+
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
+        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
+        if (channel == null) {
+            info.logger().error("Channel argument is missing or invalid.");
+            return;
+        }
+
+        GuildPlayer player = getPlayer(info, channel, false);
+        if (player == null) {
+            info.logger().error("No player found for the provided channel.");
+            return;
+        }
+
+        boolean newState = !player.adminLock(); // toggle lock
+        player.adminLock(newState);
+
+        String msg = newState ? "Music bot is now &blocked &rfor staff-only use." : "Music bot is now &bunlocked &rfor all users.";
+        info.logger().info(msg);
+
+    }
+
+    @CommandArgument(name = "channel", description = "Voice channel with the bot", scope = ArgumentScope.CONSOLE)
+    public Argument<?> channel() {
+        return new VoiceChannelArgument();
     }
 
 }

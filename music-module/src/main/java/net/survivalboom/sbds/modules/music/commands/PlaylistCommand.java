@@ -1,12 +1,20 @@
 package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
+import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
 
 @Command(name = "playlist")
 public class PlaylistCommand extends AbstractPlayerCommand {
@@ -35,6 +43,33 @@ public class PlaylistCommand extends AbstractPlayerCommand {
 
         info.reply("music.command.playlist").withPlaceholders(placeholders).queue();
 
+    }
+
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
+
+        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
+        Objects.requireNonNull(channel);
+
+        GuildPlayer player = getPlayer(info, channel, false);
+        if (player == null) {
+            info.logger().error("No music player found for the specified channel.");
+            return;
+        }
+
+        if (player.getPlaylistSize() == 0) {
+            info.logger().info("The playlist is currently empty.");
+            return;
+        }
+
+        String playlistStr = createTracksString(player.getPlaylist(), true, 100);
+
+        info.logger().info("Playlist ({} tracks):\n{}", player.getPlaylistSize(), playlistStr);
+    }
+
+    @CommandArgument(name = "channel", description = "Voice channel where the bot is playing", scope = ArgumentScope.CONSOLE)
+    public Argument<?> channel() {
+        return new VoiceChannelArgument();
     }
 
 }

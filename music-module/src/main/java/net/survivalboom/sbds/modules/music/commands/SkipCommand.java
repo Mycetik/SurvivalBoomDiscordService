@@ -2,11 +2,14 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import dev.arbjerg.lavalink.protocol.v4.TrackInfo;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.IntegerArgument;
 import net.survivalboom.sbds.api.commands.base.Command;
 import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.interaction.IInteractionInfo;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
@@ -103,6 +106,51 @@ public class SkipCommand extends AbstractPlayerCommand {
                 .setEphemeral(ephemeral)
                 .queue();
 
+    }
+
+    @Override
+    public void executes(@NotNull ConsoleExecutionInfo info) {
+
+        AudioChannelUnion channel = info.arguments().getCastOrNull("channel", AudioChannelUnion.class);
+        Objects.requireNonNull(channel);
+
+        int steps = info.arguments().getCastOrDefault("count", Integer.class, 1);
+
+        if (steps < 1) {
+            info.logger().warn("Invalid skip count.");
+            return;
+        }
+
+        GuildPlayer player = getPlayer(info, channel, false);
+        if (player == null) {
+            info.logger().warn("No player found for the given channel.");
+            return;
+        }
+
+        if (player.isLastTrack()) {
+            player.stop();
+            info.logger().info("Last track reached. Stopping player.");
+            return;
+        }
+
+        TrackInfo skippedTrack = Objects.requireNonNull(player.getCurrentPlaying()).getInfo();
+
+        try {
+            player.changePlayingIndex(steps);
+        } catch (IllegalArgumentException e) {
+            info.logger().warn("Invalid skip index. Playlist size: {}", player.getPlaylistSize());
+            return;
+        }
+
+        TrackInfo playingTrack = Objects.requireNonNull(player.getCurrentPlaying()).getInfo();
+
+        info.logger().info("Skipped {} song(s): {} -> {}", steps, skippedTrack.getTitle(), playingTrack.getTitle());
+
+    }
+
+    @CommandArgument(name = "channel", description = "The voice channel")
+    public Argument<?> channel() {
+        return new VoiceChannelArgument();
     }
 
     @CommandArgument(name = "count", description = "Songs to skip", required = false)
