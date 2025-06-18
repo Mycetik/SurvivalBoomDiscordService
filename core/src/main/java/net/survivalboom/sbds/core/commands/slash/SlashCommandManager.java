@@ -1,8 +1,7 @@
 package net.survivalboom.sbds.core.commands.slash;
 
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.*;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
@@ -27,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+// TODO Зробити так щоб команди компілювались в CommandData лише раз, тільки при реєстрації або ініціалізації менеджера.
 public class SlashCommandManager extends AbstractCommandManager implements Listener, ISlashCommandManager {
 
     private final CommandInteractionManager commandInteractionManager;
@@ -124,6 +124,11 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         }
 
+    }
+
+    @EventHandler
+    public void onGuildJoin(@NotNull GuildJoinEvent event) {
+        commandInteractionManager.update(event.getGuild());
     }
 
     @EventHandler

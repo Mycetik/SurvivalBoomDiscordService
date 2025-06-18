@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.core.interaction.command;
 
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import net.survivalboom.sbds.api.utils.Manager;
@@ -70,6 +71,20 @@ public class CommandInteractionManager extends Manager {
             guildCommands.forEach(a::addCommands);
             a.queue();
         });
+
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void update(@NotNull Guild guild) {
+
+        Objects.requireNonNull(guild, "guild == null");
+
+        List<CommandData> guildCommands = guildCommandUpdates.stream().map(this::getCommandData).filter(Objects::nonNull).flatMap(List::stream).toList();
+
+        var action = guild.updateCommands();
+        guildCommands.forEach(action::addCommands);
+
+        action.queue();
 
     }
 
