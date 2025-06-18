@@ -1,18 +1,13 @@
 package net.survivalboom.sbds.modules.voice.voice;
 
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class PrivateVoice {
 
@@ -26,6 +21,8 @@ public class PrivateVoice {
     private final Set<Member> blackList = new HashSet<>();
 
     private final Set<Member> whitelist = new HashSet<>();
+
+    private final Set<Member> muted = new HashSet<>();
 
     private boolean locked = false;
 
@@ -56,15 +53,41 @@ public class PrivateVoice {
             return;
         }
 
-        List<Member> toKick = members.stream().filter(blackList::contains).filter(m -> isLocked() && !whitelist.contains(m)).toList();
+        kickMembers(members);
+
+    }
+
+    private void kickMembers(List<Member> members) {
+
+        List<Member> toKick = members.stream()
+                .filter(m -> !m.getUser().isBot())
+                .filter(m -> !voiceManager.getModule().getSbds().getPermissionManager().hasPermission(m, "voice.admin", false))
+                .filter(m -> !owner.equals(m))
+                .filter(m -> blackList.contains(m) || (isLocked() && !whitelist.contains(m)))
+                .toList();
+
         toKick.forEach(m -> m.getGuild().kickVoiceMember(m).queue());
 
     }
 
 
+
     // FUNCTIONS //
     public void setOwner(@NotNull Member member) {
+
+        Member lastOwner = owner;
+        if (lastOwner != null) {
+            Objects.requireNonNull(channel.getPermissionOverride(lastOwner)).delete().queue();
+        }
+
+        blacklist(member, false);
+        whitelist(member, false);
+
         this.owner = member;
+
+        EnumSet<Permission> permissions = EnumSet.of(Permission.VIEW_CHANNEL, Permission.VOICE_CONNECT);
+        channel.getManager().putPermissionOverride(member, permissions, null).queue();
+
     }
 
     public void setLocked(boolean v) {
@@ -79,6 +102,7 @@ public class PrivateVoice {
         if (v) {
             EnumSet<Permission> denyPermissions = EnumSet.of(Permission.VOICE_CONNECT);
             channel.getManager().putPermissionOverride(role, null, denyPermissions).queue();
+            kickMembers(channel.getMembers());
         }
 
         else {
@@ -113,6 +137,42 @@ public class PrivateVoice {
 
     }
 
+    public void setMuted(@NotNull Member member, boolean v) {
+
+        if (muted.contains(member) == v) {
+            return;
+        }
+
+        GuildVoiceState voiceState = member.getVoiceState();
+        if (voiceState == null || !channel.equals(voiceState.getChannel())) {
+            throw new IllegalStateException("Member not in the current voice channel");
+        }
+
+        Guild guild = channel.getGuild();
+        VoiceChannel vChannel = voiceManager.voiceCreatorChannels().getVoiceCreator(guild);
+        if (vChannel == null) return;
+
+        EnumSet<Permission> permissions = EnumSet.of(Permission.VOICE_SPEAK);
+        if (v) {
+            channel.getManager().putPermissionOverride(member, null, permissions).queue(vo -> reMute(guild, member, vChannel));
+            muted.add(member);
+        }
+
+        else {
+            channel.getManager().putPermissionOverride(member, permissions, null).queue(vo -> reMute(guild, member, vChannel));
+            muted.remove(member);
+        }
+
+    }
+
+    private void reMute(Guild guild, Member member, VoiceChannel vChannel) {
+        voiceManager.getIgnoredMembers().add(member);
+        guild.moveVoiceMember(member, vChannel)
+                .queue(v -> guild.moveVoiceMember(member, channel)
+                        .queue(vv -> voiceManager.getIgnoredMembers().remove(member))
+                );
+    }
+
     public void setMaxMembers(int limit) {
         if (limit > 50) limit = 0;
         channel.getManager().setUserLimit(limit).queue();
@@ -127,39 +187,54 @@ public class PrivateVoice {
     public void whitelist(@NotNull Member member, boolean value) {
 
         if (value) {
-            blackList.remove(member);
+            blacklist(member, false);
         }
 
-        if (whitelist.contains(member) && value) {
+        if (whitelist.contains(member) == value) {
             return;
         }
 
+
         if (value) {
+
             whitelist.add(member);
+
+            EnumSet<Permission> permissions = EnumSet.of(Permission.VOICE_CONNECT, Permission.VIEW_CHANNEL);
+            channel.getManager().putMemberPermissionOverride(member.getIdLong(), permissions, null).queue();
+
         }
 
         else {
             whitelist.remove(member);
+            Objects.requireNonNull(channel.getPermissionOverride(member)).delete().queue();
         }
+
+
 
     }
 
     public void blacklist(@NotNull Member member, boolean value) {
 
         if (value) {
-            whitelist.remove(member);
+            whitelist(member, false);
         }
 
-        if (blackList.contains(member) && value) {
+        if (blackList.contains(member) == value) {
             return;
         }
 
         if (value) {
+
             blackList.add(member);
+
+            EnumSet<Permission> permissions = EnumSet.of(Permission.VOICE_CONNECT);
+            channel.getManager().putMemberPermissionOverride(member.getIdLong(), null, permissions).queue();
+
         }
 
         else {
             blackList.remove(member);
+            Objects.requireNonNull(channel.getPermissionOverride(member)).delete().queue();
         }
 
     }
@@ -172,6 +247,7 @@ public class PrivateVoice {
 
         String whitelistString = whitelist.isEmpty() ? "[values.none]" : String.join(", ", whitelist.stream().map(m -> m.getUser().getEffectiveName()).toList());
         String blacklistString = blackList.isEmpty() ? "[values.none]" : String.join(", ", blackList.stream().map(m -> m.getUser().getEffectiveName()).toList());
+        String mutedString = muted.isEmpty() ? "[values.none]" : String.join(", ", muted.stream().map(m -> m.getUser().getEffectiveName()).toList());
 
         Placeholders placeholders = new Placeholders();
         placeholders
@@ -180,7 +256,8 @@ public class PrivateVoice {
                 .add("{LOCKED}", value(locked))
                 .add("{HIDDEN}", value(hidden))
                 .add("{WHITELIST}", whitelistString)
-                .add("{BLACKLIST}", blacklistString);
+                .add("{BLACKLIST}", blacklistString)
+                .add("{MUTED}", mutedString);
 
         if (controlPanelMessage == null || create) {
             messages.sendMessage(channel, "voice.control.panel", owner.getUser())
@@ -221,6 +298,10 @@ public class PrivateVoice {
         return new HashSet<>(whitelist);
     }
 
+    public @NotNull Set<Member> getMuted() {
+        return new HashSet<>(muted);
+    }
+
     public boolean isHidden() {
         return hidden;
     }
@@ -242,4 +323,9 @@ public class PrivateVoice {
         return v ? "[values.true]" : "[values.false]";
     }
 
+
+    @Override
+    public String toString() {
+        return "PrivateVoice{name=" + channel.getName() + ",guild=" + channel.getGuild().getName() + ",owner=" + owner.getEffectiveName() + "}";
+    }
 }

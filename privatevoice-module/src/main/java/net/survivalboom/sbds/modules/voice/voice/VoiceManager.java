@@ -7,14 +7,15 @@ import net.survivalboom.sbds.api.events.Listener;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.scheduler.IScheduler;
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
+import net.survivalboom.sbds.api.utils.ConcurrentHashSet;
 import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.modules.voice.storage.VoiceCreatorChannels;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -22,17 +23,24 @@ public class VoiceManager extends Manager implements Listener {
 
     private static final Logger log = LoggerFactory.getLogger(VoiceManager.class);
 
-    private final Set<PrivateVoice> voiceSet = new HashSet<>();
+    private final VoiceCreatorChannels voiceCreatorChannels;
+
+    private final Set<PrivateVoice> voiceSet = new ConcurrentHashSet<>();
+
+    private final Set<Member> ignoredMembers = new ConcurrentHashSet<>();
 
     private final ModuleMain module;
 
     private final IScheduler scheduler;
 
 
+    private boolean shuttingDown = false;
+
     private ISchedulerTask task;
 
 
-    public VoiceManager(@NotNull ModuleMain module) {
+    public VoiceManager(@NotNull ModuleMain module, @NotNull VoiceCreatorChannels voiceCreatorChannels) {
+        this.voiceCreatorChannels = voiceCreatorChannels;
         this.scheduler = module.getSbds().getScheduler();
         this.module = module;
     }
@@ -41,16 +49,19 @@ public class VoiceManager extends Manager implements Listener {
     @Override
     protected void init0() {
         task = scheduler.schedule(module, this::task, 10, 3000);
+        shuttingDown = false;
     }
 
     @Override
     protected void shutdown0() {
 
+        shuttingDown = true;
+
         task.cancelAndWait(5000, true);
 
         task = null;
 
-        getVoices().forEach(this::deleteVoice);
+        voiceSet.forEach(this::deleteVoice);
         voiceSet.clear();
 
     }
@@ -82,8 +93,38 @@ public class VoiceManager extends Manager implements Listener {
     }
 
     public void deleteVoice(@NotNull PrivateVoice voice) {
+
         voiceSet.remove(voice);
-        voice.getChannel().delete().queue();
+        VoiceChannel fallbackChannel = voiceCreatorChannels.getVoiceCreator(voice.getChannel().getGuild());
+
+        if (fallbackChannel == null) {
+            voice.getChannel().delete().queue();
+            return;
+        }
+
+        List<Member> members = new ArrayList<>(voice.getChannel().getMembers());
+        if (!shuttingDown) members.remove(voice.getOwner());
+
+        if (members.isEmpty()) {
+            voice.getChannel().delete().queue();
+            return;
+        }
+
+        for (int i = 0; i < members.size(); i++) {
+
+            Member member = members.get(i);
+            var action = member.getGuild().moveVoiceMember(member, fallbackChannel);
+
+            if (i + 1 >= members.size()) {
+                action.queue(v -> voice.getChannel().delete().queue());
+            }
+
+            else {
+                action.queue();
+            }
+
+        }
+
     }
 
     public @Nullable PrivateVoice findByChannel(@NotNull VoiceChannel channel) {
@@ -99,6 +140,18 @@ public class VoiceManager extends Manager implements Listener {
         return new ArrayList<>(voiceSet);
     }
 
+    public boolean isShuttingDown() {
+        return shuttingDown;
+    }
+
+    public @NotNull Set<Member> getIgnoredMembers() {
+        return ignoredMembers;
+    }
+
+    public @NotNull VoiceCreatorChannels voiceCreatorChannels() {
+        return voiceCreatorChannels;
+    }
+
     private void task() {
 
         for (PrivateVoice voice : voiceSet) {
@@ -110,11 +163,12 @@ public class VoiceManager extends Manager implements Listener {
             }
 
             catch (Throwable t) {
-                log.error("Failed to tick channel `{}` in guild `{}`.", voice.getChannel().getName(), voice.getChannel().getGuild().getName(), t);
+                log.error("Failed to tick channel `{}`.", voice, t);
             }
 
         }
 
     }
+
 
 }

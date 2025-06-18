@@ -19,9 +19,9 @@ public class PrivateVoiceModule extends ModuleMain {
 
     @Override
     public void onLoad() {
-        voiceManager = new VoiceManager(this);
         voiceCreatorChannels = new VoiceCreatorChannels(this);
-        guildEventListener = new GuildEventListener(voiceManager, voiceCreatorChannels);
+        voiceManager = new VoiceManager(this, voiceCreatorChannels);
+        guildEventListener = new GuildEventListener(voiceManager);
     }
 
     @Override

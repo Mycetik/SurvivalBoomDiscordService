@@ -7,42 +7,43 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.Listener;
-import net.survivalboom.sbds.modules.voice.storage.VoiceCreatorChannels;
 import net.survivalboom.sbds.modules.voice.voice.PrivateVoice;
 import net.survivalboom.sbds.modules.voice.voice.VoiceManager;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 
 public class GuildEventListener implements Listener {
 
-    private static final Logger log = LoggerFactory.getLogger(GuildEventListener.class);
     private final VoiceManager voiceManager;
 
-    private final VoiceCreatorChannels voiceCreatorChannels;
 
-
-    public GuildEventListener(@NotNull VoiceManager voiceManager, @NotNull VoiceCreatorChannels voiceCreatorChannels) {
+    public GuildEventListener(@NotNull VoiceManager voiceManager) {
         this.voiceManager = voiceManager;
-        this.voiceCreatorChannels = voiceCreatorChannels;
     }
 
 
     @EventHandler
     public void onVoiceStateUpdate(GuildVoiceUpdateEvent event) {
 
+        if (voiceManager.isShuttingDown()) {
+            return;
+        }
+
         if (!(event.getNewValue() instanceof VoiceChannel channel)) {
             return;
         }
 
-        if (!voiceCreatorChannels.isVoiceCreator(channel)) {
+        if (!voiceManager.voiceCreatorChannels().isVoiceCreator(channel)) {
             return;
         }
 
         Member member = event.getMember();
+
+        if (voiceManager.getIgnoredMembers().contains(member)) {
+            return;
+        }
 
         voiceManager.createVoice(member, channel);
 

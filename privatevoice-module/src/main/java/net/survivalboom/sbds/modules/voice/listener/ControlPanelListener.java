@@ -11,7 +11,6 @@ import net.survivalboom.sbds.modules.voice.voice.PrivateVoice;
 import net.survivalboom.sbds.modules.voice.voice.VoiceManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -55,6 +54,8 @@ public class ControlPanelListener {
             case "blacklist" -> blacklist(info);
 
             case "whitelist" -> whitelist(info);
+
+            case "mute" -> mute(info);
 
             case "delete" -> delete(info);
 
@@ -172,6 +173,11 @@ public class ControlPanelListener {
                     return;
                 }
 
+                if (voice.getOwner().equals(member)) {
+                    dropdown.reply("voice.control.blacklist.self").send().setEphemeral(true).queue();
+                    return;
+                }
+
                 boolean state = !voice.getBlackList().contains(member);
 
                 voice.blacklist(member, state);
@@ -185,7 +191,7 @@ public class ControlPanelListener {
                         .queue(v -> voice.updateControlPanel(false));
 
 
-            }, null, 30000).queue();
+            }, null, 30000).send().setEphemeral(true).queue();
 
         }, info);
 
@@ -205,6 +211,11 @@ public class ControlPanelListener {
                     return;
                 }
 
+                if (voice.getOwner().equals(member)) {
+                    dropdown.reply("voice.control.whitelist.self").send().setEphemeral(true).queue();
+                    return;
+                }
+
 
                 boolean state = !voice.getBlackList().contains(member);
 
@@ -219,7 +230,50 @@ public class ControlPanelListener {
                         .queue(v -> voice.updateControlPanel(false));
 
 
-            }, null, 30000).queue();
+            }, null, 30000).send().setEphemeral(true).queue();
+
+        }, info);
+
+    }
+
+    public void mute(StringDropdownInteractionInfo info) {
+
+        onVoice(voice -> {
+
+            voice.updateControlPanel(false);
+
+            info.reply("voice.control.mute.select").entityDropdownCallback("member", dropdown -> {
+
+                Member member = dropdown.mentions().getMembers().getFirst();
+                if (member.getUser().isBot()) {
+                    dropdown.reply("voice.control.mute.bot").send().setEphemeral(true).queue();
+                    return;
+                }
+
+                GuildVoiceState voiceState = member.getVoiceState();
+                if (voiceState == null || !voice.getChannel().equals(voiceState.getChannel())) {
+                    dropdown.reply("voice.control.mute.not-in-voice").send().setEphemeral(true).queue();
+                    return;
+                }
+
+                if (voice.getOwner().equals(member)) {
+                    dropdown.reply("voice.control.mute.self").send().setEphemeral(true).queue();
+                    return;
+                }
+
+                boolean state = !voice.getMuted().contains(member);
+
+                voice.setMuted(member, state);
+
+                String str = state ? "voice.control.mute.muted" : "voice.control.mute.unmuted";
+
+                dropdown.reply(str)
+                        .withPlaceholders("{MEMBER}", member.getAsMention())
+                        .send()
+                        .setEphemeral(true)
+                        .queue(v -> voice.updateControlPanel(false));
+
+            }, null, 30000).send().setEphemeral(true).queue();
 
         }, info);
 
@@ -248,7 +302,7 @@ public class ControlPanelListener {
             return;
         }
 
-        if (!voice.getOwner().equals(member) && !voiceManager.getModule().getSbds().getPermissionManager().hasPermission(member, "voice.bypass", false)){
+        if (!voice.getOwner().equals(member) && !voiceManager.getModule().getSbds().getPermissionManager().hasPermission(member, "voice.admin", false)){
             info.reply("voice.control.not-owner").send().setEphemeral(true).queue();
             voice.updateControlPanel(false);
             return;

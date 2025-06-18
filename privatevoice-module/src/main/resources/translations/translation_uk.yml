@@ -80,6 +80,11 @@ voice:
               description: "Керувати білим списком користувачів."
               emoji: "📘"
 
+            - name: "mute"
+              label: "Керування мутами"
+              description: "Вимкнути/увімкнути мікрофон користувачу."
+              emoji: "🎙️"
+
             - name: "delete"
               label: "Видалити"
               description: "Видалити приватний канал."
@@ -149,6 +154,14 @@ voice:
 
     blacklist:
 
+      self:
+        $embed:
+          title: "Ви не можете заблокувати самого себе!"
+          color: ff0000
+          description: |
+            Ви спробували заблокувати самого себе. Ви дебіл.
+            Живіть із цим.
+
       select:
         $content: "Оберіть учасника"
         $components:
@@ -170,7 +183,7 @@ voice:
         $embed:
           title: "Користувача заблоковано!"
           color: 4188fa
-          description: "Користувачf {MEMBER} заблоковано! Тепер він не зможе зайти у цей канал."
+          description: "Користувач {MEMBER} заблоковано! Тепер він не зможе зайти у цей канал."
 
       removed:
         $embed:
@@ -179,6 +192,22 @@ voice:
           description: "Користувача {MEMBER} розблоковано! Тепер він зможе зайти у цей канал."
 
     whitelist:
+
+      self:
+        $embed:
+          title: "Ви не можете додати у білий список самого себе!"
+          color: ff0000
+          description: |
+            Ви власник каналу, ви не можете додати себе у білий список.
+            Живіть із цим.
+
+      bot:
+        $embed:
+          title: "Додати у білий список бота?"
+          color: ff0000
+          description: |
+            Ви спробували додати у білий список бота. Ви дебіл.
+            Живіть із цим.
 
       select:
         $content: "Оберіть учасника"
@@ -198,6 +227,51 @@ voice:
           title: "Видалено з білого списку!"
           color: 4188fa
           description: "Користувача {MEMBER} видалено з білого списку."
+
+    mute:
+
+      self:
+        $embed:
+          title: "Ви не можете замутити самого себе!"
+          color: ff0000
+          description: |
+            Ви спробували замутити самого себе. Ви дебіл.
+            Живіть із цим.
+
+      bot:
+        $embed:
+          title: "Замутити бота?"
+          color: ff0000
+          description: |
+            Ви спробували замутити бота. Ви дебіл.
+            Живіть із цим.
+
+      not-in-voice:
+        $embed:
+          title: "Не у голосовому каналі!"
+          color: ff0000
+          description: |
+            Цей користувач не знаходиться у вашому каналі. Тому ви не можете його замутити.
+            Логічно?
+
+      select:
+        $content: "Оберіть учасника"
+        $components:
+          - name: member
+            type: ENTITY_SELECT
+            target: USER
+
+      muted:
+        $embed:
+          title: "Користувача замучено!"
+          color: 4188fa
+          description: "Користувача {MEMBER} замучено у цьому голосовому каналі."
+
+      unmuted:
+        $embed:
+          title: "Користувача розмучено!"
+          color: 4188fa
+          description: "Користувача {MEMBER} розмучено у цьому голосовому каналі."
         
             
     

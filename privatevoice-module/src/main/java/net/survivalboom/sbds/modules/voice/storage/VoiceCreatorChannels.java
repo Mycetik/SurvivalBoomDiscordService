@@ -10,6 +10,7 @@ import net.survivalboom.sbds.api.utils.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -43,13 +44,23 @@ public class VoiceCreatorChannels extends Manager {
     }
 
     public boolean isVoiceCreator(@NotNull VoiceChannel channel) {
+        return channels.computeIfAbsent(channel, key -> channel.equals(getVoiceCreator(channel.getGuild())));
+    }
 
-        return channels.computeIfAbsent(channel, key -> {
+    public @Nullable VoiceChannel getVoiceCreator(@NotNull Guild guild) {
 
-            IGuildData guildData = repository.createGuildData(key.getGuild());
-            return guildData.container().getOrCreate(this.key).getCastOrDefault("creator", String.class, "").equals(channel.getId());
+        VoiceChannel channel = channels.keySet().stream().filter(v -> v.getGuild().equals(guild)).findAny().orElse(null);
+        if (channel != null) {
+            return channel;
+        }
 
-        });
+        IGuildData guildData = repository.createGuildData(guild);
+        String channelId = guildData.container().getOrCreate(key).getCastOrDefault("creator", String.class, "");
+
+        channel = guild.getChannelById(VoiceChannel.class, channelId);
+        if (channel != null) channels.put(channel, true);
+
+        return channel;
 
     }
 
