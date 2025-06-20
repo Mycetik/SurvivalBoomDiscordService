@@ -27,7 +27,7 @@ import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.List;
 
-@Command(name = "status", description = "Shows a status of the discord bot.", permission = "sbds.commands.status", defaultPermission = true)
+@Command(name = "status", description = "Shows a status of the discord bot.", translationKey = "sbds.command.status", permission = "sbds.commands.status", defaultPermission = true)
 public class StatusCommand extends CommandBase implements SlashCommand, ConsoleCommand {
 
     private final SystemMonitor systemMonitor;

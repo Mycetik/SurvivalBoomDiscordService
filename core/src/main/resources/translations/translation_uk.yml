@@ -20,6 +20,11 @@ values:
 
 sbds:
 
+  command:
+
+    status:
+      description: "Відображає статус діскорд бота."
+
   error:
     $embed:
       title: ":bangbang: Ой-ой! :bangbang:"

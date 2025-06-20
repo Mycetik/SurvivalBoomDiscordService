@@ -13,7 +13,17 @@ lang:
   russian: "Русский"
   english: "Английский"
 
+values:
+  true: "Да"
+  false: "Нет"
+  none: "Нету"
+
 sbds:
+
+  command:
+
+    status:
+      description: "Отображает статус дискорд бота."
 
   error:
     $embed:

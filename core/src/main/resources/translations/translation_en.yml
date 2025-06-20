@@ -13,7 +13,17 @@ lang:
   russian: "Russian"
   english: "English"
 
+values:
+  true: "Yes"
+  false: "No"
+  none: "None"
+
 sbds:
+
+  command:
+
+    status:
+      description: "Shows a status of the discord bot."
 
   error:
     $embed:
