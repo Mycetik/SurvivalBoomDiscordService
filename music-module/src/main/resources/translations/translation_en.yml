@@ -434,7 +434,7 @@ music:
         name: "mode"
         description: "Loop mode"
         choices:
-          no: "Off"
+          off: "Off"
           track: "Current Track"
           playlist: "Playlist"
       success:

@@ -42,7 +42,7 @@ public class GuildPlayer {
     private boolean paused = false;
 
 
-    private LoopMode loop = LoopMode.NO;
+    private LoopMode loop = LoopMode.OFF;
 
     private boolean idleDisconnect = true;
 
@@ -158,7 +158,7 @@ public class GuildPlayer {
         this.playing = false;
         this.paused = false;
         this.channel = null;
-        this.loop = LoopMode.NO;
+        this.loop = LoopMode.OFF;
         this.idleDisconnect = true;
         this.playingIndex = 0;
         this.playlist.clear();
@@ -340,7 +340,7 @@ public class GuildPlayer {
                     this.playingIndex = -1;
                 }
 
-                else if (loop == LoopMode.NO) {
+                else if (loop == LoopMode.OFF) {
                     stop();
                     return;
                 }
