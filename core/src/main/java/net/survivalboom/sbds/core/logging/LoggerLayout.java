@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -125,7 +126,7 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
             Object[] array = event.getArgumentArray();
             if (array == null) return null;
 
-            List<Object> args = List.of(array);
+            List<Object> args = Arrays.stream(array).toList();
             if (args.isEmpty()) return null;
 
             if (args.getLast() instanceof Throwable t) {
