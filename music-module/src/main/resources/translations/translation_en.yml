@@ -434,9 +434,11 @@ music:
         name: "mode"
         description: "Loop mode"
         choices:
-          off: "Off"
+          disabled: "Off"
           track: "Current Track"
           playlist: "Playlist"
+
+
       success:
         $embed:
           author: "{BOT}"

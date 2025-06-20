@@ -545,7 +545,7 @@ music:
         name: "режим"
         description: "Режим повтора треков"
         choices:
-          off: "Выключить"
+          disabled: "Выключить"
           track: "Текущий трек"
           playlist: "Весь плейлист"
 
