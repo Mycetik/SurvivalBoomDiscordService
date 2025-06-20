@@ -4,6 +4,7 @@ import dev.arbjerg.lavalink.protocol.v4.TrackInfo;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.IntegerArgument;
@@ -22,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "skip", description = "Skip the current song")
+@Command(name = "skip", description = "Skips the current playing song", translationKey = "music.command.skip")
 public class SkipCommand extends AbstractPlayerCommand {
 
     public SkipCommand(@NotNull BotManager botManager) {
@@ -58,7 +59,7 @@ public class SkipCommand extends AbstractPlayerCommand {
             return;
         }
 
-        int steps = info instanceof SlashExecutionInfo slashExecutionInfo ? slashExecutionInfo.arguments().getCastOrDefault("count", Integer.class, 1) : 1;
+        int steps = info instanceof SlashExecutionInfo slashExecutionInfo ? slashExecutionInfo.arguments().getCastOrDefault("steps", Integer.class, 1) : 1;
         int allowedSteps = player.getPlaylistSize() - player.getPlayingIndex();
 
         if (steps < 1) {
@@ -114,7 +115,7 @@ public class SkipCommand extends AbstractPlayerCommand {
         AudioChannelUnion channel = info.arguments().getCastOrNull("channel", AudioChannelUnion.class);
         Objects.requireNonNull(channel);
 
-        int steps = info.arguments().getCastOrDefault("count", Integer.class, 1);
+        int steps = info.arguments().getCastOrDefault("steps", Integer.class, 1);
 
         if (steps < 1) {
             info.logger().warn("Invalid skip count.");
@@ -148,12 +149,12 @@ public class SkipCommand extends AbstractPlayerCommand {
 
     }
 
-    @CommandArgument(name = "channel", description = "The voice channel")
+    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }
 
-    @CommandArgument(name = "count", description = "Songs to skip", required = false)
+    @CommandArgument(name = "steps", description = "Songs to skip", required = false)
     public Argument<?> songs() {
         return new IntegerArgument();
     }

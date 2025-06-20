@@ -25,6 +25,11 @@ music:
 
     play:
 
+      description: "Шукає трек за вашим запитом й запускає музичного бота у вашому каналі."
+      query:
+        name: "запит"
+        description: "Посилання на трек або пошуковий запит"
+
       no-free-bot:
         $embed:
           title: "Вільного бота не знайдено!"
@@ -244,15 +249,25 @@ music:
     #
 
     stop:
-      $embed:
-        description: "<:blurple_verified:1024732810667364414> Стоп! Музичного бота зупинено!"
-        color: 8f00ff
+
+      description: "Зупиняє музичного бота у вашому каналі."
+
+      success:
+        $embed:
+          description: "<:blurple_verified:1024732810667364414> Стоп! Музичного бота зупинено!"
+          color: 8f00ff
 
     #
     # /SKIP
     #
 
     skip:
+
+      description: "Пропускає поточу пісню у музичному боті."
+
+      steps:
+        name: "кількість"
+        description: "Кількість пісень для пропуску"
 
       invalid-index:
         $embed:
@@ -383,6 +398,12 @@ music:
     #
     back:
 
+      description: "Повертає минулу пісню у музичному боті."
+
+      steps:
+        name: "кількість"
+        description: "Кількість пісень для повернення"
+
       multiple:
         $embed:
 
@@ -506,26 +527,46 @@ music:
     # /PLAYLIST
     #
     playlist:
-      $embed:
-        title: "Плейліст з `{COUNT}` пісень."
-        description: "{PLAYLIST}"
+
+      description: "Відображає поточний плейліст музичного бота."
+
+      success:
+        $embed:
+          title: "Плейліст з `{COUNT}` пісень."
+          description: "{PLAYLIST}"
 
     #
     # /LOOP
     #
     loop:
-      $embed:
-        author: "{BOT}"
-        author-icon: "{BOT-AVATAR}"
 
-        title: "Режим повторення"
-        color: 8f00ff
-        description: "Режим повторення змінено `{MODE}`."
+      description: "Задає режим повторення треків у музичному боті."
+
+
+      mode:
+        name: "режим"
+        description: "Режим повторювання треків"
+        choices:
+          no: "Вимкнути"
+          track: "Поточний трек"
+          playlist: "Увесь плейліст"
+
+
+      success:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+
+          title: "Режим повторення"
+          color: 8f00ff
+          description: "Режим повторення змінено `{MODE}`."
 
     #
     # /LOCK
     #
     lock:
+
+      description: "Блокує поточного музичного бота для використання тільки адміністратором."
 
       denied:
         $embed:
@@ -559,6 +600,11 @@ music:
     #
     music-ban:
 
+      description: "Забороняє користувачу використати музичного бота."
+      target:
+        name: "Учасник"
+        description: "Учасник якого потрібно заблокувати."
+
       denied:
         $embed:
           title: "Ви заблоковані! Отакої!"
@@ -590,6 +636,8 @@ music:
     #
     pause:
 
+      description: "Призупиняє або відновлює відтворення поточного треку в музичному боті."
+
       paused:
         $embed:
           author: "{BOT}"
@@ -612,6 +660,8 @@ music:
     # /music-24-7
     #
     24-7:
+
+      description: "Змушує музичного бота залишатись у голосовому каналі, навіть якщо нікого немає."
 
       enable:
         $embed:

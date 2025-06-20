@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "loop", description = "Set loop mode for current music bot")
+@Command(name = "loop", description = "Sets a loop mode for current music bot", translationKey = "music.command.loop")
 public class LoopCommand extends AbstractPlayerCommand {
 
     public LoopCommand(@NotNull BotManager botManager) {
@@ -46,7 +46,7 @@ public class LoopCommand extends AbstractPlayerCommand {
                 .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl())
                 .add("{MODE}", loop);
 
-        info.reply("music.command.loop").withPlaceholders(placeholders).queue();
+        info.reply("music.command.loop.success").withPlaceholders(placeholders).queue();
 
     }
 
@@ -75,7 +75,7 @@ public class LoopCommand extends AbstractPlayerCommand {
         }
     }
 
-    @CommandArgument(name = "channel", description = "Voice channel with the bot", scope = ArgumentScope.CONSOLE)
+    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

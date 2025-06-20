@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "pause", description = "Pause or resume current track")
+@Command(name = "pause", description = "Pauses or resumes current playing track", translationKey = "music.command.pause")
 public class PauseCommand extends AbstractPlayerCommand {
 
     public PauseCommand(@NotNull BotManager botManager) {

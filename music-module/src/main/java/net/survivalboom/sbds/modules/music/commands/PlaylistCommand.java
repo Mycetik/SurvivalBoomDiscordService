@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "playlist")
+@Command(name = "playlist", description = "Shows current playlist", translationKey = "music.command.playlist")
 public class PlaylistCommand extends AbstractPlayerCommand {
 
     public PlaylistCommand(@NotNull BotManager botManager) {
@@ -41,7 +41,7 @@ public class PlaylistCommand extends AbstractPlayerCommand {
                 .add("{COUNT}", player.getPlaylistSize())
                 .add("{PLAYLIST}", playListStr);
 
-        info.reply("music.command.playlist").withPlaceholders(placeholders).queue();
+        info.reply("music.command.playlist.success").withPlaceholders(placeholders).queue();
 
     }
 
@@ -67,7 +67,7 @@ public class PlaylistCommand extends AbstractPlayerCommand {
         info.logger().info("Playlist ({} tracks):\n{}", player.getPlaylistSize(), playlistStr);
     }
 
-    @CommandArgument(name = "channel", description = "Voice channel where the bot is playing", scope = ArgumentScope.CONSOLE)
+    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

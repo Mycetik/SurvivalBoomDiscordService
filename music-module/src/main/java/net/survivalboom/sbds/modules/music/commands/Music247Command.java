@@ -14,7 +14,7 @@ import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "music-24-7", description = "Disable idle disconnect for the current music bot", permission = "music.command.24_7")
+@Command(name = "music-24-7", description = "Disable disconnect on idle for the current music bot", translationKey = "music.command.24-7", permission = "music.command.24_7")
 public class Music247Command extends AbstractPlayerCommand {
 
     public Music247Command(@NotNull BotManager botManager) {
@@ -69,7 +69,7 @@ public class Music247Command extends AbstractPlayerCommand {
 
     }
 
-    @CommandArgument(name = "channel", description = "Voice channel where the bot is playing", scope = ArgumentScope.CONSOLE)
+    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

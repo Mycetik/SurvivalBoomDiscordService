@@ -70,6 +70,7 @@ public class MusicModule extends ModuleMain {
         list.add(new PlayCommand(botManager));
         list.add(new StopCommand(botManager));
         list.add(new SkipCommand(botManager));
+        list.add(new BackCommand(botManager));
         list.add(new PlaylistCommand(botManager));
 
         list.add(new LoopCommand(botManager));

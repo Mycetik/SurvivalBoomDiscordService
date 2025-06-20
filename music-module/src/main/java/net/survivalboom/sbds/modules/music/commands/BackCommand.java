@@ -2,7 +2,6 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import dev.arbjerg.lavalink.protocol.v4.TrackInfo;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
@@ -24,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "back")
+@Command(name = "back", description = "Returns the previous song", translationKey = "music.command.back")
 public class BackCommand extends AbstractPlayerCommand {
 
     public BackCommand(@NotNull BotManager botManager) {
@@ -54,7 +53,7 @@ public class BackCommand extends AbstractPlayerCommand {
 
         if (checkBannedOrLocked(info, player, ephemeral)) return;
 
-        int steps = info instanceof SlashExecutionInfo slashExecutionInfo ? slashExecutionInfo.arguments().getCastOrDefault("count", Integer.class, 1) : 1;
+        int steps = info instanceof SlashExecutionInfo slashExecutionInfo ? slashExecutionInfo.arguments().getCastOrDefault("steps", Integer.class, 1) : 1;
         int allowedSteps = player.getPlayingIndex();
 
         if (steps < 1) {
@@ -108,7 +107,7 @@ public class BackCommand extends AbstractPlayerCommand {
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
         AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
-        int steps = info.arguments().getCastOrDefault("count", Integer.class, 1);
+        int steps = info.arguments().getCastOrDefault("steps", Integer.class, 1);
 
         if (channel == null || steps < 1) {
             info.logger().warn("Invalid channel or back count.");
@@ -142,12 +141,12 @@ public class BackCommand extends AbstractPlayerCommand {
 
     }
 
-    @CommandArgument(name = "count", description = "Songs to skip", required = false, index = 1)
+    @CommandArgument(name = "steps", description = "Songs to skip", required = false, index = 1)
     public Argument<?> songs() {
         return new IntegerArgument();
     }
 
-    @CommandArgument(name = "channel", description = "A channel", scope = ArgumentScope.CONSOLE)
+    @CommandArgument(name = "channel", description = "Channel with music bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

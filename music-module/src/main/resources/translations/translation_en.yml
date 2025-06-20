@@ -4,3 +4,535 @@
 #
 
 $name: "english"
+
+music:
+
+  not-in-voice:
+    $embed:
+      description: <:9752barrierblockmc:1013463226752696392> You are not in a voice channel.
+      color: ff0000
+
+  no-bot-in-voice:
+    $embed:
+      description: <:9752barrierblockmc:1013463226752696392> No music bot is in your voice channel.
+      color: ff0000
+
+  command:
+
+    play:
+
+      description: "Searches for a track by your query and starts the music bot in your channel."
+      query:
+        name: "query"
+        description: "Track URL or search query"
+
+      no-free-bot:
+        $embed:
+          title: "No Free Bot Found!"
+          description: |
+            No free music bot was found!
+            Try again later maybe.
+          color: ff0000
+
+      no-tracks-found:
+        $embed:
+          description: <:google_dinosaur:1077358570091319337> No results found for `{QUERY}`!
+          color: ff0000
+
+      searching-tracks:
+        $embed:
+          description: <a:loading:1086970461549756536> Searching for tracks by `{QUERY}`...
+          color: ffce47
+
+      loading-tracks:
+        $embed:
+          description: <a:loading:1086970461549756536> Loading tracks from `{URL}`...
+          color: ffce47
+
+      load-failed:
+        $embed:
+          title: "Load Error!"
+          description: |
+            <:9752barrierblockmc:1013463226752696392> Failed to load track. Bad link or something just broke.
+            ```
+            {ERROR}
+            ```
+          color: ff0000
+
+      playlist-added-single:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Added to Playlist!"
+          color: 8f00ff
+          description: |
+            Added to playlist:
+            - `{ADDED-NAME}`
+            Now playing:
+            - `{PLAYING-NAME}`
+          fields:
+            - name: "Duration"
+              value: "`{ADDED-DURATION}`"
+              inline: true
+            - name: "Source"
+              value: "[{ADDED-SOURCE}]({ADDED-LINK})"
+              inline: true
+            - name: "Playlist Size"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+      playlist-added:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "`{TRACKS-COUNT}` Tracks Added to Playlist!"
+          color: 8f00ff
+          description: |
+            Added:
+            {TRACKS}
+            
+            Now playing:
+            - `{PLAYING-NAME}`
+          fields:
+            - name: "Duration"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+            - name: "Source"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+            - name: "Playlist Size"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+      connected:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Free Bot Found!"
+          color: 8f00ff
+          description: |
+            Now playing:
+            - `{PLAYING-NAME}`
+          fields:
+            - name: "Duration"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+            - name: "Source"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+            - name: "Playlist Size"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+    stop:
+      description: "Stops the music bot in your channel."
+      success:
+        $embed:
+          description: "<:blurple_verified:1024732810667364414> Stop! Music bot has been stopped!"
+          color: 8f00ff
+
+    skip:
+      description: "Skips the current song in the music bot."
+      steps:
+        name: "amount"
+        description: "Number of songs to skip"
+      invalid-index:
+        $embed:
+          title: "Invalid Index"
+          color: ff0000
+          description: "Specify a valid index from `0` to `{PLAYLIST-SIZE}`."
+
+      multiple:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "`{SKIP}` Songs Skipped!"
+          color: 8f00ff
+          description: |
+            Now playing:
+            - `{PLAYING-NAME}`
+          fields:
+            - name: "Duration"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+            - name: "Source"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+            - name: "Playlist Size"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+      single:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Song Skipped!"
+          color: 8f00ff
+          description: |
+            Skipped:
+            - `{SKIPPED-NAME}`
+            Now playing:
+            - `{PLAYING-NAME}`
+          fields:
+            - name: "Duration"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+            - name: "Source"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+            - name: "Playlist Size"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+    back:
+      description: "Goes back to the previous song in the music bot."
+      steps:
+        name: "amount"
+        description: "Number of songs to go back"
+
+      multiple:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "`{SKIP}` Songs Skipped!"
+          color: 8f00ff
+          description: |
+            Now playing:
+            - `{PLAYING-NAME}`
+          fields:
+            - name: "Duration"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+            - name: "Source"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+            - name: "Playlist Size"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+      single:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Song Skipped!"
+          color: 8f00ff
+          description: |
+            Skipped:
+            - `{SKIPPED-NAME}`
+            Now playing:
+            - `{PLAYING-NAME}`
+          fields:
+            - name: "Duration"
+              value: "`{PLAYING-DURATION}`"
+              inline: true
+            - name: "Source"
+              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              inline: true
+            - name: "Playlist Size"
+              value: "`{PLAYLIST-SIZE}`"
+              inline: true
+
+        $components:
+          - name: "musicmodule:back"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏮"
+          - name: "musicmodule:pause"
+            type: BUTTON
+            style: SUCCESS
+            static: true
+            emoji: "⏯"
+          - name: "musicmodule:next"
+            type: BUTTON
+            style: PRIMARY
+            static: true
+            emoji: "⏭"
+          - name: "musicmodule:stop"
+            type: BUTTON
+            style: DANGER
+            static: true
+            emoji: "🛑"
+          - name: "musicmodule:lock"
+            type: BUTTON
+            style: SECONDARY
+            static: true
+            emoji: "🔒"
+
+    playlist:
+      description: "Displays the current music bot playlist."
+      success:
+        $embed:
+          title: "Playlist of `{COUNT}` songs."
+          description: "{PLAYLIST}"
+
+    loop:
+      description: "Sets the loop mode for tracks in the music bot."
+      mode:
+        name: "mode"
+        description: "Loop mode"
+        choices:
+          no: "Off"
+          track: "Current Track"
+          playlist: "Playlist"
+      success:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Loop Mode"
+          color: 8f00ff
+          description: "Loop mode changed to `{MODE}`."
+
+    lock:
+      description: "Locks the current music bot to be used only by admin."
+      denied:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Bot is Locked!"
+          color: ff0000
+          description: "Only staff can control it."
+
+      locked:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Music Bot Locked!"
+          color: 8f00ff
+          description: "Only staff can control it now."
+
+      unlocked:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Music Bot Unlocked!"
+          color: 8f00ff
+          description: "Anyone can control it now."
+
+    music-ban:
+      description: "Bans a user from using the music bot."
+      target:
+        name: "user"
+        description: "User to ban from using the bot."
+      denied:
+        $embed:
+          title: "You're Banned! Oops!"
+          color: ff0000
+          description: |
+            Admin has banned you from using the music bot!
+            Maybe think about your behavior…
+
+      banned:
+        $embed:
+          title: "User Banned!"
+          color: 8f00ff
+          description: |
+            You have banned {USER} from using the music bot.
+            They won't be able to use it anymore.
+
+      unbanned:
+        $embed:
+          title: "User Unbanned!"
+          color: 8f00ff
+          description: |
+            You have allowed {USER} to use the music bot again.
+
+    pause:
+      description: "Pauses or resumes the current track in the music bot."
+
+      paused:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Paused!"
+          color: 8f00ff
+          description: "Current track paused."
+
+      resumed:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "Resumed!"
+          color: 8f00ff
+          description: "Resumed playback of current track."
+
+    24-7:
+      description: "Keeps the bot in voice channel even if no one's there."
+
+      enable:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "24/7 Mode Enabled!"
+          color: 8f00ff
+          description: "Bot will now stay in the channel and repeat the playlist."
+
+      disable:
+        $embed:
+          author: "{BOT}"
+          author-icon: "{BOT-AVATAR}"
+          title: "24/7 Mode Disabled!"
+          color: 8f00ff
+          description: "Bot will now leave the channel after the playlist ends."

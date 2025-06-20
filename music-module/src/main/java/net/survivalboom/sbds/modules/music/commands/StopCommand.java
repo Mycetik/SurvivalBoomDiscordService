@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "stop")
+@Command(name = "stop", description = "Stops current playing music bot", translationKey = "music.command.stop")
 public class StopCommand extends AbstractPlayerCommand {
 
     public StopCommand(@NotNull BotManager botManager) {
@@ -51,7 +51,7 @@ public class StopCommand extends AbstractPlayerCommand {
         if (checkBannedOrLocked(info, player, ephemeral)) return;
 
         player.stop();
-        info.reply("music.command.stop")
+        info.reply("music.command.stop.success")
                 .withPlaceholders(Placeholders.of("{BOT}", player.getBot().getBot().getSelfUser().getAsMention()))
                 .send()
                 .setEphemeral(ephemeral)
@@ -76,7 +76,7 @@ public class StopCommand extends AbstractPlayerCommand {
 
     }
 
-    @CommandArgument(name = "channel", description = "A channel", scope = ArgumentScope.CONSOLE)
+    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

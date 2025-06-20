@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "music-lock", description = "Lock current music bot for staff usage only", permission = "music.command.lock")
+@Command(name = "music-lock", description = "Locks current music bot for staff usage only", translationKey = "music.command.lock", permission = "music.command.lock")
 public class LockCommand extends AbstractPlayerCommand {
 
     public LockCommand(@NotNull BotManager botManager) {
@@ -92,7 +92,7 @@ public class LockCommand extends AbstractPlayerCommand {
 
     }
 
-    @CommandArgument(name = "channel", description = "Voice channel with the bot", scope = ArgumentScope.CONSOLE)
+    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

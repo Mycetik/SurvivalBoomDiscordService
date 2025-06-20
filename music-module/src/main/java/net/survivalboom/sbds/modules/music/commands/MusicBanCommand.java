@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "music-ban", description = "Ban a member from using music bot", permission = "music.command.musicban")
+@Command(name = "music-ban", description = "Bans member from using music bot", translationKey = "music.command.music-ban", permission = "music.command.musicban")
 public class MusicBanCommand extends AbstractPlayerCommand {
 
     public MusicBanCommand(@NotNull BotManager botManager) {
@@ -60,13 +60,13 @@ public class MusicBanCommand extends AbstractPlayerCommand {
 
     }
 
-    @CommandArgument(name = "guild", description = "The guild", scope = ArgumentScope.CONSOLE)
+    @CommandArgument(name = "guild", description = "Guild", scope = ArgumentScope.CONSOLE)
     public Argument<?> guild() {
         return new IntegerArgument();
     }
 
 
-    @CommandArgument(name = "target", description = "A member to ban/unban", index = 1)
+    @CommandArgument(name = "target", description = "Member", index = 1)
     public Argument<?> target() {
         return new UserArgument();
     }

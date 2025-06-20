@@ -41,6 +41,10 @@ public class GuildEventListener implements Listener {
 
         Member member = event.getMember();
 
+        if (member.getUser().isBot()) {
+            return;
+        }
+
         if (voiceManager.getIgnoredMembers().contains(member)) {
             return;
         }

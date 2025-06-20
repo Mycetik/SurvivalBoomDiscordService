@@ -27,7 +27,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 
-@Command(name = "play", description = "Finds music and adds it to the playlist, or connects a new music bot")
+@Command(name = "play", description = "Finds a track from your query and connects a new bot to your channel", translationKey = "music.command.play")
 public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
 
     public PlayCommand(@NotNull BotManager botManager) {
@@ -252,7 +252,7 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
 
     }
 
-    @CommandArgument(name = "channel", description = "123", scope = ArgumentScope.CONSOLE)
+    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }
