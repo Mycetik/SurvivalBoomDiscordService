@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 public class SlashCommandLocalizator {
 
-    private static final Logger log = LoggerFactory.getLogger(SlashCommandLocalizator.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(SlashCommandLocalizator.class.getSimpleName());
 
     private static final Pattern OPTION_PATTERN = Pattern.compile("^[a-zа-яіїєґ]+$");
 
