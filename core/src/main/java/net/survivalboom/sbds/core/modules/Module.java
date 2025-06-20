@@ -214,6 +214,7 @@ public class Module extends Valid implements IModule {
 
             catch (Throwable t) {
                 enabled = false;
+                registration.unregister();
                 throw t;
             }
 
