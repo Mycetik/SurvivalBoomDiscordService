@@ -11,7 +11,7 @@ import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.modules.voice.storage.VoiceCreatorChannels;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "set", description = "Sets a voice for creator in this guild.", permission = "voice.command.setup")
+@Command(name = "set", description = "Sets a voice for creator in this guild.", translationKey = "voice.command.setup.set", permission = "voice.command.setup")
 public class SetupCommand extends CommandBase implements SlashCommand {
 
     private final VoiceCreatorChannels voiceCreatorChannels;

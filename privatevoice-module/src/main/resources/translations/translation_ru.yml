@@ -5,29 +5,312 @@
 
 $name: "russian"
 
-commands:
-
-  private-voice:
-    successful-setup:
-      $embed:
-        title: "Успех!"
-        description: "Установлено создаватель приватных голосовых каналов."
-        color: ff0000
-
 voice:
-  panel:
-    $embed:
-      title: "Управление каналом **{CHANNEL}**"
-      description: ""
-      color: ff0000
 
-  lock: "Заблокировать канал 🔒"
-  unlock: "Разблокировать канал 🔓"
-  show: "Показать канал 👁️"
-  hide: "Скрыть канал 👁️‍🗨️"
-  delete: "Удалить канал 🧹"
-  set_limit: "Установить лимит участников 👤"
-  placeholder: "Выберите действие"
-  blacklist: "Чёрный список"
-  whitelist: "Белый список"
-  rename: "✏️ Переименовать канал"
+  control:
+
+    not-in-voice:
+      $embed:
+        title: "Не в приватном голосовом канале."
+        color: ff0000
+        description: |
+          Вы не находитесь в приватном голосовом канале.
+          Не упускайте уникальную возможность и создайте свой собственный уже сейчас!
+
+    not-owner:
+      $embed:
+        title: "Не владелец!"
+        color: ff0000
+        description: |
+          Вы не владелец этого приватного голосового канала.
+          Не упускайте уникальную возможность и создайте свой собственный уже сейчас!
+
+    panel:
+      $embed:
+        title: ":satellite_orbital: SurvivalBoom :satellite_orbital:"
+        color: 4188fa
+        description: |
+          :level_slider: Панель управления голосовым каналом.
+          
+          :loud_sound: Голосовый канал: {CHANNEL} 
+          :crown: Владелец: {OWNER}
+          
+          :lock: Заблокировано: `{LOCKED}` 
+          :eyeglasses: Скрыто: `{HIDDEN}`
+          
+          :white_check_mark: Белый список: `{WHITELIST}`
+          :beginner: Чёрный список: `{BLACKLIST}` 
+          :microphone2: Замученные пользователи: `{MUTED}` 
+          
+          :eight_spoked_asterisk: Потеряли панель? Напишите `+` чтобы отправить панель снова.
+      $components:
+
+        - name: privatevoicemodule:action
+          static: true
+          type: STRING_SELECT
+          options:
+
+            - name: "change-name"
+              label: "Название канала"
+              description: "Изменить название канала."
+              emoji: "📑"
+
+            - name: "set-limit"
+              label: "Лимит пользователей"
+              description: "Изменить лимит пользователей в канале."
+              emoji: "🪬"
+
+            - name: "lock"
+              label: "Заблокировать/Разблокировать"
+              description: "Управление доступом к каналу."
+              emoji: "🔐"
+
+            - name: "hide"
+              label: "Скрыть/Показать"
+              description: "Управление видимостью канала."
+              emoji: "👁️"
+
+            - name: "blacklist"
+              label: "Чорный список"
+              description: "Управление чёрным списком пользователей."
+              emoji: "📕"
+
+            - name: "whitelist"
+              label: "Белый список"
+              description: "Управление белым списком пользователей."
+              emoji: "📘"
+
+            - name: "mute"
+              label: "Управление мутами"
+              description: "Замутить/размутить пользователя."
+              emoji: "🎙️"
+
+            - name: "delete"
+              label: "Удалить"
+              description: "Удалить приватный канал."
+              emoji: "🗑️"
+
+    rename:
+
+      modal:
+        title: "Изменить название канала"
+        input-name: "Новое название"
+        input-placeholder: "Введи..."
+
+      success:
+        $embed:
+          title: "Название изменено!"
+          color: 4188fa
+          description: "Вы изменили название канала на `{NAME}`."
+
+    set-limit:
+
+      modal:
+        title: "Максимум участников"
+        input-name: "Количество участников"
+        input-placeholder: "Введите..."
+
+      success:
+        $embed:
+          title: "Количество участников изменено!"
+          color: 4188fa
+          description: "Вы изменили максимальное количество участников на `{LIMIT}`."
+
+      invalid:
+        $embed:
+          title: "Неправильное число!"
+          color: ff0000
+          description: |
+            Вы должны указать число от **1** до **50**.
+            Ваше значение `{INPUT}` неправильное, потому что оно не является числом.
+
+    lock:
+
+      locked:
+        $embed:
+          title: "Канал заблокирован!"
+          color: 4188fa
+          description:  "Вы заблокировали канал. Теперь никто не сможет зайти в этот канал."
+
+      unlocked:
+        $embed:
+          title: "Канал разблокирован!"
+          color: 4188fa
+          description: "Ви разблокировали канал. Тепер кто угодно сможет зайти в этот канал."
+
+    hide:
+
+      hidden:
+        $embed:
+          title: "Канал спрятан!"
+          color: 4188fa
+          description: "Вы спрятали канал. Теперь никто не сможет увидеть этот канал."
+
+      show:
+        $embed:
+          title: "Канал показан!"
+          color: 4188fa
+          description: "Вы показали канал. Теперь кто угодно сможет увидить этот канал."
+
+    blacklist:
+
+      self:
+        $embed:
+          title: "Вы не можете заблокировать самого себя."
+          color: ff0000
+          description: |
+            Вы попробовали заблокировать самого себя. Вы дебил.
+            Живите с этим.
+
+      select:
+        $content: "Выберите участника."
+        $components:
+          - name: member
+            type: ENTITY_SELECT
+            target: USER
+
+      bot:
+        $embed:
+          title: "Заблокировать бота?"
+          color: ff0000
+          description: |
+            Вы попробовали заблокировать бота. Вы дебил.
+            Живите с этим.
+      
+      
+
+      added:
+        $embed:
+          title: "Пользователь заблокирован!"
+          color: 4188fa
+          description: "Пользователь {MEMBER} заблокирован! Теперь он не сможет зайти в этот канал."
+
+      removed:
+        $embed:
+          title: "Пользователь разблокирован!"
+          color: 4188fa
+          description: "Пользователь {MEMBER} разблокирован! Теперь он сможет зайти в этот канал."
+
+    whitelist:
+
+      self:
+        $embed:
+          title: "Вы не можете добавить самого себя в белый список."
+          color: ff0000
+          description: |
+            Вы владелец канала, вы не можете добавить себя в белый список.
+            Живите с этим.
+
+      bot:
+        $embed:
+          title: "Добавить в белый список бота?"
+          color: ff0000
+          description: |
+            Вы попробовали добавить в белый список бота. Вы дебил.
+            Живите с этим.
+
+      select:
+        $content: "Выберите участника"
+        $components:
+          - name: member
+            type: ENTITY_SELECT
+            target: USER
+
+      added:
+        $embed:
+          title: "Добавлено в белый список!"
+          color: 4188fa
+          description: "Пользователь {MEMBER} добавлен в белый список."
+
+      removed:
+        $embed:
+          title: "Удалено из белого списка."
+          color: 4188fa
+          description: "Пользователь {MEMBER} удален из белого списка."
+
+    mute:
+
+      self:
+        $embed:
+          title: "Вы не можете замутить самого себя!"
+          color: ff0000
+          description: |
+            Вы попробовали замутить самого себя. Вы дебил.
+            Живите с этим.
+
+      bot:
+        $embed:
+          title: "Замутить бота?"
+          color: ff0000
+          description: |
+            Вы попробовали замутить бота. Вы дебил.
+            Живите с этим.
+
+      not-in-voice:
+        $embed:
+          title: "Не в голосовом канале!"
+          color: ff0000
+          description: |
+            Этот пользователь не находиться в голосовом канале. Поэтому вы не можете его замутить.
+            Логично?
+
+      select:
+        $content: "Выберите участника."
+        $components:
+          - name: member
+            type: ENTITY_SELECT
+            target: USER
+
+      muted:
+        $embed:
+          title: "Пользователь замучен!"
+          color: 4188fa
+          description: "Пользователь {MEMBER} замучен в этом голосовом канале."
+
+      unmuted:
+        $embed:
+          title: "Пользователь размучен!"
+          color: 4188fa
+          description: "Пользователь {MEMBER} размучен в этом голосовом канале."
+
+
+
+
+
+  command:
+
+    setup:
+
+      invalid-channel:
+        $embed:
+          title: "Неправильный канал!"
+          color: ff0000
+          description: "Пожалуйста, выберите **голосовой** канал."
+
+      set:
+
+        description: "Устанавливает канал-создатель приватных голосовых каналов."
+
+        channel:
+          name: "канал"
+          description: "Канал-создатель приватных каналов"
+
+        success:
+          $embed:
+            title: "Приватные каналы настроены!"
+            color: 00ff08
+            description: "Вы установили канал для создания приватных голосовых каналов. Поздравляем!"
+            fields:
+
+              - name: "Канал"
+                value: "{CHANNEL}"
+
+      remove:
+
+        description: "Удаляет канал-создатель приватных каналов и выключает приватные каналы."
+
+        success:
+          $embed:
+            title: "Приватные каналы выключено!"
+            color: 00ff08
+            description: "Вы удалили канал-создатель приватных каналов."

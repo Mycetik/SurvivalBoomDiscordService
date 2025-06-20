@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "remove", description = "Removes and disables private channels from this guild.", permission = "voice.command.remove")
+@Command(name = "remove", description = "Removes and disables private channels from this guild.", translationKey = "voice.command.setup.remove", permission = "voice.command.remove")
 public class RemoveCommand extends CommandBase implements SlashCommand {
 
     private final VoiceCreatorChannels voiceCreatorChannels;

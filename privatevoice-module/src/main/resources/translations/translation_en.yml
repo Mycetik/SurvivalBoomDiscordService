@@ -5,29 +5,307 @@
 
 $name: "english"
 
-commands:
-
-  private-voice:
-    successful-setup:
-      $embed:
-        title: "Success!"
-        description: "Private voice channel creator has been set up."
-        color: ff0000
-
 voice:
-  panel:
-    $embed:
-      title: "Managing channel **{CHANNEL}**"
-      description: ""
-      color: ff0000
 
-  lock: "Lock channel 🔒"
-  unlock: "Unlock channel 🔓"
-  show: "Show channel 👁️"
-  hide: "Hide channel 👁️‍🗨️"
-  delete: "Delete channel 🧹"
-  set_limit: "Set user limit 👤"
-  placeholder: "Select an action"
-  blacklist: "Blacklist"
-  whitelist: "Whitelist"
-  rename: "✏️ Rename channel"
+  control:
+
+    not-in-voice:
+      $embed:
+        title: "You are not in a private voice channel!"
+        color: ff0000
+        description: |
+          You are not currently in a private voice channel!
+          Don't miss out — create your own now!
+
+    not-owner:
+      $embed:
+        title: "You are not the owner!"
+        color: ff0000
+        description: |
+          You are not the owner of this private channel!
+          Don't miss the chance — create your own channel now!
+
+    panel:
+      $embed:
+        title: ":satellite_orbital: SurvivalBoom :satellite_orbital:"
+        color: 4188fa
+        description: |
+          :level_slider: Voice Channel Control Panel.
+          
+          :loud_sound: Voice Channel: {CHANNEL}
+          :crown: Owner: {OWNER}
+          
+          :lock: Locked: `{LOCKED}`
+          :eyeglasses: Hidden: `{HIDDEN}`
+          
+          :white_check_mark: Whitelisted Users: `{WHITELIST}`
+          :beginner: Blacklisted Users: `{BLACKLIST}`
+          :microphone2: Muted Users: `{MUTED}`
+          
+          :eight_spoked_asterisk: Lost the panel? Type `+` to send it again.
+      $components:
+
+        - name: privatevoicemodule:action
+          static: true
+          type: STRING_SELECT
+          options:
+
+            - name: "change-name"
+              label: "Channel Name"
+              description: "Change the channel's name."
+              emoji: "📑"
+
+            - name: "set-limit"
+              label: "User Limit"
+              description: "Set the max number of users."
+              emoji: "🪬"
+
+            - name: "lock"
+              label: "Lock/Unlock"
+              description: "Manage channel access."
+              emoji: "🔐"
+
+            - name: "hide"
+              label: "Hide/Show"
+              description: "Manage channel visibility."
+              emoji: "👁️"
+
+            - name: "blacklist"
+              label: "Blacklist"
+              description: "Block specific users."
+              emoji: "📕"
+
+            - name: "whitelist"
+              label: "Whitelist"
+              description: "Allow specific users."
+              emoji: "📘"
+
+            - name: "mute"
+              label: "Mute Control"
+              description: "Mute/unmute a user."
+              emoji: "🎙️"
+
+            - name: "delete"
+              label: "Delete"
+              description: "Delete your private channel."
+              emoji: "🗑️"
+
+    rename:
+
+      modal:
+        title: "Rename Channel"
+        input-name: "New Name"
+        input-placeholder: "Enter..."
+
+      success:
+        $embed:
+          title: "Name Changed!"
+          color: 4188fa
+          description: "You've renamed the channel to `{NAME}`."
+
+    set-limit:
+
+      modal:
+        title: "Max Users"
+        input-name: "User Count"
+        input-placeholder: "Enter..."
+
+      success:
+        $embed:
+          title: "User Limit Updated!"
+          color: 4188fa
+          description: "You've set the max number of users to `{LIMIT}`."
+
+      invalid:
+        $embed:
+          title: "Invalid Number!"
+          color: ff0000
+          description: |
+            You must enter a number between **1** and **50**.
+            Your input `{INPUT}` is invalid and not a number.
+
+    lock:
+
+      locked:
+        $embed:
+          title: "Channel Locked!"
+          color: 4188fa
+          description: "You've locked the channel. No one else can join now."
+
+      unlocked:
+        $embed:
+          title: "Channel Unlocked!"
+          color: 4188fa
+          description: "You've unlocked the channel. Anyone can join now."
+
+    hide:
+
+      hidden:
+        $embed:
+          title: "Channel Hidden!"
+          color: 4188fa
+          description: "You've hidden the channel. No one can see it now."
+
+      show:
+        $embed:
+          title: "Channel Visible!"
+          color: 4188fa
+          description: "You've made the channel visible. Anyone can now see it."
+
+    blacklist:
+
+      self:
+        $embed:
+          title: "You can't block yourself!"
+          color: ff0000
+          description: |
+            You tried to block yourself. You're an idiot.
+            Deal with it.
+
+      select:
+        $content: "Select a user"
+        $components:
+          - name: member
+            type: ENTITY_SELECT
+            target: USER
+
+      bot:
+        $embed:
+          title: "Blocking a bot?"
+          color: ff0000
+          description: |
+            You tried to block a bot. You're an idiot.
+            Deal with it.
+
+      added:
+        $embed:
+          title: "User Blocked!"
+          color: 4188fa
+          description: "User {MEMBER} is now blocked and can't join this channel."
+
+      removed:
+        $embed:
+          title: "User Unblocked!"
+          color: 4188fa
+          description: "User {MEMBER} is now unblocked and can join this channel."
+
+    whitelist:
+
+      self:
+        $embed:
+          title: "You can't whitelist yourself!"
+          color: ff0000
+          description: |
+            You're the channel owner, you can't whitelist yourself.
+            Deal with it.
+
+      bot:
+        $embed:
+          title: "Whitelisting a bot?"
+          color: ff0000
+          description: |
+            You tried to whitelist a bot. You're an idiot.
+            Deal with it.
+
+      select:
+        $content: "Select a user"
+        $components:
+          - name: member
+            type: ENTITY_SELECT
+            target: USER
+
+      added:
+        $embed:
+          title: "User Whitelisted!"
+          color: 4188fa
+          description: "User {MEMBER} has been added to the whitelist."
+
+      removed:
+        $embed:
+          title: "User Removed from Whitelist!"
+          color: 4188fa
+          description: "User {MEMBER} has been removed from the whitelist."
+
+    mute:
+
+      self:
+        $embed:
+          title: "You can't mute yourself!"
+          color: ff0000
+          description: |
+            You tried to mute yourself. You're an idiot.
+            Deal with it.
+
+      bot:
+        $embed:
+          title: "Muting a bot?"
+          color: ff0000
+          description: |
+            You tried to mute a bot. You're an idiot.
+            Deal with it.
+
+      not-in-voice:
+        $embed:
+          title: "User not in voice channel!"
+          color: ff0000
+          description: |
+            This user is not in your channel. So you can't mute them.
+            Makes sense?
+
+      select:
+        $content: "Select a user"
+        $components:
+          - name: member
+            type: ENTITY_SELECT
+            target: USER
+
+      muted:
+        $embed:
+          title: "User Muted!"
+          color: 4188fa
+          description: "User {MEMBER} has been muted in this voice channel."
+
+      unmuted:
+        $embed:
+          title: "User Unmuted!"
+          color: 4188fa
+          description: "User {MEMBER} has been unmuted in this voice channel."
+
+  command:
+
+    setup:
+
+      invalid-channel:
+        $embed:
+          title: "Invalid Channel!"
+          color: ff0000
+          description: "Please select a **voice** channel."
+
+      set:
+
+        description: "Sets the channel used to create private voice channels."
+
+        channel:
+          name: "channel"
+          description: "Channel that creates private voice channels"
+
+        success:
+          $embed:
+            title: "Private Channels Configured!"
+            color: 00ff08
+            description: "You've set the channel for creating private voice channels. Congrats!"
+            fields:
+
+              - name: "Channel"
+                value: "{CHANNEL}"
+
+      remove:
+
+        description: "Removes the creator channel and disables private channels."
+
+        success:
+          $embed:
+            title: "Private Channels Disabled!"
+            color: 00ff08
+            description: "You removed the channel for creating private voice channels."
+
