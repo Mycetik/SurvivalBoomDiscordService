@@ -34,9 +34,11 @@ public class Command {
     private boolean defaultPermission;
 
 
-    private String description;
+    private @Nullable String description;
 
-    private String usage;
+    private @Nullable String translationKey;
+
+    private @Nullable String usage;
 
 
     private boolean global = false;
@@ -71,6 +73,11 @@ public class Command {
 
     public @NotNull Command withDescription(@Nullable String description) {
         this.description = description;
+        return this;
+    }
+
+    public @NotNull Command withTranslationKey(@Nullable String key) {
+        this.translationKey = key;
         return this;
     }
 
@@ -241,6 +248,10 @@ public class Command {
 
     public @Nullable String description() {
         return description;
+    }
+
+    public @Nullable String translationKey() {
+        return translationKey;
     }
 
 

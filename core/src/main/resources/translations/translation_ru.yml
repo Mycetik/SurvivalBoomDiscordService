@@ -6,13 +6,14 @@
 $name: "russian"
 $display-name: "$[lang.russian]"
 $icon: "🇷🇺"
+$discord-locale: RUSSIAN
 
 lang:
   ukrainian: "Украинский"
   russian: "Русский"
   english: "Английский"
 
-common:
+sbds:
 
   error:
     $embed:

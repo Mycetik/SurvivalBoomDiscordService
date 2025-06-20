@@ -1,14 +1,14 @@
 package net.survivalboom.sbds.core.translations;
 
+import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
 import net.survivalboom.sbds.api.translations.MessageLoadException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.modules.Module;
-import net.survivalboom.sbds.core.modules.ModuleManager;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TranslationManager extends Manager implements ITranslationManager {
 
@@ -29,6 +30,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
 
 
     private final File dir;
+
 
     private final Map<String, Translation> translationMap = new HashMap<>();
 
@@ -170,6 +172,16 @@ public class TranslationManager extends Manager implements ITranslationManager {
 
     }
 
+    @Override
+    public @Nullable Translation findTranslationByLocale(@NotNull DiscordLocale locale) {
+        return translationMap.values().stream().filter(t -> t.discordLocale().equals(locale)).findAny().orElse(null);
+    }
+
+    @Override
+    public @NotNull Set<DiscordLocale> getAvailableLocales() {
+        return translationMap.values().stream().map(Translation::discordLocale).collect(Collectors.toSet());
+    }
+
     private void addModuleTranslation(@NotNull Module module, @NotNull File file) throws IOException, InvalidConfigurationException, MessageLoadException {
 
         YamlConfiguration yamlConfiguration = new YamlConfiguration();
@@ -179,7 +191,8 @@ public class TranslationManager extends Manager implements ITranslationManager {
         if (translationName == null) throw new IllegalStateException("Yaml file does not contain `$name` key");
 
         Translation translation = getTranslation(translationName);
-        if (translation == null) throw new IllegalStateException("Unknown translation `" + translationName + "`");
+        if (translation == null) return;
+//            throw new IllegalStateException("Unknown translation `" + translationName + "`");
 
         translation.addModuleTranslation(module, yamlConfiguration);
 

@@ -1,11 +1,13 @@
 package net.survivalboom.sbds.core.translations;
 
+import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.InvalidComponentException;
 import net.survivalboom.sbds.api.messages.MessageTemplate;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.InvalidTranslationException;
 import net.survivalboom.sbds.api.translations.MessageLoadException;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.messages.Message;
 import net.survivalboom.sbds.api.utils.Valid;
 import net.survivalboom.sbds.api.messages.InvalidEmbedException;
@@ -25,6 +27,8 @@ public class Translation extends Valid implements ITranslation {
     private final String name;
 
     private final File file;
+
+    private DiscordLocale discordLocale;
 
     private String displayName;
 
@@ -51,6 +55,8 @@ public class Translation extends Valid implements ITranslation {
 
         load(yamlConfiguration);
 
+        if (discordLocale == null) throw new InvalidTranslationException("Invalid translation. Value of key `$discord-locale` is not valid");
+
     }
 
 
@@ -60,6 +66,7 @@ public class Translation extends Valid implements ITranslation {
 
         this.displayName = yamlConfiguration.getString("$display-name");
         this.icon = yamlConfiguration.getString("$icon");
+        this.discordLocale = CommonUtils.getEnumValue(DiscordLocale.class, yamlConfiguration.getString("$discord-locale"));
 
         Set<String> keys = yamlConfiguration.getKeys(false);
         keys.remove("$name");
@@ -222,6 +229,16 @@ public class Translation extends Valid implements ITranslation {
     @Override
     public void displayName(@Nullable String displayName) {
         this.displayName = displayName;
+    }
+
+    @Override
+    public @NotNull DiscordLocale discordLocale() {
+        return discordLocale;
+    }
+
+    @Override
+    public void discordLocale(@NotNull DiscordLocale locale) {
+        this.discordLocale = locale;
     }
 
 

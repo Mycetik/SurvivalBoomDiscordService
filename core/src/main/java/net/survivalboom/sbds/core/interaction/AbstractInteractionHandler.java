@@ -191,7 +191,7 @@ public abstract class AbstractInteractionHandler<T, E extends IReplyCallback> ex
 
         catch (Throwable t) {
             logger.error("An exception was thrown in interaction processor.", t);
-            sbds.getMessages().reply(event, "common.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t)).send().setEphemeral(true).queue();
+            sbds.getMessages().reply(event, "sbds.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t)).send().setEphemeral(true).queue();
         }
 
     }
@@ -202,13 +202,13 @@ public abstract class AbstractInteractionHandler<T, E extends IReplyCallback> ex
 
         RegisteredInteractionListener<T> button = registeredInteractionListeners.stream().filter(b -> b.key.equals(key)).findAny().orElse(null);
         if (button == null) {
-            sbds.getMessages().reply(event, "common.invalid-interaction", event.getUser()).withPlaceholders(Placeholders.of("{ID}", id)).send().setEphemeral(true).queue();
+            sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser()).withPlaceholders(Placeholders.of("{ID}", id)).send().setEphemeral(true).queue();
             return;
         }
 
         Member member = event.getMember();
         if (button.permission != null && member != null && !sbds.getPermissionManager().hasPermission(member, button.permission, false)) {
-            sbds.getMessages().reply(event, "common.no-permission", event.getUser()).withPlaceholders("{PERMISSION}", button.permission).send().setEphemeral(true).queue();
+            sbds.getMessages().reply(event, "sbds.no-permission", event.getUser()).withPlaceholders("{PERMISSION}", button.permission).send().setEphemeral(true).queue();
             return;
         }
 
@@ -220,7 +220,7 @@ public abstract class AbstractInteractionHandler<T, E extends IReplyCallback> ex
 
         PendingInteraction<T> pending = pendingInteractions.stream().filter(p -> p.id.equals(id)).findAny().orElse(null);
         if (pending == null || !event.getUser().equals(pending.user)) {
-            sbds.getMessages().reply(event, "common.invalid-interaction", event.getUser()).withPlaceholders(Placeholders.of("{ID}", id)).send().setEphemeral(true).queue();
+            sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser()).withPlaceholders(Placeholders.of("{ID}", id)).send().setEphemeral(true).queue();
             return;
         }
 

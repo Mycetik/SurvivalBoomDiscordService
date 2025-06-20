@@ -18,7 +18,7 @@ public abstract class SimpleArgument<T> extends Argument<T> {
 
 
     public static @NotNull OptionData createOptionData(@NotNull OptionType type, @NotNull CommandArgument argument) {
-        return new OptionData(type, argument.name(), Objects.requireNonNullElse(argument.description(), "Option has no description."), argument.required());
+        return new OptionData(type, argument.name(), Objects.requireNonNullElse(argument.description(), "-"), argument.required());
     }
 
 }

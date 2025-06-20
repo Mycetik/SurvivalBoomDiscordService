@@ -6,6 +6,7 @@
 $name: "ukrainian"
 $display-name: "$[lang.ukrainian]"
 $icon: "🇺🇦"
+$discord-locale: UKRAINIAN
 
 lang:
   ukrainian: "Українська"
@@ -17,7 +18,7 @@ values:
   false: "Ні"
   none: "Немає"
 
-common:
+sbds:
 
   error:
     $embed:

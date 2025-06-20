@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.translations;
 
+import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.survivalboom.sbds.api.messages.IMessage;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.jetbrains.annotations.NotNull;
@@ -24,6 +25,11 @@ public interface ITranslation {
     @Nullable String displayName();
 
     void displayName(@Nullable String displayName);
+
+
+    @NotNull DiscordLocale discordLocale();
+
+    void discordLocale(@NotNull DiscordLocale locale);
 
 
     @Nullable String icon();

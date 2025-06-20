@@ -13,6 +13,7 @@ public @interface Command {
 
     @NotNull String usage() default "";
     @NotNull String description() default "";
+    @NotNull String translationKey() default "";
 
     @NotNull String permission() default "";
     boolean defaultPermission() default false;

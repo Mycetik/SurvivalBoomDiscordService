@@ -1,11 +1,10 @@
 package net.survivalboom.sbds.api.commands.base;
 
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
+import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.modules.ModuleMain;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -23,6 +22,8 @@ public abstract class CommandBase implements CommandExecutor {
 
 
     private final String description;
+
+    private final String translationKey;
 
     private final String usage;
 
@@ -55,6 +56,7 @@ public abstract class CommandBase implements CommandExecutor {
 
         this.description = info.description().isEmpty() ? null : info.description();
         this.usage = info.usage().isEmpty() ? null : info.usage();
+        this.translationKey = info.translationKey().isEmpty() ? null : info.translationKey();
 
         this.permission = info.permission().isEmpty() ? null : info.permission();
         this.defaultPermission = info.defaultPermission();
@@ -116,7 +118,8 @@ public abstract class CommandBase implements CommandExecutor {
 
             if (argument == null) throw InvalidCommandException.createInvalidArgumentException(method, "Method returned null", null);
 
-            out.add(new net.survivalboom.sbds.api.commands.CommandArgument(name, argumentInfo.description(), List.of(argumentInfo.scope()), argument, argumentInfo.index(), argumentInfo.required()));
+            String argumentTranslationKey = translationKey != null ? translationKey + "." + argumentInfo.name() : null;
+            out.add(new net.survivalboom.sbds.api.commands.CommandArgument(name, argumentInfo.description(), argumentTranslationKey, List.of(argumentInfo.scope()), argument, argumentInfo.index(), argumentInfo.required()));
 
         }
 
@@ -150,10 +153,13 @@ public abstract class CommandBase implements CommandExecutor {
 
         net.survivalboom.sbds.api.commands.Command command = new net.survivalboom.sbds.api.commands.Command(name, module, this);
 
-        command.withDescription(description);
-        command.withUsage(usage);
-        command.withAliases(aliases);
-        command.withPermission(permission, defaultPermission);
+        command
+            .withDescription(description)
+            .withUsage(usage)
+            .withAliases(aliases)
+            .withTranslationKey(translationKey)
+            .withPermission(permission, defaultPermission);
+
 
         if (!subcommands.isEmpty()) {
             subcommands.forEach(c -> command.withSubcommand(c, sbds, module));
@@ -161,9 +167,9 @@ public abstract class CommandBase implements CommandExecutor {
             return command;
         }
 
-        command.withArguments(arguments);
-
-        command.executes(this);
+        command
+            .withArguments(arguments)
+            .executes(this);
 
         return command;
 
@@ -210,6 +216,10 @@ public abstract class CommandBase implements CommandExecutor {
 
     public final @Nullable String getDescription() {
         return description;
+    }
+
+    public final @Nullable String getTranslationKey() {
+        return translationKey;
     }
 
     public final @Nullable String getPermission() {

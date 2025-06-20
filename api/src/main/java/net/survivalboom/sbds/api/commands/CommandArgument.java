@@ -14,6 +14,8 @@ public class CommandArgument {
 
     private final @Nullable String description;
 
+    private final @Nullable String translationKey;
+
     private final int index;
 
     private final boolean required;
@@ -24,15 +26,15 @@ public class CommandArgument {
     private final @NotNull Argument<?> argument;
 
 
-    public CommandArgument(@NotNull String name, @Nullable String description, @NotNull List<ArgumentScope> scopes, @NotNull Argument<?> argument, int index, boolean required) {
+    public CommandArgument(@NotNull String name, @Nullable String description, @Nullable String translationKey, @NotNull List<ArgumentScope> scopes, @NotNull Argument<?> argument, int index, boolean required) {
 
         Objects.requireNonNull(name, "name == null");
         Objects.requireNonNull(argument, "argument == null");
 
         this.name = name;
 
-        if (description == null || description.isBlank()) this.description = null;
-        else this.description = description;
+        this.description = description == null || description.isBlank() ? null : description;
+        this.translationKey = translationKey == null || translationKey.isBlank() ? null: translationKey;
 
         this.argument = argument;
         this.scopes = new ArrayList<>(scopes);
@@ -59,6 +61,10 @@ public class CommandArgument {
         return description;
     }
 
+    public @Nullable String translationKey() {
+        return translationKey;
+    }
+
     public @NotNull Argument<?> argument() {
         return argument;
     }
@@ -69,15 +75,15 @@ public class CommandArgument {
 
 
     public static @NotNull CommandArgument create(@NotNull String name, @Nullable String description, @NotNull List<ArgumentScope> scopes, @NotNull Argument<?> argument, int index, boolean required) {
-        return new CommandArgument(name, description, scopes, argument, index, required);
+        return new CommandArgument(name, description, null, scopes, argument, index, required);
     }
 
     public static @NotNull CommandArgument create(@NotNull String name, @Nullable String description, @NotNull Argument<?> argument) {
-        return new CommandArgument(name, description, defaultScopes(), argument, 0, true);
+        return new CommandArgument(name, description, null, defaultScopes(), argument, 0, true);
     }
 
     public static @NotNull CommandArgument create(@NotNull String name, @NotNull Argument<?> argument) {
-        return new CommandArgument(name, null, defaultScopes(), argument, 0, true);
+        return new CommandArgument(name, null, null, defaultScopes(), argument, 0, true);
     }
 
     public static @NotNull List<ArgumentScope> defaultScopes() {

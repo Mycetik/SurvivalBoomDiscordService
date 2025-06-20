@@ -20,20 +20,23 @@ import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
+import net.survivalboom.sbds.core.translations.TranslationManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 // TODO Зробити так щоб команди компілювались в CommandData лише раз, тільки при реєстрації або ініціалізації менеджера.
 public class SlashCommandManager extends AbstractCommandManager implements Listener, ISlashCommandManager {
 
     private final CommandInteractionManager commandInteractionManager;
 
+    private final SlashCommandLocalizator localizator;
+
+
     public SlashCommandManager(@NotNull SBDS sbds) {
         super("SlashCommandManager", sbds, true);
         this.commandInteractionManager = sbds.getCommandInteractionManager();
+        this.localizator = new SlashCommandLocalizator(sbds.getTranslationManager());
     }
 
     @Override
@@ -71,8 +74,10 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
     private @NotNull CommandData createCommandData(@NotNull Command command) {
 
-        String description = Objects.requireNonNullElse(command.description(), "Command has no description.");
+        String description = Objects.requireNonNullElse(command.description(), "-");
         SlashCommandData commandData = Commands.slash(command.getName(), description);
+
+        commandData.setLocalizationFunction(localizator.createLocalizationFunction(command));
 
         if (!command.hasSubcommands()) {
             commandData.addOptions(createCommandOptions(command));
@@ -85,6 +90,58 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
         return commandData;
 
     }
+
+//    private @Nullable String getLocalizationKey(@NotNull Command command, @NotNull String request) {
+//
+//        String[] parts = request.split("\\.");
+//        int lastIndex = parts.length - 1;
+//        int lastInformativeIndex = lastIndex - 1;
+//        String type = parts[lastIndex];
+//
+//        if (parts[lastInformativeIndex].equals(command.getName())) {
+//            if (type.equals("name")) return null;
+//            String translationKey = command.translationKey();
+//            return translationKey != null ? translationKey + "." + type : null;
+//        }
+//
+//        Command targetCommand = command;
+//        int index = 0;
+//        for (int i = 1; i < parts.length && i < 4; i++) {
+//
+//            index = i;
+//
+//            String part = parts[i];
+//            Command cmd = targetCommand.subcommands().stream().filter(c -> c.getName().equals(part)).findAny().orElse(null);
+//            if (cmd == null) break;
+//
+//            targetCommand = cmd;
+//
+//        }
+//
+//        String argumentTarget = parts[index];
+//        CommandArgument argument = targetCommand.arguments().stream().filter(a -> a.name().equals(argumentTarget)).findAny().orElse(null);
+//        if (argument == null) {
+//            return null;
+//        }
+//
+//        String argumentTranslationKey = argument.translationKey();
+//        if (argumentTranslationKey == null) {
+//            return null;
+//        }
+//
+//        if (index == lastInformativeIndex) {
+//            return argumentTranslationKey;
+//        }
+//
+//        index++;
+//
+//        String additionalTranslationKey = parts[index];
+//
+//        return argumentTranslationKey + "." + additionalTranslationKey;
+//
+//    }
+
+
 
     private List<OptionData> createCommandOptions(@NotNull Command command) {
 
@@ -107,7 +164,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
         for (Command subcommand : command.subcommands()) {
 
             String name = subcommand.getName();
-            String description = Objects.requireNonNullElse(subcommand.description(), "Subcommand has no description.");
+            String description = Objects.requireNonNullElse(subcommand.description(), "- ");
 
             if (!subcommand.hasSubcommands()) {
                 slash.addSubcommands(new SubcommandData(name, description).addOptions(createCommandOptions(subcommand)));
@@ -117,7 +174,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
             SubcommandGroupData subcommandGroup = new SubcommandGroupData(name, description);
             for (Command subsubcommand : subcommand.subcommands()) {
-                subcommandGroup.addSubcommands(new SubcommandData(subsubcommand.getName(), Objects.requireNonNullElse(subsubcommand.description(), "Subcommand has no description.")).addOptions(createCommandOptions(subsubcommand)));
+                subcommandGroup.addSubcommands(new SubcommandData(subsubcommand.getName(), Objects.requireNonNullElse(subsubcommand.description(), "- ")).addOptions(createCommandOptions(subsubcommand)));
             }
 
             slash.addSubcommandGroups(subcommandGroup);
@@ -175,8 +232,8 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
         catch (Throwable t) {
             logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName(), commandName, t);
-            if (!event.isAcknowledged()) messages.reply(event, "common.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
-            else messages.createActionMessage("common.error", event.getUser(), d -> event.getHook().editOriginal(MessageEditData.fromCreateData(d))).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
+            if (!event.isAcknowledged()) messages.reply(event, "sbds.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
+            else messages.createActionMessage("sbds.error", event.getUser(), d -> event.getHook().editOriginal(MessageEditData.fromCreateData(d))).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
         }
 
     }
@@ -213,7 +270,7 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
             boolean hasPermission = permissionManager.hasPermission(member, permission, command.defaultPermission());
             if (!hasPermission) {
-                messages.reply(event.getInteraction(),"common.no-permission", event.getUser()).withPlaceholders(Placeholders.of("{PERMISSION}", permission)).queue();
+                messages.reply(event.getInteraction(),"sbds.no-permission", event.getUser()).withPlaceholders(Placeholders.of("{PERMISSION}", permission)).queue();
                 return false;
             }
 
