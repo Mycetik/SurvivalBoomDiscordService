@@ -124,6 +124,11 @@ public class TranslationManager extends Manager implements ITranslationManager {
         return translationMap.get(name);
     }
 
+    @Override
+    public @NotNull List<ITranslation> getTranslations() {
+        return new ArrayList<>(translationMap.values());
+    }
+
 
     public @NotNull List<Translation> getTranslations0() {
         return new ArrayList<>(translationMap.values());
