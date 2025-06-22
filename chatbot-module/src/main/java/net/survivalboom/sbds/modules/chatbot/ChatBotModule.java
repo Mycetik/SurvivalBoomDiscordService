@@ -32,7 +32,9 @@ public class ChatBotModule extends ModuleMain {
 
         saveDefaultConfig();
         checkFiles(Map.of(
-                "translations/translation_uk.yml", "translations/translation_uk.yml"
+                "translations/translation_uk.yml", "translations/translation_uk.yml",
+                "translations/translation_ru.yml", "translations/translation_ru.yml",
+                "translations/translation_en.yml", "translations/translation_en.yml"
         ));
         addModuleTranslations();
 
