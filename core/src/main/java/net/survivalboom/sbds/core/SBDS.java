@@ -25,6 +25,7 @@ import net.survivalboom.sbds.core.monitor.SystemMonitor;
 import net.survivalboom.sbds.core.permissions.PermissionManager;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.api.SbdsProvider;
+import net.survivalboom.sbds.core.service.ServiceProvider;
 import net.survivalboom.sbds.core.translations.TranslationManager;
 import org.bspfsystems.yamlconfiguration.configuration.Configuration;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
@@ -53,6 +54,8 @@ public class SBDS implements ISBDS {
     private final Database database;
 
     private final ModuleManager moduleManager;
+
+    private final ServiceProvider serviceProvider;
 
     private final EventManager eventManager;
 
@@ -108,6 +111,7 @@ public class SBDS implements ISBDS {
 
         this.eventManager = new EventManager(this);
         this.moduleManager = new ModuleManager(this);
+        this.serviceProvider = new ServiceProvider(this);
 
         this.translationManager = new TranslationManager(this);
         this.messages = new Messages(this);
@@ -177,6 +181,7 @@ public class SBDS implements ISBDS {
         entityDropdownInteractionManager.init();
         modalInteractionManager.init();
 
+        serviceProvider.init();
         moduleManager.init();
         slashCommandManager.updateCommands();
 
@@ -290,6 +295,11 @@ public class SBDS implements ISBDS {
     @Override
     public @NotNull ModuleManager getModuleManager() {
         return moduleManager;
+    }
+
+    @Override
+    public @NotNull ServiceProvider getServiceProvider() {
+        return serviceProvider;
     }
 
     @Override
