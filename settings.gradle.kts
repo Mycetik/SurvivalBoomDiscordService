@@ -9,9 +9,15 @@ rootProject.name = "SurvivalBoom Discord Service"
 
 include("api")
 include("core")
+
 include("test-module")
 include("music-module")
 include("privatevoice-module")
 include("github-module")
-include("chatbot-module")
 include("translation-module")
+
+include("chatbot-module")
+
+/// AI MODULE ///
+include("ai-module:api")
+include("ai-module:module")

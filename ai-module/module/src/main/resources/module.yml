@@ -1,0 +1,13 @@
+#
+# SURVIVALBOOM DISCORD SERVICE | SURVIVALBOOM NETWORK 2025
+#               AI API MODULE | By TIMURishche
+#
+
+name: "AIModule"
+description: "Модуль, що реалізує API для взаємодії із ШІ"
+
+main: "net.survivalboom.sbds.modules.ai.AIModule"
+
+version: "1.0"
+author: TIMURishche
+

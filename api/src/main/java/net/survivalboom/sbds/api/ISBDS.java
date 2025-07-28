@@ -16,6 +16,7 @@ import net.survivalboom.sbds.api.modules.IModuleManager;
 import net.survivalboom.sbds.api.monitoring.ISystemMonitor;
 import net.survivalboom.sbds.api.permissions.IPermissionManager;
 import net.survivalboom.sbds.api.scheduler.IScheduler;
+import net.survivalboom.sbds.api.service.IServiceProvider;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
 import org.bspfsystems.yamlconfiguration.configuration.Configuration;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +35,8 @@ public interface ISBDS {
 
 
     @NotNull IModuleManager getModuleManager();
+
+    @NotNull IServiceProvider getServiceProvider();
 
     @NotNull ILibrariesManager getLibrariesManager();
 
