@@ -1,0 +1,168 @@
+
+#
+# SurvivalBoom Discord Service | SurvivalBoom Network 2025
+#            Moderation Module | By TIMURishche
+#
+
+$name: ukrainian
+
+
+moderation:
+
+  invalid-duration:
+    $embed:
+      description: |
+        Рядок `{STRING}` не є правильним значенням.
+        Будь ласка, уведіть значенням за прикладом: `1d 30m 45s`
+        Де `d` - день, `m` - хвилини, `s` - секунди.
+      color: ff0000
+
+  command:
+
+    #
+    # BAN
+    #
+
+    ban:
+
+      description: Відправляє користувача на бананові острови на цьому сервері
+
+      user:
+        name: користувач
+        description: Користувач якого потрібно забанити
+
+      reason:
+        name: причина
+        description: Причина блокування користувача. Її будуть бачити усі, а також вона зберігається у журналі аудиту.
+
+      comment:
+        name: коментар
+        description: Ваш коментар до бану. Тут можна записати вашу особисту думку або додатковий контекст.
+
+      time:
+        name: час
+        description: Час блокування користувача
+
+      already-banned:
+        $embed:
+          description: ":bomb: Користувач {MEMBER} вже має відпустку на бананових островах."
+          color: ff0000
+
+      success:
+        $embed:
+          title: "Бананові острови!"
+          description: ":boom: Користувач рапово полетів на бананові острови! Чи повернеться він?"
+          color: 8EF527
+          fields:
+
+            - name: "Причина"
+              value: "{REASON}"
+              inline: true
+
+            - name: "Час"
+              value: "{DURATION}"
+              inline: true
+
+            - name: "Модератор"
+              value: "{RESPONSIBLE}"
+              inline: true
+
+            - name: "Коментар"
+              value: "{COMMENT}"
+              inline: true
+
+    unban:
+
+      description: Скасовує відпустку користувача на бананових островах
+
+      user:
+        name: користувач
+        description: Користувач чий кайф на бананових островах ви бажаєте припинити
+
+      not-banned:
+        $embed:
+          description: ":bomb: Користувач {MEMBER} не має відпустку на бананових островах."
+          color: ff0000
+
+      success:
+        $embed:
+          title: Повернуто з бананових островів!
+          color: 8EF527
+          description: ":gun: Користувача {MEMBER} врятовано з бананових островів!"
+
+    #
+    # MUTE
+    #
+
+    mute:
+
+      description: "Заліплює ротяку особливо розумним користувачам"
+
+      user:
+        name: "користувач"
+        description: "Користувач якого потрібно замутити"
+
+      reason:
+        name: "причина"
+        description: "Причина для муту. Її будуть бачити усі, а також вона зберігається у журналі аудиту"
+
+      comment:
+        name: "коментар"
+        description: "Ваш коментар до муту. Тут можна записати вашу особисту думку або додатковий контекст"
+
+      time:
+        name: "час"
+        description: "Час на який замутити користувача"
+
+      already-muted:
+        $embed:
+          description: ":see_no_evil: Користувач {MEMBER} уже замучений на цьому сервері."
+          color: ff0000
+
+      success:
+        $embed:
+          title: "Ротяку заліплено скотчем!"
+          description: ":speak_no_evil: Користувач {MEMBER} раптово зрозумів, що його ротяку заліплено скотчем."
+          color: 8EF527
+          fields:
+
+            - name: "Причина"
+              value: "{REASON}"
+              inline: true
+
+            - name: "Час"
+              value: "{DURATION}"
+              inline: true
+
+            - name: "Модератор"
+              value: "{RESPONSIBLE}"
+              inline: true
+
+            - name: "Коментар"
+              value: "{COMMENT}"
+              inline: true
+
+    unmute:
+
+      user:
+        name: "користувач"
+        description: "Користувач якого потрібно розмутити"
+
+      not-muted:
+        $embed:
+          description: |
+            :see_no_evil: Користувач {MEMBER} не замучений. 
+            *Ви що, не пам'ятаєте вже кого тримаєте у підвалі?*
+          color: ff0000
+
+      success:
+        $embed:
+          title: Скотч з ротяки зірвано!
+          color: 8EF527
+          description: |
+            :monkey_face: Користувача {MEMBER} розмучено!
+            *Сподіваємось, наступного разу учасник буде менше патякати незручні речі...*
+
+    #
+    # WARN
+    #

@@ -13,30 +13,11 @@ public class WebhookRepositoryHandler extends RepositoryHandler<WebhookData> {
     }
 
     public @Nullable WebhookData getWebhook(int id) {
-
-        WebhookData webhookData = cache.get(id);
-        if (webhookData == null) {
-
-            webhookData = sessionReturn(session -> session.get(WebhookData.class, id));
-
-            if (webhookData != null) {
-                cache.put(webhookData.id(), webhookData);
-            }
-
-        }
-
-        return webhookData;
-
+        return getById(id).join();
     }
 
     public @NotNull WebhookData createWebhook(long channelId) {
-
-        WebhookData webhookData = create(new WebhookData(channelId));
-
-        cache.put(webhookData.id(), webhookData);
-
-        return webhookData;
-
+        return save(new WebhookData(channelId)).join();
     }
 
     public @NotNull List<WebhookData> getWebhooksInChannel(long channel) {
@@ -53,20 +34,12 @@ public class WebhookRepositoryHandler extends RepositoryHandler<WebhookData> {
 
             return session.createQuery(query).getResultList();
 
-        });
+        }, true).join();
 
     }
 
-    public boolean deleteWebhook(int id) {
-
-        WebhookData webhookData = getWebhook(id);
-        if (webhookData == null) return false;
-
-        delete(webhookData);
-        cache.remove(id);
-
-        return true;
-
+    public void deleteWebhook(int id) {
+        delete(id);
     }
 
 }

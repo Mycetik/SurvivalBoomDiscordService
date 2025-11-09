@@ -1,0 +1,11 @@
+#
+# SurvivalBoom Discord Service | SurvivalBoom Network 2025
+#            Moderation Module | By TIMURishche
+#
+
+name: ModerationModule
+main: net.survivalboom.sbds.moderation.module.ModerationModule
+version: 1.0
+
+author: TIMURishche
+website: https://survivalboom.net

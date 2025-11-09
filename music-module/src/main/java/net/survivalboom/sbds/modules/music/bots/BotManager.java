@@ -206,22 +206,21 @@ public class BotManager extends Manager {
 
     public @NotNull List<MusicBot> findBotsInGuild(@NotNull Guild guild) {
 
-        List<MusicBot> bots = new ArrayList<>(musicBots.stream().filter(bot -> bot.getBot().getGuilds().contains(guild)).toList());
-        Collections.shuffle(bots);
+        //        Collections.shuffle(bots); <--- не прикольно і не зручно;
 
-        return bots;
+        return new ArrayList<>(musicBots.stream().filter(bot -> bot.getBot().getGuilds().contains(guild)).toList());
 
     }
 
 
     public boolean isMusicBanned(@NotNull Guild guild, @NotNull User user) {
-        IGuildData guildData = guildRepository.createGuildData(guild);
+        IGuildData guildData = guildRepository.createGuildData(guild).join();
         return Objects.requireNonNullElse((Boolean) guildData.container().getOrCreate(key).get(user.getId()), false);
     }
 
     public void setMusicBanned(@NotNull Guild guild, @NotNull User user, boolean state) {
 
-        IGuildData guildData = guildRepository.createGuildData(guild);
+        IGuildData guildData = guildRepository.createGuildData(guild).join();
         TypeMap map = guildData.container().getOrCreate(key);
 
         if (state) map.put(user.getId(), true);

@@ -21,3 +21,7 @@ include("chatbot-module")
 /// AI MODULE ///
 include("ai-module:api")
 include("ai-module:module")
+
+/// MODRATION MODULE ///
+include("moderation-module:api")
+include("moderation-module:module")
