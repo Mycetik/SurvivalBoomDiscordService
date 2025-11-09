@@ -15,6 +15,7 @@ public class GroupPermissionRepositoryHandler extends RepositoryHandler<GroupPer
     }
 
 
+    // TODO 07.11.2025: Зробити по-нормальному дозволи.
     public @NotNull Set<Permission> getGroupPermissions(long guildId, @NotNull String group) {
 
         return sessionReturn(session -> {
@@ -32,7 +33,7 @@ public class GroupPermissionRepositoryHandler extends RepositoryHandler<GroupPer
 
             return result.stream().map(GroupPermissionRecord::toPermission).collect(Collectors.toSet());
 
-        });
+        }, false).join();
 
     }
 
