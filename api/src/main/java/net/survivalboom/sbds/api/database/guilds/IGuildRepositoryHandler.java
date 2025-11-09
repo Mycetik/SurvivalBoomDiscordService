@@ -4,24 +4,23 @@ import net.dv8tion.jda.api.entities.Guild;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface IGuildRepositoryHandler {
 
-    @Nullable IGuildData getGuildData(long id);
+    @Nullable CompletableFuture<IGuildData> getGuildData(long id);
 
-    @Nullable IGuildData getGuildData(@NotNull Guild guild);
-
-
-    @NotNull IGuildData createGuildData(long id);
-
-    @NotNull IGuildData createGuildData(@NotNull Guild guild);
+    @Nullable CompletableFuture<IGuildData> getGuildData(@NotNull Guild guild);
 
 
-    boolean deleteGuildData(long id);
+    @NotNull CompletableFuture<IGuildData> createGuildData(long id);
 
-    boolean deleteGuildData(@NotNull Guild guild);
+    @NotNull CompletableFuture<IGuildData> createGuildData(@NotNull Guild guild);
 
 
-    void update(@NotNull IGuildData iGuildData);
+    CompletableFuture<Void> deleteGuildData(long id);
+
+    CompletableFuture<Void> deleteGuildData(@NotNull Guild guild);
 
 
 }

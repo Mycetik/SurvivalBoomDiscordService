@@ -31,7 +31,7 @@ public class UserPermissionRepositoryHandler extends RepositoryHandler<UserPermi
 
             return result.stream().map(UserPermissionRecord::toPermission).collect(Collectors.toSet());
 
-        });
+        }, false).join();
 
     }
 

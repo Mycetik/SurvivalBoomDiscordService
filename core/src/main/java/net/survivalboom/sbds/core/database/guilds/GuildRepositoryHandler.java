@@ -4,9 +4,10 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
 import net.survivalboom.sbds.api.database.guilds.IGuildData;
 import net.survivalboom.sbds.api.database.guilds.IGuildRepositoryHandler;
-import org.hibernate.Transaction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.concurrent.CompletableFuture;
 
 public class GuildRepositoryHandler extends RepositoryHandler<GuildData> implements IGuildRepositoryHandler {
 
@@ -15,75 +16,45 @@ public class GuildRepositoryHandler extends RepositoryHandler<GuildData> impleme
     }
 
     @Override
-    public @Nullable GuildData getGuildData(long id) {
-
-        GuildData guildData = cache.get(id);
-        if (guildData == null) {
-
-            guildData = sessionReturn(session -> session.get(GuildData.class, id));
-            if (guildData == null) return null;
-
-            cache.put(id, guildData);
-
-        }
-
-        return guildData;
-
+    public @NotNull CompletableFuture<@Nullable IGuildData> getGuildData(long id) {
+        return getById(id).thenApply(d -> d);
     }
 
     @Override
-    public @Nullable GuildData getGuildData(@NotNull Guild guild) {
+    public @NotNull CompletableFuture<@Nullable IGuildData> getGuildData(@NotNull Guild guild) {
         return getGuildData(guild.getIdLong());
     }
 
 
     @Override
-    public @NotNull IGuildData createGuildData(long id) {
+    public @NotNull CompletableFuture<IGuildData> createGuildData(long id) {
 
-        GuildData guildData = getGuildData(id);
-        if (guildData != null) return guildData;
+        return getGuildData(id).thenCompose(gd -> {
 
-        guildData = new GuildData(id);
-        save(guildData);
+            if (gd != null) {
+                return CompletableFuture.completedFuture(gd);
+            }
 
-        cache.put(id, guildData);
+            return save(new GuildData(id)).thenApply(d -> d);
 
-        return guildData;
+        });
 
     }
 
     @Override
-    public @NotNull IGuildData createGuildData(@NotNull Guild guild) {
+    public @NotNull CompletableFuture<IGuildData> createGuildData(@NotNull Guild guild) {
         return createGuildData(guild.getIdLong());
     }
 
 
     @Override
-    public boolean deleteGuildData(long id) {
-
-        GuildData guildData = getGuildData(id);
-        if (guildData == null) return false;
-
-        delete(guildData);
-
-        return true;
-
+    public CompletableFuture<Void> deleteGuildData(long id) {
+        return delete(id);
     }
 
     @Override
-    public boolean deleteGuildData(@NotNull Guild guild) {
+    public CompletableFuture<Void> deleteGuildData(@NotNull Guild guild) {
         return deleteGuildData(guild.getIdLong());
-    }
-
-    @Override
-    public void update(@NotNull IGuildData iGuildData) {
-        GuildData guildData = (GuildData) iGuildData;
-        session(session -> {
-            Transaction transaction = session.beginTransaction();
-            session.merge(guildData);
-            transaction.commit();
-            session.flush();
-        });
     }
 
 }

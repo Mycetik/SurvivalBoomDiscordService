@@ -10,16 +10,15 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DatabaseSaveQueue extends Manager {
 
     private static final Logger log = LoggerFactory.getLogger(DatabaseSaveQueue.class.getSimpleName());
 
-    private final Set<EntityToSave> queue = new HashSet<>();
+    private final Map<DataRecord, CompletableFuture<Void>> queue = new ConcurrentHashMap<>();
 
     private final Database database;
 
@@ -36,7 +35,7 @@ public class DatabaseSaveQueue extends Manager {
 
     @Override
     protected void init0() {
-        this.task = sbds.getScheduler().schedule0(null, "DatabaseSaveQueue", task -> tick(), 1000, 1000);
+        this.task = sbds.getScheduler().schedule0(null, "SBDS-DatabaseSaveQueue", task -> tick(), 1000, 1000);
     }
 
     @Override
@@ -58,32 +57,31 @@ public class DatabaseSaveQueue extends Manager {
 
     private void saveAll() {
 
-        if (queue.isEmpty()) return;
-
-        long currentTime = System.currentTimeMillis();
+        if (queue.isEmpty()) {
+            return;
+        }
 
         try (Session session = database.createSession()) {
 
             Transaction transaction = session.beginTransaction();
-            for (EntityToSave entity : new ArrayList<>(queue)) {
+            for (var entry : queue.entrySet()) {
 
-                if (entity.time.get() + 5000 >= currentTime) {
-                    break;
-                }
+                DataRecord record = entry.getKey();
+                CompletableFuture<Void> future = entry.getValue();
 
-                database.checkRepository(entity.record);
+                database.checkRepository(record);
 
                 try {
-                    session.merge(entity.record);
+                    session.merge(record);
+                    future.complete(null);
                 }
 
                 catch (Throwable t) {
-
-                    log.error("An error occurred while trying to save an entity {}. Looks like you break something. This may cause data loss.", entity.record.getClass().getSimpleName(), t);
-
+                    log.error("An error occurred while trying to save an entity {}. Looks like you break something. This may cause data loss.", record, t);
+                    future.completeExceptionally(t);
                 }
 
-                queue.remove(entity);
+                queue.remove(record);
 
             }
 
@@ -94,30 +92,12 @@ public class DatabaseSaveQueue extends Manager {
     }
 
 
-    public void queue(@NotNull DataRecord dataRecord) {
-
-        EntityToSave entity = queue.stream()
-                .filter(e -> e.record.equals(dataRecord))
-                .findAny()
-                .orElse(null);
-
-        long currentTime = System.currentTimeMillis();
-
-        if (entity != null) {
-            entity.time.set(currentTime);
-            return;
-        }
-
-        entity = new EntityToSave(dataRecord, new AtomicLong(currentTime));
-        queue.add(entity);
-
+    public synchronized @NotNull CompletableFuture<Void> queue(@NotNull DataRecord dataRecord) {
+        return queue.computeIfAbsent(dataRecord, k -> new CompletableFuture<>());
     }
 
     public int size() {
         return queue.size();
     }
-
-
-    record EntityToSave(@NotNull DataRecord record, @NotNull AtomicLong time) {}
 
 }

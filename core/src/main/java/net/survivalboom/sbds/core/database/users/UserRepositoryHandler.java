@@ -2,9 +2,12 @@ package net.survivalboom.sbds.core.database.users;
 
 import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
+import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.database.users.IUserRepositoryHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.concurrent.CompletableFuture;
 
 public class UserRepositoryHandler extends RepositoryHandler<UserData> implements IUserRepositoryHandler {
 
@@ -12,65 +15,51 @@ public class UserRepositoryHandler extends RepositoryHandler<UserData> implement
         super(UserData.class);
     }
 
+
     @Override
-    public @Nullable UserData getUser(@NotNull User user) {
+    public @NotNull CompletableFuture<@Nullable IUserData> getUser(@NotNull User user) {
         return getUser(user.getIdLong());
     }
 
     @Override
-    public @Nullable UserData getUser(long id) {
-
-        UserData userData = cache.get(id);
-        if (userData == null) {
-
-            userData = sessionReturn(session -> session.get(UserData.class, id));
-
-            if (userData == null) return null;
-
-            cache.put(id, userData);
-        }
-
-        return userData;
-
-
+    public @NotNull CompletableFuture<@Nullable IUserData> getUser(long id) {
+        return getById(id).thenApply(d -> d);
     }
 
     @Override
-    public @NotNull UserData createUser(@NotNull User user) {
+    public @NotNull CompletableFuture<IUserData> createUser(@NotNull User user) {
         return createUser(user.getIdLong());
     }
 
     @Override
-    public @NotNull UserData createUser(long id) {
+    public @NotNull CompletableFuture<IUserData> createUser(long id) {
 
-        UserData iuserData = getUser(id);
-        if (iuserData != null) return iuserData;
+        return getUser(id).thenCompose(v -> {
 
-        UserData userData = new UserData(id);
+            if (v != null) {
+                return CompletableFuture.completedFuture(v);
+            }
 
-        save(userData);
+            return save(new UserData(id)).thenApply(d -> d);
 
-        cache.put(id, userData);
-
-        return userData;
+        });
 
     }
 
     @Override
-    public boolean deleteUser(@NotNull User user) {
+    public @NotNull CompletableFuture<Void> deleteUser(@NotNull User user) {
         return deleteUser(user.getIdLong());
     }
 
     @Override
-    public boolean deleteUser(long id) {
+    public @NotNull CompletableFuture<Void> deleteUser(@NotNull IUserData userData) {
+        UserData ud = (UserData) userData;
+        return delete(ud);
+    }
 
-        UserData userData = getUser(id);
-        if (userData == null) return false;
-
-        delete(userData);
-
-        return true;
-
+    @Override
+    public @NotNull CompletableFuture<Void> deleteUser(long id) {
+        return delete(id);
     }
 
 }

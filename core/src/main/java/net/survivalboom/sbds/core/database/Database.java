@@ -24,6 +24,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class Database extends Manager implements IDatabase {
 
@@ -32,19 +35,21 @@ public class Database extends Manager implements IDatabase {
     private final SBDS sbds;
 
 
-    @Nullable private Properties properties;
+    @Nullable
+    private Properties properties;
 
-    @Nullable private SessionFactory sessionFactory = null;
+    @Nullable
+    private SessionFactory sessionFactory = null;
 
 
     private final Map<NamespacedKey, Repository> repositoryMap = new HashMap<>();
 
-    private final DatabaseSaveQueue saveQueue;
+    private final DatabaseQueue queue;
 
 
     public Database(@NotNull SBDS sbds) {
         this.sbds = sbds;
-        this.saveQueue = new DatabaseSaveQueue(this, sbds);
+        this.queue = new DatabaseQueue(this, sbds.getScheduler());
     }
 
 
@@ -69,16 +74,21 @@ public class Database extends Manager implements IDatabase {
             throw t;
         }
 
-        saveQueue.init0();
+        queue.init0();
 
     }
 
     @Override
     protected void shutdown0() {
+
         log.info("Shutting down database...");
         repositoryMap.clear();
-        saveQueue.shutdown0();
-        if (sessionFactory != null) sessionFactory.close();
+        queue.shutdown0();
+
+        if (sessionFactory != null) {
+            sessionFactory.close();
+        }
+
     }
 
     //
@@ -326,12 +336,37 @@ public class Database extends Manager implements IDatabase {
 
 
     //
-    // SAVE QUEUE
+    // QUEUE
     //
 
     @Override
     public void queueSave(@NotNull DataRecord record) {
-        saveQueue.queue(record);
+        checkRepository(record);
+        queue.queueRecordSave(record);
+    }
+
+    public @NotNull <V> CompletableFuture<V> queueSessionRequest(@NotNull Repository repository, @NotNull Function<Session, V> function) {
+
+        checkValid();
+        checkRepository(repository);
+        checkDatabase();
+
+        return queue.queueSessionRequest(function);
+
+    }
+
+    public @NotNull CompletableFuture<Void> queueSessionRequest(@NotNull Repository repository, @NotNull Consumer<Session> consumer) {
+
+        checkValid();
+        checkRepository(repository);
+        checkDatabase();
+
+        return queue.queueSessionRequest(consumer);
+
+    }
+
+    public @NotNull DatabaseQueue getQueue() {
+        return queue;
     }
 
     //
@@ -339,6 +374,8 @@ public class Database extends Manager implements IDatabase {
     //
 
     public void checkRepository(@NotNull DataRecord record) {
+
+        Objects.requireNonNull(record, "record == null");
 
         if (repositoryMap.values().stream().noneMatch(r -> r.getHandler().getDataRecordClass().equals(record.getClass()))) {
             throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");

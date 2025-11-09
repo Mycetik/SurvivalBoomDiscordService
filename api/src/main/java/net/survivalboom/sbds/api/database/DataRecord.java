@@ -1,21 +1,29 @@
 package net.survivalboom.sbds.api.database;
 
 import net.survivalboom.sbds.api.SbdsProvider;
-import net.survivalboom.sbds.api.utils.Valid;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class DataRecord extends Valid {
+import java.util.Objects;
 
-    public void invalid() {
-        valid(false);
-    }
+public abstract class DataRecord {
 
     public void save() {
         save(this);
     }
 
+    public abstract long getId();
+
+    //
+    // STATIC
+    //
+
     public static void save(@NotNull DataRecord record) {
         SbdsProvider.getInstance().getDatabase().queueSave(record);
+    }
+
+
+    public static long hash(Object... args) {
+        return Math.abs(Objects.hash(args));
     }
 
 }

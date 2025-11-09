@@ -9,9 +9,9 @@ public interface IUserData {
 
     long getID();
 
-    @Nullable ITranslation translation();
+    @Nullable ITranslation getTranslation();
 
-    void translation(@Nullable ITranslation translation);
+    void setTranslation(@Nullable ITranslation translation);
 
     void save();
 

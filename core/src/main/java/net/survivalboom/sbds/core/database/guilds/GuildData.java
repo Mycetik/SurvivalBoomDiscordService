@@ -47,7 +47,7 @@ public class GuildData extends DataRecord implements IGuildData {
     }
 
     @Override
-    public @Nullable ITranslation translation() {
+    public @Nullable ITranslation getTranslation() {
         return translation;
     }
 

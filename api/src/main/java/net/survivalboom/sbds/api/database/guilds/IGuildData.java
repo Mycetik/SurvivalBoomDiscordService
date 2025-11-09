@@ -11,7 +11,7 @@ public interface IGuildData {
 
     @NotNull NamespacedContainer container();
 
-    @Nullable ITranslation translation();
+    @Nullable ITranslation getTranslation();
 
     void save();
 

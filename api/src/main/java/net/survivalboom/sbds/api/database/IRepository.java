@@ -6,13 +6,26 @@ import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public interface IRepository {
 
+    //
+    // DATABASE QUERIES
+    //
+
     @NotNull Session getSession();
 
+    @NotNull <V> CompletableFuture<V> queueSessionRequest(@NotNull Function<Session, V> function);
+
+    @NotNull CompletableFuture<Void> queueSessionRequest(@NotNull Consumer<Session> consumer);
+
+
+    //
+    // GETTERS
+    //
 
     @NotNull NamespacedKey getName();
 
@@ -23,5 +36,7 @@ public interface IRepository {
     @NotNull RepositoryHandler<? extends DataRecord> getHandler();
 
     @NotNull IDatabase getDatabase();
+
+
 
 }

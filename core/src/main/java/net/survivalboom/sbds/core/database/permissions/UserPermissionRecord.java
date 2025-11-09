@@ -30,4 +30,9 @@ public class UserPermissionRecord extends DataRecord {
         return new Permission(permission, value);
     }
 
+    @Override
+    public long getId() {
+        return id;
+    }
+
 }

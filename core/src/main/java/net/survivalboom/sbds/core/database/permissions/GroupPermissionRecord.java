@@ -38,4 +38,10 @@ public class GroupPermissionRecord extends DataRecord {
     public @NotNull Permission toPermission() {
         return new Permission(permission, value);
     }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
 }

@@ -31,22 +31,14 @@ public class GroupRepositoryHandler extends RepositoryHandler<GroupRecord> {
 
             return session.createQuery(query).getResultList();
 
-        });
-
-        out.forEach(gd -> cache.put(Objects.hash(gd.id(), gd.guildId()), gd));
+        }, true).join();
 
         return out;
 
     }
 
     public @NotNull GroupRecord createGuildGroup(long guildId, @NotNull String group) {
-
-        GroupRecord record = create(new GroupRecord(guildId, group));
-
-        cache.put(Objects.hash(record.id(), record.guildId()), record);
-
-        return record;
-
+        return save(new GroupRecord(guildId, group)).join();
     }
 
     public void removeGuildGroup(long guildId, @NotNull String group) {

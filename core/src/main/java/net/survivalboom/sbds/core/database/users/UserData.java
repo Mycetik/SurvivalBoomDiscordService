@@ -53,7 +53,7 @@ public class UserData extends DataRecord implements IUserData {
     }
 
     @Override
-    public void translation(@Nullable ITranslation translation) {
+    public void setTranslation(@Nullable ITranslation translation) {
         this.translation = translation;
     }
 
@@ -63,8 +63,14 @@ public class UserData extends DataRecord implements IUserData {
     }
 
     @Override
-    public @Nullable ITranslation translation() {
+    public @Nullable ITranslation getTranslation() {
         return translation;
+    }
+
+
+    @Override
+    public long getId() {
+        return id;
     }
 
 }

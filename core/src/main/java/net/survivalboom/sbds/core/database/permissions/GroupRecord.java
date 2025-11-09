@@ -39,4 +39,10 @@ public class GroupRecord extends DataRecord {
         return id;
     }
 
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
 }

@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -84,7 +83,7 @@ public class Messages extends Manager implements IMessages {
         checkValid();
 
         if (userData == null) return getMessage(name, (Translation) null, fallback);
-        ITranslation translation = userData.translation();
+        ITranslation translation = userData.getTranslation();
 
         return getMessage(name, translation, fallback);
 
@@ -128,7 +127,7 @@ public class Messages extends Manager implements IMessages {
 
         IMessage message = null;
         if (guild != null) {
-            ITranslation translation = guildRepository.createGuildData(guild).translation();
+            ITranslation translation = guildRepository.createGuildData(guild).join().getTranslation();
             if (translation != null) message = translation.getMessage(name);
         }
 
@@ -149,7 +148,7 @@ public class Messages extends Manager implements IMessages {
     }
 
     private @NotNull IUserData getUserData(@NotNull User user) {
-        return userRepository.createUser(user);
+        return userRepository.createUser(user).join();
     }
 
     //

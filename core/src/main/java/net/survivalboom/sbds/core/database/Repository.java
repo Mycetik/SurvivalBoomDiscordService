@@ -13,6 +13,10 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 public class Repository extends Valid implements IRepository {
 
     private final Database database;
@@ -52,10 +56,28 @@ public class Repository extends Valid implements IRepository {
 
     }
 
+    //
+    // DATABASE QUERIES
+    //
+
     @Override
     public @NotNull Session getSession() {
         return database.requestSession(this);
     }
+
+    @Override
+    public @NotNull <V> CompletableFuture<V> queueSessionRequest(@NotNull Function<Session, V> function) {
+        return database.queueSessionRequest(this, function);
+    }
+
+    @Override
+    public @NotNull CompletableFuture<Void> queueSessionRequest(@NotNull Consumer<Session> consumer) {
+        return database.queueSessionRequest(this, consumer);
+    }
+
+    //
+    // GETTERS
+    //
 
     @Override
     public @NotNull NamespacedKey getName() {
