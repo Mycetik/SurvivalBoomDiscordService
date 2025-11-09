@@ -69,7 +69,7 @@ public class TranslationCommand extends CommandBase implements SlashCommand, Con
         User user = info.arguments().getCastOrNull("user", User.class);
         Objects.requireNonNull(user, "user == null");
 
-        IUserData userData = repository.createUser(user);
+        IUserData userData = repository.createUser(user).join();
 
         ITranslation translation = info.arguments().getCastOrNull("translation0", ITranslation.class);
         if (translation == null) {
