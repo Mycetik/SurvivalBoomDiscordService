@@ -1,7 +1,6 @@
 package net.survivalboom.sbds.modules.translation.commands;
 
 import net.dv8tion.jda.api.entities.User;
-import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
@@ -41,11 +40,11 @@ public class TranslationCommand extends CommandBase implements SlashCommand, Con
     public void executes(@NotNull SlashExecutionInfo info) {
 
         String translationRaw = info.arguments().getCastOrNull("translation", String.class);
-        IUserData userData = repository.createUser(info.user());
+        IUserData userData = repository.createUser(info.user()).join();
 
         if (translationRaw == null) {
 
-            ITranslation currentTranslation = userData.translation();
+            ITranslation currentTranslation = userData.getTranslation();
             String displayName = currentTranslation != null ? currentTranslation.displayName() : "[values.none]";
 
             info.reply("translation.command.translation.show").withPlaceholders("{TRANSLATION}", displayName).queue();
@@ -57,7 +56,7 @@ public class TranslationCommand extends CommandBase implements SlashCommand, Con
         ITranslation translation = translationManager.getTranslation(translationRaw);
         Objects.requireNonNull(translation, "Invalid translation");
 
-        userData.translation(translation);
+        userData.setTranslation(translation);
         userData.save();
 
         info.reply("translation.command.translation.set").withPlaceholders("{TRANSLATION}", translation.displayName()).queue();
@@ -76,7 +75,7 @@ public class TranslationCommand extends CommandBase implements SlashCommand, Con
         if (translation == null) {
 
 
-            ITranslation currentTranslation = userData.translation();
+            ITranslation currentTranslation = userData.getTranslation();
 
             if (currentTranslation != null) {
                 info.logger().info("Current translation for `{}` is `{}`.", user.getEffectiveName(), currentTranslation.getName());
@@ -91,7 +90,7 @@ public class TranslationCommand extends CommandBase implements SlashCommand, Con
         }
 
 
-        userData.translation(translation);
+        userData.setTranslation(translation);
         userData.save();
 
         info.logger().info("Successfully set translation for `{}` to `{}`.", user.getEffectiveName(), translation.getName());

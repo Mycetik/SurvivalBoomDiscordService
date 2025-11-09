@@ -28,14 +28,14 @@ public class SlashCommandListener implements Listener {
     @EventHandler
     public void onSlashCommand(SlashCommandInteractionEvent event) {
 
-        IUserData userData = repository.createUser(event.getUser());
-        if (userData.translation() != null) return;
+        IUserData userData = repository.createUser(event.getUser()).join();
+        if (userData.getTranslation() != null) return;
 
         DiscordLocale locale = event.getUserLocale();
         ITranslation translation = translationManager.findTranslationByLocale(locale);
         if (translation == null) return;
 
-        userData.translation(translation);
+        userData.setTranslation(translation);
         userData.save();
 
         log.info("Successfully set `{}` for `{}` based on user's discord locale `{}`.", translation.getName(), event.getUser().getEffectiveName(), locale);
