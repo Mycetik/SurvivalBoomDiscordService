@@ -4,7 +4,10 @@ import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.ContextCommandBase;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
+import net.survivalboom.sbds.api.commands.slash.SlashCommand;
+import net.survivalboom.sbds.api.commands.string.StringCommand;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
@@ -106,6 +109,22 @@ public abstract class ModuleMain {
     //
     // REGISTRATIONS
     //
+
+    public void registerCommand(@NotNull CommandBase base) {
+
+        if (base instanceof SlashCommand) {
+            getSbds().getSlashCommandManager().registerCommand(this, base);
+        }
+
+        if (base instanceof StringCommand) {
+            // <-- to do
+        }
+
+        if (base instanceof ConsoleCommand) {
+            getSbds().getConsoleListener().registerCommand(this, base);
+        }
+
+    }
 
     public @NotNull ICommandManager.RegisteredCommand registerSlashCommand(@NotNull CommandBase commandBase) {
         return getSbds().getSlashCommandManager().registerCommand(this, commandBase);
