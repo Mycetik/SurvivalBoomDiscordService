@@ -17,8 +17,11 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -383,6 +386,78 @@ public class CommonUtils {
         map.put(path, configuration.getString(path));
 
     }
+
+
+    //
+    // TIME
+    //
+
+    private static final Pattern periodPattern = Pattern.compile("([0-9]+)([hdwmy])");
+
+    public static @NotNull String durationToString(Duration duration) {
+
+        if (duration == null) {
+            return "null";
+        }
+
+        long seconds = duration.getSeconds();
+        long absSeconds = Math.abs(seconds);
+
+        String positive = String.format(
+                "%d:%02d:%02d",
+                absSeconds / 3600,
+                (absSeconds % 3600) / 60,
+                absSeconds % 60);
+
+        return seconds < 0 ? "-" + positive : positive;
+
+    }
+
+    public static @Nullable Duration getDurationFromStr(String string) {
+
+        if (string == null) {
+            return null;
+        }
+
+        string = string.toLowerCase(Locale.ENGLISH);
+
+        Matcher matcher = periodPattern.matcher(string);
+        Duration duration = Duration.ZERO;
+
+        while (matcher.find()) {
+
+            int num = Integer.parseInt(matcher.group(1));
+            String typ = matcher.group(2);
+
+            Duration d = switch (typ) {
+
+                case "h" -> Duration.ofHours(num);
+
+                case "d" -> Duration.ofDays(num);
+
+                case "w" -> Duration.ofDays(num * 7L);
+
+                case "m" -> Duration.ofDays(num * 30L);
+
+                case "y" -> Duration.ofDays(num * 365L);
+
+                default -> null;
+
+            };
+
+            if (d == null) {
+                return null;
+            }
+
+            duration = duration.plus(d);
+
+        }
+
+        return duration;
+
+    }
+
+
 
 
 }
