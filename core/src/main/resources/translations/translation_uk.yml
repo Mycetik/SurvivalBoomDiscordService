@@ -25,6 +25,11 @@ sbds:
     status:
       description: "Відображає статус діскорд бота."
 
+  loading:
+    $embed:
+      description: "<a:loading:1086970461549756536> Оброблюємо ваш запит, зачекайте..."
+      color: f9f06b
+
   error:
     $embed:
       title: ":bangbang: Ой-ой! :bangbang:"
