@@ -18,6 +18,7 @@ import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInter
 import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownInteractionInfo;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
 import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
+import net.survivalboom.sbds.api.service.IServiceProvider;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
@@ -164,6 +165,10 @@ public abstract class ModuleMain {
 
     public void registerEvents(@NotNull Listener listener) {
         getSbds().getEventManager().registerEvents(this, listener);
+    }
+
+    public @NotNull IServiceProvider.RegisteredService registerService(@NotNull Object obj) {
+        return getSbds().getServiceProvider().registerService(this, obj);
     }
 
     //
