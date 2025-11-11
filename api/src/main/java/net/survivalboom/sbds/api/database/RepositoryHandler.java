@@ -30,7 +30,6 @@ public abstract class RepositoryHandler<T extends DataRecord> {
 
 
     public void configure(@NotNull IRepository repository) {
-        if (this.repository != null) throw new RuntimeException("already configured, debil4ik!");
         this.repository = repository;
     }
 
