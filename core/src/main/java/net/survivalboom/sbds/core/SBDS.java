@@ -28,12 +28,15 @@ import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.core.service.ServiceProvider;
 import net.survivalboom.sbds.core.translations.TranslationManager;
 import org.bspfsystems.yamlconfiguration.configuration.Configuration;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Locale;
 
 public class SBDS implements ISBDS {
 
@@ -91,6 +94,25 @@ public class SBDS implements ISBDS {
 
 
     private final JDABuilder jdaBuilder;
+    private static final EnumSet<GatewayIntent> DEFAULT_GATEWAY_INTENTS = EnumSet.of(
+            GatewayIntent.GUILD_MESSAGES,
+            GatewayIntent.GUILD_MESSAGE_REACTIONS,
+            GatewayIntent.DIRECT_MESSAGES,
+            GatewayIntent.DIRECT_MESSAGE_REACTIONS,
+            GatewayIntent.GUILD_VOICE_STATES,
+            GatewayIntent.GUILD_INVITES,
+            GatewayIntent.GUILD_WEBHOOKS,
+            GatewayIntent.GUILD_EMOJIS_AND_STICKERS,
+            GatewayIntent.GUILD_MESSAGE_TYPING,
+            GatewayIntent.GUILD_MODERATION,
+            GatewayIntent.AUTO_MODERATION_CONFIGURATION,
+            GatewayIntent.AUTO_MODERATION_EXECUTION
+    );
+    private static final EnumSet<GatewayIntent> PRIVILEGED_GATEWAY_INTENTS = EnumSet.of(
+            GatewayIntent.GUILD_MEMBERS,
+            GatewayIntent.GUILD_PRESENCES,
+            GatewayIntent.MESSAGE_CONTENT
+    );
 
     private JDA bot = null;
 
@@ -99,7 +121,7 @@ public class SBDS implements ISBDS {
 
         this.logger = logger;
         this.configuration = configuration;
-        this.jdaBuilder = JDABuilder.createDefault(token, EnumSet.allOf(GatewayIntent.class));
+        this.jdaBuilder = JDABuilder.createDefault(token, resolveGatewayIntents(configuration));
         this.workingDir = workingDir;
 
         this.librariesManager = librariesManager;
@@ -386,6 +408,51 @@ public class SBDS implements ISBDS {
 
     public @NotNull CommandInteractionManager getCommandInteractionManager() {
         return commandInteractionManager;
+    }
+
+    private @NotNull EnumSet<GatewayIntent> resolveGatewayIntents(@NotNull YamlConfiguration configuration) {
+
+        EnumSet<GatewayIntent> intents = EnumSet.copyOf(DEFAULT_GATEWAY_INTENTS);
+
+        ConfigurationSection discordSection = configuration.getConfigurationSection("discord");
+        if (discordSection == null) {
+            logger.info("No discord.gateway-intents section found. Using safe defaults: {}", intents);
+            return intents;
+        }
+
+        List<String> configured = discordSection.getStringList("gateway-intents");
+        if (configured == null || configured.isEmpty()) {
+            logger.info("discord.gateway-intents not configured. Using safe defaults: {}", intents);
+            return intents;
+        }
+
+        EnumSet<GatewayIntent> parsed = EnumSet.noneOf(GatewayIntent.class);
+        for (String name : configured) {
+            if (name == null || name.isBlank()) continue;
+
+            String trimmed = name.trim();
+            try {
+                GatewayIntent intent = GatewayIntent.valueOf(trimmed.toUpperCase(Locale.ROOT));
+                parsed.add(intent);
+            }
+            catch (IllegalArgumentException ex) {
+                logger.warn("Unknown gateway intent '{}' in settings.yml. Skipping...", trimmed);
+            }
+        }
+
+        if (parsed.isEmpty()) {
+            logger.warn("No valid gateway intents configured; falling back to safe defaults: {}", intents);
+            return intents;
+        }
+
+        EnumSet<GatewayIntent> privileged = EnumSet.copyOf(PRIVILEGED_GATEWAY_INTENTS);
+        privileged.retainAll(parsed);
+        if (!privileged.isEmpty()) {
+            logger.warn("Privileged gateway intents requested: {}. Ensure they are enabled in the Discord developer portal.", privileged);
+        }
+
+        logger.info("Using configured gateway intents: {}", parsed);
+        return parsed;
     }
 
     //
