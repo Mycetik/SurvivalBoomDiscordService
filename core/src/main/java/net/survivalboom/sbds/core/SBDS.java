@@ -242,6 +242,8 @@ public class SBDS implements ISBDS {
         logger.info("");
         logger.info("Stopping SurvivalBoom Discord Service...");
 
+        bot.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.customStatus("Shutting down SBDS v" + BuildConstants.VERSION + "..."));
+
         moduleManager.shutdown();
 
         consoleListener.shutdown();
