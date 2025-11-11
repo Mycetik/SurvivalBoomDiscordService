@@ -258,6 +258,7 @@ public class Database extends Manager implements IDatabase {
         if (repository == null) return;
 
         repository.invalid();
+        repository.getHandler().purgeCache();
         repositoryMap.remove(key);
 
         rebuildSessionFactory();
