@@ -5,9 +5,11 @@ import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,7 +35,7 @@ public abstract class RepositoryHandler<T extends DataRecord> {
     }
 
     public void reload() {
-        cache.clear();
+        purgeCache();
     }
 
     //
@@ -143,6 +145,10 @@ public abstract class RepositoryHandler<T extends DataRecord> {
     //
     // GETTERS
     //
+
+    public void purgeCache() {
+        this.cache.clear();
+    }
 
     public @NotNull Map<Long, T> getCache() {
         return new HashMap<>(cache);
