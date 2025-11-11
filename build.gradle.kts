@@ -1,6 +1,6 @@
 import java.nio.file.Files
 
-group = "net.survivalboom.survivalboomapi"
+group = "net.survivalboom.sbds"
 version = "3.0.0"
 
 val outFile = File(childProjects["core"]!!.layout.buildDirectory.asFile.orNull, "libs/SBDS-${version}.jar")

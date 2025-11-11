@@ -74,7 +74,7 @@ public class Database extends Manager implements IDatabase {
             throw t;
         }
 
-        queue.init0();
+        queue.init();
 
     }
 
@@ -83,7 +83,7 @@ public class Database extends Manager implements IDatabase {
 
         log.info("Shutting down database...");
         repositoryMap.clear();
-        queue.shutdown0();
+        queue.shutdown();
 
         if (sessionFactory != null) {
             sessionFactory.close();
