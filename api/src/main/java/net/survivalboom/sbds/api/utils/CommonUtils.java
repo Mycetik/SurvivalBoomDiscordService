@@ -392,12 +392,12 @@ public class CommonUtils {
     // TIME
     //
 
-    private static final Pattern periodPattern = Pattern.compile("([0-9]+)([hdwmy])");
+    private static final Pattern periodPattern = Pattern.compile("([0-9]+)([shdwmy])");
 
-    public static @NotNull String durationToString(Duration duration) {
+    public static @Nullable String durationToString(Duration duration) {
 
         if (duration == null) {
-            return "null";
+            return null;
         }
 
         long seconds = duration.getSeconds();
@@ -430,6 +430,8 @@ public class CommonUtils {
             String typ = matcher.group(2);
 
             Duration d = switch (typ) {
+
+                case "s" -> Duration.ofSeconds(num);
 
                 case "h" -> Duration.ofHours(num);
 
