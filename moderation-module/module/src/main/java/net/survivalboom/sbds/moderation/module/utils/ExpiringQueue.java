@@ -1,10 +1,9 @@
-package net.survivalboom.sbds.moderation.module.moderation;
+package net.survivalboom.sbds.moderation.module.utils;
 
-import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.moderation.module.ModerationModule;
 import net.survivalboom.sbds.moderation.module.storage.Punishment;
-import net.survivalboom.sbds.moderation.module.storage.PunishmentRepositoryHandler;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,18 +17,15 @@ import java.util.concurrent.TimeUnit;
 public class ExpiringQueue extends Manager {
 
     private static final Logger log = LoggerFactory.getLogger(ExpiringQueue.class);
-    private final ModuleMain main;
-
-    private final ModerationManager manager;
+    private final ModerationModule main;
 
     private final DelayQueue<Expiring> queue = new DelayQueue<>();
 
     private ISchedulerTask expiringHandlerTask = null;
 
 
-    public ExpiringQueue(@NotNull ModerationManager manager, @NotNull ModuleMain main) {
+    public ExpiringQueue(@NotNull ModerationModule main) {
         this.main = main;
-        this.manager = manager;
     }
 
 
@@ -50,7 +46,7 @@ public class ExpiringQueue extends Manager {
     }
 
 
-    public void queue(@NotNull PunishmentRepositoryHandler<?> repository, long id, long time) {
+    public void queue(@NotNull ExpiringModerationManager<?> manager, long id, long time) {
 
         checkValid();
 
@@ -58,11 +54,11 @@ public class ExpiringQueue extends Manager {
             throw new IllegalArgumentException("time < 0");
         }
 
-        this.queue.add(new Expiring(repository, id, time));
+        this.queue.add(new Expiring(manager, id, time));
 
     }
 
-    public void queue(@NotNull PunishmentRepositoryHandler<?> repository, @NotNull Punishment punishment) {
+    public void queue(@NotNull ExpiringModerationManager<?> manager, @NotNull Punishment punishment) {
 
         checkValid();
 
@@ -71,8 +67,12 @@ public class ExpiringQueue extends Manager {
             throw new IllegalArgumentException("Punishment has no expiry time");
         }
 
-        this.queue.add(new Expiring(repository, punishment.getId(), end.getEpochSecond()));
+        this.queue.add(new Expiring(manager, punishment.getId(), end.getEpochSecond()));
 
+    }
+
+    public void remove(@NotNull Punishment punishment, @NotNull ExpiringModerationManager<?> manager) {
+        this.queue.removeIf(e -> e.id == punishment.getId() && e.manager.equals(manager));
     }
 
 
@@ -87,28 +87,28 @@ public class ExpiringQueue extends Manager {
             return;
         }
 
-        Punishment punishment = next.repository.getById(next.id).join();
+        Punishment punishment = next.manager.getById0(null, next.id).join();
         Objects.requireNonNull(punishment, "punishment == null! suka blyat! шо за пиздець блять???");
 
         log.info("Punishment `{}` was expired! Removing...", punishment);
-        manager.removePunishment(punishment, null, null, null).join();
+        main.removePunishment(punishment, null, null, null).join();
 
     }
 
 
-    static class Expiring implements Delayed {
+    public static class Expiring implements Delayed {
 
         private final long id;
 
         private final long endTimestamp;
 
-        private final PunishmentRepositoryHandler<?> repository;
+        private final ExpiringModerationManager<?> manager;
 
 
-        public Expiring(@NotNull PunishmentRepositoryHandler<?> repository, long id, long endTimestamp) {
+        public Expiring(@NotNull ExpiringModerationManager<?> manager, long id, long endTimestamp) {
             this.id = id;
             this.endTimestamp = endTimestamp;
-            this.repository = repository;
+            this.manager = manager;
         }
 
 
@@ -118,17 +118,24 @@ public class ExpiringQueue extends Manager {
             var currentTimeMillis = System.currentTimeMillis();
             var currentTimeSeconds = currentTimeMillis / 1000;
 
-            var sourceTime = currentTimeSeconds - endTimestamp;
+            var sourceTime = endTimestamp - currentTimeSeconds;
 
-            var t = timeUnit.convert(sourceTime, TimeUnit.SECONDS);
-
-            return t;
+            return timeUnit.convert(sourceTime, TimeUnit.SECONDS);
 
         }
 
         @Override
         public int compareTo(@NotNull Delayed delayed) {
             return Long.compare(this.endTimestamp, ((Expiring) delayed).endTimestamp);
+        }
+
+
+        public long getId() {
+            return id;
+        }
+
+        public long getEndTimestamp() {
+            return endTimestamp;
         }
 
     }

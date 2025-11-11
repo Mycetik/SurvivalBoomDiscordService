@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.moderation.module.commands.mute;
+package net.survivalboom.sbds.moderation.module.commands.kick;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
@@ -11,69 +11,71 @@ import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.moderation.module.commands.AbstractModerationCommand;
-import net.survivalboom.sbds.moderation.module.moderation.MuteManager;
+import net.survivalboom.sbds.moderation.module.moderation.KickManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "unmute", description = "Removes a mute from a user in a guild", permission = "moderation.command.unmute", translationKey = "moderation.command.unmute")
-public class UnMuteCommand extends AbstractModerationCommand {
-
-    private final MuteManager muteManager;
+@Command(name = "kick", description = "Kicks user from the guild", translationKey = "moderation.command.kick", permission = "moderation.command.kick")
+public class KickCommand extends AbstractModerationCommand {
 
 
-    public UnMuteCommand(@NotNull MuteManager muteManager) {
-        this.muteManager = muteManager;
+    private final KickManager kickManager;
+
+
+    public KickCommand(@NotNull KickManager kickManager) {
+        this.kickManager = kickManager;
     }
 
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
-        User user = info.arguments().getCastNotNull("user", User.class);
-
         Guild guild = info.guild();
         Objects.requireNonNull(guild, "guild == null");
+
+        User user = info.arguments().getCastNotNull("user", User.class);
 
         String reason = info.arguments().getCastOrNull("reason", String.class);
         String comment = info.arguments().getCastOrNull("comment", String.class);
 
-        User responsible = info.user();
+        User moderator = info.user();
 
-        info.reply("sbds.loading").queue();
-
-        var result = muteManager.getCurrent(guild, user).join();
-        if (result.isEmpty()) {
-            info.editHook("moderation.command.unmute.not-muted").withPlaceholders("{user}", user.getAsMention()).queue();
+        if (user.isBot()) {
+            info.reply("moderation.punishment-bot").queue();
             return;
         }
 
-        var mute = result.getFirst();
-        var entry = muteManager.removeMute(mute, responsible, reason, comment).join();
+        if (info.sbds().getPermissionManager().hasPermission(guild.getIdLong(), user.getIdLong(), "moderation.kick.immune", false)) {
+            info.reply("moderation.punishment-denied").queue();
+            return;
+        }
 
-        info.editHook("moderation.command.unmute.success").withPlaceholders(createPunishmentPlaceholders(entry)).queue();
+        if (info.user().equals(user)) {
+            info.reply("moderation.punishment-self").queue();
+            return;
+        }
+
+        info.reply("sbds.loading").queue();
+
+        var result = kickManager.kick(guild, user, moderator, reason, comment).join();
+
+        info.editHook("moderation.command.kick.success").withPlaceholders(createPunishmentPlaceholders(result)).queue();
 
     }
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        User user = info.arguments().getCastNotNull("user", User.class);
         Guild guild = info.arguments().getCastNotNull("guild", Guild.class);
+        User user = info.arguments().getCastNotNull("user", User.class);
 
         String reason = info.arguments().getCastOrNull("reason", String.class);
         String comment = info.arguments().getCastOrNull("comment", String.class);
 
-        var result = muteManager.getCurrent(guild, user).join();
-        if (result.isEmpty()) {
-            info.logger().error("User `{}` is not muted on the guild `{}`.", user, guild);
-            return;
-        }
+        kickManager.kick(guild, user, null, reason, comment).join();
 
-        var mute = result.getFirst();
-        muteManager.removeMute(mute, null, reason, comment).join();
-
-        info.logger().info("Successfully unmuted user `{}` on the guild `{}`.", user, guild);
+        info.logger().info("Successfully kicked `{}` from the `{}`", user, guild);
 
     }
 

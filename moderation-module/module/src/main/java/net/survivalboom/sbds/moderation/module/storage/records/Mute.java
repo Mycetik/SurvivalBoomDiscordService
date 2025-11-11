@@ -4,16 +4,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.survivalboom.sbds.moderation.api.moderation.PunishmentType;
+import net.survivalboom.sbds.moderation.api.storage.IMuteData;
 import net.survivalboom.sbds.moderation.module.storage.Punishment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
-import java.time.temporal.Temporal;
 
 @Entity
 @Table(name = "sbds_moderation_mutes")
-public class Mute extends Punishment {
+public class Mute extends Punishment implements IMuteData {
 
     public Mute(
 
@@ -29,10 +30,12 @@ public class Mute extends Punishment {
             @Nullable Instant end
 
     ) {
-        super(guild, user, reason, comment, responsible, time, end, false);
+        super(guild, user, reason, comment, responsible, time, end, false, PunishmentType.MUTE);
     }
 
-    public Mute() {}
+    protected Mute() {
+        super(PunishmentType.MUTE);
+    }
 
     public static @NotNull Mute create(
             @NotNull Guild guild,

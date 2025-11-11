@@ -8,6 +8,8 @@ import net.dv8tion.jda.api.requests.restaction.CacheRestAction;
 import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.converters.GuildConverter;
 import net.survivalboom.sbds.api.database.converters.UserConverter;
+import net.survivalboom.sbds.moderation.api.moderation.PunishmentType;
+import net.survivalboom.sbds.moderation.api.storage.IPunishmentData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,38 +18,41 @@ import java.time.Instant;
 import java.util.Objects;
 
 @MappedSuperclass
-public abstract class Punishment extends DataRecord {
+public abstract class Punishment extends DataRecord implements IPunishmentData {
 
     @Id
-    private long id;
+    protected long id;
 
 
     @Column(nullable = false)
     @Convert(converter = GuildConverter.class)
-    private Guild guild;
+    protected Guild guild;
 
     @Column(nullable = false)
     @Convert(converter = UserConverter.class)
-    private User user;
+    protected User user;
 
 
     @Column
-    private String reason;
+    protected String reason;
 
     @Column
-    private String comment;
+    protected String comment;
 
 
     @Column
     @Convert(converter = UserConverter.class)
-    private User responsible;
+    protected User moderator;
 
 
     @Column(nullable = false)
-    private Instant time;
+    protected Instant time;
 
     @Column
-    private Instant end;
+    protected Instant end;
+
+
+    protected final PunishmentType typed;
 
 
     public Punishment(
@@ -58,12 +63,13 @@ public abstract class Punishment extends DataRecord {
             @Nullable String reason,
             @Nullable String comment,
 
-            @Nullable User responsible,
+            @Nullable User moderator,
 
             @NotNull Instant time,
             @Nullable Instant end,
 
-            boolean allowDuplication
+            boolean allowDuplication,
+            PunishmentType type
 
     ) {
 
@@ -77,7 +83,7 @@ public abstract class Punishment extends DataRecord {
         this.reason = reason;
         this.comment = comment;
 
-        this.responsible = responsible;
+        this.moderator = moderator;
 
         this.time = time;
         this.end = end;
@@ -86,52 +92,90 @@ public abstract class Punishment extends DataRecord {
             this.id = hash(guild.getIdLong(), user.getIdLong());
         }
 
+        else {
+            this.id = hash(guild.getIdLong(), user.getIdLong(), time.getEpochSecond());
+        }
+
+        this.typed = type;
+
     }
 
-    protected Punishment() {}
-
-
-    public @NotNull Guild getGuild() {
-        return guild;
+    protected Punishment(
+            PunishmentType type
+    ) {
+        this.typed = type;
     }
 
-    public @NotNull User getUser() {
-        return user;
-    }
 
-    public CacheRestAction<@Nullable Member> getMember() {
-        return guild.retrieveMember(user);
-    }
-
+    //
+    // ID
+    //
 
     @Override
     public long getId() {
         return id;
     }
 
+    @Override
+    public @NotNull PunishmentType getType() {
+        return typed;
+    }
 
+    //
+    // GUILD/USER/MODERATOR
+    //
+
+    @Override
+    public @NotNull Guild getGuild() {
+        return guild;
+    }
+
+    @Override
+    public @NotNull User getUser() {
+        return user;
+    }
+
+    @Override
+    public CacheRestAction<@Nullable Member> getMember() {
+        return guild.retrieveMember(user);
+    }
+
+    @Override
+    public @Nullable User getModerator() {
+        return moderator;
+    }
+
+    //
+    // REASON
+    //
+
+    @Override
     public @Nullable String getReason() {
         return reason;
     }
 
+    @Override
     public @Nullable String getComment() {
         return comment;
     }
 
 
-    public @Nullable User getResponsible() {
-        return responsible;
-    }
+    //
+    // TIME
+    //
 
 
+    @Override
     public @NotNull Instant getTime() {
         return time;
     }
 
+    @Override
     public @Nullable Instant getEnd() {
         return end;
     }
 
+    @Override
     public @Nullable Duration getDuration() {
 
         if (end == null) {
@@ -145,7 +189,7 @@ public abstract class Punishment extends DataRecord {
 
     @Override
     public String toString() {
-        return String.format("%s{id=%s, guild=%s, user=%s, responsible=%s, reason=%s, comment=%s, time=%s, end=%s}", getClass().getSimpleName(), id, guild, user, responsible, reason, comment, time, end);
+        return String.format("%s{id=%s, guild=%s, user=%s, responsible=%s, reason=%s, comment=%s, time=%s, end=%s}", getClass().getSimpleName(), id, guild, user, moderator, reason, comment, time, end);
     }
 
 }

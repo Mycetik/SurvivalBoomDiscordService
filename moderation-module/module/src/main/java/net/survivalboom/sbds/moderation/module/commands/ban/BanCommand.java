@@ -13,8 +13,7 @@ import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.moderation.module.commands.AbstractModerationCommand;
-import net.survivalboom.sbds.moderation.module.moderation.ModerationManager;
-import net.survivalboom.sbds.moderation.module.storage.records.Ban;
+import net.survivalboom.sbds.moderation.module.moderation.BanManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -23,11 +22,11 @@ import java.util.Objects;
 @Command(name = "ban", description = "Bans user in a guild", translationKey = "moderation.command.ban", permission = "moderation.command.ban")
 public class BanCommand extends AbstractModerationCommand {
 
-    private final ModerationManager moderationManager;
+    private final BanManager banManager;
 
 
-    public BanCommand(@NotNull ModerationManager moderationManager) {
-        this.moderationManager = moderationManager;
+    public BanCommand(@NotNull BanManager banManager) {
+        this.banManager = banManager;
     }
 
 
@@ -45,26 +44,40 @@ public class BanCommand extends AbstractModerationCommand {
         String durationRaw = info.arguments().getCastOrNull("time", String.class);
         Duration duration = durationRaw != null ? CommonUtils.getDurationFromStr(durationRaw) : null;
         if (duration == null && durationRaw != null) {
-            info.reply("moderation.invalid-duration").queue();
+            info.reply("moderation.invalid-duration").withPlaceholders("{string}", durationRaw).queue();
+            return;
+        }
+
+        if (user.isBot()) {
+            info.reply("moderation.punishment-bot").queue();
+            return;
+        }
+
+        if (info.sbds().getPermissionManager().hasPermission(guild.getIdLong(), user.getIdLong(), "moderation.ban.immune", false)) {
+            info.reply("moderation.punishment-denied").queue();
+            return;
+        }
+
+        if (info.user().equals(user)) {
+            info.reply("moderation.punishment-self").queue();
             return;
         }
 
         info.reply("sbds.loading").queue();
 
-        Ban ban = moderationManager.getBan(guild, user).join();
-        if (ban != null) {
-            info.editHook("moderation.command.ban.already-banned").withPlaceholders("{MEMBER}", user.getAsMention()).queue();
+        var result = banManager.getCurrent(guild, user).join();
+        if (!result.isEmpty()) {
+            info.editHook("moderation.command.ban.already-banned").withPlaceholders("{user}", user.getAsMention()).queue();
             return;
         }
 
-        User responsible = info.user();
+        User moderator = info.user();
 
-        ban = moderationManager.ban(guild, user, duration, responsible, reason, comment).join();
+        var ban = banManager.ban(guild, user, moderator, reason, comment, duration).join();
 
-        info.editHook("moderation.ban.success")
+        info.editHook("moderation.command.ban.success")
                 .withPlaceholders(createPunishmentPlaceholders(ban))
                 .queue();
-
 
     }
 
@@ -84,13 +97,13 @@ public class BanCommand extends AbstractModerationCommand {
             return;
         }
 
-        Ban ban = moderationManager.getBan(guild, user).join();
-        if (ban != null) {
-            info.logger().error("User `{}` already has a ban `{}` in the guild `{}`.", user, ban, guild);
+        var result = banManager.getCurrent(guild, user).join();
+        if (!result.isEmpty()) {
+            info.logger().error("User `{}` already has a ban `{}` in the guild `{}`.", user, result.getFirst(), guild);
             return;
         }
 
-        moderationManager.ban(guild, user, duration, null, reason, comment).join();
+        banManager.ban(guild, user, null, reason, comment, duration).join();
 
         info.logger().info("User `{}` successfully banned in the guild `{}`.", user, guild);
 

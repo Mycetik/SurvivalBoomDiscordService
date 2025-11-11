@@ -11,8 +11,7 @@ import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.moderation.module.commands.AbstractModerationCommand;
-import net.survivalboom.sbds.moderation.module.moderation.ModerationManager;
-import net.survivalboom.sbds.moderation.module.storage.records.Ban;
+import net.survivalboom.sbds.moderation.module.moderation.BanManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -20,11 +19,11 @@ import java.util.Objects;
 @Command(name = "unban", description = "Removes a ban from a user in a guild", permission = "moderation.command.unban", translationKey = "moderation.command.unban")
 public class UnBanCommand extends AbstractModerationCommand {
 
-    private final ModerationManager moderationManager;
+    private final BanManager banManager;
 
 
-    public UnBanCommand(@NotNull ModerationManager manager) {
-        this.moderationManager = manager;
+    public UnBanCommand(@NotNull BanManager banManager) {
+        this.banManager = banManager;
     }
 
 
@@ -38,20 +37,21 @@ public class UnBanCommand extends AbstractModerationCommand {
 
         info.reply("sbds.loading").queue();
 
-        Ban ban = moderationManager.getBan(guild, user).join();
-        if (ban == null) {
-            info.editHook("moderation.commands.unban.not-banned").withPlaceholders("{MEMBER}", user.getAsMention()).queue();
+        var result = banManager.getCurrent(guild, user).join();
+        if (result.isEmpty()) {
+            info.editHook("moderation.command.unban.not-banned").withPlaceholders("{user}", user.getAsMention()).queue();
             return;
         }
 
+        var ban = result.getFirst();
         User responsible = info.user();
 
         String reason = info.arguments().getCastOrNull("reason", String.class);
         String comment = info.arguments().getCastOrNull("comment", String.class);
 
-        moderationManager.removeBan(ban, responsible, reason, comment).join();
+        var entry = banManager.removeBan(ban, responsible, reason, comment).join();
 
-        info.editHook("moderation.commands.unban.success").withPlaceholders("{MEMBER}", user.getAsMention()).queue();
+        info.editHook("moderation.command.unban.success").withPlaceholders(createPunishmentPlaceholders(entry)).queue();
 
     }
 
@@ -61,8 +61,8 @@ public class UnBanCommand extends AbstractModerationCommand {
         User user = info.arguments().getCastNotNull("user", User.class);
         Guild guild = info.arguments().getCastNotNull("guild", Guild.class);
 
-        Ban ban = moderationManager.getBan(guild, user).join();
-        if (ban == null) {
+        var result = banManager.getCurrent(guild, user).join();
+        if (result.isEmpty()) {
             info.logger().error("User `{}` is not banned on the guild `{}`.", user, guild);
             return;
         }
@@ -70,7 +70,9 @@ public class UnBanCommand extends AbstractModerationCommand {
         String reason = info.arguments().getCastOrNull("reason", String.class);
         String comment = info.arguments().getCastOrNull("comment", String.class);
 
-        moderationManager.removeBan(ban, null, reason, comment).join();
+        var ban = result.getFirst();
+
+        banManager.removeBan(ban, null, reason, comment).join();
 
         info.logger().info("Successfully unbanned user `{}` on the guild `{}`.", user, guild);
 

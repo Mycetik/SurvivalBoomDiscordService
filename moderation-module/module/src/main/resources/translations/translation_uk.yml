@@ -12,9 +12,24 @@ moderation:
   invalid-duration:
     $embed:
       description: |
-        Рядок `{STRING}` не є правильним значенням.
+        Рядок `{string}` не є правильним значенням.
         Будь ласка, уведіть значенням за прикладом: `1d 30m 45s`
         Де `d` - день, `m` - хвилини, `s` - секунди.
+      color: ff0000
+
+  punishment-denied:ы
+  $embed:
+    description: ":x: Неможливо застосувати покарання на користувачеві."
+    color: ff0000
+
+  punishment-bot:
+    $embed:
+      description: ":x: Ви намагаєтесь застосувати покарання на боті. Навіщо?.."
+      color: ff0000
+
+  punishment-self:
+    $embed:
+      description: ":x: Ви намагаєтесь покарати самого себе. Навіщо?..."
       color: ff0000
 
   command:
@@ -45,30 +60,30 @@ moderation:
 
       already-banned:
         $embed:
-          description: ":bomb: Користувач {MEMBER} вже має відпустку на бананових островах."
+          description: ":bomb: Користувач {user} вже має відпустку на бананових островах."
           color: ff0000
 
       success:
         $embed:
-          title: "Бананові острови!"
-          description: ":boom: Користувач рапово полетів на бананові острови! Чи повернеться він?"
+          title: Бананові острови!
+          description: ":boom: Користувач {user} раптово полетів на бананові острови! Чи повернеться він?"
           color: 8EF527
           fields:
 
-            - name: "Причина"
-              value: "{REASON}"
+            - name: Причина
+              value: "{reason}"
               inline: true
 
-            - name: "Час"
-              value: "{DURATION}"
+            - name: Час
+              value: "{duration}"
               inline: true
 
-            - name: "Модератор"
-              value: "{RESPONSIBLE}"
+            - name: Модератор
+              value: "{moderator}"
               inline: true
 
-            - name: "Коментар"
-              value: "{COMMENT}"
+            - name: Коментар
+              value: "{comment}"
               inline: true
 
     unban:
@@ -77,18 +92,26 @@ moderation:
 
       user:
         name: користувач
-        description: Користувач чий кайф на бананових островах ви бажаєте припинити
+        description: Користувач чий відпочинок на бананових островах ви бажаєте припинити
+
+      reason:
+        name: причина
+        description: Причина переривання відпочинку на бананових островах
+
+      comment:
+        name: коментар
+        description: Ваш коментар до зняття бану
 
       not-banned:
         $embed:
-          description: ":bomb: Користувач {MEMBER} не має відпустку на бананових островах."
+          description: ":bomb: Користувач {user} не має відпустку на бананових островах."
           color: ff0000
 
       success:
         $embed:
           title: Повернуто з бананових островів!
           color: 8EF527
-          description: ":gun: Користувача {MEMBER} врятовано з бананових островів!"
+          description: ":gun: Користувача {user} врятовано з бананових островів!"
 
     #
     # MUTE
@@ -96,73 +119,198 @@ moderation:
 
     mute:
 
-      description: "Заліплює ротяку особливо розумним користувачам"
+      description: Заліплює ротяку особливо розумним користувачам
 
       user:
-        name: "користувач"
-        description: "Користувач якого потрібно замутити"
+        name: користувач
+        description: Користувач якого потрібно замутити
 
       reason:
-        name: "причина"
-        description: "Причина для муту. Її будуть бачити усі, а також вона зберігається у журналі аудиту"
+        name: причина
+        description: Причина для муту. Її будуть бачити усі, а також вона зберігається у журналі аудиту
 
       comment:
-        name: "коментар"
-        description: "Ваш коментар до муту. Тут можна записати вашу особисту думку або додатковий контекст"
+        name: коментар
+        description: Ваш коментар до муту. Тут можна записати вашу особисту думку або додатковий контекст
 
       time:
-        name: "час"
-        description: "Час на який замутити користувача"
+        name: час
+        description: Час на який замутити користувача
 
       already-muted:
         $embed:
-          description: ":see_no_evil: Користувач {MEMBER} уже замучений на цьому сервері."
+          description: ":see_no_evil: Користувач {user} уже замучений на цьому сервері."
           color: ff0000
 
       success:
         $embed:
-          title: "Ротяку заліплено скотчем!"
-          description: ":speak_no_evil: Користувач {MEMBER} раптово зрозумів, що його ротяку заліплено скотчем."
+          title: Ротяку заліплено скотчем!
+          description: ":speak_no_evil: Користувач {user} раптово зрозумів, що його ротяку заліплено скотчем."
           color: 8EF527
           fields:
 
-            - name: "Причина"
-              value: "{REASON}"
+            - name: Причина
+              value: "{reason}"
               inline: true
 
-            - name: "Час"
-              value: "{DURATION}"
+            - name: Час
+              value: "{duration}"
               inline: true
 
-            - name: "Модератор"
-              value: "{RESPONSIBLE}"
+            - name: Модератор
+              value: "{moderator}"
               inline: true
 
-            - name: "Коментар"
-              value: "{COMMENT}"
+            - name: Коментар
+              value: "{comment}"
               inline: true
 
     unmute:
 
+      description: Розліплює від скотчу ротяку користувача
+
       user:
-        name: "користувач"
-        description: "Користувач якого потрібно розмутити"
+        name: користувач
+        description: Користувач якого потрібно розмутити
+
+      reason:
+        name: причина
+        description: Причина зняття муту з користувача
+
+      comment:
+        name: коментар
+        description: Коментар до зняття муту
 
       not-muted:
         $embed:
-          description: |
-            :see_no_evil: Користувач {MEMBER} не замучений. 
-            *Ви що, не пам'ятаєте вже кого тримаєте у підвалі?*
           color: ff0000
+          description: ":see_no_evil: Користувач {user} не замучений."
 
       success:
         $embed:
           title: Скотч з ротяки зірвано!
           color: 8EF527
-          description: |
-            :monkey_face: Користувача {MEMBER} розмучено!
-            *Сподіваємось, наступного разу учасник буде менше патякати незручні речі...*
+          description: ":monkey_face: Користувача {user} розмучено!"
 
     #
     # WARN
     #
+
+    warn:
+
+      description: Видає попередження користувачу на цьому сервері
+
+      user:
+        name: користувач
+        description: Користувач якому потрібно видати попередження
+
+      time:
+        name: час
+        description: Час скільки буде дійсне це попередження
+
+      reason:
+        name: причина
+        description: Причина видачі попередження. Її будуть бачити усі, а також вона зберігається у журналі аудиту.
+
+      comment:
+        name: коментар
+        description: Коментар до попередження. Тут можна висловити особисту думку щодо покарання або дій користувача
+
+      success:
+        $embed:
+          title: Попереджено!
+          description: ":warning: Користувач {user} отримав попередження!"
+          color: 8EF527
+          fields:
+
+            - name: Причина
+              value: "{reason}"
+              inline: true
+
+            - name: Час
+              value: "{duration}"
+              inline: true
+
+            - name: Модератор
+              value: "{moderator}"
+              inline: true
+
+            - name: Коментар
+              value: "{comment}"
+              inline: true
+
+    unwarn:
+
+      description: Знімає попередження із користувача
+
+      id:
+        name: номер
+        description: Номер попередження
+
+      reason:
+        name: причина
+        description: Причина зняття попередження
+
+      comment:
+        name: коментар
+        description: Коментар до зняття попередження
+
+      unknown:
+        $embed:
+          description: ":x: Попередження `{id}` не знайдено."
+          color: ff0000
+
+      success:
+        $embed:
+          description: ":ballot_box_with_check: Попередження `{id}` знято з користувача {user}."
+          color: 8EF527
+
+
+    #
+    # KICK
+    #
+
+    kick:
+
+      description: Виганяє користувача із серверу
+
+      user:
+        name: користувач
+        description: Користувач якого потрібно вигнати із серверу
+
+      reason:
+        name: причина
+        description: Причина для вигнання. Її будуть бачити усі, а також вона зберігається у журналі аудиту
+
+      comment:
+        name: коментар
+        description: Ваш коментар до вигнання. Тут можна записати вашу особисту думку або додатковий контекст
+
+      success:
+        $embed:
+          title: Вигнано!
+          description: ":wave: Користувача {user} вигнано з серверу."
+          color: 8EF527
+          fields:
+
+            - name: Причина
+              value: "{reason}"
+              inline: true
+
+            - name: Час
+              value: "{duration}"
+              inline: true
+
+            - name: Модератор
+              value: "{moderator}"
+              inline: true
+
+            - name: Коментар
+              value: "{comment}"
+              inline: true
+
+      not-in-server:
+        $embed:
+          description: ":pinching_hand: Користувач {user} не знаходиться на цьому сервері."
+          color: ff0000
+

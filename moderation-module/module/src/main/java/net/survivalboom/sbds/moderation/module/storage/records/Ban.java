@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.survivalboom.sbds.moderation.api.moderation.PunishmentType;
+import net.survivalboom.sbds.moderation.api.storage.IBanData;
 import net.survivalboom.sbds.moderation.module.storage.Punishment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +14,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "sbds_moderation_bans")
-public class Ban extends Punishment {
+public class Ban extends Punishment implements IBanData {
 
 
     public Ban(
@@ -29,10 +31,12 @@ public class Ban extends Punishment {
             @Nullable Instant end
 
     ) {
-        super(guild, user, reason, comment, responsible, time, end, false);
+        super(guild, user, reason, comment, responsible, time, end, false, PunishmentType.WARN);
     }
 
-    public Ban() {}
+    protected Ban() {
+        super(PunishmentType.WARN);
+    }
 
 
     public static @NotNull Ban create(

@@ -1,17 +1,18 @@
 package net.survivalboom.sbds.moderation.module.storage;
 
+import jakarta.persistence.criteria.Predicate;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
-import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
-import net.survivalboom.sbds.moderation.module.moderation.ExpiringQueue;
+import net.survivalboom.sbds.moderation.module.utils.ExpiringModerationManager;
+import net.survivalboom.sbds.moderation.module.utils.ExpiringQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public class PunishmentRepositoryHandler<T extends Punishment> extends RepositoryHandler<T> {
@@ -33,7 +34,9 @@ public class PunishmentRepositoryHandler<T extends Punishment> extends Repositor
             @NotNull ExpiringQueue queue
 
     ) {
+
         super(clazz);
+
         this.allowDuplications = allowDuplicates;
         this.punishmentCreator = punishmentCreator;
 
@@ -45,7 +48,7 @@ public class PunishmentRepositoryHandler<T extends Punishment> extends Repositor
     // EXPIRING
     //
 
-    public void loadExpiring() {
+    public void loadExpiring(ExpiringModerationManager<T> manager) {
 
         var result = sessionReturn(session -> {
 
@@ -59,34 +62,14 @@ public class PunishmentRepositoryHandler<T extends Punishment> extends Repositor
 
         }, false).join();
 
-        result.forEach(v -> expiringQueue.queue(this, v));
+        result.forEach(v -> expiringQueue.queue(manager, v));
 
     }
 
-
-    public @NotNull CompletableFuture<@Nullable T> getPunishment(@NotNull Guild guild, @NotNull User user) {
-
-        if (allowDuplications) {
-            throw new IllegalStateException("There may be multiple punishments in this repository for one member of a guild. Please use getPunishments(guild, user) instead");
-        }
-
-        Objects.requireNonNull(guild, "guild == null");
-        Objects.requireNonNull(user, "user == null");
-
-        long id = DataRecord.hash(guild.getIdLong(), user.getIdLong());
-
-        return getById(id);
-
-    }
-
-    public @NotNull CompletableFuture<@NotNull List<T>> getPunishments(@NotNull Guild guild, @NotNull User user) {
-
-        if (!allowDuplications) {
-            throw new IllegalStateException("There will be only one punishment per member in a guild. Please use getPunishment(guild, user) instead");
-        }
-
-        Objects.requireNonNull(guild, "guild == null");
-        Objects.requireNonNull(user, "user == null");
+    public @NotNull CompletableFuture<@NotNull List<T>> getPunishments(
+            @Nullable Guild guild,
+            @Nullable User user
+    ) {
 
         return sessionReturn(session -> {
 
@@ -94,44 +77,18 @@ public class PunishmentRepositoryHandler<T extends Punishment> extends Repositor
             var query = cb.createQuery(dataRecordClass);
             var root = query.from(dataRecordClass);
 
-            query.select(root).where(cb.equal(root.get("guild"), guild), cb.equal(root.get("user"), user));
+            List<Predicate> predicates = new ArrayList<>();
 
-            return session.createQuery(query).getResultList();
+            if (user != null) {
+                predicates.add(cb.equal(root.get("user"), user));
+            }
 
-        }, true);
+            if (guild != null) {
+                predicates.add(cb.equal(root.get("guild"), guild));
+            }
 
-    }
-
-
-    public @NotNull CompletableFuture<List<T>> getGuildPunishments(@NotNull Guild guild) {
-
-        Objects.requireNonNull(guild, "guild == null");
-
-        return sessionReturn(session -> {
-
-            var cb = session.getCriteriaBuilder();
-            var query = cb.createQuery(dataRecordClass);
-            var root = query.from(dataRecordClass);
-
-            query.select(root).where(cb.equal(root.get("guild"), guild));
-
-            return session.createQuery(query).getResultList();
-
-        }, true);
-
-    }
-
-    public @NotNull CompletableFuture<List<T>> getUserPunishments(@NotNull User user) {
-
-        Objects.requireNonNull(user, "user == null");
-
-        return sessionReturn(session -> {
-
-            var cb = session.getCriteriaBuilder();
-            var query = cb.createQuery(dataRecordClass);
-            var root = query.from(dataRecordClass);
-
-            query.select(root).where(cb.equal(root.get("user"), user));
+            var qs = cb.and(predicates.toArray(new Predicate[0]));
+            query.select(root).where(qs);
 
             return session.createQuery(query).getResultList();
 
@@ -153,34 +110,22 @@ public class PunishmentRepositoryHandler<T extends Punishment> extends Repositor
 
     ) {
 
-        if (duration != null && duration.getSeconds() > 10) {
-            throw new IllegalArgumentException("Duration < 10 seconds");
+        if (duration != null && duration.getSeconds() < 10) {
+            throw new IllegalArgumentException("Duration < 10 seconds. " + duration.getSeconds());
         }
 
         Instant currentTime = Instant.now();
         Instant endTime = duration != null ? currentTime.plus(duration) : null;
 
-        return getPunishment(guild, user).thenCompose(p -> {
+        return getPunishments(guild, user).thenCompose(list -> {
 
-            if (!allowDuplications) {
-
-                if (p != null) {
-                    throw new IllegalStateException("User `" + user.getName() + "` already has a punishment `" + dataRecordClass.getSimpleName() + "` in guild `" + guild.getName() + "`");
-                }
-
+            if (!allowDuplications && !list.isEmpty()) {
+                throw new IllegalStateException("User `" + user.getName() + "` already has a punishment `" + dataRecordClass.getSimpleName() + "` in guild `" + guild.getName() + "`");
             }
 
             T punishment = punishmentCreator.create(guild, user, currentTime, endTime, responsible, reason, comment);
 
-            var future = save(punishment);
-            if (endTime != null) {
-                return future.thenApply(v -> {
-                    expiringQueue.queue(this, punishment);
-                    return v;
-                });
-            }
-
-            return future;
+            return save(punishment);
 
         });
 

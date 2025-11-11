@@ -4,16 +4,17 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.survivalboom.sbds.moderation.api.moderation.PunishmentType;
+import net.survivalboom.sbds.moderation.api.storage.IWarnData;
 import net.survivalboom.sbds.moderation.module.storage.Punishment;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
-import java.time.temporal.Temporal;
 
 @Entity
 @Table(name = "sbds_moderation_warns")
-public class Warn extends Punishment {
+public class Warn extends Punishment implements IWarnData {
 
     public Warn(
 
@@ -29,10 +30,12 @@ public class Warn extends Punishment {
             @Nullable Instant end
 
     ) {
-        super(guild, user, reason, comment, responsible, time, end, true);
+        super(guild, user, reason, comment, responsible, time, end, true, PunishmentType.WARN);
     }
 
-    public Warn() {}
+    protected Warn() {
+        super(PunishmentType.WARN);
+    }
 
     public static @NotNull Warn create(
             @NotNull Guild guild,
