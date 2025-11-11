@@ -198,6 +198,9 @@ public class Messages extends Manager implements IMessages {
     // PARSER
     //
 
+    // Регулярное выражение для поиска плейсхолдеров вида [namespace.key] или [language:namespace.key]
+    private final Pattern msgReferenceRegex = Pattern.compile("\\$\\[(.*?)]");
+
     @Override
     public @NotNull String parse(@NotNull String in, @NotNull Function<String, IMessage> supplier, @Nullable Placeholders placeholders) {
 
@@ -207,17 +210,17 @@ public class Messages extends Manager implements IMessages {
 
         in = Placeholders.parse(in, placeholders);
 
-        // Регулярное выражение для поиска плейсхолдеров вида [namespace.key] или [language:namespace.key]
-        String regex = "\\[(.*?)]";
-
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(in);
+        Matcher matcher = msgReferenceRegex.matcher(in);
         StringBuilder parsedText = new StringBuilder();
 
         while (matcher.find()) {
 
 
-            String found = matcher.group().replace("[", "").replace("]", "");
+            String found = matcher.group()
+                    .replace("[", "")
+                    .replace("]", "")
+                    .replace("$", "");
+
             IMessage translatedMessage;
 
             String[] args = found.split(":");
