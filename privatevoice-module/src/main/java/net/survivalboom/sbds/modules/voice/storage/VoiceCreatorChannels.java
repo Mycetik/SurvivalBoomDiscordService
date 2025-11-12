@@ -54,7 +54,7 @@ public class VoiceCreatorChannels extends Manager {
             return channel;
         }
 
-        IGuildData guildData = repository.createGuildData(guild);
+        IGuildData guildData = repository.createGuildData(guild).join();
         String channelId = guildData.container().getOrCreate(key).getCastOrNull("creator", String.class);
 
         if (channelId == null) {
@@ -70,7 +70,7 @@ public class VoiceCreatorChannels extends Manager {
 
     public void setVoiceCreator(@NotNull VoiceChannel channel) {
 
-        IGuildData guildData = repository.createGuildData(channel.getGuild());
+        IGuildData guildData = repository.createGuildData(channel.getGuild()).join();
         TypeMap typeMap = guildData.container().getOrCreate(key);
 
         typeMap.put("creator", channel.getId());
@@ -82,7 +82,7 @@ public class VoiceCreatorChannels extends Manager {
 
     public void removeVoiceCreator(@NotNull Guild guild) {
 
-        IGuildData guildData = repository.createGuildData(guild);
+        IGuildData guildData = repository.createGuildData(guild).join();
         TypeMap typeMap = guildData.container().getOrCreate(key);
 
         typeMap.remove("creator");

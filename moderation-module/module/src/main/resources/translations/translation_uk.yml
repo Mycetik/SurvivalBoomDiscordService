@@ -17,10 +17,10 @@ moderation:
         Де `d` - день, `m` - хвилини, `s` - секунди.
       color: ff0000
 
-  punishment-denied:ы
-  $embed:
-    description: ":x: Неможливо застосувати покарання на користувачеві."
-    color: ff0000
+  punishment-denied:
+    $embed:
+      description: ":x: Неможливо застосувати покарання на користувачеві."
+      color: ff0000
 
   punishment-bot:
     $embed:

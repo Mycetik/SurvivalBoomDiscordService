@@ -57,20 +57,18 @@ public class MuteManager extends ExpiringModerationManager<Mute> implements IMut
         }
 
         return punish(guild, user, moderator, reason, comment, duration)
-                .thenCompose(mute -> createMuteRole(guild).thenCompose(role ->
-                        guild.addRoleToMember(user, role).reason("SBDS-MUTED").submit().thenApply(v -> mute)
-                ))
-                .thenApply(m -> {
+                    .thenApply(mute -> {
 
-                    if (duration != null) {
-                        guild.timeoutFor(user, duration).reason(reason).complete();
-                    }
+                        createMuteRole(guild).thenCompose(role -> guild.addRoleToMember(user, role).reason("SBDS-MUTED").submit());
 
-                    return m;
+                        if (duration != null) {
+                            guild.timeoutFor(user, duration).reason(reason).queue();
+                        }
 
-                });
+                        return mute;
 
-    }
+                    });
+        }
 
     @Override
     public @NotNull CompletableFuture<@NotNull IMuteData> mute(
@@ -146,9 +144,13 @@ public class MuteManager extends ExpiringModerationManager<Mute> implements IMut
         Guild guild = mute.getGuild();
         User user = mute.getUser();
 
-        return unPunish(mute, moderator, reason, comment).thenApply(v -> {
-            createMuteRole(guild).thenCompose(role -> guild.removeRoleFromMember(user, role).submit()).join();
-            return v;
+        return unPunish(mute, moderator, reason, comment).thenApply(entry -> {
+
+            createMuteRole(guild)
+                    .thenCompose(role -> guild.removeRoleFromMember(user, role).submit().thenCompose(v -> guild.removeTimeout(user).submit()));
+
+            return entry;
+
         });
 
     }
