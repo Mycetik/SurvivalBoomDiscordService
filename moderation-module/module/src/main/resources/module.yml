@@ -4,7 +4,7 @@
 #
 
 name: ModerationModule
-main: net.survivalboom.sbds.moderation.module.ModerationModule
+main: net.survivalboom.sbds.modules.moderation.module.ModerationModule
 version: 1.0
 
 author: TIMURishche

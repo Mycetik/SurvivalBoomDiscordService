@@ -4,7 +4,7 @@ plugins {
     id("com.gradleup.shadow") version "8.3.0"
 }
 
-group = "net.survivalboom.sbds.moderation"
+group = "net.survivalboom.sbds.modules.moderation"
 version = "1.0"
 
 repositories {
