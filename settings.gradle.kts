@@ -17,10 +17,7 @@ include("github-module")
 include("translation-module")
 
 include("chatbot-module")
-
-/// AI MODULE ///
-include("ai-module:api")
-include("ai-module:module")
+include("ai-module")
 
 /// MODRATION MODULE ///
 include("moderation-module:api")

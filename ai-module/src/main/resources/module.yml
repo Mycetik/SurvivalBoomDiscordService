@@ -11,3 +11,7 @@ main: "net.survivalboom.sbds.modules.ai.AIModule"
 version: "1.0"
 author: TIMURishche
 
+libraries:
+
+  simpleOpenAI:
+    gradle: io.github.sashirestela:simple-openai:3.22.2
