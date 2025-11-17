@@ -10,10 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ServiceProvider extends Manager implements IServiceProvider {
 
@@ -85,9 +82,11 @@ public class ServiceProvider extends Manager implements IServiceProvider {
     @Override
     public @Nullable RegisteredService getRegisteredService(@NotNull Class<?> clazz) {
 
+        Objects.requireNonNull(clazz, "class == null");
+
         checkValid();
 
-        List<RegisteredService> services = registeredServices.stream().filter(r -> r.getClass().isAssignableFrom(clazz)).toList();
+        List<RegisteredService> services = registeredServices.stream().filter(r -> clazz.isAssignableFrom(r.clazz())).toList();
         if (services.isEmpty()) {
             return null;
         }
