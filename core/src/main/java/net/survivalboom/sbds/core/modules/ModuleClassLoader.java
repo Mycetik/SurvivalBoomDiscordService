@@ -62,15 +62,24 @@ public class ModuleClassLoader extends URLClassLoader implements IModuleClassLoa
 
         if (dependencies) {
             clazz = modulesClasspath.request(name, this);
-            if (clazz != null) return clazz;
         }
 
         if (global) {
-            clazz = jarLoader.loadClassWithoutModules(name, resolve);
-            if (clazz != null) return clazz;
+
+            try {
+                clazz = jarLoader.loadClassWithoutModules(name, resolve);
+            }
+
+            catch (ClassNotFoundException ignored) {}
+
         }
 
-        throw new ClassNotFoundException();
+        if (clazz == null) {
+            throw new ClassNotFoundException();
+        }
+
+        return clazz;
+
 
     }
 

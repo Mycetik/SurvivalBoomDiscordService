@@ -71,7 +71,12 @@ public class ModulesClasspath {
 
         if (classLoader.equals(ignore)) return null;
 
-        return classLoader.getClass(name);
+        try {
+            return classLoader.loadClass0(name, false, false, false);
+        }
+        catch (ClassNotFoundException e) {
+            return null;
+        }
 
     }
 
