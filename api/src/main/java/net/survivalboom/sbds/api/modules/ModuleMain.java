@@ -23,6 +23,7 @@ import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -169,6 +170,10 @@ public abstract class ModuleMain {
 
     public @NotNull IServiceProvider.RegisteredService registerService(@NotNull Object obj) {
         return getSbds().getServiceProvider().registerService(this, obj);
+    }
+
+    public @Nullable <T> T getService(@NotNull Class<T> clazz) {
+        return getSbds().getServiceProvider().getService(clazz);
     }
 
     //
