@@ -8,9 +8,9 @@ import java.util.concurrent.CompletableFuture;
 
 public interface IGuildRepositoryHandler {
 
-    @Nullable CompletableFuture<IGuildData> getGuildData(long id);
+    @NotNull CompletableFuture<@Nullable IGuildData> getGuildData(long id);
 
-    @Nullable CompletableFuture<IGuildData> getGuildData(@NotNull Guild guild);
+    @NotNull CompletableFuture<@Nullable IGuildData> getGuildData(@NotNull Guild guild);
 
 
     @NotNull CompletableFuture<IGuildData> createGuildData(long id);
