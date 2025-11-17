@@ -190,31 +190,33 @@ public class CommonUtils {
         catch (Exception e) { throw new RuntimeException(e); }
     }
 
-    public static void waitUntil(@NotNull Supplier<Boolean> supplier, long timeOutInMillis, @Nullable Runnable onCheck) {
+    public static void waitUntil(@NotNull Supplier<Boolean> supplier, int timeOutInMillis, int checkIntervalMillis, @Nullable Runnable onCheck) {
 
         long startTime = System.currentTimeMillis();
 
         while (!supplier.get()) {
 
-            if (onCheck != null) onCheck.run();
+            if (onCheck != null) {
+                onCheck.run();
+            }
 
             long currentTime = System.currentTimeMillis();
             if (timeOutInMillis > 0 && (currentTime - startTime) > timeOutInMillis) {
                 throw new RuntimeException("waitUntil method time out");
             }
 
-            sleep(10);
+            sleep(checkIntervalMillis);
 
         }
 
     }
 
-    public static void waitUntil(@NotNull Supplier<Boolean> supplier, long timeOutMillis) {
-        waitUntil(supplier, timeOutMillis, null);
+    public static void waitUntil(@NotNull Supplier<Boolean> supplier, int timeOutMillis) {
+        waitUntil(supplier, timeOutMillis, 10, null);
     }
 
     public static void waitUntil(@NotNull Supplier<Boolean> supplier) {
-        waitUntil(supplier, 0, null);
+        waitUntil(supplier, 0, 10, null);
     }
 
     //
