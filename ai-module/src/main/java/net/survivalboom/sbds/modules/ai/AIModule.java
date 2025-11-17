@@ -3,6 +3,7 @@ package net.survivalboom.sbds.modules.ai;
 import io.github.sashirestela.cleverclient.client.OkHttpClientAdapter;
 import io.github.sashirestela.openai.SimpleOpenAI;
 import net.survivalboom.sbds.api.modules.ModuleMain;
+import net.survivalboom.sbds.modules.ai.utils.AIQueue;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -10,7 +11,10 @@ import java.io.FileInputStream;
 
 public class AIModule extends ModuleMain {
 
+    private AIQueue queue;
+
     private SimpleOpenAI manager;
+
 
     @Override
     public void onEnable() throws Throwable {
@@ -44,18 +48,35 @@ public class AIModule extends ModuleMain {
 
         manager = SimpleOpenAI.builder()
                 .apiKey(token)
-                .clientAdapter(new OkHttpClientAdapter())
                 .build();
 
+        getLogger().info("Initializing AI queue...");
+        queue = new AIQueue(this);
+        queue.init();
+
         registerService(manager);
+        registerService(queue);
 
     }
 
     @Override
     public void onDisable() {
-        manager = null;
+
+        if (manager != null) {
+            manager.shutDown();
+            manager = null;
+        }
+
+        if (queue != null) {
+            queue.shutdown();
+            queue = null;
+        }
+
     }
 
+    public @NotNull AIQueue getQueue() {
+        return queue;
+    }
 
     public @NotNull SimpleOpenAI getManager() {
         return manager;
