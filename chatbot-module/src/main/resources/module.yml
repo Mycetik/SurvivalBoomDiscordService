@@ -2,12 +2,17 @@ name: "ChatBot"
 main: "net.survivalboom.sbds.modules.chatbot.ChatBotModule"
 
 description: "Ваш друг ШІ прямо в Discord! Хочете щоб у вас у чаті жив дракон?"
-version: "1.0"
+version: 2.0
 
 author: TIMURishche
 website: "https://survivalboom.net"
 
+dependencies:
 
-libraries:
-  lavalink:
-    gradle: "com.openai:openai-java:2.7.0"
+  AIModule:
+    join-classpath: true
+    required: true
+
+  ModerationModule:
+    join-classpath: true
+    required: true

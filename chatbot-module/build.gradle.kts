@@ -10,6 +10,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.openai:openai-java:2.5.0")
+    compileOnly("io.github.sashirestela:simple-openai:3.22.2")
     compileOnly(project(":api"))
+    compileOnly(project(":moderation-module:api"))
+    compileOnly(project(":ai-module"))
 }

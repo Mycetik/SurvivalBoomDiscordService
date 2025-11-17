@@ -1,68 +1,102 @@
 package net.survivalboom.sbds.modules.chatbot;
 
+import io.github.sashirestela.openai.SimpleOpenAI;
 import net.survivalboom.sbds.api.modules.ModuleMain;
-import net.survivalboom.sbds.modules.chatbot.ai.OpenAiManager;
-import net.survivalboom.sbds.modules.chatbot.chats.ChatManager;
-import net.survivalboom.sbds.modules.chatbot.commands.BanUserCommand;
-import net.survivalboom.sbds.modules.chatbot.commands.SetChannelCommand;
-import net.survivalboom.sbds.modules.chatbot.commands.console.SetModelCommand;
-import net.survivalboom.sbds.modules.chatbot.commands.console.ViewModelCommand;
-import net.survivalboom.sbds.modules.chatbot.listener.GuildEventsListener;
+import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.modules.ai.utils.AIQueue;
+import net.survivalboom.sbds.modules.chatbot.bot.ChatBot;
+import net.survivalboom.sbds.modules.chatbot.bot.MessageListener;
+import net.survivalboom.sbds.modules.chatbot.commands.ChatBotCommand;
+import net.survivalboom.sbds.modules.moderation.api.IModerationModule;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.util.Map;
+import java.util.Objects;
 
 public class ChatBotModule extends ModuleMain {
 
-    private OpenAiManager openAiManager;
+    public static NamespacedKey KEY;
 
-    private ChatManager chatManager;
+    private static ChatBotModule instance;
 
-    private GuildEventsListener guildEventsListener;
 
-    @Override
-    public void onLoad() {
-        openAiManager = new OpenAiManager(new File(getDataFolder(), "openai-token"));
-        chatManager = new ChatManager(this, openAiManager);
-        guildEventsListener = new GuildEventsListener(chatManager);
-    }
+    private SimpleOpenAI aiManager;
+
+    private AIQueue aiQueue;
+
+    private IModerationModule moderationModule;
+
+    private ChatBot chatBot;
+
+    private MessageListener messageListener;
+
 
     @Override
     public void onEnable() {
 
         saveDefaultConfig();
-        checkFiles(Map.of(
-                "translations/translation_uk.yml", "translations/translation_uk.yml",
-                "translations/translation_ru.yml", "translations/translation_ru.yml",
-                "translations/translation_en.yml", "translations/translation_en.yml"
-        ));
-        addModuleTranslations();
 
-        openAiManager.init();
-        if (!openAiManager.isEnabled()) return;
+        KEY = NamespacedKey.fromModule(this, "data");
 
-        chatManager.init();
-        if (!chatManager.isEnabled()) return;
+        this.aiManager = getService(SimpleOpenAI.class);
+        Objects.requireNonNull(aiManager, "failed to get ai service");
 
-        guildEventsListener.init();
+        this.aiQueue = getService(AIQueue.class);
+        Objects.requireNonNull(aiQueue, "failed to get ai queue");
 
-        registerEvents(guildEventsListener);
+        this.moderationModule = getService(IModerationModule.class);
+        Objects.requireNonNull(moderationModule, "failed to get moderation service");
 
-        registerSlashCommand(new SetChannelCommand(chatManager.allowedChannels()));
-        registerSlashCommand(new BanUserCommand(chatManager.bannedUsers()));
+        this.chatBot = new ChatBot(this);
+        chatBot.init();
 
-        registerConsoleCommand(new SetModelCommand(chatManager.guildModels()));
-        registerConsoleCommand(new ViewModelCommand(chatManager.guildModels()));
+        this.messageListener = new MessageListener(this);
+        messageListener.init();
+
+        registerCommand(new ChatBotCommand(chatBot.getChannels()));
+
+        instance = this;
 
     }
 
     @Override
     public void onDisable() {
 
-        guildEventsListener.shutdownIfNeeded();
-        chatManager.shutdownIfNeeded();
-        openAiManager.shutdownIfNeeded();
+        this.aiManager = null;
+
+        chatBot.shutdown();
+        chatBot = null;
+
+        messageListener.shutdown();
+        messageListener = null;
+
+        moderationModule = null;
+        aiManager = null;
+
+        instance = null;
 
     }
+
+
+    public @NotNull SimpleOpenAI getAiManager() {
+        return aiManager;
+    }
+
+    public @NotNull AIQueue getAiQueue() {
+        return aiQueue;
+    }
+
+    public @NotNull ChatBot getChatBot() {
+        return chatBot;
+    }
+
+    public @NotNull IModerationModule getModerationModule() {
+        return moderationModule;
+    }
+
+
+    public static @NotNull ChatBotModule getInstance() {
+        return instance;
+    }
+
 
 }
