@@ -20,6 +20,13 @@ test:
 
     title: "Це - вікно"
 
+    select.role.placeholder: "Оберіть роль..."
+    select.role: "Роль"
+
+    upload: "Завантаження файлу"
+
+    text: "**Жирный текст**, *курсив*, __подчёркнутый__, ~~зачёркнутый~~, `код`, > цитата"
+
     input.short.title: "Мале поле"
     input.short.placeholder: "хрю..."
 
