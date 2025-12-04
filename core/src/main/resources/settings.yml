@@ -192,7 +192,7 @@ libraries:
   jda:
     group: "net.dv8tion"
     artifact: "JDA"
-    version: "5.2.2"
+    version: "6.1.2"
 
   # Hibernate - фреймворк для роботи із базою даних.
   hibernate:
