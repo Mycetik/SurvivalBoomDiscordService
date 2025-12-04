@@ -21,7 +21,7 @@ public interface IMessage {
 
     @NotNull MessageTemplate template();
 
-    @NotNull MessageCreateData build(@Nullable Function<Component, String> componentIdCreator, @NotNull IMessages messages, @Nullable Placeholders placeholders);
+    @NotNull MessageCreateData build(@Nullable Function<MessageComponent, String> componentIdCreator, @NotNull IMessages messages, @Nullable Placeholders placeholders);
 
     @NotNull String buildString(@Nullable Placeholders placeholders);
 

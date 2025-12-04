@@ -25,7 +25,7 @@ public class ButtonInteractionManager extends AbstractInteractionHandler<ButtonI
 
     @Override
     protected @Nullable String getIdFromEvent(ButtonInteractionEvent event) {
-        return event.getButton().getId();
+        return event.getButton().getCustomId();
     }
 
     @Override

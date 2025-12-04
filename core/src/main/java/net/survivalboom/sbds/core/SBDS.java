@@ -102,7 +102,6 @@ public class SBDS implements ISBDS {
             GatewayIntent.GUILD_VOICE_STATES,
             GatewayIntent.GUILD_INVITES,
             GatewayIntent.GUILD_WEBHOOKS,
-            GatewayIntent.GUILD_EMOJIS_AND_STICKERS,
             GatewayIntent.GUILD_MESSAGE_TYPING,
             GatewayIntent.GUILD_MODERATION,
             GatewayIntent.AUTO_MODERATION_CONFIGURATION,

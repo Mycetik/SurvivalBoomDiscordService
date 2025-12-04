@@ -1,10 +1,11 @@
 package net.survivalboom.sbds.api.interaction.dropdown.string;
 
+import net.dv8tion.jda.api.components.Component;
+import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.interactions.components.ItemComponent;
-import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
-import net.survivalboom.sbds.api.messages.Component;
+import net.survivalboom.sbds.api.messages.MessageComponent;
 import net.survivalboom.sbds.api.messages.InvalidComponentException;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class StringDropdownTemplate implements Component {
+public class StringDropdownTemplate implements MessageComponent {
 
     private final String name;
 
@@ -56,7 +57,7 @@ public class StringDropdownTemplate implements Component {
 
 
     @Override
-    public @NotNull ItemComponent build(@NotNull Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser) {
+    public @NotNull ActionRowChildComponent build(@NotNull Function<MessageComponent, String> componentIdCreator, @NotNull Function<String, String> parser) {
 
         StringSelectMenu.Builder builder = StringSelectMenu.create(componentIdCreator.apply(this));
         for (Option option : options) {
@@ -99,8 +100,8 @@ public class StringDropdownTemplate implements Component {
     }
 
     @Override
-    public net.dv8tion.jda.api.interactions.components.Component.@NotNull Type type() {
-        return net.dv8tion.jda.api.interactions.components.Component.Type.STRING_SELECT;
+    public @NotNull Component.Type type() {
+        return net.dv8tion.jda.api.components.Component.Type.STRING_SELECT;
     }
 
 

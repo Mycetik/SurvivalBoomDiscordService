@@ -1,8 +1,9 @@
 package net.survivalboom.sbds.api.interaction.dropdown.entity;
 
-import net.dv8tion.jda.api.interactions.components.ItemComponent;
-import net.dv8tion.jda.api.interactions.components.selections.EntitySelectMenu;
-import net.survivalboom.sbds.api.messages.Component;
+import net.dv8tion.jda.api.components.Component;
+import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
+import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
+import net.survivalboom.sbds.api.messages.MessageComponent;
 import net.survivalboom.sbds.api.messages.InvalidComponentException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.TypeMap;
@@ -12,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class EntityDropdownTemplate implements Component {
+public class EntityDropdownTemplate implements MessageComponent {
 
     private final String name;
 
@@ -31,7 +32,7 @@ public class EntityDropdownTemplate implements Component {
 
     private final EntitySelectMenu.SelectTarget target;
 
-    private final net.dv8tion.jda.api.interactions.components.Component.@NotNull Type type;
+    private final Component.Type type;
 
 
     private EntityDropdownTemplate(
@@ -54,15 +55,15 @@ public class EntityDropdownTemplate implements Component {
         this.target = target;
 
         this.type = switch (target) {
-            case USER -> net.dv8tion.jda.api.interactions.components.Component.Type.USER_SELECT;
-            case ROLE -> net.dv8tion.jda.api.interactions.components.Component.Type.ROLE_SELECT;
-            case CHANNEL -> net.dv8tion.jda.api.interactions.components.Component.Type.CHANNEL_SELECT;
+            case USER -> Component.Type.USER_SELECT;
+            case ROLE -> Component.Type.ROLE_SELECT;
+            case CHANNEL -> Component.Type.CHANNEL_SELECT;
         };
 
     }
 
     @Override
-    public @NotNull ItemComponent build(@NotNull Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser) {
+    public @NotNull ActionRowChildComponent build(@NotNull Function<MessageComponent, String> componentIdCreator, @NotNull Function<String, String> parser) {
 
         return EntitySelectMenu.create(componentIdCreator.apply(this), target)
                 .setMaxValues(maxCount)
@@ -93,7 +94,7 @@ public class EntityDropdownTemplate implements Component {
     }
 
     @Override
-    public net.dv8tion.jda.api.interactions.components.Component.@NotNull Type type() {
+    public @NotNull Component.Type type() {
         return type;
     }
 

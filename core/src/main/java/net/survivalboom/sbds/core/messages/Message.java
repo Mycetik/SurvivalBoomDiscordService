@@ -1,9 +1,9 @@
 package net.survivalboom.sbds.core.messages;
 
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
-import net.survivalboom.sbds.api.messages.Component;
 import net.survivalboom.sbds.api.messages.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
+import net.survivalboom.sbds.api.messages.MessageComponent;
 import net.survivalboom.sbds.api.messages.MessageTemplate;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.core.translations.Translation;
@@ -52,7 +52,7 @@ public class Message implements IMessage {
     }
 
     @Override
-    public @NotNull MessageCreateData build(@Nullable Function<Component, String> componentIdCreator, @NotNull IMessages messages, @Nullable Placeholders placeholders) {
+    public @NotNull MessageCreateData build(@Nullable Function<MessageComponent, String> componentIdCreator, @NotNull IMessages messages, @Nullable Placeholders placeholders) {
         Function<String, String> parser = s -> messages.parse(s, key -> messages.getMessage(key, translation, true), placeholders);
         return template.build(componentIdCreator, parser);
     }

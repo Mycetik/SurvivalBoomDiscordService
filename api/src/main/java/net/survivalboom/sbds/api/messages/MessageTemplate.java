@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.messages;
 
-import net.dv8tion.jda.api.interactions.components.ItemComponent;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.utils.Placeholders;
@@ -18,13 +19,13 @@ public class MessageTemplate {
 
     private final List<EmbedTemplate> embeds;
 
-    private final List<Component> components;
+    private final List<MessageComponent> components;
 
 
     private MessageTemplate(
             @Nullable String content,
             @NotNull List<EmbedTemplate> embeds,
-            @NotNull List<Component> components
+            @NotNull List<MessageComponent> components
     ) {
 
         this.content = content;
@@ -44,7 +45,7 @@ public class MessageTemplate {
 
     }
 
-    public @NotNull MessageCreateData build(@Nullable Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser) {
+    public @NotNull MessageCreateData build(@Nullable Function<MessageComponent, String> componentIdCreator, @NotNull Function<String, String> parser) {
 
         Objects.requireNonNull(parser, "parser == null");
 
@@ -65,7 +66,7 @@ public class MessageTemplate {
 
     }
 
-    private void appendActionRows(@NotNull MessageCreateBuilder builder, @Nullable Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser) {
+    private void appendActionRows(@NotNull MessageCreateBuilder builder, @Nullable Function<MessageComponent, String> componentIdCreator, @NotNull Function<String, String> parser) {
 
         Objects.requireNonNull(componentIdCreator, "componentIdCreator == null");
 
@@ -77,17 +78,19 @@ public class MessageTemplate {
 
     }
 
-    private void appendActionRow(@NotNull MessageCreateBuilder builder, int row, @NotNull Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser) {
+    private void appendActionRow(@NotNull MessageCreateBuilder builder, int row, @NotNull Function<MessageComponent, String> componentIdCreator, @NotNull Function<String, String> parser) {
 
-        List<ItemComponent> list = components.stream()
-                        .filter(c -> c.row() == row)
-                        .sorted(Comparator.comparing(Component::priority))
-                        .map(c -> c.build(componentIdCreator, parser))
-                        .toList();
+        var componentsInRow = components.stream()
+                .filter(c -> c.row() == row)
+                .sorted(Comparator.comparing(MessageComponent::priority))
+                .map(c -> c.build(componentIdCreator, parser))
+                .toList();
 
-        if (list.isEmpty()) return;
+        if (componentsInRow.isEmpty()) {
+            return;
+        }
 
-        builder.addActionRow(list);
+        builder.addComponents(ActionRow.of(componentsInRow));
 
     }
 
@@ -107,10 +110,10 @@ public class MessageTemplate {
 
         private final List<EmbedTemplate> embeds;
 
-        private final List<Component> components;
+        private final List<MessageComponent> components;
 
 
-        private Builder(@Nullable String content, @NotNull List<EmbedTemplate> embeds, @NotNull List<Component> components) {
+        private Builder(@Nullable String content, @NotNull List<EmbedTemplate> embeds, @NotNull List<MessageComponent> components) {
             this.content = content;
             this.embeds = embeds;
             this.components = components;
@@ -125,17 +128,17 @@ public class MessageTemplate {
 
         // COMPONENTS //
 
-        public @NotNull Builder addComponent(@NotNull Component component) {
+        public @NotNull Builder addComponent(@NotNull MessageComponent component) {
             components.add(component);
             return this;
         }
 
-        public @NotNull Builder addComponents(@NotNull Collection<Component> components) {
+        public @NotNull Builder addComponents(@NotNull Collection<MessageComponent> components) {
             this.components.addAll(components);
             return this;
         }
 
-        public @NotNull Builder addComponents(@NotNull Component... components) {
+        public @NotNull Builder addComponents(@NotNull MessageComponent... components) {
             this.components.addAll(List.of(components));
             return this;
         }
@@ -190,7 +193,7 @@ public class MessageTemplate {
         String content = section.getString("$content");
         List<EmbedTemplate> embeds = createEmbeds(section);
 
-        List<Component> components = Component.createComponents(TypeMap.ofMapList(section.getMapList("$components")));
+        List<MessageComponent> components = MessageComponent.createComponents(TypeMap.ofMapList(section.getMapList("$components")));
 
         return new MessageTemplate(content, embeds, components);
 
@@ -230,9 +233,9 @@ public class MessageTemplate {
     }
 
     // TODO: Зробити перевірку на правильність кількості компонентів на повідомленні.
-    private static void checkComponentValidation(@NotNull List<Component> componentList) throws InvalidComponentException {
+    private static void checkComponentValidation(@NotNull List<MessageComponent> componentList) throws InvalidComponentException {
 
-        if (componentList.stream().anyMatch(c -> c.type() == net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON) && componentList.stream().anyMatch(c -> c.type() != net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON)) {
+        if (componentList.stream().anyMatch(c -> c.type() == net.dv8tion.jda.api.components.Component.Type.BUTTON) && componentList.stream().anyMatch(c -> c.type() != net.dv8tion.jda.api.components.Component.Type.BUTTON)) {
             throw new InvalidComponentException("");
         }
 

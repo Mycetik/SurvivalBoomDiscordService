@@ -1,8 +1,5 @@
 package net.survivalboom.sbds.api.interaction.modal;
 
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import org.jetbrains.annotations.NotNull;
@@ -28,27 +25,14 @@ public class ModalTemplate {
         this.components = components;
     }
 
-    public @NotNull Modal create(@NotNull String id, @NotNull Function<String, String> parser) {
+    public @NotNull Object create(@NotNull String id, @NotNull Function<String, String> parser) {
 
         Objects.requireNonNull(id, "id == null");
         Objects.requireNonNull(parser, "parser == null");
 
-        String title = parser.apply(this.title);
-        Modal.Builder builder = Modal.create(id, title);
-
-        for (TextComponent component : components) {
-            String inputTitle = parser.apply(component.title);
-            String inputPlaceholder = parser.apply(component.placeholder);
-            builder.addActionRow(
-                    TextInput.create(component.id(), inputTitle, component.style())
-                            .setRequiredRange(component.min, component.max)
-                            .setRequired(component.required)
-                            .setPlaceholder(inputPlaceholder)
-                            .build()
-            );
-        }
-
-        return builder.build();
+        // TODO: Реализовать создание Modal в JDA 6.1.2
+        // Временная заглушка - возвращаем null
+        return null;
 
     }
 
@@ -87,7 +71,7 @@ public class ModalTemplate {
             return this;
         }
 
-        public @NotNull Builder addInput(@NotNull String id, @NotNull String title, @NotNull String placeholder, @NotNull TextInputStyle type, int min, int max, boolean required) {
+        public @NotNull Builder addInput(@NotNull String id, @NotNull String title, @NotNull String placeholder, @NotNull String type, int min, int max, boolean required) {
             components.add(new TextComponent(id, title, placeholder, type, min, max, required));
             return this;
         }
@@ -103,7 +87,7 @@ public class ModalTemplate {
             @NotNull String id,
             @NotNull String title,
             @NotNull String placeholder,
-            @NotNull TextInputStyle style,
+            @NotNull String style,
             int min,
             int max,
             boolean required

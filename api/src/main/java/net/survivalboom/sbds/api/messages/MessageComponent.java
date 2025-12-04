@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.api.messages;
 
-import net.dv8tion.jda.api.interactions.components.ItemComponent;
-import net.dv8tion.jda.api.interactions.components.Component.Type;
+import net.dv8tion.jda.api.components.Component;
+import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
 import net.survivalboom.sbds.api.interaction.button.ButtonTemplate;
 import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownTemplate;
 import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownTemplate;
@@ -13,9 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-public interface Component {
+public interface MessageComponent {
 
-    @NotNull ItemComponent build(@NotNull Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser);
+    @NotNull ActionRowChildComponent build(@NotNull Function<MessageComponent, String> componentIdCreator, @NotNull Function<String, String> parser);
 
     int row();
 
@@ -25,12 +25,12 @@ public interface Component {
 
     boolean isStatic();
 
-    @NotNull Type type();
+    @NotNull Component.Type type();
 
 
-    static @NotNull List<Component> createComponents(@NotNull List<TypeMap> mapList) throws InvalidComponentException {
+    static @NotNull List<MessageComponent> createComponents(@NotNull List<TypeMap> mapList) throws InvalidComponentException {
 
-        List<Component> list = new ArrayList<>();
+        List<MessageComponent> list = new ArrayList<>();
         for (TypeMap map : mapList) {
             list.add(createComponent(map));
         }
@@ -39,7 +39,7 @@ public interface Component {
 
     }
 
-    static @NotNull Component createComponent(@NotNull TypeMap typeMap) throws InvalidComponentException {
+    static @NotNull MessageComponent createComponent(@NotNull TypeMap typeMap) throws InvalidComponentException {
 
         String type = typeMap.get("type", String.class);
         if (type == null) throw new InvalidComponentException("Component does not have a type");

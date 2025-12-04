@@ -1,10 +1,11 @@
 package net.survivalboom.sbds.api.interaction.button;
 
+import net.dv8tion.jda.api.components.Component;
+import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.interactions.components.ItemComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.survivalboom.sbds.api.messages.Component;
+import net.survivalboom.sbds.api.messages.MessageComponent;
 import net.survivalboom.sbds.api.messages.InvalidComponentException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.TypeMap;
@@ -17,7 +18,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class ButtonTemplate implements Component {
+public class ButtonTemplate implements MessageComponent {
 
     private static final Logger log = LoggerFactory.getLogger(ButtonTemplate.class);
     private final String name;
@@ -60,7 +61,7 @@ public class ButtonTemplate implements Component {
     }
 
     @Override
-    public @NotNull ItemComponent build(@NotNull Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser) {
+    public @NotNull ActionRowChildComponent build(@NotNull Function<MessageComponent, String> componentIdCreator, @NotNull Function<String, String> parser) {
         String id = componentIdCreator.apply(this);
         return Button.of(
                 style,
@@ -91,8 +92,8 @@ public class ButtonTemplate implements Component {
     }
 
     @Override
-    public net.dv8tion.jda.api.interactions.components.Component.@NotNull Type type() {
-        return net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON;
+    public @NotNull Component.Type type() {
+        return Component.Type.BUTTON;
     }
 
 

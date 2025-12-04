@@ -24,7 +24,7 @@ public class ModalInteractionInfo extends ExecutionInfo implements MessageReplya
     public ModalInteractionInfo(@NotNull ISBDS sbds, @NotNull Logger logger, @NotNull ModalInteractionEvent event) {
         super(sbds, logger);
         this.event = event;
-        event.getInteraction().getValues().forEach(v -> map.put(v.getId(), v.getAsString()));
+        event.getValues().forEach(v -> map.put(v.getCustomId(), v.getAsString()));
     }
 
     public @Nullable String value(@NotNull String id) {
