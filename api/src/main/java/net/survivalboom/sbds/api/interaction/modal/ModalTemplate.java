@@ -1,35 +1,30 @@
 package net.survivalboom.sbds.api.interaction.modal;
 
-import net.dv8tion.jda.api.components.attachmentupload.AttachmentUpload;
-import net.dv8tion.jda.api.components.label.Label;
-import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
-import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
-import net.dv8tion.jda.api.components.textinput.TextInput;
-import net.dv8tion.jda.api.components.textinput.TextInputStyle;
+import net.dv8tion.jda.api.components.ModalTopLevelComponent;
 import net.dv8tion.jda.api.modals.Modal;
-import net.survivalboom.sbds.api.messages.IMessages;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.interaction.component.AbstractInteractionComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
 public class ModalTemplate {
 
-    private final String title;
-
-    private final List<ModalComponent> components;
-
     private final String name;
 
+    private final String title;
 
-    private ModalTemplate(@NotNull String title, @Nullable String name, @NotNull List<ModalComponent> components) {
+    private final List<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components = new ArrayList<>();
+
+
+    private ModalTemplate(@NotNull String title, @Nullable String name, @NotNull Collection<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components) {
         this.title = title;
         this.name = name;
-        this.components = components;
+        this.components.addAll(components);
     }
 
     public @NotNull Modal create(@NotNull String id, @NotNull Function<String, String> parser) {
@@ -39,159 +34,115 @@ public class ModalTemplate {
 
         Modal.Builder builder = Modal.create(id, parser.apply(title));
 
-        for (ModalComponent component : components) {
-            builder.addComponents(component.toComponent(parser));
+        for (var component : components) {
+            builder.addComponents(component.createComponent(parser, null));
         }
 
         return builder.build();
 
     }
 
-    public @Nullable String name() {
+    public @NotNull String getName() {
         return name;
     }
 
+    public @NotNull String getTitle() {
+        return title;
+    }
+
+    public @NotNull Builder copy() {
+        return new Builder(this);
+    }
+
+    //
+    // BUILDER
+    //
+
     public static @NotNull Builder builder() {
-        return new Builder("NO_TITLE", null, new ArrayList<>());
+        return new Builder();
     }
 
     public static class Builder {
 
-        private final List<ModalComponent> components;
+        private String name;
 
         private String title;
 
-        private String name;
+        private final List<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components = new ArrayList<>();
 
 
-        private Builder(@NotNull String title, @Nullable String name, @NotNull List<ModalComponent> components) {
-            this.title = title;
-            this.name = name;
-            this.components = components;
+        protected Builder() {}
+
+        protected Builder(@NotNull ModalTemplate template) {
+            this.name = template.name;
+            this.title = template.title;
+            this.components.addAll(template.components);
         }
 
-
-        public @NotNull Builder setTitle(@NotNull String title) {
-            Objects.requireNonNull(title, "title == null");
-            this.title = title;
-            return this;
+        protected Builder(@NotNull Builder builder) {
+            this.name = builder.name;
+            this.title = builder.title;
+            this.components.addAll(builder.components);
         }
+
+        // NAME //
 
         public @NotNull Builder setName(@Nullable String name) {
             this.name = name;
             return this;
         }
 
-        public @NotNull Builder addInput(@NotNull String id, @NotNull String title, @NotNull String placeholder, @NotNull TextInputStyle type, int min, int max, boolean required) {
-            components.add(ModalComponent.textInput(id, title, placeholder, type, min, max, required));
+        public @Nullable String getName() {
+            return name;
+        }
+
+        // TITLE //
+
+        public @NotNull Builder setTitle(@NotNull String title) {
+            this.title = title;
             return this;
         }
 
-        public @NotNull Builder addAttachmentUpload(@NotNull String componentId, @NotNull String title) {
-            components.add(ModalComponent.attachment(componentId, title));
+        public @Nullable String getTitle() {
+            return title;
+        }
+
+        // COMPONENTS //
+
+        public @NotNull Builder addComponent(@NotNull AbstractInteractionComponent<?, ?, ModalTopLevelComponent> component) {
+            Objects.requireNonNull(component, "component == null");
+            this.components.add(component);
             return this;
         }
 
-        public @NotNull Builder addTextDisplay(@NotNull String markdown) {
-            components.add(ModalComponent.textDisplay(markdown));
+        public @NotNull Builder addComponents(@NotNull Collection<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components) {
+            Objects.requireNonNull(components, "components == null");
+            this.components.addAll(components);
             return this;
         }
 
-        public @NotNull Builder addEntitySelect(@NotNull String id,
-                                                @NotNull String title,
-                                                @NotNull EntitySelectMenu.SelectTarget target,
-                                                int min,
-                                                int max,
-                                                @Nullable String placeholder) {
-            components.add(ModalComponent.entitySelect(id, title, placeholder, target, min, max));
+        public @NotNull Builder setComponents(@Nullable Collection<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components) {
+
+            this.components.clear();
+
+            if (components != null) {
+                this.components.addAll(components);
+            }
+
             return this;
+
         }
+
+        //
+        // BUILD
+        //
 
         public @NotNull ModalTemplate build() {
-            return new ModalTemplate(title, name, new ArrayList<>(components));
+            return new ModalTemplate(title, name, components);
         }
 
-    }
-
-
-    private TextInputStyle parseStyle(@NotNull String style) {
-        return switch (style.toUpperCase()) {
-            case "SHORT" -> TextInputStyle.SHORT;
-            case "PARAGRAPH" -> TextInputStyle.PARAGRAPH;
-            default -> TextInputStyle.SHORT;
-        };
-    }
-
-
-    private record ModalComponent(
-            @NotNull Type type,
-            @Nullable String id,
-            @Nullable String title,
-            @Nullable String placeholder,
-            @Nullable TextInputStyle textInputStyle,
-            int min,
-            int max,
-            boolean required,
-            @Nullable String content,
-            @Nullable EntitySelectMenu.SelectTarget selectTarget
-    ) {
-
-        static ModalComponent textInput(String id, String title, String placeholder, TextInputStyle style, int min, int max, boolean required) {
-            return new ModalComponent(Type.TEXT_INPUT, id, title, placeholder, style, min, max, required, null, null);
-        }
-
-        static ModalComponent attachment(String id, String title) {
-            return new ModalComponent(Type.ATTACHMENT_UPLOAD, id, title, null, null, 0, 0, true, null, null);
-        }
-
-        static ModalComponent textDisplay(String content) {
-            return new ModalComponent(Type.TEXT_DISPLAY, null, null, null, null, 0, 0, true, content, null);
-        }
-
-        static ModalComponent entitySelect(String id, String title, @Nullable String placeholder, EntitySelectMenu.SelectTarget target, int min, int max) {
-            return new ModalComponent(Type.ENTITY_SELECT, id, title, placeholder, null, min, max, true, null, target);
-        }
-
-        net.dv8tion.jda.api.components.ModalTopLevelComponent toComponent(Function<String, String> parser) {
-            return switch (type) {
-                case TEXT_INPUT -> Label.of(
-                           parser.apply(Objects.requireNonNull(title, "title")),
-                            TextInput.create(
-                                    Objects.requireNonNull(id, "component id"),
-                                    Objects.requireNonNull(textInputStyle, "text input style")
-                            )
-                            .setPlaceholder(parser.apply(Objects.requireNonNull(placeholder, "placeholder")))
-                            .setMinLength(min)
-                            .setMaxLength(max)
-                            .setRequired(required)
-                            .build()
-                    );
-                case ATTACHMENT_UPLOAD -> Label.of(
-                        parser.apply(Objects.requireNonNull(title, "title")),
-                        AttachmentUpload.of(Objects.requireNonNull(id, "component id"))
-                );
-                case TEXT_DISPLAY -> TextDisplay.of(parser.apply(Objects.requireNonNull(content, "content")));
-                case ENTITY_SELECT -> {
-                    EntitySelectMenu.Builder builder = EntitySelectMenu.create(
-                            Objects.requireNonNull(id, "component id"),
-                            Objects.requireNonNull(selectTarget, "select target")
-                    ).setMinValues(min).setMaxValues(max);
-                    if (placeholder != null) {
-                        builder.setPlaceholder(parser.apply(placeholder));
-                    }
-                    yield Label.of(
-                            parser.apply(Objects.requireNonNull(title, "title")),
-                            builder.build()
-                    );
-                }
-            };
-        }
-
-        private enum Type {
-            TEXT_INPUT,
-            ATTACHMENT_UPLOAD,
-            TEXT_DISPLAY,
-            ENTITY_SELECT
+        public @NotNull Builder copy() {
+            return new Builder(this);
         }
 
     }

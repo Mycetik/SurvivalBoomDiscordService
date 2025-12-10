@@ -53,7 +53,7 @@ public class ModalActionBuilder {
 
         ModalTemplate template = registeredModal.template();
 
-        String name = template.name();
+        String name = template.getName();
         String id = Objects.requireNonNullElse(name, UUID.randomUUID().toString());
 
         Function<String, String> parser = s -> messages.parse(s, key -> messages.getMessage(key, user, true), placeholders);;

@@ -1,10 +1,11 @@
 package net.survivalboom.sbds.modules.voice.listener;
 
+import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownInteractionInfo;
+import net.survivalboom.sbds.api.interaction.component.TextInputComponent;
+import net.survivalboom.sbds.api.interaction.component.dropdown.string.StringDropdownInteractionInfo;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
 import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
 import net.survivalboom.sbds.modules.voice.voice.PrivateVoice;
@@ -24,7 +25,14 @@ public class ControlPanelListener {
 
         ModalTemplate renameModal = ModalTemplate.builder()
                 .setTitle("[voice.control.rename.modal.title]")
-                .addInput("name", "[voice.control.rename.modal.input-name]", "[voice.control.rename.modal.input-placeholder]", TextInputStyle.SHORT, 3, 20, true)
+                .addComponent(TextInputComponent.builder()
+                        .setTitle("[voice.control.rename.modal.input-name]")
+                        .setDescription("[voice.control.rename.modal.input-placeholder]")
+                        .setStyle(TextInputStyle.SHORT)
+                        .setMinLength(3)
+                        .setMaxLength(20)
+                        .build()
+                )
                 .build();
 
         ModalTemplate limitModal = ModalTemplate.builder()

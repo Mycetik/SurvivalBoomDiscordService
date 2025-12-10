@@ -2,9 +2,9 @@ package net.survivalboom.sbds.api.messages;
 
 import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
-import net.survivalboom.sbds.api.interaction.button.ButtonTemplate;
-import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownTemplate;
-import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownTemplate;
+import net.survivalboom.sbds.api.interaction.component.button.ButtonTemplate;
+import net.survivalboom.sbds.api.interaction.component.dropdown.entity.EntityDropdownTemplate;
+import net.survivalboom.sbds.api.interaction.component.dropdown.string.StringDropdownTemplate;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,11 +46,11 @@ public interface MessageComponent {
 
         return switch (type.toLowerCase()) {
 
-            case "button" -> ButtonTemplate.create(typeMap);
+            case "button" -> ButtonTemplate.fromSection(typeMap);
 
-            case "string_select" -> StringDropdownTemplate.create(typeMap);
+            case "string_select" -> StringDropdownTemplate.fromSection(typeMap);
 
-            case "entity_select" -> EntityDropdownTemplate.create(typeMap);
+            case "entity_select" -> EntityDropdownTemplate.fromSection(typeMap);
 
             default -> throw new InvalidComponentException("Invalid component type `" + type + "`");
 

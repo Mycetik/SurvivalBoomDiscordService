@@ -1,11 +1,8 @@
 package net.survivalboom.sbds.api.interaction.modal;
 
-import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.Mentions;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
@@ -20,56 +17,22 @@ import java.util.*;
 
 public class ModalInteractionInfo extends ExecutionInfo implements MessageReplyable, HookEditable, GuildExecution {
 
-    private final Map<String, ModalMapping> mappingMap = new HashMap<>();
-    private final Map<String, String> stringValues = new HashMap<>();
+    private final Map<String, ModalMapping> data = new HashMap<>();
 
     private final ModalInteractionEvent event;
 
     public ModalInteractionInfo(@NotNull ISBDS sbds, @NotNull Logger logger, @NotNull ModalInteractionEvent event) {
         super(sbds, logger);
         this.event = event;
-        event.getValues().forEach(v -> {
-            mappingMap.put(v.getCustomId(), v);
-            extractStringValue(v).ifPresent(value -> stringValues.put(v.getCustomId(), value));
-        });
+        event.getValues().forEach(v -> data.put(v.getCustomId(), v));
     }
 
-    private Optional<String> extractStringValue(ModalMapping mapping) {
-        return switch (mapping.getType()) {
-            case TEXT_INPUT -> Optional.ofNullable(mapping.getAsString());
-            case STRING_SELECT, ROLE_SELECT, USER_SELECT, MENTIONABLE_SELECT, CHANNEL_SELECT -> {
-                List<String> values = mapping.getAsStringList();
-                yield values == null || values.isEmpty() ? Optional.empty() : Optional.of(String.join(", ", values));
-            }
-            default -> Optional.empty();
-        };
+    public @Nullable ModalMapping getValue(@NotNull String id) {
+        return data.get(id);
     }
 
-    public @Nullable String value(@NotNull String id) {
-        return stringValues.get(id);
-    }
-
-    public @NotNull Map<String, String> values() {
-        return new HashMap<>(stringValues);
-    }
-
-    public @Nullable List<String> valueList(@NotNull String id) {
-        ModalMapping mapping = mappingMap.get(id);
-        return mapping != null ? mapping.getAsStringList() : null;
-    }
-
-    public @Nullable Mentions mentions(@NotNull String id) {
-        ModalMapping mapping = mappingMap.get(id);
-        return mapping != null ? mapping.getAsMentions() : null;
-    }
-
-    public @Nullable List<Message.Attachment> attachments(@NotNull String id) {
-        ModalMapping mapping = mappingMap.get(id);
-        return mapping != null ? mapping.getAsAttachmentList() : null;
-    }
-
-    public @NotNull Map<String, ModalMapping> mappings() {
-        return new HashMap<>(mappingMap);
+    public @NotNull Map<Object, ModalMapping> getValues() {
+        return new HashMap<>(data);
     }
 
     @Override

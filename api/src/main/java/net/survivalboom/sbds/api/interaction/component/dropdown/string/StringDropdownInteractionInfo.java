@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.interaction.dropdown.string;
+package net.survivalboom.sbds.api.interaction.component.dropdown.string;
 
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.components.selections.SelectOption;
