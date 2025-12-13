@@ -37,8 +37,14 @@ public class ControlPanelListener {
 
         ModalTemplate limitModal = ModalTemplate.builder()
                 .setTitle("[voice.control.set-limit.modal.title]")
-                .addInput("limit", "[voice.control.set-limit.modal.input-name]", "[voice.control.set-limit.modal.input-placeholder]", TextInputStyle.SHORT, 1, 2, true)
-                .build();
+                .addComponent(TextInputComponent.builder()
+                        .setName("limit")
+                        .setTitle("$[voice.control.set-limit.modal.input-name]")
+                        .setStyle(TextInputStyle.SHORT)
+                        .setMinLength(1)
+                        .setMaxLength(2)
+                        .build()
+                ).build();
 
         IModalInteractionManager modalManager = voiceManager.getModule().getSbds().getModalInteractionManager();
         modalManager.registerModal(voiceManager.getModule(), "rename", renameModal);
@@ -82,7 +88,7 @@ public class ControlPanelListener {
 
             info.replyModal("privatevoicemodule:rename").onSuccess(modal -> {
 
-                String name = Objects.requireNonNull(modal.value("name"));
+                String name = modal.getValueNotNull("name").getAsString();
 
                 voice.setChannelName(name);
                 modal.reply("voice.control.rename.success")
@@ -105,7 +111,7 @@ public class ControlPanelListener {
 
             info.replyModal("privatevoicemodule:limit").onSuccess(modal -> {
 
-                String limitRaw = Objects.requireNonNull(modal.value("limit"));
+                String limitRaw = modal.getValueNotNull("limit").getAsString();
                 int limit;
 
                 try {
