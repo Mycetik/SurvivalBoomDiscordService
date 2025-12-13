@@ -6,33 +6,43 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
+import net.dv8tion.jda.api.interactions.modals.ModalMapping;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ModalInteractionInfo extends ExecutionInfo implements MessageReplyable, HookEditable, GuildExecution {
 
-    private final Map<String, String> map = new HashMap<>();
+    private final Map<String, ModalMapping> data = new HashMap<>();
 
     private final ModalInteractionEvent event;
 
     public ModalInteractionInfo(@NotNull ISBDS sbds, @NotNull Logger logger, @NotNull ModalInteractionEvent event) {
         super(sbds, logger);
         this.event = event;
-        event.getInteraction().getValues().forEach(v -> map.put(v.getId(), v.getAsString()));
+        event.getValues().forEach(v -> data.put(v.getCustomId(), v));
     }
 
-    public @Nullable String value(@NotNull String id) {
-        return map.get(id);
+    public @Nullable ModalMapping getValue(@NotNull String id) {
+        return data.get(id);
     }
 
-    public @NotNull Map<String, String> values() {
-        return new HashMap<>(map);
+    public @NotNull ModalMapping getValueNotNull(@NotNull String id) {
+
+        if (!data.containsKey(id)) {
+            throw new NullPointerException("value with id `" + id + "` does not exist");
+        }
+
+        return data.get(id);
+
+    }
+
+    public @NotNull Map<String, ModalMapping> getValues() {
+        return new HashMap<>(data);
     }
 
     @Override

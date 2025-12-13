@@ -2,8 +2,8 @@ package net.survivalboom.sbds.core.interaction.dropdown.entity;
 
 import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
-import net.survivalboom.sbds.api.interaction.dropdown.entity.IEntityDropdownInteractionManager;
+import net.survivalboom.sbds.api.interaction.component.dropdown.entity.EntityDropdownInteractionInfo;
+import net.survivalboom.sbds.api.interaction.component.dropdown.entity.IEntityDropdownInteractionManager;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.interaction.AbstractInteractionHandler;
 import org.jetbrains.annotations.NotNull;

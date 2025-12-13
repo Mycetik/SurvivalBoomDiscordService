@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.interaction.button;
+package net.survivalboom.sbds.api.interaction.component.button;
 
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.survivalboom.sbds.api.ISBDS;

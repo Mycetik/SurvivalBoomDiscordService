@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.interaction.dropdown.entity;
+package net.survivalboom.sbds.api.interaction.component.dropdown.entity;
 
 import net.dv8tion.jda.api.entities.Mentions;
 import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;

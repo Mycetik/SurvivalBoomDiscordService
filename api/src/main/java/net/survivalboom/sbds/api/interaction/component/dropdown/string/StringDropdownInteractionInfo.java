@@ -1,7 +1,7 @@
-package net.survivalboom.sbds.api.interaction.dropdown.string;
+package net.survivalboom.sbds.api.interaction.component.dropdown.string;
 
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
-import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.ComponentInteractionInfo;
 import org.jetbrains.annotations.NotNull;

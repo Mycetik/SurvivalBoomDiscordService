@@ -1,11 +1,13 @@
 package net.survivalboom.sbds.api.messages;
 
+import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
-import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
-import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownInteractionInfo;
+import net.survivalboom.sbds.api.interaction.component.IComponent;
+import net.survivalboom.sbds.api.interaction.component.button.ButtonInteractionInfo;
+import net.survivalboom.sbds.api.interaction.component.dropdown.entity.EntityDropdownInteractionInfo;
+import net.survivalboom.sbds.api.interaction.component.dropdown.string.StringDropdownInteractionInfo;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,7 +63,7 @@ public abstract class AbstractMessageBuilder<T> {
     //
 
     public @NotNull T buttonCallback(@NotNull String name, @NotNull Consumer<ButtonInteractionInfo> onSuccess, @Nullable Runnable onFail, int timeout) {
-        ComponentCallback<ButtonInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON, onSuccess, onFail, timeout);
+        ComponentCallback<ButtonInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.components.Component.Type.BUTTON, onSuccess, onFail, timeout);
         callbacks.add(callback);
         return This();
     }
@@ -77,7 +79,7 @@ public abstract class AbstractMessageBuilder<T> {
     // ENTITY SELECT //
 
     public @NotNull T entityDropdownCallback(@NotNull String name, @NotNull Consumer<EntityDropdownInteractionInfo> onSuccess, @Nullable Runnable onFail, int timeout) {
-        ComponentCallback<EntityDropdownInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.interactions.components.Component.Type.MENTIONABLE_SELECT, onSuccess, onFail, timeout);
+        ComponentCallback<EntityDropdownInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.components.Component.Type.USER_SELECT, onSuccess, onFail, timeout);
         callbacks.add(callback);
         return This();
     }
@@ -89,7 +91,7 @@ public abstract class AbstractMessageBuilder<T> {
     // STRING SELECT //
 
     public @NotNull T stringDropdownCallback(@NotNull String name, @NotNull Consumer<StringDropdownInteractionInfo> onSuccess, @Nullable Runnable onFail, int timeout) {
-        ComponentCallback<StringDropdownInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.interactions.components.Component.Type.STRING_SELECT, onSuccess, onFail, timeout);
+        ComponentCallback<StringDropdownInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.components.Component.Type.STRING_SELECT, onSuccess, onFail, timeout);
         callbacks.add(callback);
         return This();
     }
@@ -108,10 +110,10 @@ public abstract class AbstractMessageBuilder<T> {
         return messageDataSupplier.apply(this);
     }
 
-    protected @NotNull String componentIdCreator(@NotNull Component component) {
+    protected @NotNull String componentIdCreator(@NotNull IComponent component) {
 
         boolean isStatic = component.isStatic();
-        String name = component.name();
+        String name = component.getName();
         String id = isStatic && name != null ? name : UUID.randomUUID().toString();
 
         if (isStatic) {
@@ -119,7 +121,7 @@ public abstract class AbstractMessageBuilder<T> {
         }
 
         ComponentCallback<?> callback = callbacks.stream()
-                .filter(c -> c.name.equals(component.name()))
+                .filter(c -> c.name.equals(component.getName()))
                 .findAny()
                 .orElse(null);
 
@@ -161,7 +163,7 @@ public abstract class AbstractMessageBuilder<T> {
 
     protected record ComponentCallback<T>(
             @NotNull String name,
-            @NotNull net.dv8tion.jda.api.interactions.components.Component.Type type,
+            @NotNull Component.Type type,
             @NotNull Consumer<T> onSuccess,
             @Nullable Runnable onFail,
             int timeout
