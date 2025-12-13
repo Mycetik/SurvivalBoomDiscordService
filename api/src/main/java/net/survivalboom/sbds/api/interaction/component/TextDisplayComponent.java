@@ -1,13 +1,15 @@
 package net.survivalboom.sbds.api.interaction.component;
 
 import net.dv8tion.jda.api.components.Component;
+import net.dv8tion.jda.api.components.ModalTopLevelComponent;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
+import net.survivalboom.sbds.api.interaction.modal.IModalComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
-public class TextDisplayComponent extends AbstractInteractionComponent<TextDisplayComponent.Builder, TextDisplayComponent, TextDisplay> {
+public class TextDisplayComponent extends AbstractInteractionComponent<TextDisplayComponent.Builder, TextDisplayComponent, TextDisplay> implements IModalComponent {
 
     protected final String text;
 
@@ -28,8 +30,13 @@ public class TextDisplayComponent extends AbstractInteractionComponent<TextDispl
     }
 
     @Override
-    public @NotNull TextDisplay createComponent(@NotNull Function<String, String> parser, @Nullable Function<TextDisplayComponent, String> componentIdCreator) {
+    public @NotNull TextDisplay createComponent(@NotNull Function<String, String> parser, @Nullable Function<IComponent, String> componentIdCreator) {
         return TextDisplay.of(parser.apply(text));
+    }
+
+    @Override
+    public @NotNull ModalTopLevelComponent createModalComponent(@NotNull Function<String, String> parser) {
+        return createComponent(parser, null);
     }
 
     //

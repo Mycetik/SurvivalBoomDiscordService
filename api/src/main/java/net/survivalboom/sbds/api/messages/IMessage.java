@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.messages;
 
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.survivalboom.sbds.api.interaction.component.IComponent;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
@@ -21,7 +22,7 @@ public interface IMessage {
 
     @NotNull MessageTemplate template();
 
-    @NotNull MessageCreateData build(@Nullable Function<MessageComponent, String> componentIdCreator, @NotNull IMessages messages, @Nullable Placeholders placeholders);
+    @NotNull MessageCreateData build(@Nullable Function<IComponent, String> componentIdCreator, @NotNull IMessages messages, @Nullable Placeholders placeholders);
 
     @NotNull String buildString(@Nullable Placeholders placeholders);
 

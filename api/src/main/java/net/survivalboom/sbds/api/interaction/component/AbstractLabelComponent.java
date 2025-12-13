@@ -1,8 +1,10 @@
 package net.survivalboom.sbds.api.interaction.component;
 
 import net.dv8tion.jda.api.components.Component;
+import net.dv8tion.jda.api.components.ModalTopLevelComponent;
 import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.label.LabelChildComponent;
+import net.survivalboom.sbds.api.interaction.modal.IModalComponent;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,7 +16,7 @@ public abstract class AbstractLabelComponent<
         B extends AbstractLabelComponent.Builder<B, C, CO>,
         C extends AbstractLabelComponent<B, C, CO>,
         CO extends LabelChildComponent
-> extends AbstractInteractionComponent<B, C, CO> {
+> extends AbstractInteractionComponent<B, C, CO> implements IModalComponent {
 
     protected final @Nullable String title;
 
@@ -45,8 +47,14 @@ public abstract class AbstractLabelComponent<
         return description;
     }
 
-    public @NotNull Label createLabelComponent(@NotNull Function<C, String> componentIdCreator, @NotNull Function<String, String> parser) {
-        return Label.of(Objects.requireNonNullElse(title, "null"), description, createComponent(parser,  componentIdCreator));
+    @Override
+    public @NotNull Label createModalComponent(@NotNull Function<String, String> parser) {
+
+        String title = parser.apply(Objects.requireNonNullElse(this.title, "null"));
+        String description = this.description != null ? parser.apply(this.description) : null;
+
+        return Label.of(title, description, createComponent(parser,  null));
+
     }
 
     //

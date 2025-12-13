@@ -31,7 +31,17 @@ public class ModalInteractionInfo extends ExecutionInfo implements MessageReplya
         return data.get(id);
     }
 
-    public @NotNull Map<Object, ModalMapping> getValues() {
+    public @NotNull ModalMapping getValueNotNull(@NotNull String id) {
+
+        if (!data.containsKey(id)) {
+            throw new NullPointerException("value with id `" + id + "` does not exist");
+        }
+
+        return data.get(id);
+
+    }
+
+    public @NotNull Map<String, ModalMapping> getValues() {
         return new HashMap<>(data);
     }
 

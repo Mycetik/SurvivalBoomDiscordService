@@ -1,8 +1,6 @@
 package net.survivalboom.sbds.api.interaction.modal;
 
-import net.dv8tion.jda.api.components.ModalTopLevelComponent;
 import net.dv8tion.jda.api.modals.Modal;
-import net.survivalboom.sbds.api.interaction.component.AbstractInteractionComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,10 +16,10 @@ public class ModalTemplate {
 
     private final String title;
 
-    private final List<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components = new ArrayList<>();
+    private final List<IModalComponent> components = new ArrayList<>();
 
 
-    private ModalTemplate(@NotNull String title, @Nullable String name, @NotNull Collection<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components) {
+    private ModalTemplate(@NotNull String title, @Nullable String name, @NotNull Collection<IModalComponent> components) {
         this.title = title;
         this.name = name;
         this.components.addAll(components);
@@ -35,7 +33,7 @@ public class ModalTemplate {
         Modal.Builder builder = Modal.create(id, parser.apply(title));
 
         for (var component : components) {
-            builder.addComponents(component.createComponent(parser, null));
+            builder.addComponents(component.createModalComponent(parser));
         }
 
         return builder.build();
@@ -68,7 +66,7 @@ public class ModalTemplate {
 
         private String title;
 
-        private final List<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components = new ArrayList<>();
+        private final List<IModalComponent> components = new ArrayList<>();
 
 
         protected Builder() {}
@@ -109,19 +107,19 @@ public class ModalTemplate {
 
         // COMPONENTS //
 
-        public @NotNull Builder addComponent(@NotNull AbstractInteractionComponent<?, ?, ModalTopLevelComponent> component) {
+        public @NotNull Builder addComponent(@NotNull IModalComponent component) {
             Objects.requireNonNull(component, "component == null");
             this.components.add(component);
             return this;
         }
 
-        public @NotNull Builder addComponents(@NotNull Collection<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components) {
+        public @NotNull Builder addComponents(@NotNull Collection<IModalComponent> components) {
             Objects.requireNonNull(components, "components == null");
             this.components.addAll(components);
             return this;
         }
 
-        public @NotNull Builder setComponents(@Nullable Collection<AbstractInteractionComponent<?, ?, ModalTopLevelComponent>> components) {
+        public @NotNull Builder setComponents(@Nullable Collection<IModalComponent> components) {
 
             this.components.clear();
 

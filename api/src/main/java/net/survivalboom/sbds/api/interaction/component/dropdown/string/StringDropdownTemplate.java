@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.survivalboom.sbds.api.interaction.component.IComponent;
 import net.survivalboom.sbds.api.interaction.component.dropdown.AbstractDropdownComponent;
 import net.survivalboom.sbds.api.messages.InvalidComponentException;
 import net.survivalboom.sbds.api.utils.TypeMap;
@@ -40,9 +41,10 @@ public class StringDropdownTemplate extends AbstractDropdownComponent<StringDrop
     }
 
     @Override
-    public @NotNull StringSelectMenu createComponent(@NotNull Function<String, String> parser, @Nullable Function<StringDropdownTemplate, String> componentIdCreator) {
+    public @NotNull StringSelectMenu createComponent(@NotNull Function<String, String> parser, @Nullable Function<IComponent, String> componentIdCreator) {
 
         String id = componentIdCreator != null ? componentIdCreator.apply(this) : name;
+        String description = this.description != null ? parser.apply(this.description) : null;
 
         StringSelectMenu.Builder builder = StringSelectMenu.create(id);
         for (Option option : options) {

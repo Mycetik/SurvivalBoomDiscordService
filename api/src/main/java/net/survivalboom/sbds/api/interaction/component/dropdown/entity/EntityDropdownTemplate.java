@@ -2,6 +2,7 @@ package net.survivalboom.sbds.api.interaction.component.dropdown.entity;
 
 import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
+import net.survivalboom.sbds.api.interaction.component.IComponent;
 import net.survivalboom.sbds.api.interaction.component.dropdown.AbstractDropdownComponent;
 import net.survivalboom.sbds.api.messages.InvalidComponentException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
@@ -32,13 +33,17 @@ public class EntityDropdownTemplate extends AbstractDropdownComponent<EntityDrop
     }
 
     @Override
-    public @NotNull EntitySelectMenu createComponent(@NotNull Function<String, String> parser, @Nullable Function<EntityDropdownTemplate, String> componentIdCreator) {
+    public @NotNull EntitySelectMenu createComponent(@NotNull Function<String, String> parser, @Nullable Function<IComponent, String> componentIdCreator) {
+
         String id = componentIdCreator != null ? componentIdCreator.apply(this) : name;
+        String description = this.description != null ? parser.apply(this.description) : null;
+
         return EntitySelectMenu.create(id, target)
                 .setMaxValues(maxCount)
                 .setMinValues(minCount)
                 .setPlaceholder(description)
                 .build();
+
     }
 
     @Override

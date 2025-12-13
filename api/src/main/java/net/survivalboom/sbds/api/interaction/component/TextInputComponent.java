@@ -41,7 +41,7 @@ public class TextInputComponent extends AbstractLabelComponent<TextInputComponen
     }
 
     @Override
-    public @NotNull TextInput createComponent(@NotNull Function<String, String> parser, @Nullable Function<TextInputComponent, String> componentIdCreator) {
+    public @NotNull TextInput createComponent(@NotNull Function<String, String> parser, @Nullable Function<IComponent, String> componentIdCreator) {
         return TextInput.create(name, style).setMinLength(min).setMaxLength(max).build();
     }
 

@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.interaction.component;
 
 import net.dv8tion.jda.api.components.Component;
+import net.dv8tion.jda.api.components.attachmentupload.AttachmentUpload;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -12,7 +13,7 @@ public abstract class AbstractInteractionComponent<
         B extends AbstractInteractionComponent.Builder<B, C, CO>,
         C extends AbstractInteractionComponent<B, C, CO>,
         CO extends Component
-> {
+> implements IComponent {
 
     protected final String name;
 
@@ -37,6 +38,10 @@ public abstract class AbstractInteractionComponent<
 
         Objects.requireNonNull(name, "name == null");
         Objects.requireNonNull(type, "type == null");
+
+        if (row < 1 || row > 5) {
+            throw new IllegalArgumentException("row must be from 1 to 5");
+        }
 
         this.name = name;
 
@@ -70,7 +75,7 @@ public abstract class AbstractInteractionComponent<
 
     public abstract @NotNull B copy();
 
-    public abstract @NotNull CO createComponent(@NotNull Function<String, String> parser, @Nullable Function<C, String> componentIdCreator);
+    public abstract @NotNull CO createComponent(@NotNull Function<String, String> parser, @Nullable Function<IComponent, String> componentIdCreator);
 
 
     //
@@ -82,7 +87,7 @@ public abstract class AbstractInteractionComponent<
         String name = map.getCastNotNull("name", String.class);
         boolean isStatic = map.getCastOrDefault("static", Boolean.class, false);
 
-        int row = map.getCastOrDefault("row", Integer.class, 0);
+        int row = map.getCastOrDefault("row", Integer.class, 1);
         int priority = map.getCastOrDefault("priority", Integer.class, 0);
 
         return builder
@@ -101,7 +106,7 @@ public abstract class AbstractInteractionComponent<
 
         protected String name;
 
-        protected int row = 0;
+        protected int row = 1;
 
         protected int priority = 0;
 

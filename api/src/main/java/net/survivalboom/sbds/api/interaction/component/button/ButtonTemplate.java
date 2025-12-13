@@ -1,12 +1,11 @@
 package net.survivalboom.sbds.api.interaction.component.button;
 
 import net.dv8tion.jda.api.components.Component;
-import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.survivalboom.sbds.api.interaction.component.AbstractInteractionComponent;
-import net.survivalboom.sbds.api.messages.MessageComponent;
+import net.survivalboom.sbds.api.interaction.component.IComponent;
 import net.survivalboom.sbds.api.messages.InvalidComponentException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.TypeMap;
@@ -62,7 +61,7 @@ public class ButtonTemplate extends AbstractInteractionComponent<ButtonTemplate.
     @Override
     public @NotNull Button createComponent(
             @NotNull Function<String, String> parser,
-            @Nullable Function<ButtonTemplate, String> componentIdCreator
+            @Nullable Function<IComponent, String> componentIdCreator
     ) {
         String id = componentIdCreator != null ? componentIdCreator.apply(this) : name;
         return Button.of(style, id, label != null ? parser.apply(label) : null, emoji);

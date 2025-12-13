@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.interaction.component.IComponent;
 import net.survivalboom.sbds.api.interaction.component.button.ButtonInteractionInfo;
 import net.survivalboom.sbds.api.interaction.component.dropdown.entity.EntityDropdownInteractionInfo;
 import net.survivalboom.sbds.api.interaction.component.dropdown.string.StringDropdownInteractionInfo;
@@ -109,10 +110,10 @@ public abstract class AbstractMessageBuilder<T> {
         return messageDataSupplier.apply(this);
     }
 
-    protected @NotNull String componentIdCreator(@NotNull MessageComponent component) {
+    protected @NotNull String componentIdCreator(@NotNull IComponent component) {
 
         boolean isStatic = component.isStatic();
-        String name = component.name();
+        String name = component.getName();
         String id = isStatic && name != null ? name : UUID.randomUUID().toString();
 
         if (isStatic) {
@@ -120,7 +121,7 @@ public abstract class AbstractMessageBuilder<T> {
         }
 
         ComponentCallback<?> callback = callbacks.stream()
-                .filter(c -> c.name.equals(component.name()))
+                .filter(c -> c.name.equals(component.getName()))
                 .findAny()
                 .orElse(null);
 
