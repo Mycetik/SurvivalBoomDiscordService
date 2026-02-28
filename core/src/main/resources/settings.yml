@@ -134,6 +134,7 @@ discord:
     - GUILD_VOICE_STATES
     - GUILD_INVITES
     - GUILD_WEBHOOKS
+    - GUILD_EMOJIS_AND_STICKERS
     - GUILD_MESSAGE_TYPING
     - GUILD_MODERATION
     - AUTO_MODERATION_CONFIGURATION
@@ -191,7 +192,7 @@ libraries:
   jda:
     group: "net.dv8tion"
     artifact: "JDA"
-    version: "6.1.2"
+    version: "5.2.2"
 
   # Hibernate - фреймворк для роботи із базою даних.
   hibernate:

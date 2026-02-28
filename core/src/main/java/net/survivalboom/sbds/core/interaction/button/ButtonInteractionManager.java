@@ -2,8 +2,8 @@ package net.survivalboom.sbds.core.interaction.button;
 
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.interaction.component.button.ButtonInteractionInfo;
-import net.survivalboom.sbds.api.interaction.component.button.IButtonInteractionManager;
+import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
+import net.survivalboom.sbds.api.interaction.button.IButtonInteractionManager;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.interaction.AbstractInteractionHandler;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +25,7 @@ public class ButtonInteractionManager extends AbstractInteractionHandler<ButtonI
 
     @Override
     protected @Nullable String getIdFromEvent(ButtonInteractionEvent event) {
-        return event.getButton().getCustomId();
+        return event.getButton().getId();
     }
 
     @Override

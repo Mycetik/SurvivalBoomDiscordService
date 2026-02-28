@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.interaction.component.dropdown.string;
+package net.survivalboom.sbds.api.interaction.dropdown.string;
 
 import net.survivalboom.sbds.api.interaction.InteractionManager;
 

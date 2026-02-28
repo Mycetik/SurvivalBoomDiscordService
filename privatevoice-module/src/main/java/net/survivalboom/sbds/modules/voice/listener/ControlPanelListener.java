@@ -1,11 +1,10 @@
 package net.survivalboom.sbds.modules.voice.listener;
 
-import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
-import net.survivalboom.sbds.api.interaction.component.TextInputComponent;
-import net.survivalboom.sbds.api.interaction.component.dropdown.string.StringDropdownInteractionInfo;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownInteractionInfo;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
 import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
 import net.survivalboom.sbds.modules.voice.voice.PrivateVoice;
@@ -25,26 +24,13 @@ public class ControlPanelListener {
 
         ModalTemplate renameModal = ModalTemplate.builder()
                 .setTitle("[voice.control.rename.modal.title]")
-                .addComponent(TextInputComponent.builder()
-                        .setTitle("[voice.control.rename.modal.input-name]")
-                        .setDescription("[voice.control.rename.modal.input-placeholder]")
-                        .setStyle(TextInputStyle.SHORT)
-                        .setMinLength(3)
-                        .setMaxLength(20)
-                        .build()
-                )
+                .addInput("name", "[voice.control.rename.modal.input-name]", "[voice.control.rename.modal.input-placeholder]", TextInputStyle.SHORT, 3, 20, true)
                 .build();
 
         ModalTemplate limitModal = ModalTemplate.builder()
                 .setTitle("[voice.control.set-limit.modal.title]")
-                .addComponent(TextInputComponent.builder()
-                        .setName("limit")
-                        .setTitle("$[voice.control.set-limit.modal.input-name]")
-                        .setStyle(TextInputStyle.SHORT)
-                        .setMinLength(1)
-                        .setMaxLength(2)
-                        .build()
-                ).build();
+                .addInput("limit", "[voice.control.set-limit.modal.input-name]", "[voice.control.set-limit.modal.input-placeholder]", TextInputStyle.SHORT, 1, 2, true)
+                .build();
 
         IModalInteractionManager modalManager = voiceManager.getModule().getSbds().getModalInteractionManager();
         modalManager.registerModal(voiceManager.getModule(), "rename", renameModal);
@@ -88,7 +74,7 @@ public class ControlPanelListener {
 
             info.replyModal("privatevoicemodule:rename").onSuccess(modal -> {
 
-                String name = modal.getValueNotNull("name").getAsString();
+                String name = Objects.requireNonNull(modal.value("name"));
 
                 voice.setChannelName(name);
                 modal.reply("voice.control.rename.success")
@@ -111,7 +97,7 @@ public class ControlPanelListener {
 
             info.replyModal("privatevoicemodule:limit").onSuccess(modal -> {
 
-                String limitRaw = modal.getValueNotNull("limit").getAsString();
+                String limitRaw = Objects.requireNonNull(modal.value("limit"));
                 int limit;
 
                 try {

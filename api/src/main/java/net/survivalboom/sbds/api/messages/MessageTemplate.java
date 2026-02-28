@@ -1,10 +1,8 @@
 package net.survivalboom.sbds.api.messages;
 
-import net.dv8tion.jda.api.components.actionrow.ActionRow;
-import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
+import net.dv8tion.jda.api.interactions.components.ItemComponent;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
-import net.survivalboom.sbds.api.interaction.component.IComponent;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
@@ -20,13 +18,13 @@ public class MessageTemplate {
 
     private final List<EmbedTemplate> embeds;
 
-    private final List<IComponent> components;
+    private final List<Component> components;
 
 
     private MessageTemplate(
             @Nullable String content,
             @NotNull List<EmbedTemplate> embeds,
-            @NotNull List<IComponent> components
+            @NotNull List<Component> components
     ) {
 
         this.content = content;
@@ -46,7 +44,7 @@ public class MessageTemplate {
 
     }
 
-    public @NotNull MessageCreateData build(@Nullable Function<IComponent, String> componentIdCreator, @NotNull Function<String, String> parser) {
+    public @NotNull MessageCreateData build(@Nullable Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser) {
 
         Objects.requireNonNull(parser, "parser == null");
 
@@ -67,7 +65,7 @@ public class MessageTemplate {
 
     }
 
-    private void appendActionRows(@NotNull MessageCreateBuilder builder, @Nullable Function<IComponent, String> componentIdCreator, @NotNull Function<String, String> parser) {
+    private void appendActionRows(@NotNull MessageCreateBuilder builder, @Nullable Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser) {
 
         Objects.requireNonNull(componentIdCreator, "componentIdCreator == null");
 
@@ -79,21 +77,17 @@ public class MessageTemplate {
 
     }
 
-    private void appendActionRow(@NotNull MessageCreateBuilder builder, int row, @NotNull Function<IComponent, String> componentIdCreator, @NotNull Function<String, String> parser) {
+    private void appendActionRow(@NotNull MessageCreateBuilder builder, int row, @NotNull Function<Component, String> componentIdCreator, @NotNull Function<String, String> parser) {
 
-        var componentsInRow = components.stream()
-                .filter(c -> c.getRow() == row)
-                .sorted(Comparator.comparing(IComponent::getPriority))
-                .map(c -> c.createComponent(parser, componentIdCreator))
-                .map(c -> (ActionRowChildComponent) c)
-                .toList();
+        List<ItemComponent> list = components.stream()
+                        .filter(c -> c.row() == row)
+                        .sorted(Comparator.comparing(Component::priority))
+                        .map(c -> c.build(componentIdCreator, parser))
+                        .toList();
 
-        if (componentsInRow.isEmpty()) {
-            return;
-        }
+        if (list.isEmpty()) return;
 
-        // TODO: Костиль!!! Так не має бути! Потрібно зробити нормальну абстракцію!!
-        builder.addComponents(ActionRow.of(componentsInRow));
+        builder.addActionRow(list);
 
     }
 
@@ -113,10 +107,10 @@ public class MessageTemplate {
 
         private final List<EmbedTemplate> embeds;
 
-        private final List<IComponent> components;
+        private final List<Component> components;
 
 
-        private Builder(@Nullable String content, @NotNull List<EmbedTemplate> embeds, @NotNull List<IComponent> components) {
+        private Builder(@Nullable String content, @NotNull List<EmbedTemplate> embeds, @NotNull List<Component> components) {
             this.content = content;
             this.embeds = embeds;
             this.components = components;
@@ -131,17 +125,17 @@ public class MessageTemplate {
 
         // COMPONENTS //
 
-        public @NotNull Builder addComponent(@NotNull IComponent component) {
+        public @NotNull Builder addComponent(@NotNull Component component) {
             components.add(component);
             return this;
         }
 
-        public @NotNull Builder addComponents(@NotNull Collection<IComponent> components) {
+        public @NotNull Builder addComponents(@NotNull Collection<Component> components) {
             this.components.addAll(components);
             return this;
         }
 
-        public @NotNull Builder addComponents(@NotNull IComponent... components) {
+        public @NotNull Builder addComponents(@NotNull Component... components) {
             this.components.addAll(List.of(components));
             return this;
         }
@@ -196,7 +190,7 @@ public class MessageTemplate {
         String content = section.getString("$content");
         List<EmbedTemplate> embeds = createEmbeds(section);
 
-        List<IComponent> components = IComponent.createComponents(TypeMap.ofMapList(section.getMapList("$components")));
+        List<Component> components = Component.createComponents(TypeMap.ofMapList(section.getMapList("$components")));
 
         return new MessageTemplate(content, embeds, components);
 
@@ -236,9 +230,9 @@ public class MessageTemplate {
     }
 
     // TODO: Зробити перевірку на правильність кількості компонентів на повідомленні.
-    private static void checkComponentValidation(@NotNull List<IComponent> componentList) throws InvalidComponentException {
+    private static void checkComponentValidation(@NotNull List<Component> componentList) throws InvalidComponentException {
 
-        if (componentList.stream().anyMatch(c -> c.getType() == net.dv8tion.jda.api.components.Component.Type.BUTTON) && componentList.stream().anyMatch(c -> c.getType() != net.dv8tion.jda.api.components.Component.Type.BUTTON)) {
+        if (componentList.stream().anyMatch(c -> c.type() == net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON) && componentList.stream().anyMatch(c -> c.type() != net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON)) {
             throw new InvalidComponentException("");
         }
 

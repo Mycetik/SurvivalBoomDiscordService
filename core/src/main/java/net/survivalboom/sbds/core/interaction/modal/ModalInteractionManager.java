@@ -2,7 +2,7 @@ package net.survivalboom.sbds.core.interaction.modal;
 
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
-import net.dv8tion.jda.api.modals.Modal;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.requests.restaction.interactions.ModalCallbackAction;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
