@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.interaction.component.button;
+package net.survivalboom.sbds.api.interaction.button;
 
 import net.survivalboom.sbds.api.interaction.InteractionManager;
 
