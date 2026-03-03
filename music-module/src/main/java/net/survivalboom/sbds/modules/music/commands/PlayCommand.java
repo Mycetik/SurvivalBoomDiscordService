@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
@@ -70,8 +71,21 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
         player.addTracks(tracks);
 
         if (newBot) {
-            player.connect(channel);
+
+            try {
+                player.connect(channel);
+            }
+
+            catch (InsufficientPermissionException e) {
+                player.stop();
+                info.editHook("music.command.play.connect-failed")
+                        .withPlaceholders("{BOT}", player.getBot().getBot().getSelfUser().getAsMention(), "{CHANNEL}", channel.getAsMention())
+                        .queue();
+                return;
+            }
+
             player.launch();
+
         }
 
         // Готуємо плейсхолдери та відправляємо повідомлення, відповідно до того що ми зробили //

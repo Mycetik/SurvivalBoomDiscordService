@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -65,7 +66,7 @@ public class MusicBot {
 
     public void shutdown() {
         if (bot == null) throw new IllegalStateException("Not started");
-        players.values().forEach(GuildPlayer::stopIfRunning);
+        players.values().forEach(GuildPlayer::stop);
         players.clear();
         lavalink.close();
         bot.shutdown();
@@ -92,7 +93,7 @@ public class MusicBot {
         if (players.containsKey(guild)) return players.get(guild);
 
         Link link = lavalink.getOrCreateLink(guild.getIdLong());
-        LavalinkPlayer lavalinkPlayer = link.createOrUpdatePlayer().block();
+        LavalinkPlayer lavalinkPlayer = link.createOrUpdatePlayer().block(Duration.ofSeconds(5000));
         Objects.requireNonNull(lavalinkPlayer, "lavalinkPlayer == null");
 
         GuildPlayer player = new GuildPlayer(this, guild, link, lavalinkPlayer);

@@ -37,6 +37,14 @@ music:
             Свободный бот не найден. Попробуйте еще раз позже
           color: ff0000
 
+      connect-failed:
+        $embed:
+          title: "Нету доступа :("
+          description: |
+            Бот {BOT} не может подключиться к {CHANNEL}.
+            Может бот не имеет необходимых прав?
+          color: ff0000
+
       no-tracks-found:
         $embed:
           description: <:google_dinosaur:1077358570091319337> Результатов по запросу `{QUERY}` не найдено!

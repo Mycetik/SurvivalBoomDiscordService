@@ -38,6 +38,14 @@ music:
             Можливо, вам варто спробувати ще раз пізніше.
           color: ff0000
 
+      connect-failed:
+        $embed:
+          title: "Немає доступу :("
+          description: |
+            Схоже що бот {BOT} не може підключитись до {CHANNEL}.
+            Можливо бот не має необхідних прав?
+          color: ff0000
+
       no-tracks-found:
         $embed:
           description: <:google_dinosaur:1077358570091319337> Результатів за запитом `{QUERY}` не знайдено!

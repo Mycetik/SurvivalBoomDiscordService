@@ -34,6 +34,14 @@ music:
             Try again later maybe.
           color: ff0000
 
+      connect-failed:
+        $embed:
+          title: "Failed to connect :("
+          description: |
+            Bot {BOT} could not connect to {CHANNEL}.
+            Maybe bot does not have enough permissions?
+          color: ff0000
+
       no-tracks-found:
         $embed:
           description: <:google_dinosaur:1077358570091319337> No results found for `{QUERY}`!

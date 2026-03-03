@@ -55,7 +55,7 @@ public class SkipCommand extends AbstractPlayerCommand {
 
         if (player.isLastTrack()) {
             player.stop();
-            info.reply("music.command.stop").send().setEphemeral(ephemeral).queue();
+            info.reply("music.command.stop.success").send().setEphemeral(ephemeral).queue();
             return;
         }
 

@@ -245,9 +245,9 @@ public class PrivateVoice {
 
         IMessages messages = voiceManager.getModule().getSbds().getMessages();
 
-        String whitelistString = whitelist.isEmpty() ? "[values.none]" : String.join(", ", whitelist.stream().map(m -> m.getUser().getEffectiveName()).toList());
-        String blacklistString = blackList.isEmpty() ? "[values.none]" : String.join(", ", blackList.stream().map(m -> m.getUser().getEffectiveName()).toList());
-        String mutedString = muted.isEmpty() ? "[values.none]" : String.join(", ", muted.stream().map(m -> m.getUser().getEffectiveName()).toList());
+        String whitelistString = whitelist.isEmpty() ? "$[values.none]" : String.join(", ", whitelist.stream().map(m -> m.getUser().getEffectiveName()).toList());
+        String blacklistString = blackList.isEmpty() ? "$[values.none]" : String.join(", ", blackList.stream().map(m -> m.getUser().getEffectiveName()).toList());
+        String mutedString = muted.isEmpty() ? "$[values.none]" : String.join(", ", muted.stream().map(m -> m.getUser().getEffectiveName()).toList());
 
         Placeholders placeholders = new Placeholders();
         placeholders
@@ -320,7 +320,7 @@ public class PrivateVoice {
 
 
     private String value(boolean v) {
-        return v ? "[values.true]" : "[values.false]";
+        return v ? "$[values.true]" : "$[values.false]";
     }
 
 

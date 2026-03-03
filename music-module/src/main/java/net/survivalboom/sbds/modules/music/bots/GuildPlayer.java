@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -22,15 +23,21 @@ import java.util.Objects;
 public class GuildPlayer {
 
     private static final Logger log = LoggerFactory.getLogger(GuildPlayer.class);
+
     private final MusicModule musicModule;
 
     private final MusicBot bot;
 
-    private final Guild guild;
-
     private final LavalinkPlayer lavalinkPlayer;
 
     private final Link lavalink;
+
+
+    private final Guild guild;
+
+    private final Member botGuildMember;
+
+    private AudioChannelUnion channel = null;
 
 
     private final List<Track> playlist = new ArrayList<>();
@@ -51,13 +58,13 @@ public class GuildPlayer {
 
     private ISchedulerTask task;
 
-    private AudioChannelUnion channel = null;
-
 
     public GuildPlayer(@NotNull MusicBot bot, @NotNull Guild guild, @NotNull Link lavalink, @NotNull LavalinkPlayer lavalinkPlayer) {
 
         this.guild = guild;
         this.bot = bot;
+
+        this.botGuildMember = Objects.requireNonNull(bot.getBot().getGuildById(guild.getId())).getSelfMember();
 
         this.lavalink = lavalink;
         this.lavalinkPlayer = lavalinkPlayer;
@@ -108,15 +115,21 @@ public class GuildPlayer {
 
         Objects.requireNonNull(channel, "channel == null");
 
-        if (!channel.getGuild().equals(guild)) throw new IllegalArgumentException("Invalid guild for this player");
-        if (channel.equals(this.channel)) throw new IllegalStateException("Already connected to this channel");
+        if (!channel.getGuild().equals(guild)) {
+            throw new IllegalArgumentException("Invalid guild for this player");
+        }
 
-        bot.getBot().getDirectAudioController().connect(channel);
+        if (channel.equals(this.channel)) {
+            throw new IllegalStateException("Already connected to this channel");
+        }
+
+//        bot.getBot().getDirectAudioController().connect(channel);
+        botGuildMember.getGuild().getAudioManager().openAudioConnection(channel);
 
         CommonUtils.waitUntil(() -> {
             updateCurrentChannel();
             return this.channel != null;
-        }, 1000);
+        }, 5000);
 
     }
 
@@ -144,32 +157,28 @@ public class GuildPlayer {
     }
 
     /**
-     * Повністю зупинити музчиного бота й відключити його від каналу.
+     * Повністю зупинити музчного бота й відключити його від каналу.
      */
     public void stop() {
 
-        if (!isActive()) throw new IllegalStateException("not running");
+        if (task != null) {
+            task.cancelAndWait(1000, true);
+            task = null;
+        }
 
-        task.cancelAndWait(1000, true);
-        bot.getBot().getDirectAudioController().disconnect(guild);
+//        bot.getBot().getDirectAudioController().disconnect(guild);
+        botGuildMember.getGuild().getAudioManager().closeAudioConnection();
+
+        this.channel = null;
 
         setPaused(false);
-
-        this.playing = false;
-        this.paused = false;
-        this.channel = null;
         this.loop = LoopMode.DISABLED;
+        this.paused = false;
         this.idleDisconnect = true;
+
         this.playingIndex = 0;
         this.playlist.clear();
 
-        task = null;
-
-    }
-
-    public void stopIfRunning() {
-        if (!isActive()) return;
-        stop();
     }
 
     /**
@@ -310,11 +319,19 @@ public class GuildPlayer {
     }
 
     private void updateCurrentChannel() {
-        this.channel = Objects.requireNonNull(Objects.requireNonNull(bot.getBot().getGuildById(guild.getId())).getSelfMember().getVoiceState()).getChannel();
+
+        var state = botGuildMember.getVoiceState();
+        if (state == null) {
+            this.channel = null;
+            return;
+        }
+
+        this.channel = botGuildMember.getVoiceState().getChannel();
+
     }
 
     private void updateTrack() {
-        lavalinkPlayer.setTrack(getCurrentPlaying()).subscribe();
+        lavalinkPlayer.setTrack(getCurrentPlaying()).block(Duration.ofSeconds(5000));
     }
 
     private void task() {
