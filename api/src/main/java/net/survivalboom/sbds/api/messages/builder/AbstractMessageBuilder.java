@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.messages;
+package net.survivalboom.sbds.api.messages.builder;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;

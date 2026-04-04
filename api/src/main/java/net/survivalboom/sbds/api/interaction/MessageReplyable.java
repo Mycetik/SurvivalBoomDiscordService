@@ -4,7 +4,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.survivalboom.sbds.api.messages.IMessages;
-import net.survivalboom.sbds.api.messages.MessageActionBuilder;
+import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
 import org.jetbrains.annotations.NotNull;
 
 public interface MessageReplyable {

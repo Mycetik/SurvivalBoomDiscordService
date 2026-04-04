@@ -2,8 +2,7 @@ package net.survivalboom.sbds.api.interaction.dropdown.entity;
 
 import net.dv8tion.jda.api.interactions.components.ItemComponent;
 import net.dv8tion.jda.api.interactions.components.selections.EntitySelectMenu;
-import net.survivalboom.sbds.api.messages.Component;
-import net.survivalboom.sbds.api.messages.InvalidComponentException;
+import net.survivalboom.sbds.api.messages.components.InvalidComponentException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;

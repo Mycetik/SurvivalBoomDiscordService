@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.survivalboom.sbds.api.events.Listener;
 import net.survivalboom.sbds.api.interaction.InteractionManager;
 import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.core.SBDS;

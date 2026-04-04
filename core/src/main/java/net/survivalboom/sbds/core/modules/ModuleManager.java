@@ -5,8 +5,7 @@ import net.survivalboom.sbds.api.modules.IModuleManager;
 import net.survivalboom.sbds.api.modules.InvalidModuleException;
 import net.survivalboom.sbds.api.modules.InvalidModuleMetaException;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.api.utils.Manager;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -268,7 +267,7 @@ public class ModuleManager extends Manager implements IModuleManager {
         }
 
         if (!modules.containsValue(m)) throw new IllegalArgumentException("Module object is not registered in the ModuleManager. Is module unloaded?");
-        if (!m.valid()) throw new IllegalArgumentException("Module object is registered in ModuleManager, but Method#valid returned false. Did you break something?");
+        if (!m.isValid()) throw new IllegalArgumentException("Module object is registered in ModuleManager, but Method#valid returned false. Did you break something?");
 
         return m;
 

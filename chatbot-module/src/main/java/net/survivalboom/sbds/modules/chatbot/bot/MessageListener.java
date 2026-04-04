@@ -15,7 +15,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.Listener;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.modules.chatbot.ChatBotModule;
 import net.survivalboom.sbds.modules.chatbot.storage.AIChannels;
 import net.survivalboom.sbds.modules.chatbot.utils.MessageBuffer;

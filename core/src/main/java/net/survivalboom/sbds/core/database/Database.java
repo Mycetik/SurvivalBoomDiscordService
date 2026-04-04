@@ -8,7 +8,7 @@ import net.survivalboom.sbds.api.database.IRepository;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.database.guilds.GuildRepositoryHandler;
@@ -387,7 +387,7 @@ public class Database extends Manager implements IDatabase {
     private void checkRepository(@NotNull Repository repository) {
 
         if (!repositoryMap.containsValue(repository)) throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");
-        if (!repository.valid()) throw new IllegalArgumentException("Repository object is registered, but method Repository#valid returned false. Did you break something?");
+        if (!repository.isValid()) throw new IllegalArgumentException("Repository object is registered, but method Repository#valid returned false. Did you break something?");
 
     }
 

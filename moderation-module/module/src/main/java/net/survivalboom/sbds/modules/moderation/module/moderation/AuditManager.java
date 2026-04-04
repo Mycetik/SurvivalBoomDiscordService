@@ -2,7 +2,7 @@ package net.survivalboom.sbds.modules.moderation.module.moderation;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.modules.moderation.api.moderation.IAuditManager;
 import net.survivalboom.sbds.modules.moderation.api.moderation.PunishmentType;
 import net.survivalboom.sbds.modules.moderation.api.storage.IAuditEntry;

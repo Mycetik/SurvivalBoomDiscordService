@@ -8,7 +8,7 @@ import net.survivalboom.sbds.api.commands.base.CommandArgument;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.slash.SlashCommand;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.messages.IMessage;
+import net.survivalboom.sbds.api.translations.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.modules.github.storage.WebhookData;

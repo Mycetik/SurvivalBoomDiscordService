@@ -5,7 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.messages.IMessage;
+import net.survivalboom.sbds.api.translations.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.utils.Placeholders;

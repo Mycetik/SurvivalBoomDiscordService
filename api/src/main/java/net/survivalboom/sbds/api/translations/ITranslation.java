@@ -1,7 +1,6 @@
 package net.survivalboom.sbds.api.translations;
 
 import net.dv8tion.jda.api.interactions.DiscordLocale;
-import net.survivalboom.sbds.api.messages.IMessage;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

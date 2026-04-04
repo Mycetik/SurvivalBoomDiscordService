@@ -3,7 +3,7 @@ package net.survivalboom.sbds.modules.music.lavalink;
 import dev.arbjerg.lavalink.client.NodeOptions;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;

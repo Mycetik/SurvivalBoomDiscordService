@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.core.database;
 
 import net.survivalboom.sbds.api.database.DataRecord;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.core.scheduler.SchedulerTask;
 import org.hibernate.Session;

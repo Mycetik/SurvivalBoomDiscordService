@@ -1,16 +1,12 @@
 package net.survivalboom.sbds.core.translations;
 
 import net.dv8tion.jda.api.interactions.DiscordLocale;
-import net.survivalboom.sbds.api.messages.IMessage;
-import net.survivalboom.sbds.api.messages.InvalidComponentException;
-import net.survivalboom.sbds.api.messages.MessageTemplate;
-import net.survivalboom.sbds.api.translations.ITranslation;
-import net.survivalboom.sbds.api.translations.InvalidTranslationException;
-import net.survivalboom.sbds.api.translations.MessageLoadException;
+import net.survivalboom.sbds.api.translations.*;
+import net.survivalboom.sbds.api.messages.components.InvalidComponentException;
+import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.core.messages.Message;
-import net.survivalboom.sbds.api.utils.Valid;
-import net.survivalboom.sbds.api.messages.InvalidEmbedException;
+import net.survivalboom.sbds.api.utils.valid.Valid;
+import net.survivalboom.sbds.api.messages.template.InvalidEmbedException;
 import net.survivalboom.sbds.core.modules.Module;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
@@ -24,9 +20,12 @@ import java.util.*;
 
 public class Translation extends Valid implements ITranslation {
 
-    private final String name;
 
-    private final File file;
+    private final ITranslationManager manager;
+
+
+    private Registration<ITranslation> registration;
+
 
     private DiscordLocale discordLocale;
 
@@ -35,29 +34,10 @@ public class Translation extends Valid implements ITranslation {
     private String icon;
 
 
-    private final Map<String, Message> messages = new HashMap<>();
-
-    private final Map<Module, Map<String, Message>> moduleMessages = new HashMap<>();
+    private final Map<String, IMessage> messages = new HashMap<>();
 
 
-    public Translation(@NotNull File file) throws IOException, InvalidConfigurationException, MessageLoadException, InvalidTranslationException {
-
-        Objects.requireNonNull(file, "file == null");
-        if (!file.exists() || !file.isFile()) throw new InvalidTranslationException("Invalid file `" + file.getPath() + "`");
-
-        this.file = file;
-
-        YamlConfiguration yamlConfiguration = new YamlConfiguration();
-        yamlConfiguration.load(file);
-
-        this.name = yamlConfiguration.getString("$name");
-        if (this.name == null) throw new InvalidTranslationException("Invalid translation. Key `$name` not found");
-
-        load(yamlConfiguration);
-
-        if (discordLocale == null) throw new InvalidTranslationException("Invalid translation. Value of key `$discord-locale` is not valid");
-
-    }
+    public Translation() {}
 
 
     private void load(@NotNull YamlConfiguration yamlConfiguration) throws MessageLoadException {
@@ -254,7 +234,7 @@ public class Translation extends Valid implements ITranslation {
 
 
     public void invalid() {
-        valid(false);
+        setValid(false);
     }
 
     @Override

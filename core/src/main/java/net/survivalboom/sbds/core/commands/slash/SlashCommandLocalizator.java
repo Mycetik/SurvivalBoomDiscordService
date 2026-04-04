@@ -2,11 +2,10 @@ package net.survivalboom.sbds.core.commands.slash;
 
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.commands.localization.LocalizationFunction;
-import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.translations.CommandTranslationScope;
-import net.survivalboom.sbds.core.messages.Message;
+import net.survivalboom.sbds.core.translations.Message;
 import net.survivalboom.sbds.core.translations.Translation;
 import net.survivalboom.sbds.core.translations.TranslationManager;
 import org.jetbrains.annotations.NotNull;

@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.modules.moderation.module.utils;
 
 import net.survivalboom.sbds.api.modules.ModuleMain;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.modules.moderation.module.ModerationModule;
 import net.survivalboom.sbds.modules.moderation.module.moderation.AuditManager;

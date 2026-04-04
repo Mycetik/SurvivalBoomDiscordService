@@ -6,7 +6,7 @@ import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
 import net.survivalboom.sbds.api.translations.MessageLoadException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.modules.Module;
 import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;

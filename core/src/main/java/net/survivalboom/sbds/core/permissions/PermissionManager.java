@@ -5,7 +5,7 @@ import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.permissions.IGuildGroup;
 import net.survivalboom.sbds.api.permissions.IPermissionManager;
 import net.survivalboom.sbds.api.permissions.Permission;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.database.Database;

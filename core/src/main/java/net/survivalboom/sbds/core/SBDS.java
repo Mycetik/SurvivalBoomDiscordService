@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.registrations.IRegistrationRegistry;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.commands.context.ContextCommandManager;
 import net.survivalboom.sbds.core.commands.slash.SlashCommandManager;
@@ -23,6 +24,7 @@ import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.ModuleManager;
 import net.survivalboom.sbds.core.monitor.SystemMonitor;
 import net.survivalboom.sbds.core.permissions.PermissionManager;
+import net.survivalboom.sbds.core.registration.RegistrationRegistry;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.core.service.ServiceProvider;
@@ -57,6 +59,8 @@ public class SBDS implements ISBDS {
     private final Database database;
 
     private final ModuleManager moduleManager;
+
+    private final RegistrationRegistry registrationRegistry;
 
     private final ServiceProvider serviceProvider;
 
@@ -102,7 +106,6 @@ public class SBDS implements ISBDS {
             GatewayIntent.GUILD_VOICE_STATES,
             GatewayIntent.GUILD_INVITES,
             GatewayIntent.GUILD_WEBHOOKS,
-            GatewayIntent.GUILD_EMOJIS_AND_STICKERS,
             GatewayIntent.GUILD_MESSAGE_TYPING,
             GatewayIntent.GUILD_MODERATION,
             GatewayIntent.AUTO_MODERATION_CONFIGURATION,
@@ -133,6 +136,7 @@ public class SBDS implements ISBDS {
 
         this.eventManager = new EventManager(this);
         this.moduleManager = new ModuleManager(this);
+        this.registrationRegistry = new RegistrationRegistry(this);
         this.serviceProvider = new ServiceProvider(this);
 
         this.translationManager = new TranslationManager(this);
@@ -205,6 +209,7 @@ public class SBDS implements ISBDS {
 
         serviceProvider.init();
         moduleManager.init();
+        registrationRegistry.init();
         slashCommandManager.updateCommands();
 
         bot.getPresence().setPresence(OnlineStatus.IDLE, Activity.customStatus("Running on SBDS v" + BuildConstants.VERSION + "🦖"));
@@ -244,6 +249,7 @@ public class SBDS implements ISBDS {
 
         bot.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.customStatus("Shutting down SBDS v" + BuildConstants.VERSION + "..."));
 
+        registrationRegistry.shutdown();
         moduleManager.shutdown();
 
         consoleListener.shutdown();
@@ -319,6 +325,11 @@ public class SBDS implements ISBDS {
     @Override
     public @NotNull ModuleManager getModuleManager() {
         return moduleManager;
+    }
+
+    @Override
+    public @NotNull IRegistrationRegistry getRegistrationRegistry() {
+        return registrationRegistry;
     }
 
     @Override

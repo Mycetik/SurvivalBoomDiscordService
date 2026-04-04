@@ -2,7 +2,7 @@ package net.survivalboom.sbds.core.service;
 
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.service.IServiceProvider;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.modules.ModuleManager;
 import org.jetbrains.annotations.NotNull;

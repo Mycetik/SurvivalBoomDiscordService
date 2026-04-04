@@ -1,10 +1,12 @@
-package net.survivalboom.sbds.api.messages;
+package net.survivalboom.sbds.api.messages.builder;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.FluentRestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.translations.IMessage;
+import net.survivalboom.sbds.api.messages.IMessages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,7 +50,7 @@ public class MessageActionBuilder<T extends FluentRestAction<?, ?>> extends Abst
                 return MessageCreateData.fromContent(key);
             }
 
-            return message.build(b::componentIdCreator, messages, b.placeholders);
+            return message.createMessageData(b::componentIdCreator, messages, b.placeholders);
 
         };
 
@@ -65,7 +67,7 @@ public class MessageActionBuilder<T extends FluentRestAction<?, ?>> extends Abst
                 return MessageCreateData.fromContent(key);
             }
 
-            return message.build(b::componentIdCreator, messages, b.placeholders);
+            return message.createMessageData(b::componentIdCreator, messages, b.placeholders);
 
         };
 

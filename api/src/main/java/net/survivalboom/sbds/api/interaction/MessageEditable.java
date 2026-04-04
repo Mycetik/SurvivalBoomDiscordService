@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
 import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.messages.IMessages;
-import net.survivalboom.sbds.api.messages.MessageActionBuilder;
+import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

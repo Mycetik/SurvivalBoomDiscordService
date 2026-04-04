@@ -5,7 +5,7 @@ import net.survivalboom.sbds.api.modules.InvalidModuleException;
 import net.survivalboom.sbds.api.modules.InvalidModuleMetaException;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.api.utils.Valid;
+import net.survivalboom.sbds.api.utils.valid.Valid;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
@@ -224,7 +224,7 @@ public class Module extends Valid implements IModule {
 
 
     public void close() throws IOException {
-        valid(false);
+        setValid(false);
         if (classLoader != null) classLoader.close();
         jarFile.close();
     }

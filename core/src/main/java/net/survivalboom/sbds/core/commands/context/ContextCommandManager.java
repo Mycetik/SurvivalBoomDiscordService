@@ -11,7 +11,7 @@ import net.survivalboom.sbds.api.events.Listener;
 import net.survivalboom.sbds.api.commands.context.ContextInteractionInfo;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
 import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
 
 public class ContextCommandManager extends Manager implements Listener, IContextCommandManager {
 

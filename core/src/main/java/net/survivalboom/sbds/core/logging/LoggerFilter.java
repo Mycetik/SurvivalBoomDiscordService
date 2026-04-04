@@ -2,8 +2,7 @@ package net.survivalboom.sbds.core.logging;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import net.survivalboom.sbds.api.utils.Manager;
-import net.survivalboom.sbds.core.SBDS;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;

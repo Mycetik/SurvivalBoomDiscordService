@@ -1,6 +1,6 @@
-package net.survivalboom.sbds.api.utils;
+package net.survivalboom.sbds.api.utils.valid;
 
-public abstract class Valid {
+public abstract class Valid implements IValid {
 
     private boolean valid = true;
 
@@ -8,11 +8,12 @@ public abstract class Valid {
         if (!valid) throw new IllegalStateException("Object is no longer valid");
     }
 
-    protected void valid(boolean v) {
+    protected void setValid(boolean v) {
         this.valid = v;
     }
 
-    public boolean valid() {
+    @Override
+    public boolean isValid() {
         return valid;
     }
 

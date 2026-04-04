@@ -8,7 +8,7 @@ import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
-import net.survivalboom.sbds.api.messages.MessageActionBuilder;
+import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

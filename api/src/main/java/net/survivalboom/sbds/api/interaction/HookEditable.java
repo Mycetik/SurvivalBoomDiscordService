@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.messages.IMessages;
-import net.survivalboom.sbds.api.messages.MessageActionBuilder;
+import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
 import org.jetbrains.annotations.NotNull;
 
 public interface HookEditable {

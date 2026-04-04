@@ -6,7 +6,7 @@ import net.survivalboom.sbds.api.database.IRepository;
 import net.survivalboom.sbds.core.modules.Module;
 import net.survivalboom.sbds.api.database.RepositoryHandler;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
-import net.survivalboom.sbds.api.utils.Valid;
+import net.survivalboom.sbds.api.utils.valid.Valid;
 import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -105,6 +105,6 @@ public class Repository extends Valid implements IRepository {
     }
 
     public void invalid() {
-        valid(false);
+        setValid(false);
     }
 }

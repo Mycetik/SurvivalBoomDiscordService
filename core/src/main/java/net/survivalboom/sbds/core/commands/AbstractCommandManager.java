@@ -7,7 +7,7 @@ import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.Module;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.permissions.PermissionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

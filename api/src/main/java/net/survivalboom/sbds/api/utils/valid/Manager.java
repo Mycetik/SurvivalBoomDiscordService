@@ -1,25 +1,25 @@
-package net.survivalboom.sbds.api.utils;
+package net.survivalboom.sbds.api.utils.valid;
 
-public abstract class Manager extends Valid {
+public abstract class Manager extends Valid implements IManager {
 
     public Manager() {
-        valid(false);
+        setValid(false);
     }
 
     public void init() {
-        if (valid()) throw new IllegalStateException("Manager already initialized");
-        valid(true);
+        if (isValid()) throw new IllegalStateException("Manager already initialized");
+        setValid(true);
         init0();
     }
 
     public void shutdown() {
         checkValid();
         shutdown0();
-        valid(false);
+        setValid(false);
     }
 
     public void shutdownIfNeeded() {
-        if (!valid()) return;
+        if (!isValid()) return;
         shutdown();
     }
 

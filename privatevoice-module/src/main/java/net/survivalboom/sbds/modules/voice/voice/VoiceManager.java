@@ -8,7 +8,7 @@ import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.scheduler.IScheduler;
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.ConcurrentHashSet;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.modules.voice.storage.VoiceCreatorChannels;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
