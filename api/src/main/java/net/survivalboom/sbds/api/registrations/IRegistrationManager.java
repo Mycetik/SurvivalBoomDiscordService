@@ -14,6 +14,19 @@ public interface IRegistrationManager<T> {
 
     boolean unregister(@NotNull Registration<T> registration);
 
+    default @Nullable Registration<T> unregister(@NotNull T obj) {
+
+        var reg = getObjectRegistration(obj);
+        if (reg == null) {
+            return null;
+        }
+
+        unregister(reg);
+
+        return reg;
+
+    }
+
     //
     // GETTERS
     //

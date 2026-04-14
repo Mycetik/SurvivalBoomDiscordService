@@ -113,7 +113,7 @@ public class SlashCommandLocalizator {
 
                 for (Translation translation : translationManager.getTranslations0()) {
 
-                    DiscordLocale locale = translation.discordLocale();
+                    DiscordLocale locale = translation.getDiscordLocale();
                     Message message = translation.getMessage(translationKey);
 
                     if (message == null) {

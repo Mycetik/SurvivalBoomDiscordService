@@ -12,18 +12,27 @@ import java.util.List;
 
 public interface ComponentTemplate {
 
-    @NotNull Component build(@Nullable StringParser parser, @Nullable ComponentLinker linker);
+    // PROPERTIES //
 
-    int row();
+    @Nullable String getName();
 
-    int priority();
+    int getRow();
 
-    @Nullable String name();
+    int getPriority();
 
     boolean isStatic();
 
-    @NotNull Component.Type type();
+    @NotNull Component.Type getType();
 
+    // BUILD //
+
+    @NotNull Component build(@Nullable StringParser parser, @Nullable ComponentLinker linker);
+
+    @NotNull TypeMap dump();
+
+    //
+    // BUILDER
+    //
 
     static @NotNull List<ComponentTemplate> createComponents(@NotNull List<TypeMap> mapList) throws InvalidComponentException {
 

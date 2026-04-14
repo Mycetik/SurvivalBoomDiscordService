@@ -55,7 +55,7 @@ public class RegistrationRegistry extends Manager implements IRegistrationRegist
     }
 
 
-    public <T> @NotNull Registration<T> register0(@NotNull IModule module, @NotNull T object, @NotNull Consumer<Registration<T>> unregisterAction, @NotNull String... names) {
+    public <T> @NotNull Registration<T> register0(@Nullable IModule module, @NotNull T object, @NotNull Consumer<Registration<T>> unregisterAction, @NotNull String... names) {
         return register0(module, object, unregisterAction, List.of(names));
     }
 

@@ -26,7 +26,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
     private static final Logger log = LoggerFactory.getLogger("TranslationManager");
 
 
-    private final SBDS sbds;
+    protected final SBDS sbds;
 
 
     private final File dir;
@@ -184,12 +184,12 @@ public class TranslationManager extends Manager implements ITranslationManager {
 
     @Override
     public @Nullable Translation findTranslationByLocale(@NotNull DiscordLocale locale) {
-        return translationMap.values().stream().filter(t -> t.discordLocale().equals(locale)).findAny().orElse(null);
+        return translationMap.values().stream().filter(t -> t.getDiscordLocale().equals(locale)).findAny().orElse(null);
     }
 
     @Override
     public @NotNull Set<DiscordLocale> getAvailableLocales() {
-        return translationMap.values().stream().map(Translation::discordLocale).collect(Collectors.toSet());
+        return translationMap.values().stream().map(Translation::getDiscordLocale).collect(Collectors.toSet());
     }
 
     private void addModuleTranslation(@NotNull Module module, @NotNull File file) throws IOException, InvalidConfigurationException, MessageLoadException {

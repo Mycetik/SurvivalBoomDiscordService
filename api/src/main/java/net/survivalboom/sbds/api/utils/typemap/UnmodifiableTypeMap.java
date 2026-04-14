@@ -1,0 +1,72 @@
+package net.survivalboom.sbds.api.utils.typemap;
+
+import net.survivalboom.sbds.api.utils.CommonUtils;
+import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+
+public class UnmodifiableTypeMap extends AbstractTypeMap {
+
+    public UnmodifiableTypeMap(@NotNull Map<String, Object> map) {
+        super(Map.copyOf(map));
+    }
+
+    @Override
+    public @NotNull Object put(@NotNull String string, @NotNull Object object) {
+        throw new IllegalStateException("This is an UnmodifiableTypeMap!");
+    }
+
+    @Override
+    public Object remove(Object o) {
+        throw new IllegalStateException("This is an UnmodifiableTypeMap!");
+    }
+
+    @Override
+    public void putAll(@NotNull Map<? extends String, ?> map) {
+        throw new IllegalStateException("This is an UnmodifiableTypeMap!");
+    }
+
+    @Override
+    public void clear() {
+        throw new IllegalStateException("This is an UnmodifiableTypeMap!");
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Object get(Object o) {
+
+        Object obj = super.get(o);
+
+        try {
+            Map<String, Object> map = (Map<String, Object>) obj;
+            return UnmodifiableTypeMap.ofMap(map);
+        }
+
+        catch (ClassCastException ignored) {}
+
+        return obj;
+
+    }
+
+    //
+    // STATIC
+    //
+
+    public static @NotNull UnmodifiableTypeMap ofMap(@NotNull Map<String, Object> map) {
+        return new UnmodifiableTypeMap(map);
+    }
+
+    public static @NotNull UnmodifiableTypeMap empty() {
+        return new UnmodifiableTypeMap(new HashMap<>());
+    }
+
+    // of configuration section //
+
+    public static @NotNull UnmodifiableTypeMap fromSection(@NotNull ConfigurationSection section) {
+        var map = CommonUtils.mapFromSection(section);
+        return ofMap(map);
+    }
+
+
+}

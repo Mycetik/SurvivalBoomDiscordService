@@ -45,7 +45,7 @@ public class TranslationCommand extends CommandBase implements SlashCommand, Con
         if (translationRaw == null) {
 
             ITranslation currentTranslation = userData.getTranslation();
-            String displayName = currentTranslation != null ? currentTranslation.displayName() : "[values.none]";
+            String displayName = currentTranslation != null ? currentTranslation.getDisplayName() : "[values.none]";
 
             info.reply("translation.command.translation.show").withPlaceholders("{TRANSLATION}", displayName).queue();
 
@@ -59,7 +59,7 @@ public class TranslationCommand extends CommandBase implements SlashCommand, Con
         userData.setTranslation(translation);
         userData.save();
 
-        info.reply("translation.command.translation.set").withPlaceholders("{TRANSLATION}", translation.displayName()).queue();
+        info.reply("translation.command.translation.set").withPlaceholders("{TRANSLATION}", translation.getDisplayName()).queue();
 
     }
 

@@ -10,7 +10,7 @@ import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.utils.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
-import net.survivalboom.sbds.api.utils.configuration.json.JsonConfiguration;
+import net.survivalboom.sbds.api.utils.json.JsonConfiguration;
 import net.survivalboom.sbds.modules.github.storage.WebhookData;
 import net.survivalboom.sbds.modules.github.storage.WebhookRepositoryHandler;
 import org.jetbrains.annotations.NotNull;

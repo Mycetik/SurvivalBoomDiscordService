@@ -2,9 +2,11 @@ package net.survivalboom.sbds.api.utils;
 
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
@@ -333,19 +335,119 @@ public class CommonUtils {
 
     }
 
+    //
+    // MAP
+    //
+
+    @SuppressWarnings("unchecked")
+    public static <T> T deepCopy(T object) {
+
+        // 1. Обработка Map
+        if (object instanceof Map<?, ?>) {
+            Map<Object, Object> sourceMap = (Map<Object, Object>) object;
+            Map<Object, Object> copyMap = new LinkedHashMap<>(); // Сохраняем порядок вставки
+            for (Map.Entry<Object, Object> entry : sourceMap.entrySet()) {
+                copyMap.put(deepCopy(entry.getKey()), deepCopy(entry.getValue()));
+            }
+
+            return (T) copyMap;
+
+        }
+
+        // 2. Обработка List (включая List<Map>)
+        else if (object instanceof List<?>) {
+            List<Object> sourceList = (List<Object>) object;
+            List<Object> copyList = new ArrayList<>(sourceList.size());
+            for (Object item : sourceList) {
+                copyList.add(deepCopy(item));
+            }
+
+            return (T) copyList;
+
+        }
+
+        // 3. Обработка Set (опционально, для полноты)
+        else if (object instanceof Set<?>) {
+
+            Set<Object> sourceSet = (Set<Object>) object;
+            Set<Object> copySet = new LinkedHashSet<>();
+            for (Object item : sourceSet) {
+                copySet.add(deepCopy(item));
+            }
+
+            return (T) copySet;
+
+        }
+
+        // 4. Базовый случай: примитивы, String, неизменяемые объекты или null
+        // В Java String и обертки примитивов неизменяемы, их копировать не нужно.
+        return object;
+
+    }
+
+    public static @NotNull Map<String, Object> compressDeepMap(@NotNull Map<String, Object> source) {
+        Objects.requireNonNull(source, "source == null");
+        return compressDeepMap0(source, new HashMap<>(), "");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static @NotNull Map<String, Object> compressDeepMap0(@NotNull Map<String, Object> source, @NotNull Map<String, Object> map, @NotNull String path) {
+
+        for (var entry : map.entrySet()) {
+
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            String newPath = path + key + ".";
+
+            if (value instanceof Map<?,?> m) {
+
+                Map<String, Object> mm;
+                try {
+                    mm = (Map<String, Object>) m;
+                }
+
+                catch (ClassCastException ignored) {
+                    continue;
+                }
+
+                compressDeepMap0(mm, map, newPath);
+
+            }
+
+            else if (value instanceof Collection<?> undefinedCollection) {
+
+                Collection<Map<String, Object>> collection;
+
+                try {
+                    collection = (Collection<Map<String, Object>>) undefinedCollection;
+                }
+
+                catch (ClassCastException ignored) {
+                    continue;
+                }
+
+                var list = List.copyOf(collection);
+                for (int i = 0; i < list.size(); i++) {
+                    var m = list.get(i);
+                    compressDeepMap0(m, map, newPath + i + ".");
+                }
+
+            }
+
+            else {
+                map.put(newPath, value);
+            }
+
+        }
+
+        return map;
+
+    }
 
     //
     // YAML
     //
-
-    @SuppressWarnings("unchecked")
-    public static @NotNull List<TypeMap> typeMap(@NotNull List<Map<?, ?>> map) {
-
-        List<TypeMap> out = new ArrayList<>();
-        map.forEach(m -> out.add(TypeMap.ofMap((Map<String, Object>) m, true)));
-
-        return out;
-    }
 
     public static @NotNull ConfigurationSection getOrCreateSection(@NotNull ConfigurationSection configuration, @NotNull String path) {
 
@@ -386,6 +488,17 @@ public class CommonUtils {
         }
 
         map.put(path, configuration.getString(path));
+
+    }
+
+    public static @NotNull Map<String, Object> mapFromSection(@NotNull ConfigurationSection section) {
+
+        Map<String, Object> map = new HashMap<>();
+        for (String key : section.getKeys(true)) {
+            map.put(key, section.get(key));
+        }
+
+        return map;
 
     }
 

@@ -9,7 +9,8 @@ import net.survivalboom.sbds.api.messages.components.InvalidComponentException;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.ComponentTemplate;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import net.survivalboom.sbds.api.utils.TypeMap;
+import net.survivalboom.sbds.api.utils.typemap.ModifiableTypeMap;
+import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -48,7 +49,6 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
     }
 
-
     @Override
     public @NotNull MessageCreateData createMessageData(@Nullable StringParser parser, @Nullable ComponentLinker linker) {
 
@@ -69,8 +69,8 @@ public class EmbedMessageTemplate implements IMessageTemplate {
             final int index = i;
 
             List<Component> components = this.components.stream()
-                    .filter(component -> component.row() == index)
-                    .sorted(Comparator.comparing(ComponentTemplate::priority))
+                    .filter(component -> component.getRow() == index)
+                    .sorted(Comparator.comparing(ComponentTemplate::getPriority))
                     .map(component -> component.build(parser, linker))
                     .toList();
 
@@ -95,6 +95,10 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
     }
 
+    @Override
+    public void dump(@NotNull ModifiableTypeMap map) {
+        
+    }
 
     //
     // BUILDER
@@ -104,10 +108,16 @@ public class EmbedMessageTemplate implements IMessageTemplate {
         return new Builder();
     }
 
-    public static @NotNull Builder ofSection(@NotNull ConfigurationSection section) throws InvalidEmbedException, InvalidComponentException {
+    public static @NotNull Builder ofString(@NotNull String content) {
+        return builder().setContent(content);
+    }
 
-        String content = section.getString("$content");
-        List<EmbedTemplate> embeds = createEmbeds(section);
+    public static @NotNull Builder ofMap(@NotNull TypeMap map) throws InvalidEmbedException, InvalidComponentException {
+
+        String content = map.getCast("$content", String.class).orElse(null);
+        List<EmbedTemplate> embeds = createEmbeds(map);
+
+        map.getCastList()
 
         List<ComponentTemplate> components = ComponentTemplate.createComponents(TypeMap.ofMapList(section.getMapList("$components")));
 

@@ -3,6 +3,7 @@ package net.survivalboom.sbds.api.registrations;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.Manager;
+import net.survivalboom.sbds.api.utils.valid.Valid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -12,31 +13,65 @@ import java.util.*;
 
 public class RegistrationManager<T> extends Manager implements IRegistrationManager<T> {
 
-    private static final Logger log = LoggerFactory.getLogger(RegistrationManager.class);
+    protected static final Logger log = LoggerFactory.getLogger(RegistrationManager.class);
 
-    private final IRegistrationRegistry registry;
+    protected final IRegistrationRegistry registry;
+
+    protected final String sourceName;
 
     @Nullable
-    private final String sourceName;
+    protected final Callback<T> callback;
 
-    @Nullable
-    private final Callback<T> callback;
-
-    private final Map<NamespacedKey, Registration<T>> registrationMap = new HashMap<>();
+    protected final Map<NamespacedKey, Registration<T>> registrationMap = new HashMap<>();
 
 
     public RegistrationManager(
-            @Nullable String sourceName,
+            @NotNull String sourceName,
             @Nullable Callback<T> callback,
             @NotNull IRegistrationRegistry registry
     ) {
 
+        Objects.requireNonNull(sourceName, "sourceName == null");
         Objects.requireNonNull(registry, "registry == null");
 
         this.sourceName = sourceName;
         this.callback = callback;
         this.registry = registry;
 
+    }
+
+    public RegistrationManager(
+            @NotNull Manager manager,
+            @Nullable Callback<T> callback,
+            @NotNull IRegistrationRegistry registry
+    ) {
+        this(manager.getManagerName(), callback, registry);
+    }
+
+    public RegistrationManager(
+            @NotNull Manager manager,
+            @NotNull String subname,
+            @Nullable Callback<T> callback,
+            @NotNull IRegistrationRegistry registry
+    ) {
+        this(manager.getManagerName() + "." + subname, callback, registry);
+    }
+
+    public RegistrationManager(
+            @NotNull Valid valid,
+            @Nullable Callback<T> callback,
+            @NotNull IRegistrationRegistry registry
+    ) {
+        this(valid.getClass().getSimpleName(), callback, registry);
+    }
+
+    public RegistrationManager(
+            @NotNull Valid valid,
+            @NotNull String subname,
+            @Nullable Callback<T> callback,
+            @NotNull IRegistrationRegistry registry
+    ) {
+        this(valid.getClass().getSimpleName() + "." + subname, callback, registry);
     }
 
 
@@ -66,13 +101,7 @@ public class RegistrationManager<T> extends Manager implements IRegistrationMana
         Objects.requireNonNull(object, "object == null");
         checkValid();
 
-        List<String> names = new ArrayList<>();
-        if (this.sourceName != null) {
-            names.add(sourceName);
-        }
-        names.add(name);
-
-        var reg = registry.register(module, object, this::unreg0, names);
+        var reg = registry.register(module, object, this::unreg0, sourceName, name);
 
         if (callback == null) {
             registrationMap.put(reg.regKey(), reg);
@@ -93,7 +122,7 @@ public class RegistrationManager<T> extends Manager implements IRegistrationMana
 
     }
 
-    private void unreg0(@NotNull Registration<T> reg) {
+    protected void unreg0(@NotNull Registration<T> reg) {
 
         registrationMap.remove(reg.regKey());
 
