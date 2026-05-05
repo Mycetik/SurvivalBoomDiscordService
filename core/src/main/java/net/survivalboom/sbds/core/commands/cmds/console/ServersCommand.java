@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.core.commands.cmds.console;
 
 import net.dv8tion.jda.api.entities.Guild;
-import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Objects;
 
-@Command(name = "servers", description = "Shows a list of servers where bot was invited", usage = "servers")
+@CommandClass(name = "servers", description = "Shows a list of servers where bot was invited", usage = "servers")
 public class ServersCommand extends CommandBase implements ConsoleCommand {
 
     @Override

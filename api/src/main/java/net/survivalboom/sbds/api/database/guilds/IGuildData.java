@@ -1,18 +1,37 @@
 package net.survivalboom.sbds.api.database.guilds;
 
+import net.dv8tion.jda.api.entities.Guild;
+import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
 import net.survivalboom.sbds.api.translations.ITranslation;
-import net.survivalboom.sbds.api.utils.NamespacedContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface IGuildData {
+
+    // GUILD //
 
     long getId();
 
-    @NotNull NamespacedContainer container();
+    @NotNull Guild getGuild();
 
-    @Nullable ITranslation getTranslation();
+    // TRANSLATION //
+
+    @Nullable ITranslation getDefaultTranslation();
+
+    void setDefaultTranslation(@Nullable ITranslation translation);
+
+    // DATA //
+
+    @NotNull INamespacedDataContainer container();
 
     void save();
+
+    // MISC //
+
+    @NotNull IGuildDataManager getManager();
+
+    @NotNull CompletableFuture<Void> delete();
 
 }

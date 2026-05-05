@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.core;
 
 import net.survivalboom.sbds.api.utils.CommonUtils;
+import net.survivalboom.sbds.core.libraries.DynamicClassLoader;
 import net.survivalboom.sbds.core.libraries.JarLoader;
 import net.survivalboom.sbds.core.libraries.simple.SimpleLibrariesDownloader;
 import org.jetbrains.annotations.NotNull;
@@ -15,45 +16,67 @@ public class Main {
 
     public static void main(String[] args) throws Throwable {
 
-        if (started) throw new RuntimeException("Ну ты долбоеб, да? Я склоняюсь к мысли что да");
+        if (started) {
+            throw new RuntimeException("Ну ты долбоеб, да? Я склоняюсь к мысли что да");
+        }
+
         started = true;
+
+        System.out.printf("Starting SBDS v%s ...", BuildConstants.VERSION);
 
         File workingDir = CommonUtils.getJarFile(Main.class).getParentFile();
 
-        JarLoader jarLoader = new JarLoader(Main.class.getClassLoader());
-        Thread.currentThread().setContextClassLoader(jarLoader);
+        DynamicClassLoader classLoader = new DynamicClassLoader("SBDS", Main.class.getClassLoader());
+        Thread.currentThread().setContextClassLoader(classLoader);
 
-        checkInitialLibraries(workingDir, jarLoader);
-        launch(workingDir, jarLoader);
+        checkInitialLibraries(workingDir, classLoader);
+        launch(workingDir, classLoader);
 
         System.exit(0);
 
     }
 
-    private static void checkInitialLibraries(@NotNull File workingDir, @NotNull JarLoader jarLoader) {
+    private static void checkInitialLibraries(@NotNull File workingDir, @NotNull DynamicClassLoader classLoader) {
 
         System.out.println("Loading initial libraries...");
 
-        SimpleLibrariesDownloader librariesDownloader = new SimpleLibrariesDownloader(new File(workingDir, "libraries"), jarLoader);
+        SimpleLibrariesDownloader librariesDownloader = new SimpleLibrariesDownloader(new File(workingDir, "libraries"), classLoader);
 
-        // Logging
-        librariesDownloader.download("https://repo1.maven.org/maven2/", "org.slf4j", "slf4j-api", "2.0.16");
-        librariesDownloader.download("https://repo1.maven.org/maven2/", "ch.qos.logback", "logback-core", "1.5.16");
-        librariesDownloader.download("https://repo1.maven.org/maven2/", "ch.qos.logback", "logback-classic", "1.5.16");
+        // Logging //
+        var slf4j = librariesDownloader.download("https://repo1.maven.org/maven2/", "org.slf4j", "slf4j-api", "2.0.16");
+        var logbackCore = librariesDownloader.download("https://repo1.maven.org/maven2/", "ch.qos.logback", "logback-core", "1.5.16");
+        var logbackClassic = librariesDownloader.download("https://repo1.maven.org/maven2/", "ch.qos.logback", "logback-classic", "1.5.16");
+
+        logbackClassic.dependencies().add(logbackCore);
+        logbackClassic.dependencies().add(slf4j);
 
         // configuration
-        librariesDownloader.download("https://repo1.maven.org/maven2/", "org.yaml", "snakeyaml", "2.3");
-        librariesDownloader.download("https://repo1.maven.org/maven2/", "org.bspfsystems", "yamlconfiguration", "2.0.1");
-        librariesDownloader.download("https://repo1.maven.org/maven2/", "org.json", "json", "20240303");
+
+        var geantyref = librariesDownloader.download("https://repo1.maven.org/maven2/", "io.leangen.geantyref", "geantyref", "2.0.1");
+        var option = librariesDownloader.download("https://repo1.maven.org/maven2/", "net.kyori", "option", "1.1.0");
+
+        var configurateCore = librariesDownloader.download("https://repo1.maven.org/maven2/", "org.spongepowered", "configurate-core", "4.2.0");
+
+        configurateCore.dependencies().add(geantyref);
+        configurateCore.dependencies().add(option);
+
+        var configurateYaml = librariesDownloader.download("https://repo1.maven.org/maven2/", "org.spongepowered", "configurate-yaml", "4.2.0");
+        var configurateXml = librariesDownloader.download("https://repo1.maven.org/maven2/", "org.spongepowered", "configurate-xml", "4.2.0");
+
+        configurateYaml.dependencies().add(configurateCore);
+        configurateXml.dependencies().add(configurateCore);
 
     }
 
-    private static void launch(@NotNull File workingDir, @NotNull JarLoader jarLoader) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private static void launch(@NotNull File workingDir, @NotNull DynamicClassLoader loader) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
 
-        Class<?> bootstrapClass = jarLoader.findClass("net.survivalboom.sbds.core.SbdsBootstrap");
+        Class<?> bootstrapClass = loader.getClass("net.survivalboom.sbds.core.SbdsBootstrap", false, false, false);
+        if (bootstrapClass == null) {
+            throw new ClassNotFoundException("net.survivalboom.sbds.core.SbdsBootstrap");
+        }
 
         Constructor<?> constructor = bootstrapClass.getDeclaredConstructors()[0];
-        Object bootstrapInstance = constructor.newInstance(workingDir, jarLoader);
+        Object bootstrapInstance = constructor.newInstance(workingDir, loader);
 
         bootstrapClass.getMethod("launch").invoke(bootstrapInstance);
 

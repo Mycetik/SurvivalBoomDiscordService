@@ -6,9 +6,10 @@ import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.ITranslationsMessagesPool;
 import net.survivalboom.sbds.api.utils.valid.Valid;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -91,12 +92,12 @@ public class TranslationMessagesPool extends Valid implements ITranslationsMessa
     //
 
     @Override
-    public @NotNull LoadResult load(@NotNull ConfigurationSection section, boolean replace) {
+    public @NotNull LoadResult load(@NotNull ConfigurationNode section, boolean replace) {
 
         checkValid();
 
         LoadResult result = new LoadResult(new HashMap<>(), new HashMap<>());
-        load0(result, section, "");
+        load0(result, section);
 
         if (replace) {
             this.messagesMap.clear();
@@ -108,59 +109,61 @@ public class TranslationMessagesPool extends Valid implements ITranslationsMessa
 
     }
 
-    private void load0(@NotNull LoadResult result, @NotNull ConfigurationSection section, @NotNull String path) {
+    private void load0(@NotNull LoadResult result, @NotNull ConfigurationNode node) {
 
-        for (String key : section.getKeys(false)) {
+        for (ConfigurationNode child : node.childrenMap().values()) {
 
-            String curPath = path + key;
+            String curPath = child.path().toString();
 
-            ConfigurationSection sect = section.getConfigurationSection(key);
+            if (child.isMap()) {
 
-            String content = section.getString(key, "null");
-            if (sect == null) {
+                boolean hasSpecialKey = child.childrenMap().keySet()
+                        .stream()
+                        .anyMatch(k -> String.valueOf(k).contains("$"));
+
+                if (hasSpecialKey) {
+
+                    try {
+
+                        IMessageTemplate template = IMessageTemplate.fromSection(child);
+
+                        result.loaded().put(curPath, template);
+
+                    }
+
+                    catch (Exception e) {
+                        result.failed().put(curPath, e);
+                    }
+
+                }
+
+                else {
+                    load0(result, child);
+                }
+
+            }
+
+            else {
+                String content = child.getString("null");
                 result.loaded().put(curPath, EmbedMessageTemplate.ofString(content).build());
-                continue;
             }
-
-            if (sect.getKeys(false).stream().anyMatch(k -> k.contains("$"))) {
-
-                IMessageTemplate template;
-
-                try {
-                    template = IMessageTemplate.fromSection(sect);
-                }
-
-                catch (Exception e) {
-                    result.failed().put(curPath, e);
-                    continue;
-                }
-
-                result.loaded().put(curPath, template);
-
-                continue;
-
-            }
-
-            load0(result, sect, curPath + ".");
-
 
         }
-
     }
 
 
     @Override
-    public void save(@NotNull ConfigurationSection section) {
+    public void save(@NotNull ConfigurationNode section) throws SerializationException {
 
         for (var entry : messagesMap.entrySet()) {
 
             String key = entry.getKey();
             IMessageTemplate template = entry.getValue();
 
-            ConfigurationSection sect = section.createSection(key);
-            template.dump(sect);
+            String[] path = key.split("\\.");
+            ConfigurationNode targetNode = section.node((Object[]) path);
 
-            section.set(key, sect);
+            targetNode.set(template);
 
         }
 

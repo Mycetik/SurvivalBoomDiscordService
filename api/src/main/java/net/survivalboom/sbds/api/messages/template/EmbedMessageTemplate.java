@@ -1,40 +1,39 @@
 package net.survivalboom.sbds.api.messages.template;
 
-import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
+import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
-import net.survivalboom.sbds.api.messages.components.InvalidComponentException;
+import net.survivalboom.sbds.api.messages.components.MessageInteractableComponentTemplate;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.ComponentTemplate;
+import net.survivalboom.sbds.api.messages.components.templates.ButtonTemplate;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import net.survivalboom.sbds.api.utils.typemap.ModifiableTypeMap;
-import net.survivalboom.sbds.api.utils.typemap.TypeMap;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.spongepowered.configurate.objectmapping.ConfigSerializable;
+import org.spongepowered.configurate.objectmapping.meta.PostProcess;
+import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.*;
 import java.util.function.Function;
 
+@ConfigSerializable
 public class EmbedMessageTemplate implements IMessageTemplate {
 
-    private static final Logger log = LoggerFactory.getLogger(EmbedMessageTemplate.class);
-    @Nullable
-    private final String content;
+    private @Nullable String content = null;
 
     private final List<EmbedTemplate> embeds = new ArrayList<>();
 
-    private final List<ComponentTemplate> components = new ArrayList<>();
+    private final List<MessageInteractableComponentTemplate<? extends ActionRowChildComponent>> components = new ArrayList<>();
 
 
     public EmbedMessageTemplate(
             @Nullable String content,
             @Nullable Collection<EmbedTemplate> embeds,
-            @Nullable Collection<ComponentTemplate> components
+            @Nullable Collection<MessageInteractableComponentTemplate<? extends ActionRowChildComponent>> components
     ) {
 
         this.content = content;
@@ -47,10 +46,52 @@ public class EmbedMessageTemplate implements IMessageTemplate {
             this.components.addAll(components);
         }
 
+        if ((content == null || content.isBlank()) && this.embeds.isEmpty() && this.components.isEmpty()) {
+            throw new IllegalArgumentException("Тобі блять робить нєхуй, чи що? Розкажи мені будь ласка.");
+        }
+
+        // Перевірка на дебіла. В одному рядку можуть бути або кнопки, або Dropdown.
+        for (int i = 1; i < 6; i++) {
+
+            int finalI = i;
+            var templates = this.components.stream()
+                    .filter(t -> t.getRow() == finalI)
+                    .toList();
+
+            boolean hasDropdown = templates.stream().anyMatch(t -> !(t instanceof ButtonTemplate));
+            boolean hasButtons = templates.stream().anyMatch(t -> t instanceof ButtonTemplate);
+
+            boolean isUserDumbFucker = hasDropdown && hasButtons;
+            if (isUserDumbFucker) {
+                throw new IllegalArgumentException("Invalid set of components on row " + i + ". Buttons and Dropdowns cannot be on the same row. Got: `" + templates + "`");
+            }
+
+            if (hasDropdown && templates.size() > 1) {
+                throw new IllegalArgumentException("One row can only contain one dropdown. Got: `" + templates + "`");
+            }
+
+        }
+
+    }
+
+    @ApiStatus.Internal
+    public EmbedMessageTemplate() {}
+
+    @PostProcess
+    private void validate() throws SerializationException {
+
+        if ((content == null || content.isBlank()) && this.embeds.isEmpty() && this.components.isEmpty()) {
+            throw new SerializationException("content is empty && embeds are empty && component are empty; what are you trying to send?");
+        }
+
     }
 
     @Override
     public @NotNull MessageCreateData createMessageData(@Nullable StringParser parser, @Nullable ComponentLinker linker) {
+
+        if ((content == null || content.isBlank()) && this.embeds.isEmpty() && this.components.isEmpty()) {
+            throw new IllegalArgumentException("content is empty && embeds are empty && component are empty; you fucked up! congratulations!");
+        }
 
         MessageCreateBuilder builder = new MessageCreateBuilder();
 
@@ -64,29 +105,47 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
         // components //
 
+        // Проходимось по кожній з 6 рядків та шукаємо компоненти, що знаходяться на такому рядку.
         for (int i = 1; i < 6; i++) {
 
             final int index = i;
 
-            List<Component> components = this.components.stream()
+            var components = this.components.stream()
                     .filter(component -> component.getRow() == index)
-                    .sorted(Comparator.comparing(ComponentTemplate::getPriority))
-                    .map(component -> component.build(parser, linker))
                     .toList();
 
-            List<ActionRowChildComponent> rowChildComponents = new ArrayList<>();
-            for (Component component : components) {
+            // Ця лінія не має компонентів, пропускаємо.
+            if (components.isEmpty()) {
+                continue;
+            }
 
-                if (!(component instanceof ActionRowChildComponent actionRowChildComponent)) {
-                    log.warn("Tried to add incompatible with ActionRow component `{}`.", component.getType());
-                    continue;
-                }
+            // Це Dropdown, ніяких кнопок бути не може (якщо звісно якийсь дебіл якимсь чином не обійшов конструктор...), додаємо просто в ActionRow.
+            if (!(components.getFirst() instanceof ButtonTemplate)) {
 
-                rowChildComponents.add(actionRowChildComponent);
+                ActionRowChildComponent component = components.getFirst().build(parser, linker);
+                ActionRow row = ActionRow.of(component);
+
+                builder.addComponents(row);
+
+                continue;
 
             }
 
-            ActionRow row = ActionRow.of(rowChildComponents);
+            // КНОПАЧКІ!!!! // Робимо кнопочкі. Логічно? Думаю да. А якщо ні - вийди в вікно.
+            List<Button> buttons = new ArrayList<>();
+            for (var template : components) {
+
+                // Нєхуй Reflection бавитись, понятно блять? Нєхуй перевірку в конструкторі скіпать. Совсєм абнаглєлі вайбкодері.
+                if (!(template instanceof ButtonTemplate buttonTemplate)) {
+                    throw new RuntimeException("А схуялі блять, скажи мені будь ласка, га? Пизди давно тобі не давали, чи що? Хуль тут `" + template.getClass() + "` замість `ButtonTemplate? А блять?");
+                }
+
+                Button button = buttonTemplate.build(parser, linker);
+                buttons.add(button);
+
+            }
+
+            ActionRow row = ActionRow.of(buttons);
             builder.addComponents(row);
 
         }
@@ -95,9 +154,8 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
     }
 
-    @Override
-    public void dump(@NotNull ModifiableTypeMap map) {
-        
+    public @NotNull Builder copy() {
+        return new Builder(this);
     }
 
     //
@@ -112,51 +170,6 @@ public class EmbedMessageTemplate implements IMessageTemplate {
         return builder().setContent(content);
     }
 
-    public static @NotNull Builder ofMap(@NotNull TypeMap map) throws InvalidEmbedException, InvalidComponentException {
-
-        String content = map.getCast("$content", String.class).orElse(null);
-        List<EmbedTemplate> embeds = createEmbeds(map);
-
-        map.getCastList()
-
-        List<ComponentTemplate> components = ComponentTemplate.createComponents(TypeMap.ofMapList(section.getMapList("$components")));
-
-        return builder()
-                .setContent(content)
-                .setEmbeds(embeds)
-                .setComponents(components);
-
-    }
-
-    private static @NotNull List<EmbedTemplate> createEmbeds(@NotNull ConfigurationSection section) throws InvalidEmbedException {
-
-        Objects.requireNonNull(section, "section == null");
-
-        List<EmbedTemplate> out = new ArrayList<>();
-
-        if (!section.contains("$embed") && !section.contains("$embeds")) return new ArrayList<>();
-
-        if (!section.contains("$embeds")) {
-
-            ConfigurationSection embedSection = section.getConfigurationSection("$embed");
-            Objects.requireNonNull(embedSection);
-
-            EmbedTemplate embed = EmbedTemplate.fromSection(embedSection);
-
-            return new ArrayList<>(List.of(embed));
-
-        }
-
-
-        List<Map<?, ?>> map = section.getMapList("$embeds");
-        for (Map<?, ?> m : map) {
-            out.add(EmbedTemplate.fromSection(m));
-        }
-
-        return out;
-
-    }
-
     public static class Builder {
 
         @Nullable
@@ -164,7 +177,7 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
         private final List<EmbedTemplate> embeds = new ArrayList<>();
 
-        private final List<ComponentTemplate> components = new ArrayList<>();
+        private final List<MessageInteractableComponentTemplate<? extends ActionRowChildComponent>> components = new ArrayList<>();
 
 
         private Builder() {}
@@ -175,6 +188,15 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
             this.embeds.addAll(builder.embeds);
             this.components.addAll(builder.components);
+
+        }
+
+        private Builder(@NotNull EmbedMessageTemplate template) {
+
+            this.content = template.content;
+
+            this.embeds.addAll(template.embeds);
+            this.components.addAll(template.components);
 
         }
 
@@ -230,7 +252,7 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
         // COMPONENTS //
 
-        public @NotNull Builder setComponents(@Nullable Collection<ComponentTemplate> components) {
+        public @NotNull Builder setComponents(@Nullable Collection<MessageInteractableComponentTemplate<? extends ActionRowChildComponent>> components) {
 
             this.components.clear();
 
@@ -242,17 +264,34 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
         }
 
-        public @NotNull Builder addComponent(@NotNull ComponentTemplate component) {
+        public @NotNull Builder addComponent(@NotNull MessageInteractableComponentTemplate<? extends ActionRowChildComponent> component) {
             this.components.add(component);
             return this;
         }
 
-        public @NotNull Builder addComponents(@NotNull Collection<ComponentTemplate> components) {
+        @SuppressWarnings("unchecked")
+        public @NotNull Builder addComponent(@NotNull ComponentTemplate<?> component) {
+
+            MessageInteractableComponentTemplate<? extends ActionRowChildComponent> sex;
+
+            try {
+                sex = (MessageInteractableComponentTemplate<? extends ActionRowChildComponent>) component;
+            }
+
+            catch (ClassCastException e) {
+                throw new RuntimeException("Нєт. Ну просто блять нєт. Ну сука, ну просто ні. Ти розумієш блять? Воно так не буде сука працювати.", e);
+            }
+
+            return addComponent(sex);
+
+        }
+
+        public @NotNull Builder addComponents(@NotNull Collection<MessageInteractableComponentTemplate<? extends ActionRowChildComponent>> components) {
             this.components.addAll(components);
             return this;
         }
 
-        public @NotNull List<ComponentTemplate> getComponents() {
+        public @NotNull List<MessageInteractableComponentTemplate<? extends ActionRowChildComponent>> getComponents() {
             return new ArrayList<>(this.components);
         }
 

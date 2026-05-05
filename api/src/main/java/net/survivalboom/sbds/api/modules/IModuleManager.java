@@ -9,45 +9,58 @@ import java.util.List;
 
 public interface IModuleManager {
 
+    @NotNull ISBDS getSbds();
 
-    String ALLOWED_CHARACTERS = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIGKLMNOPQRSTUVWXYZ";
+    @NotNull File getModulesDir();
 
-    static boolean checkNameValid(@NotNull String name) {
+    //
+    // MODULES
+    //
 
-        for (char c : name.toCharArray()) {
-            if (ALLOWED_CHARACTERS.indexOf(c) == -1) return false;
-        }
+    // LOADING & UNLOADING //
 
-        return true;
-
-    }
-
-
-    @Nullable IModule loadModule(@NotNull File file);
-
-    void unloadModule(@NotNull IModule module);
-
-    void enableModule(@NotNull IModule module);
-
-    void disableModule(@NotNull IModule module);
+    @NotNull IModule loadModule(@NotNull File file) throws ModuleLoadingException, ModuleStateCallbackException, ModuleRefusedException;
 
 
-    default void unloadModule(@NotNull ModuleMain moduleMain) {
+    void unloadModule(@NotNull IModule module) throws ModuleLoadingException, ModuleStateCallbackException;
+
+    default void unloadModule(@NotNull ModuleMain moduleMain) throws ModuleLoadingException, ModuleStateCallbackException {
         unloadModule(moduleMain.getModule());
     }
 
-    default void disableModule(@NotNull ModuleMain moduleMain) {
-        disableModule(moduleMain.getModule());
+    // ENABLING & DISABLING //
+
+    void enableModule(@NotNull IModule module) throws ModuleLoadingException, ModuleStateCallbackException, ModuleRefusedException;
+
+    default void enableModule(@NotNull ModuleMain moduleMain) throws ModuleLoadingException, ModuleStateCallbackException, ModuleRefusedException {
+        enableModule(moduleMain.getModule());
     }
 
 
+    void disableModule(@NotNull IModule module) throws ModuleLoadingException, ModuleStateCallbackException;
 
-    @Nullable IModule getModule(@NotNull String name);
+    default void disableModule(@NotNull ModuleMain moduleMain) throws ModuleLoadingException, ModuleStateCallbackException {
+        disableModule(moduleMain.getModule());
+    }
 
-    @NotNull ISBDS getSbds();
+    // GETTERS //
+
+    @Nullable IModule getModule(@NotNull String id);
 
     @NotNull List<IModule> getModules();
 
-    @NotNull File getModulesDir();
+    // MISC //
+
+    @NotNull IModule checkModuleValid(@NotNull IModule module);
+
+    @NotNull IModule checkModuleEnabled(@NotNull IModule imodule, @Nullable String message);
+
+    //
+    // NAMES
+    //
+
+    String ALLOWED_NAME_CHARACTERS = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIGKLMNOPQRSTUVWXYZ";
+
+    String ALLOWED_ID_CHARACTERS = "abcdefghijklmnopqrstuvwxyz1234567890";
 
 }

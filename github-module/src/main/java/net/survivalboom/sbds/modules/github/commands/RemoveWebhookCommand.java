@@ -2,18 +2,18 @@ package net.survivalboom.sbds.modules.github.commands;
 
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.primitive.IntegerArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.slash.SlashCommand;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.modules.github.storage.WebhookData;
 import net.survivalboom.sbds.modules.github.storage.WebhookRepositoryHandler;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "remove", description = "Remove a github webhook.", permission = "github.command.remove")
-public class RemoveWebhookCommand extends CommandBase implements SlashCommand {
+@CommandClass(name = "remove", description = "Remove a github webhook.", permission = "github.command.remove")
+public class RemoveWebhookCommand extends CommandBase implements SlashCommandExecutor {
 
     private final WebhookRepositoryHandler repository;
 
@@ -38,7 +38,7 @@ public class RemoveWebhookCommand extends CommandBase implements SlashCommand {
     }
 
 
-    @CommandArgument(name = "id", description = "The id of the webhook.")
+    @ArgumentMethod(name = "id", description = "The id of the webhook.")
     public Argument<?> id() {
         return new IntegerArgument();
     }

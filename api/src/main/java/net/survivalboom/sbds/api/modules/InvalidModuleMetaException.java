@@ -6,12 +6,8 @@ public class InvalidModuleMetaException extends Exception {
         super(message);
     }
 
-    public InvalidModuleMetaException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
     public InvalidModuleMetaException(Throwable cause) {
-        super(cause.getMessage(), cause);
+        super(cause);
     }
 
 }

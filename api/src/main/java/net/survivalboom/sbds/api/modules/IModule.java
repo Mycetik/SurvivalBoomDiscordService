@@ -1,42 +1,32 @@
 package net.survivalboom.sbds.api.modules;
 
-import net.survivalboom.sbds.api.ISBDS;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
+import net.survivalboom.sbds.api.utils.valid.IValid;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.util.jar.JarFile;
 
-public interface IModule {
+public interface IModule extends IValid {
+
+    // MODULE INFO //
 
     @NotNull String getName();
 
+    @NotNull ModuleMeta getMeta();
 
     boolean isEnabled();
 
+    @NotNull Logger getLogger();
 
-    @NotNull File getFile();
+    // MODULE LOCATION //
+
+    @Nullable ModuleFile getFile();
 
     @NotNull File getDataFolder();
 
-    @NotNull JarFile getJar();
-
-    @NotNull IModuleManager getModuleManager();
-
-
-    @NotNull YamlConfiguration getConfig();
-
-
-    @NotNull Logger getLogger();
-
-    @NotNull IModuleMeta getMeta();
-
-    @NotNull IModuleClassLoader getClassLoader();
+    // MODULE CLASS //
 
     @NotNull ModuleMain getMain();
-
-
-    @NotNull ISBDS getSbds();
 
 }

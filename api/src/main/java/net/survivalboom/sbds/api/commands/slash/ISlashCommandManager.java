@@ -2,8 +2,10 @@ package net.survivalboom.sbds.api.commands.slash;
 
 import net.survivalboom.sbds.api.commands.ICommandManager;
 
-public interface ISlashCommandManager extends ICommandManager {
+public interface ISlashCommandManager extends ICommandManager<ISlashCommandManager.IRegisteredSlashCommand, ISlashCommandManager> {
 
-    void updateCommands();
+    interface IRegisteredSlashCommand extends IRegisteredCommand<IRegisteredSlashCommand, ISlashCommandManager> {
+
+    }
 
 }

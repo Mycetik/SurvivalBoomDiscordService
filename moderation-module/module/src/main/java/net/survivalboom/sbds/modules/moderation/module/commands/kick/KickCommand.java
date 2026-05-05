@@ -6,8 +6,8 @@ import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.discord.GuildArgument;
 import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.modules.moderation.module.commands.AbstractModerationCommand;
@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "kick", description = "Kicks user from the guild", translationKey = "moderation.command.kick", permission = "moderation.command.kick")
+@CommandClass(name = "kick", description = "Kicks user from the guild", translationKey = "moderation.command.kick", permission = "moderation.command.kick")
 public class KickCommand extends AbstractModerationCommand {
 
 
@@ -80,22 +80,22 @@ public class KickCommand extends AbstractModerationCommand {
     }
 
 
-    @CommandArgument(name = "guild", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(name = "guild", scope = ArgumentScope.CONSOLE)
     public GuildArgument guild() {
         return new GuildArgument();
     }
 
-    @CommandArgument(name = "user", index = 1)
+    @ArgumentMethod(name = "user", index = 1)
     public UserArgument user() {
         return new UserArgument();
     }
 
-    @CommandArgument(name = "reason", index = 2, required = false)
+    @ArgumentMethod(name = "reason", index = 2, required = false)
     public StringArgument reason() {
         return new StringArgument();
     }
 
-    @CommandArgument(name = "comment", index = 3, required = false)
+    @ArgumentMethod(name = "comment", index = 3, required = false)
     public StringArgument comment() {
         return new StringArgument();
     }

@@ -10,12 +10,11 @@ public abstract class ExecutionInfo {
 
     protected final ISBDS sbds;
 
-    protected final Logger logger;
 
-
-    public ExecutionInfo(@NotNull ISBDS sbds, @NotNull Logger logger) {
+    public ExecutionInfo(
+            @NotNull ISBDS sbds
+    ) {
         this.sbds = sbds;
-        this.logger = logger;
     }
 
 
@@ -25,10 +24,6 @@ public abstract class ExecutionInfo {
 
     public @NotNull IMessages messages() {
         return sbds.getMessages();
-    }
-
-    public @NotNull Logger logger() {
-        return logger;
     }
 
 }

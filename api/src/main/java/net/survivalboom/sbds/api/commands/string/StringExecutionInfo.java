@@ -5,21 +5,25 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
-import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
-import net.survivalboom.sbds.api.utils.TypeMap;
+import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
-public class StringExecutionInfo extends CommandExecutionInfo {
+public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandManager.IRegisteredStringCommand, IStringCommandManager> {
 
     private final Message message;
 
-    public StringExecutionInfo(@NotNull Command command, @NotNull Message message, @NotNull String alias, @NotNull TypeMap arguments, @NotNull Logger logger, @NotNull ISBDS sbds) {
-        super(command, alias, arguments, logger, sbds);
+    public StringExecutionInfo(
+            @NotNull Message message,
+            @NotNull IStringCommandManager.IRegisteredStringCommand rootCommand,
+            @NotNull Command currentCommand,
+            @NotNull String alias,
+            @NotNull TypeMap arguments
+    ) {
+        super(rootCommand, currentCommand, alias, arguments);
         this.message = message;
     }
 
@@ -31,7 +35,7 @@ public class StringExecutionInfo extends CommandExecutionInfo {
         return this.message.getGuild();
     }
 
-    public @Nullable Member guildMember() {
+    public @Nullable Member member() {
         return this.message.getMember();
     }
 

@@ -162,7 +162,7 @@ public class RegistrationManager<T> extends Manager implements IRegistrationMana
 
     @Override
     public @NotNull List<Registration<T>> getRegistrations() {
-        return List.of();
+        return new ArrayList<>(registrationMap.values());
     }
 
     @Override
@@ -176,9 +176,9 @@ public class RegistrationManager<T> extends Manager implements IRegistrationMana
 
     public interface Callback<T> {
 
-        void onRegister(@NotNull Registration<T> registration);
+        default void onRegister(@NotNull Registration<T> registration) {}
 
-        void unRegister(@NotNull Registration<T> registration);
+        default void unRegister(@NotNull Registration<T> registration) {}
 
     }
 

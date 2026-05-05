@@ -2,9 +2,9 @@ package net.survivalboom.sbds.core.logging;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.utils.valid.Manager;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
+import net.survivalboom.sbds.core.SBDS;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -14,14 +14,12 @@ import java.util.regex.Pattern;
 
 public class LoggerFilter extends Manager {
 
-    private final LoggerLayout layout = LoggerLayout.layout;
-
     private final Set<LoggerRule> rules = new HashSet<>();
 
     private final YamlConfiguration configuration;
 
 
-    public LoggerFilter(@NotNull YamlConfiguration configuration) {
+    public LoggerFilter(@NotNull SBDS sbds) {
         this.configuration = configuration;
     }
 

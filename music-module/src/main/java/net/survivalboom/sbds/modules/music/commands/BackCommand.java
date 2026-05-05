@@ -8,14 +8,14 @@ import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.IntegerArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.interaction.IInteractionInfo;
 import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-@Command(name = "back", description = "Returns the previous song", translationKey = "music.command.back")
+@CommandClass(name = "back", description = "Returns the previous song", translationKey = "music.command.back")
 public class BackCommand extends AbstractPlayerCommand {
 
     public BackCommand(@NotNull BotManager botManager) {
@@ -141,12 +141,12 @@ public class BackCommand extends AbstractPlayerCommand {
 
     }
 
-    @CommandArgument(name = "steps", description = "Songs to skip", required = false, index = 1)
+    @ArgumentMethod(name = "steps", description = "Songs to skip", required = false, index = 1)
     public Argument<?> songs() {
         return new IntegerArgument();
     }
 
-    @CommandArgument(name = "channel", description = "Channel with music bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(name = "channel", description = "Channel with music bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

@@ -11,12 +11,12 @@ import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.GreedyStringArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
-import net.survivalboom.sbds.api.commands.slash.SlashCommand;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
 import net.survivalboom.sbds.modules.music.bots.TrackLoadException;
@@ -28,8 +28,8 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Objects;
 
-@Command(name = "play", description = "Finds a track from your query and connects a new bot to your channel", translationKey = "music.command.play")
-public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
+@CommandClass(name = "play", description = "Finds a track from your query and connects a new bot to your channel", translationKey = "music.command.play")
+public class PlayCommand extends AbstractPlayerCommand implements SlashCommandExecutor {
 
     public PlayCommand(@NotNull BotManager botManager) {
         super(botManager);
@@ -266,12 +266,12 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommand {
 
     }
 
-    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }
 
-    @CommandArgument(name = "query", description = "URL or search query")
+    @ArgumentMethod(name = "query", description = "URL or search query")
     public Argument<?> song() {
         return new GreedyStringArgument();
     }

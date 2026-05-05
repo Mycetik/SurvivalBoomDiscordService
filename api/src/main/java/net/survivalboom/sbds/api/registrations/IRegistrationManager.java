@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public interface IRegistrationManager<T> {
 
@@ -33,7 +34,22 @@ public interface IRegistrationManager<T> {
 
     @NotNull List<Registration<T>> getRegistrations();
 
+    default @NotNull List<T> getRegisteredObjects() {
+        return getRegistrations().stream().map(Registration::object).collect(Collectors.toList());
+    }
+
     @Nullable Registration<T> getRegistration(@NotNull NamespacedKey key);
+
+    default @Nullable T getRegistrationAsObject(@NotNull NamespacedKey key) {
+
+        var reg = getRegistration(key);
+        if (reg == null) {
+            return null;
+        }
+
+        return reg.object();
+
+    }
 
     default @Nullable Registration<T> getRegistration(@NotNull String name) {
         return getRegistration(NamespacedKey.fromString(name));

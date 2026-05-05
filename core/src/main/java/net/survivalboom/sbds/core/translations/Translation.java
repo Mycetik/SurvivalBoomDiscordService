@@ -5,22 +5,13 @@ import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.registrations.RegistrationManager;
 import net.survivalboom.sbds.api.translations.*;
-import net.survivalboom.sbds.api.messages.components.InvalidComponentException;
 import net.survivalboom.sbds.api.registrations.Registration;
-import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.Valid;
-import net.survivalboom.sbds.api.messages.template.InvalidEmbedException;
-import net.survivalboom.sbds.core.modules.Module;
 import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
-import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 public class Translation extends Valid implements ITranslation, RegistrationManager.Callback<ITranslationsMessagesPool> {
@@ -29,7 +20,7 @@ public class Translation extends Valid implements ITranslation, RegistrationMana
     private final ITranslationManager manager;
 
 
-    private Registration<ITranslation> registration;
+    protected Registration<ITranslation> registration;
 
 
     private DiscordLocale discordLocale;
@@ -112,16 +103,6 @@ public class Translation extends Valid implements ITranslation, RegistrationMana
 
     }
 
-    @Override
-    public void onRegister(@NotNull Registration<ITranslationsMessagesPool> registration) {
-
-    }
-
-    @Override
-    public void unRegister(@NotNull Registration<ITranslationsMessagesPool> registration) {
-
-    }
-
     private void cacheFullRecalculate() {
 
         Map<String, IMessageTemplate> out = new HashMap<>();
@@ -173,12 +154,12 @@ public class Translation extends Valid implements ITranslation, RegistrationMana
     // DISCORD LOCALE //
 
     @Override
-    public @NotNull DiscordLocale getDiscordLocale() {
+    public @Nullable DiscordLocale getDiscordLocale() {
         return discordLocale;
     }
 
     @Override
-    public void setDiscordLocale(@NotNull DiscordLocale locale) {
+    public void setDiscordLocale(@Nullable DiscordLocale locale) {
         checkValid();
         this.discordLocale = locale;
     }
@@ -202,6 +183,17 @@ public class Translation extends Valid implements ITranslation, RegistrationMana
 
 
     @Override
+    public @NotNull ITranslationManager getManager() {
+        return manager;
+    }
+
+    @Override
+    public void remove() {
+        checkValid();
+        manager.removeTranslation(this);
+    }
+
+    @Override
     protected void setValid(boolean v) {
 
         if (v) {
@@ -220,7 +212,7 @@ public class Translation extends Valid implements ITranslation, RegistrationMana
     @Override
     public String toString() {
         return String.format(
-                "Translation{key=%s,displayName=%s,messagesSize=%s}",
+                "Translation{key=%s, displayName=%s, messagesSize=%s}",
                 registration.key(),
                 displayName,
                 cache.size()

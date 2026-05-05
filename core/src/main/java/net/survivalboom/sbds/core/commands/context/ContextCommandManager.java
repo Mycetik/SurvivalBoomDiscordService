@@ -12,7 +12,7 @@ import net.survivalboom.sbds.api.commands.context.ContextInteractionInfo;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.valid.Manager;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
 import net.survivalboom.sbds.core.modules.Module;

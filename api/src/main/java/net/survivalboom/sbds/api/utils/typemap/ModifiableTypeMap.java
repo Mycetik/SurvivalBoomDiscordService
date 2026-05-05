@@ -1,7 +1,6 @@
 package net.survivalboom.sbds.api.utils.typemap;
 
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -120,13 +119,6 @@ public class ModifiableTypeMap extends AbstractTypeMap {
 
     public static @NotNull ModifiableTypeMap empty(boolean allowNull, Class<?>... allowedTypes) {
         return new ModifiableTypeMap(new HashMap<>(), allowNull, List.of(allowedTypes));
-    }
-
-    // of configuration section //
-
-    public static @NotNull ModifiableTypeMap fromSection(@NotNull ConfigurationSection section, boolean allowNull) {
-        var map = CommonUtils.mapFromSection(section);
-        return ofMap(map, allowNull);
     }
 
 }

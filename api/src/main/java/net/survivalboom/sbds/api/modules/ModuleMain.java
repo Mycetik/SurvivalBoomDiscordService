@@ -1,67 +1,63 @@
 package net.survivalboom.sbds.api.modules;
 
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.commands.ICommandManager;
-import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.base.ContextCommandBase;
-import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
-import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
-import net.survivalboom.sbds.api.commands.slash.SlashCommand;
-import net.survivalboom.sbds.api.commands.string.StringCommand;
 import net.survivalboom.sbds.api.database.IDatabase;
-import net.survivalboom.sbds.api.database.IRepository;
-import net.survivalboom.sbds.api.database.RepositoryHandler;
-import net.survivalboom.sbds.api.events.Listener;
-import net.survivalboom.sbds.api.interaction.InteractionManager;
-import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
-import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
-import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownInteractionInfo;
-import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
-import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
-import net.survivalboom.sbds.api.service.IServiceProvider;
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.jar.JarFile;
 
 public abstract class ModuleMain {
 
-    private IModule module = null;
+    private ISBDS sbds;
+
+    private IModule module;
 
     //
     // LIFECYCLE (will be overridden in module's class)
     //
 
-    public void onLoad() throws Throwable {}
+    @ApiStatus.OverrideOnly
+    public void onLoad() throws Exception {}
 
-    public void onUnload() throws Throwable {}
+    @ApiStatus.OverrideOnly
+    public void onUnload() throws Exception {}
 
 
-    public void onEnable() throws Throwable {}
+    @ApiStatus.OverrideOnly
+    public void onEnable() throws Exception {}
 
-    public void onDisable() throws Throwable {}
+    @ApiStatus.OverrideOnly
+    public void onDisable() throws Exception {}
 
     //
     // INIT
     //
 
-    public final void init(@NotNull IModule module) {
-        if (this.module != null) throw new RuntimeException("Сука, ну написано же для таких долбоебов как ты 'Внутреннее API'. Ты слишком тупой чтобы использовать его, понимаешь? Не для тебя оно было сделано.");
+    @ApiStatus.Internal
+    public final void init(@NotNull IModule module, @NotNull ISBDS sbds) {
+
+        if (this.module != null) {
+            throw new RuntimeException("Сука, ну написано же для таких долбоебов как ты 'Внутреннее API'. Ты слишком тупой чтобы использовать его, понимаешь? Не для тебя оно было сделано.");
+        }
+
         this.module = module;
+        this.sbds = sbds;
+
     }
 
 
     public final @NotNull IModule getModule() {
         return module;
+    }
+
+    public final @NotNull ISBDS getSbds() {
+        return sbds;
     }
 
     //
@@ -72,7 +68,7 @@ public abstract class ModuleMain {
         return getModule().getName();
     }
 
-    public @NotNull File getFile() {
+    public @Nullable ModuleFile getFile() {
         return getModule().getFile();
     }
 
@@ -80,127 +76,31 @@ public abstract class ModuleMain {
         return getModule().getDataFolder();
     }
 
-    public @NotNull JarFile getJar() {
-        return getModule().getJar();
-    }
-
     public @NotNull IModuleManager getModuleManager() {
-        return getModule().getModuleManager();
+        return getSbds().getModuleManager();
     }
 
     public @NotNull IDatabase getDatabase() {
         return getSbds().getDatabase();
     }
 
-    public @NotNull YamlConfiguration getConfig() {
-        return getModule().getConfig();
-    }
-
     public @NotNull Logger getLogger() {
         return getModule().getLogger();
     }
 
-    public @NotNull IModuleMeta getMeta() {
+    public @NotNull ModuleMeta getMeta() {
         return getModule().getMeta();
-    }
-
-    public @NotNull ISBDS getSbds() {
-        return getModule().getSbds();
     }
 
     //
     // REGISTRATIONS
     //
 
-    public void registerCommand(@NotNull CommandBase base) {
-
-        if (base instanceof SlashCommand) {
-            getSbds().getSlashCommandManager().registerCommand(this, base);
-        }
-
-        if (base instanceof StringCommand) {
-            // <-- to do
-        }
-
-        if (base instanceof ConsoleCommand) {
-            getSbds().getConsoleListener().registerCommand(this, base);
-        }
-
-    }
-
-    public @NotNull ICommandManager.RegisteredCommand registerSlashCommand(@NotNull CommandBase commandBase) {
-        return getSbds().getSlashCommandManager().registerCommand(this, commandBase);
-    }
-
-    public @NotNull ICommandManager.RegisteredCommand registerConsoleCommand(@NotNull CommandBase commandBase) {
-        return getSbds().getConsoleListener().registerCommand(this, commandBase);
-    }
-
-    public @NotNull IModalInteractionManager.IRegisteredModal registerModal(@NotNull String name, @NotNull ModalTemplate template) {
-        return getSbds().getModalInteractionManager().registerModal(this, name, template);
-    }
-
-    public @NotNull InteractionManager.IRegisteredListener registerButton(@NotNull String name, @NotNull Consumer<ButtonInteractionInfo> consumer) {
-        return getSbds().getButtonInteractionManager().registerListener(this, name, consumer);
-    }
-
-    public @NotNull InteractionManager.IRegisteredListener registerStringDropdown(@NotNull String name, @NotNull Consumer<StringDropdownInteractionInfo> consumer) {
-        return getSbds().getStringDropdownInteractionManager().registerListener(this, name, consumer);
-    }
-
-    public @NotNull InteractionManager.IRegisteredListener registerEntityDropdown(@NotNull String name, @NotNull Consumer<EntityDropdownInteractionInfo> consumer) {
-        return getSbds().getEntityDropdownInteractionManager().registerListener(this, name, consumer);
-    }
-
-    public @NotNull IContextCommandManager.RegisteredContextCommand registeredContextCommand(@NotNull ContextCommandBase base) {
-        return getSbds().getContextCommandManager().registerContextCommand(this, base);
-    }
-
-    public void addModuleTranslations() {
-        getSbds().getTranslationManager().addModuleTranslations(this);
-    }
-
-    public @NotNull IRepository createRepository(@NotNull String name, @NotNull RepositoryHandler<?> handler) {
-        return getDatabase().createRepository(getModule(), name, handler);
-    }
-
-    public void registerEvents(@NotNull Listener listener) {
-        getSbds().getEventManager().registerEvents(this, listener);
-    }
-
-    public @NotNull IServiceProvider.RegisteredService registerService(@NotNull Object obj) {
-        return getSbds().getServiceProvider().registerService(this, obj);
-    }
-
-    public @Nullable <T> T getService(@NotNull Class<T> clazz) {
-        return getSbds().getServiceProvider().getService(clazz);
-    }
+    // <-- пусто!
 
     //
     // CONFIG
     //
-
-    public @NotNull YamlConfiguration saveDefaultConfig() {
-        return saveDefaultConfig("config.yml");
-    }
-
-    public @NotNull YamlConfiguration saveDefaultConfig(@NotNull String fileName) {
-
-        Objects.requireNonNull(fileName, "filename == null");
-
-        File configFile = new File(getModule().getDataFolder(), fileName);
-        try {
-            checkFiles(Map.of(fileName, fileName));
-            getConfig().load(configFile);
-        }
-
-        catch (IOException | InvalidConfigurationException e) {
-            getLogger().warn("Failed to load configuration file `{}`", fileName, e);
-        }
-
-        return getConfig();
-
-    }
 
     public void checkFiles(@NotNull Map<String, String> map) {
         Objects.requireNonNull(map, "map == null");

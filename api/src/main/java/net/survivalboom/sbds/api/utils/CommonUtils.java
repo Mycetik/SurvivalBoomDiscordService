@@ -2,13 +2,12 @@ package net.survivalboom.sbds.api.utils;
 
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.survivalboom.sbds.api.utils.typemap.TypeMap;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
+import org.spongepowered.configurate.ConfigurationNode;
 
 import java.io.File;
 import java.io.IOException;
@@ -133,6 +132,24 @@ public class CommonUtils {
         String decodedPath = URLDecoder.decode(jarPath, StandardCharsets.UTF_8);
 
         return new File(decodedPath);
+
+    }
+
+    //
+    // TEXT
+    //
+
+    public static @Nullable Character checkString(@NotNull String string, @NotNull String allowed) {
+
+        for (char c : string.toCharArray()) {
+
+            if (allowed.indexOf(c) == -1) {
+                return c;
+            }
+
+        }
+
+        return null;
 
     }
 
@@ -449,19 +466,7 @@ public class CommonUtils {
     // YAML
     //
 
-    public static @NotNull ConfigurationSection getOrCreateSection(@NotNull ConfigurationSection configuration, @NotNull String path) {
-
-        Objects.requireNonNull(configuration, "configuration == null");
-        Objects.requireNonNull(path, "path == null");
-
-        ConfigurationSection out = configuration.getConfigurationSection(path);
-        if (out == null) out = configuration.createSection(path);
-
-        return out;
-
-    }
-
-    public static @NotNull Properties getPropertiesFromYaml(@NotNull ConfigurationSection section) {
+    public static @NotNull Properties getPropertiesFromYaml(@NotNull ConfigurationNode section) {
 
         Properties properties = new Properties();
         properties.putAll(getStringMapFromYaml(section));
@@ -470,32 +475,31 @@ public class CommonUtils {
 
     }
 
-    public static @NotNull Map<String, String> getStringMapFromYaml(@NotNull ConfigurationSection section) {
-
-        Map<String, String> map = new HashMap<>();
-        section.getKeys(false).forEach(k -> loadPropertiesMap(section, map, k));
-
-        return map;
-
+    public static @NotNull Map<String, String> getStringMapFromYaml(@NotNull ConfigurationNode section) {
+        return loadPropertiesMap(section, new HashMap<>());
     }
 
-    private static void loadPropertiesMap(@NotNull ConfigurationSection configuration, @NotNull Map<String, String> map, @NotNull String path) {
+    private static Map<String, String> loadPropertiesMap(@NotNull ConfigurationNode node, @NotNull Map<String, String> map) {
 
-        ConfigurationSection section = configuration.getConfigurationSection(path);
-        if (section != null) {
-            section.getKeys(false).forEach(k -> loadPropertiesMap(configuration, map, path + "." + k));
-            return;
-        }
+        for (ConfigurationNode child : node.childrenMap().values()) {
 
-        map.put(path, configuration.getString(path));
+            if (!child.isMap()) {
 
-    }
+                String path = child.path().toString();
 
-    public static @NotNull Map<String, Object> mapFromSection(@NotNull ConfigurationSection section) {
+                String string = child.getString();
+                if (string == null) {
+                    continue;
+                }
 
-        Map<String, Object> map = new HashMap<>();
-        for (String key : section.getKeys(true)) {
-            map.put(key, section.get(key));
+                map.put(path, string);
+
+                continue;
+
+            }
+
+            loadPropertiesMap(child, map);
+
         }
 
         return map;

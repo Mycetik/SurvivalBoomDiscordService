@@ -14,13 +14,14 @@ import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.Listener;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
+import net.survivalboom.sbds.core.commands.parser.SlashCommandParser;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
-import net.survivalboom.sbds.core.translations.TranslationManager;
+import net.survivalboom.sbds.core.interaction.command.CommandLocalizator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -30,13 +31,13 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
     private final CommandInteractionManager commandInteractionManager;
 
-    private final SlashCommandLocalizator localizator;
+    private final CommandLocalizator localizator;
 
 
     public SlashCommandManager(@NotNull SBDS sbds) {
         super("SlashCommandManager", sbds, true);
         this.commandInteractionManager = sbds.getCommandInteractionManager();
-        this.localizator = new SlashCommandLocalizator(sbds.getTranslationManager());
+        this.localizator = new CommandLocalizator(sbds.getTranslationManager());
     }
 
     @Override
@@ -142,50 +143,9 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 //    }
 
 
-
-    private List<OptionData> createCommandOptions(@NotNull Command command) {
-
-        List<OptionData> out = new ArrayList<>();
-        for (CommandArgument argument : command.arguments()) {
-
-            if (!argument.scopes().contains(ArgumentScope.SLASH)) continue;
-
-            OptionData optionData = argument.argument().build(argument);
-            out.add(optionData);
-
-        }
-
-        return out;
-
-    }
-
-    private void addSlashSubCommands(@NotNull SlashCommandData slash, @NotNull Command command) {
-
-        for (Command subcommand : command.subcommands()) {
-
-            String name = subcommand.getName();
-            String description = Objects.requireNonNullElse(subcommand.description(), "- ");
-
-            if (!subcommand.hasSubcommands()) {
-                slash.addSubcommands(new SubcommandData(name, description).addOptions(createCommandOptions(subcommand)));
-                continue;
-            }
-
-
-            SubcommandGroupData subcommandGroup = new SubcommandGroupData(name, description);
-            for (Command subsubcommand : subcommand.subcommands()) {
-                subcommandGroup.addSubcommands(new SubcommandData(subsubcommand.getName(), Objects.requireNonNullElse(subsubcommand.description(), "- ")).addOptions(createCommandOptions(subsubcommand)));
-            }
-
-            slash.addSubcommandGroups(subcommandGroup);
-
-        }
-
-    }
-
     @EventHandler
     public void onGuildJoin(@NotNull GuildJoinEvent event) {
-        commandInteractionManager.update(event.getGuild());
+        commandInteractionManager.updateGuild(event.getGuild());
     }
 
     @EventHandler

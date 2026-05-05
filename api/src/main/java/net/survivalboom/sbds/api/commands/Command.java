@@ -1,279 +1,309 @@
 package net.survivalboom.sbds.api.commands;
 
-import net.dv8tion.jda.annotations.UnknownNullability;
-import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.commands.argument.internal.SubCommandArgument;
-import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.ToIntFunction;
 
 public class Command {
 
+    // COMMAND BASE //
+
     private final String name;
 
-    private final IModule module;
-
-
-    @Nullable private final CommandBase origin;
-
+    private final CommandExecutor<?> executor;
 
     private final List<CommandArgument> arguments = new ArrayList<>();
 
-    private final List<Command> subcommands = new ArrayList<>();
-
-
     private final List<String> aliases = new ArrayList<>();
 
+    // COMMAND INFO //
 
-    private String permission;
+    private final @Nullable String description;
 
-    private boolean defaultPermission;
+    private final @Nullable String translationKey;
 
+    // PERMISSION //
 
-    private @Nullable String description;
+    private final @Nullable String permission;
 
-    private @Nullable String translationKey;
-
-    private @Nullable String usage;
-
-
-    private boolean global = false;
-
-    private boolean guild = true;
+    private final boolean defaultPermission;
 
 
-    private CommandExecutor executor;
+    public Command(
+            @NotNull String name,
+            @NotNull CommandExecutor<?> executor,
+            @Nullable Collection<CommandArgument> arguments,
+            @Nullable Collection<String> aliases,
 
+            @Nullable String description,
+            @Nullable String translationKey,
 
-    public Command(@NotNull String name, @Nullable IModule module, @Nullable CommandBase origin) {
+            @Nullable String permission,
+            boolean defaultPermission
+    ) {
+
         Objects.requireNonNull(name, "name == null");
+        Objects.requireNonNull(executor, "executor == null");
+
         this.name = name;
-        this.origin = origin;
-        this.module = module;
-    }
+        this.executor = executor;
 
-    public static @NotNull Command create(@NotNull String name, @NotNull IModule module) {
+        this.description = description;
+        this.translationKey = translationKey;
 
-        Objects.requireNonNull(module, "module == null");
-        Objects.requireNonNull(name, "name == null");
-
-        return new Command(name, module, null);
-
-    }
-
-    public @NotNull Command withPermission(@Nullable String permission, boolean defaultPermission) {
         this.permission = permission;
         this.defaultPermission = defaultPermission;
-        return this;
-    }
 
-    public @NotNull Command withDescription(@Nullable String description) {
-        this.description = description;
-        return this;
-    }
-
-    public @NotNull Command withTranslationKey(@Nullable String key) {
-        this.translationKey = key;
-        return this;
-    }
-
-    public @NotNull Command withUsage(@Nullable String usage) {
-        this.usage = usage;
-        return this;
-    }
-
-
-    public @NotNull Command withArguments(@NotNull CommandArgument... arguments) {
-
-        this.arguments.addAll(Arrays.asList(arguments));
-
-        sortArguments();
-
-        return this;
-
-    }
-
-    public @NotNull Command withAliases(@NotNull String... aliases) {
-        Objects.requireNonNull(aliases, "aliases == null");
-        this.aliases.addAll(List.of(aliases));
-        return this;
-    }
-
-    public @NotNull Command withAliases(@NotNull List<String> aliases) {
-        Objects.requireNonNull(aliases, "aliases == null");
-        this.aliases.addAll(aliases);
-        return this;
-    }
-
-
-
-    public @NotNull Command setGlobal(boolean v) {
-        this.global = v;
-        return this;
-    }
-
-    public @NotNull Command setGuild(boolean v) {
-        this.guild = v;
-        return this;
-    }
-
-
-
-
-    public @NotNull Command withArguments(@NotNull Iterable<CommandArgument> arguments) {
-
-        if (hasSubcommands()) throw new IllegalStateException("Couldn't add argument to command with subcommands");
-
-        Objects.requireNonNull(arguments, "arguments == null");
-        for (CommandArgument argument : arguments) {
-            this.arguments.add(argument);
+        if (arguments != null) {
+            this.arguments.addAll(arguments);
         }
 
-        sortArguments();
-
-        return this;
-
-    }
-
-    public @NotNull Command withArgument(@NotNull CommandArgument argument) {
-
-        if (hasSubcommands()) throw new IllegalStateException("Couldn't add argument to command with subcommands");
-
-        Objects.requireNonNull(argument, "argument == null");
-
-        arguments.add(argument);
-        sortArguments();
-
-        return this;
+        if (aliases != null) {
+            this.aliases.addAll(aliases);
+        }
 
     }
 
-    private void sortArguments() {
-
-        ToIntFunction<CommandArgument> function = argument -> {
-
-            int price = argument.index();
-            if (!argument.required()) price += 10;
-
-            return price;
-
-        };
-
-        Comparator<CommandArgument> comparator = Comparator.comparingInt(function);
-
-        arguments.sort(comparator);
-
-    }
-
-
-
-
-
-    public @NotNull Command executes(@NotNull CommandExecutor executor) {
-        Objects.requireNonNull(executor, "executor == null");
-        this.executor = executor;
-        return this;
-    }
-
-
-    public @NotNull Command withSubcommand(@NotNull Command command) {
-
-        Objects.requireNonNull(command, "command == null");
-
-        subcommands.add(command);
-
-        arguments.clear();
-        arguments.add(CommandArgument.create("subcommand", new SubCommandArgument(subcommands)));
-
-        return command;
-
-    }
-
-    public @NotNull Command withSubcommand(@NotNull CommandBase base, @NotNull ISBDS sbds, @Nullable IModule module) {
-        return withSubcommand(base.build(sbds, module));
-    }
-
-
-
-
-
-
+    // COMMAND BASE //
 
     public @NotNull String getName() {
         return name;
     }
 
-
-
-    public @UnknownNullability IModule module() {
-        return module;
-    }
-
-    public @Nullable CommandBase origin() {
-        return origin;
-    }
-
-    public @NotNull List<String> aliases() {
-        return new ArrayList<>(aliases);
-    }
-
-    public @NotNull CommandExecutor executor() {
+    public @NotNull CommandExecutor<?> getExecutor() {
         return executor;
     }
 
-    public @NotNull List<Command> subcommands() {
-        return subcommands;
-    }
-
-    public @NotNull List<CommandArgument> arguments() {
+    public @NotNull List<CommandArgument> getArguments() {
         return new ArrayList<>(arguments);
     }
 
-    public @NotNull List<CommandArgument> requiredArguments() {
-        return arguments().stream().filter(CommandArgument::required).toList();
+    public @NotNull List<String> getAliases() {
+        return new ArrayList<>(aliases);
     }
 
-    public @NotNull List<CommandArgument> optionalArguments() {
-        return arguments().stream().filter(a -> !a.required()).toList();
-    }
+    // COMMAND INFO //
 
-
-    public @Nullable String usage() {
-        return usage;
-    }
-
-    public @Nullable String description() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public @Nullable String translationKey() {
+    public @Nullable String getTranslationKey() {
         return translationKey;
     }
 
+    // PERMISSION //
 
-    public boolean global() {
-        return global;
-    }
-
-    public boolean guild() {
-        return guild;
-    }
-
-
-    public @Nullable String permission() {
+    public @Nullable String getPermission() {
         return permission;
     }
 
-    public boolean defaultPermission() {
+    public boolean isDefaultPermission() {
         return defaultPermission;
     }
 
-    public boolean hasSubcommands() {
-        return !subcommands.isEmpty();
+    // COPY //
+
+    public @NotNull Builder copy() {
+        return new Builder(this);
+    }
+
+
+    //
+    // BUILDER
+    //
+
+    public static @NotNull Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+
+        // COMMAND BASE //
+
+        private String name;
+
+        private CommandExecutor<?> executor;
+
+        private final List<CommandArgument> arguments = new ArrayList<>();
+
+        private final List<String> aliases = new ArrayList<>();
+
+        // COMMAND INFO //
+
+        private @Nullable String description;
+
+        private @Nullable String translationKey;
+
+        // PERMISSION //
+
+        private @Nullable String permission;
+
+        private boolean defaultPermission;
+
+
+        private Builder() {}
+
+        private Builder(Builder builder) {
+
+            this.name = builder.name;
+            this.executor = builder.executor;
+
+            this.arguments.addAll(builder.arguments);
+            this.aliases.addAll(builder.aliases);
+
+            this.description = builder.description;
+            this.translationKey = builder.translationKey;
+
+            this.permission = builder.permission;
+            this.defaultPermission = builder.defaultPermission;
+
+        }
+
+        private Builder(Command command) {
+
+            this.name = command.name;
+            this.executor = command.executor;
+
+            this.arguments.addAll(command.arguments);
+            this.aliases.addAll(command.aliases);
+
+            this.description = command.description;
+            this.translationKey = command.translationKey;
+
+            this.permission = command.permission;
+            this.defaultPermission = command.defaultPermission;
+
+        }
+
+        // NAME //
+
+        public @NotNull Builder setName(@NotNull String name) {
+            this.name = name;
+            return this;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        // EXECUTOR //
+
+        public @NotNull Builder setExecutor(@NotNull CommandExecutor<?> executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        public CommandExecutor<?> getExecutor() {
+            return executor;
+        }
+
+        // ARGUMENTS //
+
+        public @NotNull Builder setArguments(@Nullable Collection<CommandArgument> arguments) {
+
+            this.arguments.clear();
+
+            if (arguments != null) {
+                this.arguments.addAll(arguments);
+            }
+
+            return this;
+
+        }
+
+        public @NotNull Builder addArgument(@NotNull CommandArgument argument) {
+            Objects.requireNonNull(argument, "argument == null");
+            this.arguments.add(argument);
+            return this;
+        }
+
+        public @NotNull List<CommandArgument> getArguments() {
+            return arguments;
+        }
+
+        // ALIASES //
+
+        public @NotNull Builder setAliases(@Nullable Collection<String> aliases) {
+
+            this.aliases.clear();
+
+            if (aliases != null) {
+                this.aliases.addAll(aliases);
+            }
+
+            return this;
+
+        }
+
+        public @NotNull Builder addAlias(@NotNull String alias) {
+
+            Objects.requireNonNull(alias, "alias == null");
+            this.aliases.add(alias);
+
+            return this;
+
+        }
+
+        public @NotNull List<String> getAliases() {
+            return aliases;
+        }
+
+        // DESCRIPTION //
+
+        public @NotNull Builder setDescription(@Nullable String description) {
+            this.description = description;
+            return this;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        // TRANSLATION KEY //
+
+        public @NotNull Builder setTranslation(@Nullable String translationKey) {
+            this.translationKey = translationKey;
+            return this;
+        }
+
+        public String getTranslationKey() {
+            return translationKey;
+        }
+
+        // PERMISSION //
+
+        public @NotNull Builder setPermission(@Nullable String permission) {
+            this.permission = permission;
+            return this;
+        }
+
+        public String getPermission() {
+            return permission;
+        }
+
+        // DEFAULT PERMISSION //
+
+        public @NotNull Builder setDefaultPermission(boolean value) {
+            this.defaultPermission = value;
+            return this;
+        }
+
+        public boolean isDefaultPermission() {
+            return defaultPermission;
+        }
+
+        // BUILD //
+
+        public @NotNull Command build() {
+            return new Command(name, executor, arguments, aliases, description, translationKey, permission, defaultPermission);
+        }
+
+        public @NotNull Builder copy() {
+            return new Builder(this);
+        }
+
     }
 
 }

@@ -53,6 +53,8 @@ public class MusicModule extends ModuleMain {
 
         addModuleTranslations();
 
+
+
         List<CommandBase> commands = prepareCommands();
         commands.forEach(this::registerSlashCommand);
 

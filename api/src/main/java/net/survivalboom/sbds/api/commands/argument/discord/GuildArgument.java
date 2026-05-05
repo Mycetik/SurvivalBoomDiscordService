@@ -1,42 +1,42 @@
 package net.survivalboom.sbds.api.commands.argument.discord;
 
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
-import net.survivalboom.sbds.api.commands.argument.SimpleArgument;
+import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
 import org.jetbrains.annotations.NotNull;
 
-public class GuildArgument extends SimpleArgument<Guild> {
+public class GuildArgument extends Argument<Guild> {
 
-    @NotNull
     @Override
-    protected Guild parse0(@NotNull Object input, @NotNull Argument.ArgumentResources resources) throws ArgumentParseException {
+    public @NotNull Guild parse(@NotNull Object input, @NotNull ArgumentParsingContext context) throws ArgumentParseException {
 
-        JDA bot = resources.sbds().getBot();
-
+        String guildID;
         if (input instanceof String string) {
-            Guild guild = bot.getGuildById(string);
-            if (guild == null) throw new ArgumentParseException("Guild with id `" + string + "` not found");
-            return guild;
+            guildID = string;
         }
 
-        if (input instanceof OptionMapping optionMapping) {
-            String string = optionMapping.getAsString();
-            Guild guild = bot.getGuildById(string);
-            if (guild == null) throw new ArgumentParseException("Guild with id `" + string + "` not found");
-            return guild;
+        else if (input instanceof OptionMapping option) {
+            guildID = option.getAsString();
         }
 
-        throw new ArgumentParseException();
+        else {
+            throw new ArgumentParseException();
+        }
+
+        Guild guild = context.sbds().getBot().getGuildById(guildID);
+        if (guild == null) {
+            throw new ArgumentParseException("Guild with id `" + guildID + "` not found");
+        }
+
+        return guild;
 
     }
 
-    @NotNull
     @Override
-    public OptionType getOptionType() {
+    public @NotNull OptionType getOptionType() {
         return OptionType.STRING;
     }
 

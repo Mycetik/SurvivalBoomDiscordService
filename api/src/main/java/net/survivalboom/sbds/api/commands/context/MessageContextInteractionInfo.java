@@ -7,8 +7,11 @@ import org.slf4j.Logger;
 
 public class MessageContextInteractionInfo extends ContextInteractionInfo<MessageContextInteractionEvent> {
 
-    public MessageContextInteractionInfo(@NotNull MessageContextInteractionEvent event, @NotNull ISBDS sbds, @NotNull Logger logger) {
-        super(event, sbds, logger);
+    public MessageContextInteractionInfo(
+            @NotNull MessageContextInteractionEvent event,
+            @NotNull ISBDS sbds
+    ) {
+        super(event, sbds);
     }
 
 }

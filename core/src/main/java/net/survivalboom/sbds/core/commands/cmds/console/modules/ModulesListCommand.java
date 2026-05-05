@@ -1,6 +1,6 @@
 package net.survivalboom.sbds.core.commands.cmds.console.modules;
 
-import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-@Command(name = "list")
+@CommandClass(name = "list")
 public class ModulesListCommand extends CommandBase implements ConsoleCommand {
 
     @Override

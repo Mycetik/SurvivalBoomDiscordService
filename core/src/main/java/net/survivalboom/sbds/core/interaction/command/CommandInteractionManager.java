@@ -2,103 +2,403 @@ package net.survivalboom.sbds.core.interaction.command;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
-import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
+import net.dv8tion.jda.api.interactions.commands.build.*;
+import net.dv8tion.jda.api.interactions.commands.Command.Type;
+import net.survivalboom.sbds.api.commands.*;
+import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
+import net.survivalboom.sbds.api.interaction.command.ICommandInteractionManager;
+import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.SBDS;
+import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.*;
 
-public class CommandInteractionManager extends Manager {
+public class CommandInteractionManager extends Manager implements ICommandInteractionManager {
 
-    private static final Logger log = LoggerFactory.getLogger(CommandInteractionManager.class);
+    private static final Logger log = LoggerFactory.getLogger(CommandInteractionManager.class.getSimpleName());
+
+    private static final int QUEUE_INTERVAL = 5000;
+
 
     private final SBDS sbds;
 
+    private final CommandLocalizator localizator;
 
-    private final List<Supplier<List<CommandData>>> guildCommandUpdates = new ArrayList<>();
+    private final Map<AbstractCommandManager.RegisteredCommand<?, ?>, RegisteredCommandData> registeredCommands = new HashMap<>();
 
-    private final List<Supplier<List<CommandData>>> globalCommandUpdates = new ArrayList<>();
+
+    private ISchedulerTask task;
+
+    private boolean updateRequested = false;
+
+    private long lastTimestamp;
 
 
     public CommandInteractionManager(@NotNull SBDS sbds) {
         this.sbds = sbds;
+        this.localizator = new CommandLocalizator(sbds.getTranslationManager());
     }
 
+    //
+    // MANAGER
+    //
 
     @Override
     protected void init0() {
-
+        this.task = sbds.getScheduler().schedule0(null, "CommandInteractionManagerQueue", task -> task(), 6000, 1000);
     }
 
     @Override
     protected void shutdown0() {
-        guildCommandUpdates.clear();
-        globalCommandUpdates.clear();
+
+        task.cancelAndWait(2000, true);
+        task = null;
+
+        registeredCommands.clear();
+
     }
 
-    public void putGuild(@NotNull Supplier<List<CommandData>> supplier) {
-        guildCommandUpdates.add(supplier);
-    }
+    //
+    // REG/UNREG
+    //
 
-    public void putGlobal(@NotNull Supplier<List<CommandData>> supplier) {
-        globalCommandUpdates.add(supplier);
-    }
+    public synchronized @NotNull RegisteredCommandData registerCommand(
+            @NotNull AbstractCommandManager.RegisteredCommand<?, ?> reg,
+            @NotNull Type type
+    ) {
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void update() {
-
+        Objects.requireNonNull(reg, "reg == null");
+        Objects.requireNonNull(type, "type == null");
         checkValid();
 
-        List<CommandData> guildCommands = guildCommandUpdates.stream().map(this::getCommandData).filter(Objects::nonNull).flatMap(List::stream).toList();
-        List<CommandData> globalCommands = globalCommandUpdates.stream().map(this::getCommandData).filter(Objects::nonNull).flatMap(List::stream).toList();
+        if (registeredCommands.containsKey(reg)) {
+            throw new IllegalArgumentException("That command object is already registered");
+        }
 
-        JDA jda = sbds.getBot();
+        Command command = reg.getCommand();
 
-        CommandListUpdateAction action = jda.updateCommands();
-        globalCommands.forEach(action::addCommands);
-        action.queue();
+        CommandData commandData = switch (type) {
+            case SLASH -> createSlashCommandData(command);
+            case USER, MESSAGE -> createContextCommandData(command, type);
+            default -> throw new IllegalArgumentException("Invalid command type `" + type + "`");
+        };
 
-        jda.getGuilds().forEach(guild -> {
-            CommandListUpdateAction a = guild.updateCommands();
-            guildCommands.forEach(a::addCommands);
-            a.queue();
-        });
+        RegisteredCommandData registeredCommandData = new RegisteredCommandData(reg, commandData, type, this);
+        registeredCommands.put(reg, registeredCommandData);
+
+        return registeredCommandData;
 
     }
+
+    public synchronized void unregisterCommand(@NotNull AbstractCommandManager.RegisteredCommand<?, ?> command) {
+
+        if (!registeredCommands.containsKey(command)) {
+            throw new IllegalArgumentException("Command object `" + command + "` is not registered");
+        }
+
+        registeredCommands.remove(command);
+
+    }
+
+    //
+    // UPDATE
+    //
+
+    @Override
+    public void requestGlobalUpdate() {
+        checkValid();
+        this.updateRequested = true;
+    }
+
+    private void task() {
+
+        if (!updateRequested) {
+            return;
+        }
+
+        long time = System.currentTimeMillis();
+        if (lastTimestamp + QUEUE_INTERVAL > time) {
+            return;
+        }
+
+        this.lastTimestamp = time;
+        this.updateRequested = false;
+
+        log.info("Updating globally {} commands...", registeredCommands.size());
+        try {
+            updateGlobal();
+        }
+
+        catch (RuntimeException e) {
+            log.error("Failed to update commands. Your commands are broken!", e);
+        }
+
+    }
+
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void update(@NotNull Guild guild) {
+    private void updateGlobal() {
 
-        Objects.requireNonNull(guild, "guild == null");
+        List<CommandData> global = registeredCommands.values().stream()
+                .filter(command -> command.isGlobal)
+                .map(command -> command.commandData)
+                .toList();
 
-        List<CommandData> guildCommands = guildCommandUpdates.stream().map(this::getCommandData).filter(Objects::nonNull).flatMap(List::stream).toList();
+        JDA bot = sbds.getBot();
 
-        var action = guild.updateCommands();
-        guildCommands.forEach(action::addCommands);
+        bot.updateCommands().addCommands(global).queue();
 
-        action.queue();
+        bot.getGuilds().forEach(this::updateGuild);
 
     }
 
-    private @Nullable List<CommandData> getCommandData(@NotNull Supplier<List<CommandData>> supplier) {
+    @Override
+    public synchronized void updateGuild(@NotNull Guild guild) {
 
-        try {
-            return supplier.get();
+        Objects.requireNonNull(guild, "guild == null");
+        checkValid();
+
+        List<CommandData> list = registeredCommands.values().stream()
+                .filter(command -> command.isGuildGlobal || command.guildRegistrations.contains(guild))
+                .map(command -> command.commandData)
+                .toList();
+
+        log.info("Updating commands for `{}`. Registering {} commands.", guild, list.size());
+
+        guild.updateCommands().addCommands(list).queue();
+
+    }
+
+    //
+    // COMMAND DATA
+    //
+
+    // CONTEXT //
+
+    private @NotNull CommandData createContextCommandData(@NotNull Command command, @NotNull net.dv8tion.jda.api.interactions.commands.Command.Type type) {
+        return Commands.context(type, command.getName());
+    }
+
+    // SLASH //
+
+    private @NotNull SlashCommandData createSlashCommandData(@NotNull Command command) {
+
+        String description = Objects.requireNonNullElse(command.getDescription(), "-");
+        SlashCommandData commandData = Commands.slash(command.getName(), description);
+
+        commandData.setLocalizationFunction(localizator.createLocalizationFunction(command));
+
+        List<CommandArgument> subcommandArguments = command.getArguments().stream()
+                .filter(argument -> argument.argument() instanceof SubCommandArgument)
+                .toList();
+
+        if (subcommandArguments.size() > 1) {
+            throw new IllegalArgumentException("Provided command has more than 1 subcommand");
         }
 
-        catch (Throwable t) {
-            log.error("An error occurred in command update processor.", t);
+        boolean hasSubCommands = !subcommandArguments.isEmpty();
+
+        if (hasSubCommands) {
+            List<Command> subcommands = ((SubCommandArgument) subcommandArguments.getFirst().argument()).getSubcommands();
+            addSlashSubCommands(commandData, subcommands);
         }
 
-        return null;
+        else {
+            commandData.addOptions(createSlashCommandOptions(command));
+        }
+
+        return commandData;
+
+    }
+
+    private void addSlashSubCommands(@NotNull SlashCommandData slash, @NotNull List<Command> subcommands) {
+
+        for (Command command : subcommands) {
+
+            String name = command.getName();
+            String description = Objects.requireNonNullElse(command.getDescription(), "- ");
+
+            List<CommandArgument> subcommandArguments = command.getArguments().stream()
+                    .filter(argument -> argument.argument() instanceof SubCommandArgument)
+                    .toList();
+
+            if (subcommandArguments.size() > 1) {
+                throw new IllegalArgumentException("Provided sub-command`" + name + "` has more than 1 subcommand");
+            }
+
+            boolean hasSubCommands = !subcommandArguments.isEmpty();
+
+            if (!hasSubCommands) {
+                slash.addSubcommands(new SubcommandData(name, description).addOptions(createSlashCommandOptions(command)));
+                continue;
+            }
+
+            List<Command> subCommands = ((SubCommandArgument) subcommandArguments.getFirst().argument()).getSubcommands();
+            SubcommandGroupData subcommandGroup = new SubcommandGroupData(name, description);
+
+            for (Command subcommand : subcommands) {
+                subcommandGroup.addSubcommands(new SubcommandData(subcommand.getName(), Objects.requireNonNullElse(subcommand.getDescription(), "- ")).addOptions(createSlashCommandOptions(subcommand)));
+            }
+
+            slash.addSubcommandGroups(subcommandGroup);
+
+        }
+
+    }
+
+    private List<OptionData> createSlashCommandOptions(@NotNull Command command) {
+
+        List<OptionData> out = new ArrayList<>();
+        for (CommandArgument argument : command.getArguments()) {
+
+            if (!argument.scopes().contains(ArgumentScope.SLASH)) {
+                continue;
+            }
+
+            OptionData optionData = argument.argument().createOptionData(argument);
+            out.add(optionData);
+
+        }
+
+        return out;
+
+    }
+
+    public static class RegisteredCommandData implements IRegisteredCommandData {
+
+        private final CommandData commandData;
+
+        private final ICommandManager.IRegisteredCommand<?, ?> command;
+
+        private final Type type;
+
+        private final CommandInteractionManager manager;
+
+
+        private boolean isGlobal = false;
+
+        private boolean isGuildGlobal = true;
+
+
+        private final List<Guild> guildRegistrations = new ArrayList<>();
+
+
+        public RegisteredCommandData(
+                @NotNull ICommandManager.IRegisteredCommand<?, ?> command,
+                @NotNull CommandData commandData,
+                @NotNull Type type,
+                @NotNull CommandInteractionManager manager
+        ) {
+            this.command = command;
+            this.commandData = commandData;
+            this.type = type;
+            this.manager = manager;
+        }
+
+        // INFO //
+
+        @Override
+        public @NotNull CommandData getCommandData() {
+            return commandData;
+        }
+
+        @Override
+        public @NotNull ICommandManager.IRegisteredCommand<?, ?> getCommand() {
+            return command;
+        }
+
+        @Override
+        public @NotNull ICommandInteractionManager getManager() {
+            return manager;
+        }
+
+        @Override
+        public @NotNull Type getType() {
+            return type;
+        }
+
+        // GLOBAL //
+
+        @Override
+        public boolean isGlobal() {
+            return isGlobal;
+        }
+
+        @Override
+        public void setGlobal(boolean value) {
+
+            this.isGlobal = value;
+
+            if (value) {
+                this.isGuildGlobal = false;
+                this.guildRegistrations.clear();
+            }
+
+        }
+
+        // GUILD //
+
+        @Override
+        public boolean isGuildGlobal() {
+            return isGuildGlobal;
+        }
+
+        @Override
+        public void setGuildGlobal(boolean value) {
+
+            this.isGuildGlobal = value;
+
+            if (value) {
+                this.isGlobal = false;
+                this.guildRegistrations.clear();
+            }
+
+        }
+
+
+
+        @Override
+        public @NotNull List<Guild> getGuildRegistrations() {
+            return new ArrayList<>(guildRegistrations);
+        }
+
+        @Override
+        public void setGuildRegistrations(@Nullable Collection<Guild> collection) {
+
+            this.guildRegistrations.clear();
+
+            if (collection == null) {
+                return;
+            }
+
+            this.isGuildGlobal = false;
+            this.isGlobal = false;
+
+            this.guildRegistrations.addAll(collection);
+
+        }
+
+        @Override
+        public void addGuildRegistration(@NotNull Guild guild) {
+
+            Objects.requireNonNull(guild, "guild == null");
+
+            this.isGuildGlobal = false;
+            this.isGlobal = false;
+
+            this.guildRegistrations.add(guild);
+
+        }
+
+        @Override
+        public void removeGuildRegistration(@NotNull Guild guild) {
+            this.guildRegistrations.remove(guild);
+        }
 
     }
 

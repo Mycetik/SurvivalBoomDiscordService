@@ -2,7 +2,7 @@ package net.survivalboom.sbds.core.commands.cmds.console;
 
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.ICommandManager;
-import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Command(name = "help", description = "Shows a list of available commands")
+@CommandClass(name = "help", description = "Shows a list of available commands")
 public class HelpCommand extends CommandBase implements ConsoleCommand {
 
     @Override

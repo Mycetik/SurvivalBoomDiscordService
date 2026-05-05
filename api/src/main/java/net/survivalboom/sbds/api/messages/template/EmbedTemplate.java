@@ -3,63 +3,52 @@ package net.survivalboom.sbds.api.messages.template;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.configurate.objectmapping.ConfigSerializable;
+import org.spongepowered.configurate.objectmapping.meta.PostProcess;
+import org.spongepowered.configurate.objectmapping.meta.Setting;
+import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
 
+@ConfigSerializable
 public class EmbedTemplate {
 
     // AUTHOR //
 
-    @Nullable
-    private final String author;
-
-    @Nullable
-    private final String authorUrl;
-
-    @Nullable
-    private final String authorIconUrl;
+    private @Setting("author") @Nullable String author;
+    private @Setting("author-url") @Nullable String authorUrl;
+    private @Setting("author-icon") @Nullable String authorIconUrl;
 
     // BODY //
 
-    @Nullable
-    private final String title;
+    private @Setting("title") @Nullable String title;
+    private @Setting("description") @Nullable String description;
 
-    @Nullable
-    private final Color color;
+    private @Setting("url") @Nullable String url;
+    private @Setting("thumbnail") @Nullable String thumbnailUrl;
 
-    @Nullable
-    private final String description;
-
-    @Nullable
-    private final String url;
-
-    @Nullable
-    private final String thumbnailUrl;
+    private @Setting("color") @Nullable Color color;
 
     // FOOTER //
 
-    @Nullable
-    private final String footer;
+    private @Setting("footer") @Nullable String footer;
+    private @Setting("footer-icon") @Nullable String footIconUrl;
 
-    @Nullable
-    private final String footIconUrl;
-
-    @Nullable
-    private final String timestamp;
+    private @Setting("timestamp") @Nullable String timestamp;
 
     // FIELDS //
 
-    @NotNull
-    private final List<EmbedField> fields = new ArrayList<>();
+    @Setting("fields")
+    private @NotNull List<EmbedField> fields = new ArrayList<>();
 
 
-    private EmbedTemplate(
+    public EmbedTemplate(
 
             // AUTHOR //
             @Nullable String author,
@@ -100,6 +89,14 @@ public class EmbedTemplate {
         if (fields != null) {
             this.fields.addAll(fields);
         }
+
+    }
+
+    @ApiStatus.Internal
+    public EmbedTemplate() {}
+
+    @PostProcess
+    private void validate() throws SerializationException {
 
     }
 
@@ -157,7 +154,12 @@ public class EmbedTemplate {
     // FIELDS
     //
 
-    public record EmbedField(@NotNull String name, @NotNull String value, boolean inline) {}
+    @ConfigSerializable
+    public record EmbedField(
+            @Setting("name") @NotNull String name,
+            @Setting("value") @NotNull String value,
+            @Setting("inline") boolean inline
+    ) {}
 
     //
     // BUILDER
@@ -165,151 +167,6 @@ public class EmbedTemplate {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    private static @NotNull EmbedTemplate fromSection(@NotNull Get section) throws InvalidEmbedException {
-
-        String author = section.getString("author");
-        String authorUrl = section.getString("author-url");
-        String authorIconUrl = section.getString("author-icon");
-
-        String title = section.getString("title");
-        String description = section.getString("description");
-        String url = section.getString("url");
-        String thumbnailUrl = section.getString("thumbnail");
-
-        String colorRaw = section.getString("color");
-        Color color;
-        if (colorRaw != null) {
-            color = color(colorRaw);
-            if (color == null) throw new InvalidEmbedException("Invalid color `" + colorRaw + "`");
-        }
-
-        else color = null;
-
-        String footer = section.getString("footer");
-        String footIconUrl = section.getString("footer-icon");
-
-        String timestamp = section.getString("timestamp");
-
-        Builder builder = builder();
-        builder.setBody(title, description, thumbnailUrl);
-        builder.setUrl(url);
-
-        builder.setAuthor(author, authorUrl, authorIconUrl);
-        builder.setColor(color);
-
-        builder.setFooter(footer, footIconUrl);
-        builder.setTimestamp(timestamp);
-
-        List<Map<?, ?>> fieldList = section.getMapList("fields");
-        if (!fieldList.isEmpty()) {
-            builder.addField(loadFields(fieldList));
-        }
-
-        return builder.build();
-
-    }
-
-    public static @NotNull EmbedTemplate fromSection(@NotNull ConfigurationSection section) throws InvalidEmbedException {
-
-        Get get = new Get() {
-
-            @Override
-            public @NotNull List<Map<?, ?>> getMapList(@NotNull String key) {
-                return section.getMapList(key);
-            }
-
-            @Override
-            public @NotNull String getSting(@NotNull String key, @NotNull String v) {
-                return section.getString(key, v);
-            }
-
-            @Override
-            public @Nullable String getString(@NotNull String key) {
-                return section.getString(key);
-            }
-
-        };
-
-        return fromSection(get);
-
-    }
-
-    public static @NotNull EmbedTemplate fromSection(@NotNull Map<?, ?> map) throws InvalidEmbedException {
-
-        Get get = new Get() {
-
-            @Override
-            @SuppressWarnings("unchecked")
-            public @NotNull List<Map<?, ?>> getMapList(@NotNull String key) {
-                return (List<Map<?, ?>>) map.get("fields");
-            }
-
-            @Override
-            public @NotNull String getSting(@NotNull String key, @NotNull String v) {
-                return (String) Objects.requireNonNullElse(map.get(key), v);
-            }
-
-            @Override
-            public @Nullable String getString(@NotNull String key) {
-                return (String) map.get(key);
-            }
-
-        };
-
-        return fromSection(get);
-
-    }
-
-    private static @NotNull List<EmbedField> loadFields(@NotNull List<Map<?, ?>> map) throws InvalidEmbedException {
-
-        List<EmbedField> out = new ArrayList<>();
-        for (int i = 0; i < map.size(); i++) {
-
-            Map<?, ?> field  = map.get(i);
-
-            String name = (String) field.get("name");
-            String value = (String) field.get("value");
-
-            Boolean inline = (Boolean) field.get("inline");
-            if (inline == null) inline = false;
-
-            if (name == null || value == null) throw new InvalidEmbedException("Invalid field `" + i + "`. Field must have string `name`, string `value` and (optional) boolean `inline` keys.");
-
-            out.add(new EmbedField(name, value, inline));
-
-        }
-
-        return out;
-
-    }
-
-    private static @Nullable Color color(@NotNull String hex) {
-
-        int resultRed, resultGreen, resultBlue;
-        try {
-            resultRed = Integer.valueOf(hex.substring(0, 2), 16);
-            resultGreen = Integer.valueOf(hex.substring(2, 4), 16);
-            resultBlue = Integer.valueOf(hex.substring(4, 6), 16);
-        }
-
-        catch (NumberFormatException e) {
-            return null;
-        }
-
-        return new Color(resultRed, resultGreen, resultBlue);
-
-    }
-
-    private interface Get {
-
-        @NotNull List<Map<?, ?>> getMapList(@NotNull String key);
-
-        @NotNull String getSting(@NotNull String key, @NotNull String v);
-
-        @Nullable String getString(@NotNull String key);
-
     }
 
     public static class Builder {
@@ -436,7 +293,7 @@ public class EmbedTemplate {
 
         }
 
-        private @NotNull Builder addField(@NotNull Collection<EmbedField> fields) {
+        private @NotNull Builder addFields(@NotNull Collection<EmbedField> fields) {
             this.fields.addAll(fields);
             return this;
         }

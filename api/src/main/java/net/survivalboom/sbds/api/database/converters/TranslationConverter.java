@@ -10,8 +10,13 @@ public class TranslationConverter implements AttributeConverter<ITranslation, St
 
     @Override
     public String convertToDatabaseColumn(ITranslation attribute) {
-        if (attribute == null) return null;
-        return attribute.getName();
+
+        if (attribute == null) {
+            return null;
+        }
+
+        return attribute.getRegistration().key().toString();
+
     }
 
     @Override

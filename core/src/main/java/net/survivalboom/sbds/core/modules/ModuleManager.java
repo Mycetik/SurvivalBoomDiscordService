@@ -1,9 +1,6 @@
 package net.survivalboom.sbds.core.modules;
 
-import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.modules.IModuleManager;
-import net.survivalboom.sbds.api.modules.InvalidModuleException;
-import net.survivalboom.sbds.api.modules.InvalidModuleMetaException;
+import net.survivalboom.sbds.api.modules.*;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import org.jetbrains.annotations.NotNull;
@@ -13,50 +10,85 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 public class ModuleManager extends Manager implements IModuleManager {
 
-    private final SBDS sbds;
+    private static final Logger log = LoggerFactory.getLogger("ModuleManager");
 
-    private final Logger logger;
+    private final SBDS sbds;
 
     private final File modulesDir;
 
     private final Map<String, Module> modules = new HashMap<>();
 
-    private final ModulesClasspath modulesClasspath = new ModulesClasspath();
+    private final ModulesClassesSharingManager classesSharingManager = new ModulesClassesSharingManager(this);
+
 
     public ModuleManager(@NotNull SBDS sbds) {
         this.sbds = sbds;
         this.modulesDir = new File(sbds.getWorkingDir(), "modules");
-        this.logger = LoggerFactory.getLogger("ModuleManager");
     }
+
+    //
+    // MANAGER
+    //
 
     @Override
     protected void init0() {
 
-        sbds.getLibrariesManager().getJarLoader().configure(modulesClasspath::findInModules);
-
-        logger.info("Loading modules...");
+        log.info("Loading modules...");
         modulesDir.mkdirs();
 
-        List<File> modulesFiles = searchForModulesFiles();
+        List<File> modulesFiles = Arrays.stream(modulesDir.listFiles())
+                .filter(file -> file.getName().endsWith(".jar"))
+                .toList();
+
         if (modulesFiles.isEmpty()) {
-            logger.info("No modules found! Skipping...");
+            log.info("No modules found! Skipping...");
             return;
         }
 
-        List<Module> modules = prepareModules(modulesFiles);
-        logger.info("Found {} modules to load! \n - {}", modules.size(), String.join(", ", modules.stream().map(loader -> String.format("%s v%s", loader.getMeta().getName(), loader.getMeta().getVersion())).toList()));
+        log.info("Found {} jar files. Loading them... \n - {}", modulesFiles.size(), String.join(", ", modulesFiles.stream().map(File::getName).toList()));
 
+        for (File file : modulesFiles) {
 
-        for (Module module : modules) {
-            loadModule(module);
+            log.info("Loading file `{}`...", file.getName());
+
+            try {
+                loadModule(file);
+            }
+
+            catch (ModuleLoadingException e) {
+                log.error("Failed to load file `{}`. Oopsie!", file.getPath(), e);
+            }
+
+            catch (ModuleRefusedException e) {
+                log.error("Module `{}` refused to load! Maybe it's mad on you?", file.getName(), e);
+            }
+
         }
 
-        for (Module module : getModules0()) {
-            enableModule(module);
+        for (Module module : modules.values()) {
+
+            log.info("Enabling `{}`...", module);
+
+            try {
+                enableModule(module);
+            }
+
+            catch (ModuleStateCallbackException e) {
+                log.error("An exception was thrown when attempted to enable module `{}`.", module, e);
+            }
+
+            catch (ModuleRefusedException e) {
+                log.error("Module `{}` refused to start! Maybe it's mad on you?", module.getName(), e);
+            }
+
         }
 
     }
@@ -64,15 +96,37 @@ public class ModuleManager extends Manager implements IModuleManager {
     @Override
     protected void shutdown0() {
 
-        logger.info("Disabling modules...");
-
-        List<Module> modules = getModules0();
-        for (Module module : modules) {
-            disableModule(module);
+        if (!modules.isEmpty()) {
+            log.info("Disabling modules...");
         }
 
-        for (Module module : modules) {
-            unloadModule(module);
+        var modules = getModules();
+        for (IModule module : modules) {
+
+            if (module.isEnabled()) {
+
+                log.info("Disabling `{}`...", module);
+
+                try {
+                    disableModule(module);
+                }
+
+                catch (ModuleStateCallbackException e) {
+                    log.error("An exception was thrown in {}.onDisable().", module.getName(), e);
+                }
+
+            }
+
+            log.info("Unloading `{}`...", module);
+
+            try {
+                unloadModule(module);
+            }
+
+            catch (ModuleStateCallbackException e) {
+                log.error("An exception was thrown in {}.onUnload().", module.getName(), e);
+            }
+
         }
 
     }
@@ -81,83 +135,155 @@ public class ModuleManager extends Manager implements IModuleManager {
     // MODULES
     //
 
-    /* LOAD/UNLOAD */
+    // LOAD/UNLOAD //
 
     @Override
-    public @Nullable Module loadModule(@NotNull File file) {
-
-        try {
-            return loadModule0(file);
-        }
-
-        catch (Throwable t) {
-            logger.error("Failed to load `{}`.", file.getName(), t);
-            return null;
-        }
-
-    }
-
-    public @Nullable Module loadModule(@NotNull Module module) {
-
-        try {
-            return loadModule1(module);
-        }
-
-        catch (Throwable t) {
-            module.closeOrReport(logger);
-            modules.values().remove(module);
-            logger.error("Failed to load `{}`.", module.getFile().getName(), t);
-            return null;
-        }
-
-    }
-
-    private @NotNull Module loadModule0(@NotNull File file) throws IOException, InvalidModuleMetaException, InvalidModuleException {
+    public synchronized @NotNull Module loadModule(@NotNull File file) throws ModuleLoadingException, ModuleRefusedException {
 
         checkValid();
 
-        if (!file.exists() || !file.isFile()) throw new IllegalArgumentException("Invalid file");
+        // Перевіряємо файл на правильність //
 
-        Module module = new Module(this, file);
-        module.readMeta();
+        if (!file.exists()) {
+            throw new IllegalArgumentException("File `" + file.getPath() + "` does not exist");
+        }
 
-        return loadModule1(module);
+        if (!file.isFile()) {
+            throw new IllegalArgumentException("File `" + file.getPath() + "` is not a file");
+        }
+
+        if (!file.getName().endsWith(".jar")) {
+            throw new IllegalArgumentException("File `" + file.getPath() + "` is not a jar file");
+        }
+
+        if (!file.exists() || !file.isFile()) {
+            throw new IllegalArgumentException("Invalid file");
+        }
+
+        // Намагаємось відкрити jar файл та прочитати його вміст //
+
+        JarFile jarFile;
+        try {
+            jarFile = new JarFile(file);
+        }
+
+        catch (IOException e) {
+            throw new ModuleLoadingException(e);
+        }
+
+        ZipEntry entry = jarFile.getEntry("module.yml");
+        if (entry == null) {
+            throw new ModuleLoadingException("Module meta file `module.yml` not found in target jar file `" + file.getPath() + "`");
+        }
+
+        ModuleMeta meta;
+        try (InputStream stream = jarFile.getInputStream(entry)) {
+            meta = ModuleMeta.fromStream(stream);
+        }
+
+        catch (InvalidModuleMetaException e) {
+            throw new ModuleLoadingException(e);
+        }
+
+        catch (IOException e) {
+            throw new ModuleLoadingException("Failed to load module meta from `module.yml`");
+        }
+
+        // Створюємо модуль //
+
+        ModuleFile moduleFile = new ModuleFile(file, jarFile);
+
+        return createModule(meta, moduleFile, null);
 
     }
 
-    private synchronized @NotNull Module loadModule1(@NotNull Module module) throws InvalidModuleException, InvalidModuleMetaException {
+    @SuppressWarnings("unchecked")
+    public synchronized @NotNull Module createModule(@NotNull ModuleMeta meta, @Nullable ModuleFile file, @Nullable File dataDir) throws ModuleLoadingException, ModuleRefusedException {
 
+        Objects.requireNonNull(meta, "meta == null");
         checkValid();
 
-        ModuleMeta meta = module.getMeta();
+        // Перевіряємо чи модуль з такою назвою вже існує //
+        if (modules.containsKey(meta.getName())) {
+            throw new IllegalStateException("Module with name `" + meta.getName() + "` already loaded");
+        }
 
-        if (module.getDataFolder().isFile()) throw new IllegalStateException("Data folder is a file, you broke everything!");
-        if (!IModuleManager.checkNameValid(meta.getName())) throw new InvalidModuleMetaException("Module name contains illegal characters. Allowed characters: " + String.join(" ", IModuleManager.ALLOWED_CHARACTERS));
+        // Перевіряємо на правильність теку із даними модуля //
 
-        if (modules.containsKey(meta.getName())) throw new IllegalArgumentException("Module with name " + meta.getName() + "already loaded");
+        if (dataDir == null) {
+            dataDir = new File(modulesDir, meta.getName());
+        }
 
-        String moduleName = meta.getName();
+        if (!dataDir.isDirectory()) {
+            throw new IllegalArgumentException("Module data directory `" + dataDir.getPath() + "` is not a directory");
+        }
 
-        if (!module.downloadLibraries()) throw new RuntimeException("Library download failed");
+        // Створюємо модуль //
 
-        module.loadModule();
+        Module module = new Module(meta, file, dataDir, this);
 
-        module.initialize();
+        if (file != null) {
+            module.getClassLoader().addSource(file.file());
+        }
 
-        modules.put(moduleName, module);
+        // Шукаємо головний клас модуля.
+        String mainClassName = meta.getMain();
+        Class<? extends ModuleMain> clazz = (Class<? extends ModuleMain>) module.getClassLoader().getClass(mainClassName, false, false, false);
+        if (clazz == null) {
+            throw new ModuleLoadingException("Module main class `" + mainClassName + "` not found in module ClassLoader");
+        }
+
+        // Шукаємо конструктор за яким ми зможемо створити об'єкт.
+        Constructor<? extends ModuleMain> constructor;
+        try {
+            constructor = clazz.getDeclaredConstructor();
+        }
+
+        catch (NoSuchMethodException e) {
+            throw new ModuleLoadingException("No public no-args constructor found in class `" + mainClassName + "`");
+        }
+
+        // Створюємо об'єкт головного класа модуля.
+        ModuleMain main;
+        try {
+            main = constructor.newInstance();
+        }
+
+        catch (Exception e) {
+            throw new ModuleLoadingException("Failed to create instance of module main class", e);
+        }
+
+        // Після створення об'єкта головного класу модуля, виконуємо onLoad()
+        try {
+            main.onLoad();
+        }
+
+        catch (ModuleRefusedException e) {
+            throw e;
+        }
+
+        catch (Exception e) {
+            throw new ModuleLoadingException("An exception occurred in onLoad()", e);
+        }
+
+        module.moduleMain = main;
+        main.init(module, sbds);
+
+        // Якщо ми дійшли до цього моменту, модуль успішно завантажено! Додаємо його у реєстр
+        modules.put(meta.getName(), module);
 
         return module;
 
     }
 
     @Override
-    public synchronized void unloadModule(@NotNull IModule imodule) {
+    public synchronized void unloadModule(@NotNull IModule module) throws ModuleStateCallbackException {
 
-        checkValid();
+        checkModuleValid(module);
 
-        Module module = checkModuleValid(imodule);
-
-        if (module.isEnabled()) disableModule(module);
+        if (module.isEnabled()) {
+            throw new IllegalStateException("Module must be disabled first in order to unload");
+        }
 
         String moduleName = module.getMeta().getName();
 
@@ -165,134 +291,79 @@ public class ModuleManager extends Manager implements IModuleManager {
             module.getMain().onUnload();
         }
 
-        catch (Throwable t) {
-            logger.error("An error occurred while unloading {}.", moduleName);
+        catch (Exception e) {
+            throw new ModuleStateCallbackException(e);
         }
 
-        module.closeOrReport(logger);
-
-        modules.remove(moduleName);
+        finally {
+            this.modules.remove(moduleName);
+        }
 
     }
 
-    /* ENABLE/DISABLE */
+    // ENABLE/DISABLE //
+
+    @Override
+    public synchronized void enableModule(@NotNull IModule imodule) throws ModuleStateCallbackException, ModuleRefusedException {
+
+        checkModuleValid(imodule);
+
+        if (imodule.isEnabled()) {
+            throw new IllegalStateException("Module is not disabled");
+        }
+
+        Module module = (Module) imodule;
+        module.enabled = true;
+
+        try {
+            imodule.getMain().onEnable();
+        }
+
+        catch (ModuleRefusedException e) {
+            module.enabled = false;
+            throw e;
+        }
+
+        catch (Exception e) {
+            module.enabled = false;
+            throw new ModuleStateCallbackException(e);
+        }
+
+    }
+
+    @Override
+    public synchronized void disableModule(@NotNull IModule imodule) throws ModuleStateCallbackException {
+
+        checkModuleValid(imodule);
+
+        if (!imodule.isEnabled()) {
+            throw new IllegalStateException("Module is not enabled");
+        }
+
+        Module module = (Module) imodule;
+
+        try {
+            imodule.getMain().onDisable();
+        }
+
+        catch (Exception e) {
+            throw new ModuleStateCallbackException(e);
+        }
+
+        finally {
+            module.enabled = false;
+            sbds.getRegistrationRegistry().removeModuleRegistrations(imodule);
+        }
+
+    }
+
+    //
+    // GETTERS
+    //
 
     @Override
     public @Nullable IModule getModule(@NotNull String name) {
         return modules.get(name);
-    }
-
-    @Override
-    public synchronized void enableModule(@NotNull IModule imodule) {
-
-        Module module = checkModuleValid(imodule);
-        if (module.isEnabled()) return;
-
-        logger.info("Enabling {} v{}...", module.getName(), module.getMeta().getVersion());
-
-        try {
-            module.setEnabled(true);
-        }
-
-        catch (Throwable t) {
-            logger.error("An error occurred while enabling {}.", module.getName(), t);
-        }
-
-    }
-
-    @Override
-    public synchronized void disableModule(@NotNull IModule imodule) {
-
-        Module module = checkModuleValid(imodule);
-        if (!module.isEnabled()) return;
-
-        logger.info("Disabling {} v{}...", module.getName(), module.getMeta().getVersion());
-
-        try {
-            module.setEnabled(false);
-        }
-
-        catch (Throwable t) {
-            logger.error("An error occurred while disabling {}.", module.getName(), t);
-        }
-
-    }
-
-    /* utils */
-
-    private @NotNull List<File> searchForModulesFiles() {
-        checkValid();
-        return Arrays.stream(Objects.requireNonNull(modulesDir.listFiles())).filter(file -> file.getName().endsWith(".jar")).toList();
-    }
-
-    private @NotNull List<Module> prepareModules(@NotNull List<File> files) {
-
-        checkValid();
-
-        List<Module> out = new ArrayList<>();
-
-        for (File file : files) {
-
-            try {
-
-                Module loader = new Module(this, file);
-
-                loader.readMeta();
-
-                out.add(loader);
-
-            }
-
-            catch (IOException e) {
-                logger.error("Failed to load .jar {}.", file.getName(), e);
-            }
-
-            catch (InvalidModuleMetaException e) {
-                logger.error("Invalid module .jar {}.", file.getName(), e);
-            }
-
-        }
-
-        return out;
-
-    }
-
-    public @NotNull Module checkModuleValid(@NotNull IModule module) {
-        checkValid();
-
-        Objects.requireNonNull(module, "module == null");
-
-        if (!(module instanceof Module m)) {
-            throw new IllegalArgumentException("IModule object is instance of `" + module.getClass().getName() + "` not a net.survivalboom.sbds.core.modules.Module object! Are you trying to break SBDS?");
-        }
-
-        if (!modules.containsValue(m)) throw new IllegalArgumentException("Module object is not registered in the ModuleManager. Is module unloaded?");
-        if (!m.isValid()) throw new IllegalArgumentException("Module object is registered in ModuleManager, but Method#valid returned false. Did you break something?");
-
-        return m;
-
-    }
-
-    public @NotNull Module checkModuleEnabled(@NotNull IModule imodule, @Nullable String message) {
-
-        Module module = checkModuleValid(imodule);
-        if (!module.isEnabled()) {
-            String msg = message != null ? message : "Module must be enabled";
-            throw new IllegalArgumentException(msg);
-        }
-
-        return module;
-
-    }
-
-    public static @NotNull Module convertIModule(@NotNull IModule iModule) {
-
-        if (iModule instanceof Module module) {
-            return module;
-        }
-
-        throw new IllegalArgumentException("IModule object `" + iModule.getName() + "` is not a real Module object.");
-
     }
 
 
@@ -320,9 +391,48 @@ public class ModuleManager extends Manager implements IModuleManager {
         return new ArrayList<>(modules.values());
     }
 
-    public @NotNull ModulesClasspath getModulesClasspath() {
+    public @NotNull ModulesClassesSharingManager getModulesClassesSharingManager() {
         checkValid();
-        return modulesClasspath;
+        return classesSharingManager;
+    }
+
+    //
+    // INTERNAL
+    //
+
+    @Override
+    public @NotNull IModule checkModuleValid(@NotNull IModule module) {
+
+        Objects.requireNonNull(module, "module == null");
+        checkValid();
+
+        if (!(module instanceof Module m)) {
+            throw new IllegalArgumentException("IModule object is instance of `" + module.getClass().getName() + "` not a net.survivalboom.sbds.core.modules.Module object! Are you trying to break SBDS?");
+        }
+
+        if (!modules.containsValue(m)) {
+            throw new IllegalArgumentException("Module object is not registered in the ModuleManager. Is module unloaded?");
+        }
+
+        if (!m.isValid()) {
+            throw new IllegalArgumentException("Module object is registered in ModuleManager, but Method#valid returned false. Did you break something?");
+        }
+
+        return m;
+
+    }
+
+    @Override
+    public @NotNull IModule checkModuleEnabled(@NotNull IModule imodule, @Nullable String message) {
+
+        Module module = (Module) checkModuleValid(imodule);
+        if (!module.isEnabled()) {
+            String msg = message != null ? message : "Module must be enabled";
+            throw new IllegalArgumentException(msg);
+        }
+
+        return module;
+
     }
 
 }

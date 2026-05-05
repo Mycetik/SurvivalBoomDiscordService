@@ -8,7 +8,7 @@ import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.translations.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.ModuleMain;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.api.utils.TypeMap;
 import net.survivalboom.sbds.api.utils.json.JsonConfiguration;
 import net.survivalboom.sbds.modules.github.storage.WebhookData;

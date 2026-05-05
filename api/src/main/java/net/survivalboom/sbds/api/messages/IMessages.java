@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.messages;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
@@ -14,9 +15,10 @@ import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.database.users.IUserData;
 import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
 import net.survivalboom.sbds.api.messages.builder.MessageBuilder;
-import net.survivalboom.sbds.api.translations.IMessage;
+import net.survivalboom.sbds.api.messages.parsers.AbstractTextParser;
+import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
 import net.survivalboom.sbds.api.translations.ITranslation;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,13 +32,13 @@ public interface IMessages {
     // MESSAGES
     //
 
-    @Nullable IMessage getMessage(@NotNull String name, @Nullable IUserData userData, boolean fallback);
+    @Nullable IMessageTemplate getMessage(@NotNull String name, @Nullable IUserData userData, boolean fallback);
 
-    @Nullable IMessage getMessage(@NotNull String name, @Nullable User user, boolean fallback);
+    @Nullable IMessageTemplate getMessage(@NotNull String name, @Nullable User user, boolean fallback);
 
-    @Nullable IMessage getMessage(@NotNull String name, @Nullable ITranslation translation, boolean fallback);
+    @Nullable IMessageTemplate getMessage(@NotNull String name, @Nullable ITranslation translation, boolean fallback);
 
-    @Nullable IMessage getMessage(@NotNull String name, @Nullable Guild guild, boolean fallback);
+    @Nullable IMessageTemplate getMessage(@NotNull String name, @Nullable Guild guild, boolean fallback);
 
     //
     // MESSAGE CREATORS
@@ -56,16 +58,19 @@ public interface IMessages {
 
     @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull IReplyCallback callback, @NotNull String name, @Nullable User user);
 
+    default @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull IReplyCallback callback, @NotNull String name, @Nullable Member member) {
+        return reply(callback, name, member.getUser());
+    }
+
     @NotNull MessageActionBuilder<MessageEditAction> editMessage(@NotNull Message message, @NotNull String name, @Nullable User user);
 
     @NotNull MessageActionBuilder<MessageCreateAction> sendMessage(@NotNull MessageChannel channel, @NotNull String name, @Nullable User user);
-
 
     //
     // PARSING
     //
 
-    @NotNull String parse(@NotNull String in, @NotNull Function<String, IMessage> supplier, @Nullable Placeholders placeholders);
+    @NotNull String parse(@NotNull String in, @NotNull AbstractTextParser<?, ?> parser);
 
 
 }

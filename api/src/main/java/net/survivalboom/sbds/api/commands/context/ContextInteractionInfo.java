@@ -2,22 +2,23 @@ package net.survivalboom.sbds.api.commands.context;
 
 import net.dv8tion.jda.api.events.interaction.command.GenericContextInteractionEvent;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.interaction.InteractionInfoImpl;
+import net.survivalboom.sbds.api.interaction.CanEdit;
+import net.survivalboom.sbds.api.interaction.CanModal;
+import net.survivalboom.sbds.api.interaction.CanReply;
+import net.survivalboom.sbds.api.interaction.InteractionExecutionInfo;
 import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
 
-public abstract class ContextInteractionInfo<E extends GenericContextInteractionEvent<?>> extends InteractionInfoImpl<E> {
+public abstract class ContextInteractionInfo<E extends GenericContextInteractionEvent<?>> extends InteractionExecutionInfo<E> implements CanReply<E>, CanModal<E> {
 
-    public ContextInteractionInfo(@NotNull E event, @NotNull ISBDS sbds, @NotNull Logger logger) {
-        super(event, sbds, logger);
+    public ContextInteractionInfo(@NotNull E event, @NotNull ISBDS sbds) {
+        super(event, sbds);
     }
 
-
     @Override
-    public @NotNull ModalActionBuilder replyModal(@NotNull String key) {
-        return new ModalActionBuilder(sbds.getModalInteractionManager(), event, NamespacedKey.fromString(key));
+    public @NotNull E interaction() {
+        return event;
     }
 
 }

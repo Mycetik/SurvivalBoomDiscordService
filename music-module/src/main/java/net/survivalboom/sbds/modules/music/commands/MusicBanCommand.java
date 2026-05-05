@@ -6,8 +6,8 @@ import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.IntegerArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "music-ban", description = "Bans member from using music bot", translationKey = "music.command.music-ban", permission = "music.command.musicban")
+@CommandClass(name = "music-ban", description = "Bans member from using music bot", translationKey = "music.command.music-ban", permission = "music.command.musicban")
 public class MusicBanCommand extends AbstractPlayerCommand {
 
     public MusicBanCommand(@NotNull BotManager botManager) {
@@ -60,13 +60,13 @@ public class MusicBanCommand extends AbstractPlayerCommand {
 
     }
 
-    @CommandArgument(name = "guild", description = "Guild", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(name = "guild", description = "Guild", scope = ArgumentScope.CONSOLE)
     public Argument<?> guild() {
         return new IntegerArgument();
     }
 
 
-    @CommandArgument(name = "target", description = "Member", index = 1)
+    @ArgumentMethod(name = "target", description = "Member", index = 1)
     public Argument<?> target() {
         return new UserArgument();
     }

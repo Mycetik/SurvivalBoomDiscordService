@@ -7,19 +7,22 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.registrations.IRegistrationRegistry;
+import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
+import net.survivalboom.sbds.api.database.users.IUserDataManager;
+import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.commands.context.ContextCommandManager;
 import net.survivalboom.sbds.core.commands.slash.SlashCommandManager;
 import net.survivalboom.sbds.core.commands.console.ConsoleListener;
 import net.survivalboom.sbds.core.database.Database;
+import net.survivalboom.sbds.core.database.guilds.GuildDataManager;
+import net.survivalboom.sbds.core.database.users.UserDataManager;
 import net.survivalboom.sbds.core.events.EventManager;
-import net.survivalboom.sbds.core.interaction.button.ButtonInteractionManager;
+import net.survivalboom.sbds.core.interaction.ComponentInteractionManager;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
-import net.survivalboom.sbds.core.interaction.dropdown.entity.EntityDropdownInteractionManager;
-import net.survivalboom.sbds.core.interaction.dropdown.string.StringDropdownInteractionManager;
 import net.survivalboom.sbds.core.interaction.modal.ModalInteractionManager;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
+import net.survivalboom.sbds.core.logging.LoggerFilter;
 import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.ModuleManager;
 import net.survivalboom.sbds.core.monitor.SystemMonitor;
@@ -29,11 +32,10 @@ import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.core.service.ServiceProvider;
 import net.survivalboom.sbds.core.translations.TranslationManager;
-import org.bspfsystems.yamlconfiguration.configuration.Configuration;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.io.File;
 import java.util.EnumSet;
@@ -44,11 +46,14 @@ public class SBDS implements ISBDS {
 
     private final Logger logger;
 
-    private final YamlConfiguration configuration;
+    private final ConfigurationNode configuration;
 
     private final File workingDir;
 
     private final LibrariesManager librariesManager;
+
+
+    private final LoggerFilter loggerFilter;
 
 
     private final Scheduler scheduler;
@@ -57,6 +62,11 @@ public class SBDS implements ISBDS {
 
 
     private final Database database;
+
+    private final UserDataManager userDataManager;
+
+    private final GuildDataManager guildDataManager;
+
 
     private final ModuleManager moduleManager;
 
@@ -78,11 +88,7 @@ public class SBDS implements ISBDS {
     private final PermissionManager permissionManager;
 
 
-    private final ButtonInteractionManager buttonInteractionManager;
-
-    private final StringDropdownInteractionManager stringDropdownInteractionManager;
-
-    private final EntityDropdownInteractionManager entityDropdownInteractionManager;
+    private final ComponentInteractionManager componentInteractionManager;
 
     private final ModalInteractionManager modalInteractionManager;
 
@@ -98,6 +104,7 @@ public class SBDS implements ISBDS {
 
 
     private final JDABuilder jdaBuilder;
+
     private static final EnumSet<GatewayIntent> DEFAULT_GATEWAY_INTENTS = EnumSet.of(
             GatewayIntent.GUILD_MESSAGES,
             GatewayIntent.GUILD_MESSAGE_REACTIONS,
@@ -111,6 +118,7 @@ public class SBDS implements ISBDS {
             GatewayIntent.AUTO_MODERATION_CONFIGURATION,
             GatewayIntent.AUTO_MODERATION_EXECUTION
     );
+
     private static final EnumSet<GatewayIntent> PRIVILEGED_GATEWAY_INTENTS = EnumSet.of(
             GatewayIntent.GUILD_MEMBERS,
             GatewayIntent.GUILD_PRESENCES,
@@ -120,7 +128,13 @@ public class SBDS implements ISBDS {
     private JDA bot = null;
 
 
-    public SBDS(@NotNull Logger logger, @NotNull LibrariesManager librariesManager, @NotNull YamlConfiguration configuration, @NotNull File workingDir, @NotNull String token) {
+    public SBDS(
+            @NotNull Logger logger,
+            @NotNull LibrariesManager librariesManager,
+            @NotNull ConfigurationNode configuration,
+            @NotNull File workingDir,
+            @NotNull String token
+    ) {
 
         this.logger = logger;
         this.configuration = configuration;
@@ -129,10 +143,14 @@ public class SBDS implements ISBDS {
 
         this.librariesManager = librariesManager;
 
+        this.loggerFilter = new LoggerFilter(this);
+
         this.scheduler = new Scheduler(this);
         this.systemMonitor = new SystemMonitor(scheduler);
 
         this.database = new Database(this);
+        this.userDataManager = new UserDataManager(database);
+        this.guildDataManager = new GuildDataManager(database);
 
         this.eventManager = new EventManager(this);
         this.moduleManager = new ModuleManager(this);
@@ -148,9 +166,7 @@ public class SBDS implements ISBDS {
         this.contextCommandManager = new ContextCommandManager(this);
         this.slashCommandManager = new SlashCommandManager(this);
 
-        this.buttonInteractionManager = new ButtonInteractionManager(this);
-        this.stringDropdownInteractionManager = new StringDropdownInteractionManager(this);
-        this.entityDropdownInteractionManager = new EntityDropdownInteractionManager(this);
+        this.componentInteractionManager = new ComponentInteractionManager(this);
         this.modalInteractionManager = new ModalInteractionManager(this);
 
         SbdsProvider.internal_internal_internal_internal_internal_internal_set(this);
@@ -167,7 +183,7 @@ public class SBDS implements ISBDS {
 
         started = true;
 
-        librariesManager.configure(this);
+        loggerFilter.init();
 
         scheduler.init();
         systemMonitor.init();
@@ -191,6 +207,9 @@ public class SBDS implements ISBDS {
 
         bot.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.customStatus("Starting SBDS v" + BuildConstants.VERSION + "..."));
 
+        userDataManager.init();
+        guildDataManager.init();
+
         translationManager.init();
         messages.init();
 
@@ -202,9 +221,7 @@ public class SBDS implements ISBDS {
         contextCommandManager.init();
         consoleListener.init();
 
-        buttonInteractionManager.init();
-        stringDropdownInteractionManager.init();
-        entityDropdownInteractionManager.init();
+        componentInteractionManager.init();
         modalInteractionManager.init();
 
         serviceProvider.init();
@@ -258,9 +275,7 @@ public class SBDS implements ISBDS {
         contextCommandManager.shutdown();
         commandInteractionManager.shutdown();
 
-        buttonInteractionManager.shutdown();
-        entityDropdownInteractionManager.shutdown();
-        stringDropdownInteractionManager.shutdown();
+        componentInteractionManager.shutdown();
         modalInteractionManager.shutdown();
 
         translationManager.shutdown();
@@ -269,6 +284,8 @@ public class SBDS implements ISBDS {
         eventManager.shutdown();
 
         database.shutdown();
+        userDataManager.shutdown();
+        guildDataManager.shutdown();
 
         systemMonitor.shutdown();
 
@@ -278,6 +295,8 @@ public class SBDS implements ISBDS {
 
         bot.shutdown();
         bot = null;
+
+        loggerFilter.shutdown();
 
         logger.info("Bye bye!");
 
@@ -297,7 +316,7 @@ public class SBDS implements ISBDS {
     }
 
     @Override
-    public @NotNull Configuration getConfiguration() {
+    public @NotNull ConfigurationNode getConfiguration() {
         return configuration;
     }
 
@@ -328,7 +347,7 @@ public class SBDS implements ISBDS {
     }
 
     @Override
-    public @NotNull IRegistrationRegistry getRegistrationRegistry() {
+    public @NotNull RegistrationRegistry getRegistrationRegistry() {
         return registrationRegistry;
     }
 
@@ -362,6 +381,11 @@ public class SBDS implements ISBDS {
         return contextCommandManager;
     }
 
+    @Override
+    public @NotNull IComponentInteractionManager getComponentInteractionManager() {
+        return componentInteractionManager;
+    }
+
 
     @Override
     public @NotNull ModalInteractionManager getModalInteractionManager() {
@@ -369,23 +393,18 @@ public class SBDS implements ISBDS {
     }
 
     @Override
-    public @NotNull ButtonInteractionManager getButtonInteractionManager() {
-        return buttonInteractionManager;
-    }
-
-    @Override
-    public @NotNull StringDropdownInteractionManager getStringDropdownInteractionManager() {
-        return stringDropdownInteractionManager;
-    }
-
-    @Override
-    public @NotNull EntityDropdownInteractionManager getEntityDropdownInteractionManager() {
-        return entityDropdownInteractionManager;
-    }
-
-    @Override
     public @NotNull Database getDatabase() {
         return database;
+    }
+
+    @Override
+    public @NotNull IUserDataManager getUserManager() {
+        return userDataManager;
+    }
+
+    @Override
+    public @NotNull IGuildDataManager getGuildManager() {
+        return guildDataManager;
     }
 
     @Override
@@ -423,19 +442,22 @@ public class SBDS implements ISBDS {
         return commandInteractionManager;
     }
 
-    private @NotNull EnumSet<GatewayIntent> resolveGatewayIntents(@NotNull YamlConfiguration configuration) {
+    private @NotNull EnumSet<GatewayIntent> resolveGatewayIntents(@NotNull ConfigurationNode configuration) {
 
         EnumSet<GatewayIntent> intents = EnumSet.copyOf(DEFAULT_GATEWAY_INTENTS);
 
-        ConfigurationSection discordSection = configuration.getConfigurationSection("discord");
-        if (discordSection == null) {
-            logger.info("No discord.gateway-intents section found. Using safe defaults: {}", intents);
+        List<String> configured;
+        try {
+            configured = configuration.node("discord", "gateway-intents").getList(String.class);
+        }
+
+        catch (SerializationException e) {
+            logger.error("Invalid discord.gateway-intents. Using safe defaults: {}", intents);
             return intents;
         }
 
-        List<String> configured = discordSection.getStringList("gateway-intents");
         if (configured == null || configured.isEmpty()) {
-            logger.info("discord.gateway-intents not configured. Using safe defaults: {}", intents);
+            logger.warn("discord.gateway-intents not configured. Using safe defaults: {}", intents);
             return intents;
         }
 

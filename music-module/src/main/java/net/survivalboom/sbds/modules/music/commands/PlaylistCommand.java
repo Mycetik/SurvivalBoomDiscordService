@@ -5,18 +5,18 @@ import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "playlist", description = "Shows current playlist", translationKey = "music.command.playlist")
+@CommandClass(name = "playlist", description = "Shows current playlist", translationKey = "music.command.playlist")
 public class PlaylistCommand extends AbstractPlayerCommand {
 
     public PlaylistCommand(@NotNull BotManager botManager) {
@@ -67,7 +67,7 @@ public class PlaylistCommand extends AbstractPlayerCommand {
         info.logger().info("Playlist ({} tracks):\n{}", player.getPlaylistSize(), playlistStr);
     }
 
-    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

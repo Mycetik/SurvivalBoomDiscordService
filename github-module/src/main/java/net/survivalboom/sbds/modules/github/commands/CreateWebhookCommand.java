@@ -1,24 +1,22 @@
 package net.survivalboom.sbds.modules.github.commands;
 
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
-import net.dv8tion.jda.internal.entities.channel.concrete.NewsChannelImpl;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.TextChannelArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.slash.SlashCommand;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.modules.github.storage.WebhookData;
 import net.survivalboom.sbds.modules.github.storage.WebhookRepositoryHandler;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "add", description = "Create a github webhook.", permission = "github.command.create")
-public class CreateWebhookCommand extends CommandBase implements SlashCommand {
+@CommandClass(name = "add", description = "Create a github webhook.", permission = "github.command.create")
+public class CreateWebhookCommand extends CommandBase implements SlashCommandExecutor {
 
     private final WebhookRepositoryHandler repository;
 
@@ -40,7 +38,7 @@ public class CreateWebhookCommand extends CommandBase implements SlashCommand {
     }
 
 
-    @CommandArgument(name = "channel")
+    @ArgumentMethod(name = "channel")
     public Argument<?> channel() {
         return new TextChannelArgument();
     }

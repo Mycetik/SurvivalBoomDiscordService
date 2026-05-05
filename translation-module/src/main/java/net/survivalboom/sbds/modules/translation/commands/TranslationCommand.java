@@ -5,14 +5,14 @@ import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
-import net.survivalboom.sbds.api.commands.argument.misc.StringSelectArgument;
-import net.survivalboom.sbds.api.commands.argument.misc.TranslationArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.argument.misc.select.StringSelectArgument;
+import net.survivalboom.sbds.api.commands.argument.sbds.TranslationArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
-import net.survivalboom.sbds.api.commands.slash.SlashCommand;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.users.IUserData;
@@ -23,8 +23,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "translation", description = "Sets translation of the bot for you", translationKey = "translation.command.translation")
-public class TranslationCommand extends CommandBase implements SlashCommand, ConsoleCommand {
+@CommandClass(name = "translation", description = "Sets translation of the bot for you", translationKey = "translation.command.translation")
+public class TranslationCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommand {
 
     private final ITranslationManager translationManager;
 
@@ -97,19 +97,19 @@ public class TranslationCommand extends CommandBase implements SlashCommand, Con
 
     }
 
-    @CommandArgument(name = "translation0", description = "A translation", scope = ArgumentScope.CONSOLE, required = false)
+    @ArgumentMethod(name = "translation0", description = "A translation", scope = ArgumentScope.CONSOLE, required = false)
     public Argument<?> translation0() {
         return new TranslationArgument();
     }
 
-    @CommandArgument(name = "user", description = "A user", index = 1, scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(name = "user", description = "A user", index = 1, scope = ArgumentScope.CONSOLE)
     public Argument<?> user() {
         return new UserArgument();
     }
 
     // TODO: Замінити на нормальний TranslationArgument з AbstractSelectArgument.
     // TODO: ! Варіанти вибору не динамічні, це значить що кожен раз після видалення/створення нового перекладу потрібно перереєструвати цю команду !
-    @CommandArgument(name = "translation", description = "A translation", scope = ArgumentScope.SLASH, required = false)
+    @ArgumentMethod(name = "translation", description = "A translation", scope = ArgumentScope.SLASH, required = false)
     public Argument<?> translation() {
 
         // Ось що буває, коли сам себе в свої ж костилі заплутуєш.

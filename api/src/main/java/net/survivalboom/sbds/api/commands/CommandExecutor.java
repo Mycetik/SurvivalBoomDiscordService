@@ -2,8 +2,8 @@ package net.survivalboom.sbds.api.commands;
 
 import org.jetbrains.annotations.NotNull;
 
-public interface CommandExecutor {
+public interface CommandExecutor<T extends CommandExecutionInfo<?, ?>> {
 
-    void execute(@NotNull CommandExecutionInfo info) throws Throwable;
+    void execute(@NotNull T info) throws Exception;
 
 }

@@ -1,8 +1,8 @@
 package net.survivalboom.sbds.core.commands.cmds.console.modules;
 
 import net.survivalboom.sbds.api.commands.argument.Argument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.argument.misc.FileArgument;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 
-@Command(name = "load")
+@CommandClass(name = "load")
 public class LoadModuleCommand extends CommandBase implements ConsoleCommand {
 
     @Override
@@ -38,7 +38,7 @@ public class LoadModuleCommand extends CommandBase implements ConsoleCommand {
     }
 
 
-    @CommandArgument(name = "file")
+    @ArgumentMethod(name = "file")
     public Argument<?> file() {
         return new FileArgument(sbds -> sbds.getModuleManager().getModulesDir(), true);
     }

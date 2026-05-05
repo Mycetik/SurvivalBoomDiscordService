@@ -9,10 +9,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
-public class GuildRepositoryHandler extends RepositoryHandler<GuildData> implements IGuildRepositoryHandler {
+public class GuildRepositoryHandler extends RepositoryHandler<GuildDataRecord> implements IGuildRepositoryHandler {
 
     public GuildRepositoryHandler() {
-        super(GuildData.class);
+        super(GuildDataRecord.class);
     }
 
     @Override
@@ -35,7 +35,7 @@ public class GuildRepositoryHandler extends RepositoryHandler<GuildData> impleme
                 return CompletableFuture.completedFuture(gd);
             }
 
-            return save(new GuildData(id)).thenApply(d -> d);
+            return save(new GuildDataRecord(id)).thenApply(d -> d);
 
         });
 

@@ -1,20 +1,21 @@
 package net.survivalboom.sbds.api.interaction;
 
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
-import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.survivalboom.sbds.api.ISBDS;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
 
-public abstract class ComponentInteractionInfo<E extends GenericComponentInteractionCreateEvent> extends InteractionInfoImpl<E> implements HookEditable {
+public class ComponentInteractionInfo<event extends GenericComponentInteractionCreateEvent> extends InteractionExecutionInfo<event> implements CanReply<event>, CanEdit<event>, CanModal<event> {
 
-    public ComponentInteractionInfo(@NotNull E event, @NotNull ISBDS sbds, @NotNull Logger logger) {
-        super(event, sbds, logger);
+    public ComponentInteractionInfo(
+            @NotNull event event,
+            @NotNull ISBDS sbds
+    ) {
+        super(event, sbds);
     }
 
     @Override
-    public @NotNull InteractionHook hook() {
-        return event.getHook();
+    public @NotNull event interaction() {
+        return event;
     }
 
 }

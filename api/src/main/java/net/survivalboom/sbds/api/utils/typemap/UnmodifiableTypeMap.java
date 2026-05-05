@@ -1,10 +1,9 @@
 package net.survivalboom.sbds.api.utils.typemap;
 
-import net.survivalboom.sbds.api.utils.CommonUtils;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class UnmodifiableTypeMap extends AbstractTypeMap {
 
@@ -57,16 +56,7 @@ public class UnmodifiableTypeMap extends AbstractTypeMap {
         return new UnmodifiableTypeMap(map);
     }
 
-    public static @NotNull UnmodifiableTypeMap empty() {
-        return new UnmodifiableTypeMap(new HashMap<>());
-    }
-
-    // of configuration section //
-
-    public static @NotNull UnmodifiableTypeMap fromSection(@NotNull ConfigurationSection section) {
-        var map = CommonUtils.mapFromSection(section);
-        return ofMap(map);
-    }
+    public static final @NotNull UnmodifiableTypeMap EMPTY = new UnmodifiableTypeMap(new HashMap<>());
 
 
 }

@@ -1,80 +1,91 @@
 package net.survivalboom.sbds.api.interaction.modal;
 
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import net.dv8tion.jda.api.interactions.modals.Modal;
-import net.survivalboom.sbds.api.messages.IMessages;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.dv8tion.jda.api.components.ModalTopLevelComponent;
+import net.dv8tion.jda.api.modals.Modal;
+import net.survivalboom.sbds.api.messages.components.ModalComponentTemplate;
+import net.survivalboom.sbds.api.messages.parsers.StringParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
 public class ModalTemplate {
 
     private final String title;
 
-    private final List<TextComponent> components;
-
-    private final String name;
+    private final List<ModalComponentTemplate> components = new ArrayList<>();
 
 
-    private ModalTemplate(@NotNull String title, @Nullable String name, @NotNull List<TextComponent> components) {
+    public ModalTemplate(
+            @NotNull String title,
+            @NotNull Collection<ModalComponentTemplate> components
+    ) {
+
+        Objects.requireNonNull(title, "title == null");
+        Objects.requireNonNull(components, "components == null");
+
         this.title = title;
-        this.name = name;
-        this.components = components;
+        this.components.addAll(components);
+
     }
 
-    public @NotNull Modal create(@NotNull String id, @NotNull Function<String, String> parser) {
+    //
+    // BUILD
+    //
+
+    public @NotNull Modal build(@NotNull String id, @Nullable StringParser parser) {
 
         Objects.requireNonNull(id, "id == null");
-        Objects.requireNonNull(parser, "parser == null");
 
-        String title = parser.apply(this.title);
+        String title = StringParser.stParse(parser, this.title);
         Modal.Builder builder = Modal.create(id, title);
 
-        for (TextComponent component : components) {
-            String inputTitle = parser.apply(component.title);
-            String inputPlaceholder = parser.apply(component.placeholder);
-            builder.addActionRow(
-                    TextInput.create(component.id(), inputTitle, component.style())
-                            .setRequiredRange(component.min, component.max)
-                            .setRequired(component.required)
-                            .setPlaceholder(inputPlaceholder)
-                            .build()
-            );
+        for (ModalComponentTemplate template : components) {
+
+            ModalTopLevelComponent component = template.build(parser, null);
+            builder.addComponents(component);
+
         }
 
         return builder.build();
 
     }
 
-    public @Nullable String name() {
-        return name;
+    public @NotNull Builder copy() {
+        return new Builder(this);
     }
 
+    //
+    // BUILDER
+    //
+
     public static @NotNull Builder builder() {
-        return new Builder("NO_TITLE", null, new ArrayList<>());
+        return new Builder();
     }
 
     public static class Builder {
 
-        private final List<TextComponent> components;
-
         private String title;
 
-        private String name;
+        private final List<ModalComponentTemplate> components = new ArrayList<>();
 
 
-        private Builder(@NotNull String title, @Nullable String name, @NotNull List<TextComponent> components) {
-            this.title = title;
-            this.name = name;
-            this.components = components;
+        private Builder() {}
+
+        private Builder(@NotNull Builder builder) {
+            this.title = builder.title;
+            this.components.addAll(builder.components);
         }
 
+        private Builder(@NotNull ModalTemplate template) {
+            this.title = template.title;
+            this.components.addAll(template.components);
+        }
+
+        // TITLE //
 
         public @NotNull Builder setTitle(@NotNull String title) {
             Objects.requireNonNull(title, "title == null");
@@ -82,31 +93,51 @@ public class ModalTemplate {
             return this;
         }
 
-        public @NotNull Builder setName(@Nullable String name) {
-            this.name = name;
+        public String getTitle() {
+            return title;
+        }
+
+        // COMPONENTS //
+
+        public @NotNull Builder setComponents(@Nullable Collection<ModalComponentTemplate> components) {
+
+            this.components.clear();
+
+            if (components != null) {
+                this.components.addAll(components);
+            }
+
+            return this;
+
+        }
+
+        public @NotNull Builder addComponents(@NotNull Collection<ModalComponentTemplate> components) {
+            this.components.addAll(components);
             return this;
         }
 
-        public @NotNull Builder addInput(@NotNull String id, @NotNull String title, @NotNull String placeholder, @NotNull TextInputStyle type, int min, int max, boolean required) {
-            components.add(new TextComponent(id, title, placeholder, type, min, max, required));
+        public @NotNull Builder addComponents(@NotNull ModalComponentTemplate... components) {
+            this.components.addAll(List.of(components));
             return this;
         }
+
+        public @NotNull Builder addComponent(@NotNull ModalComponentTemplate component) {
+            this.components.add(component);
+            return this;
+        }
+
+        //
+        // BUILD
+        //
 
         public @NotNull ModalTemplate build() {
-            return new ModalTemplate(title, name, new ArrayList<>(components));
+            return new ModalTemplate(title, components);
+        }
+
+        public @NotNull Builder copy() {
+            return new Builder(this);
         }
 
     }
-
-
-    private record TextComponent(
-            @NotNull String id,
-            @NotNull String title,
-            @NotNull String placeholder,
-            @NotNull TextInputStyle style,
-            int min,
-            int max,
-            boolean required
-    ) {}
 
 }

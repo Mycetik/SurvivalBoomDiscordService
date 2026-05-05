@@ -1,170 +1,201 @@
 package net.survivalboom.sbds.api.messages.builder;
 
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
-import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
-import net.survivalboom.sbds.api.interaction.dropdown.entity.EntityDropdownInteractionInfo;
-import net.survivalboom.sbds.api.interaction.dropdown.string.StringDropdownInteractionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.interaction.ComponentInteractionInfo;
+import net.survivalboom.sbds.api.messages.IMessages;
+import net.survivalboom.sbds.api.messages.components.ComponentLinker;
+import net.survivalboom.sbds.api.messages.components.MessageInteractableComponentTemplate;
+import net.survivalboom.sbds.api.messages.parsers.LinkedTextParser;
+import net.survivalboom.sbds.api.messages.parsers.StringParser;
+import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
+import net.survivalboom.sbds.api.messages.template.TextMessageTemplate;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class AbstractMessageBuilder<T> {
+public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<it>> implements ComponentLinker {
 
-    protected final ISBDS sbds;
-
-    protected final User user;
+    protected final LinkedTextParser.Builder builder;
 
     protected final List<ComponentCallback<?>> callbacks = new ArrayList<>();
 
-    private final Function<AbstractMessageBuilder<T>, MessageCreateData> messageDataSupplier;
+    protected final String messageKey;
 
-    protected Placeholders placeholders;
+    public AbstractMessageBuilder(
+            @NotNull IMessages messages,
+            @NotNull User user,
+            @NotNull String messageKey
+    ) {
 
-    public AbstractMessageBuilder(@NotNull ISBDS sbds, @Nullable User user, @NotNull Function<AbstractMessageBuilder<T>, MessageCreateData> messageDataSupplier) {
-        this.sbds = sbds;
-        this.user = user;
-        this.messageDataSupplier = messageDataSupplier;
-    }
+        Objects.requireNonNull(messageKey, "messageKey == null");
 
-    //
-    // BUILDER
-    //
-
-    public @NotNull T withPlaceholders(@Nullable Placeholders placeholders) {
-        this.placeholders = placeholders;
-        return This();
-    }
-
-    public @NotNull T withPlaceholders(@Nullable Object... args) {
-
-        if (args == null) {
-            this.placeholders = null;
-            return This();
-        }
-
-        this.placeholders = Placeholders.of(args);
-
-        return This();
+        this.builder = LinkedTextParser.builder(messages, user);
+        this.messageKey = messageKey;
 
     }
 
     //
-    // BUTTONS
+    // TEXT PARSER
     //
 
-    public @NotNull T buttonCallback(@NotNull String name, @NotNull Consumer<ButtonInteractionInfo> onSuccess, @Nullable Runnable onFail, int timeout) {
-        ComponentCallback<ButtonInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.interactions.components.Component.Type.BUTTON, onSuccess, onFail, timeout);
+    // PLACEHOLDERS //
+
+    public @NotNull it withPlaceholder(@NotNull String key, @Nullable Object value) {
+        this.builder.addPlaceholder(key, value);
+        return it();
+    }
+
+    public @NotNull it withPlaceholders(@Nullable Placeholders placeholders) {
+        this.builder.addPlaceholders(placeholders);
+        return it();
+    }
+
+    public @NotNull it withPlaceholders(Object... args) {
+        this.builder.addPlaceholders(args);
+        return it();
+    }
+
+    // PARSERS //
+
+    public @NotNull it withParser(@NotNull StringParser parser) {
+        this.builder.addParser(parser);
+        return it();
+    }
+
+    public @NotNull it withParser(@NotNull Collection<StringParser> parsers) {
+        this.builder.addParsers(parsers);
+        return it();
+    }
+
+    //
+    // CALLBACKS
+    //
+
+    // BUTTONS //
+
+    public @NotNull it buttonCallback(
+            @NotNull String name,
+            boolean userSpecific,
+            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent>> onSuccess,
+            @Nullable Runnable onFail,
+            int timeout
+    ) {
+        var callback = new ComponentCallback<>(name, userSpecific, ButtonInteractionEvent.class, onSuccess, onFail, timeout);
         callbacks.add(callback);
-        return This();
+        return it();
     }
-
-    public @NotNull T buttonCallback(@NotNull String name, @NotNull Consumer<ButtonInteractionInfo> onSuccess, int timeout) {
-        return buttonCallback(name, onSuccess, null, timeout);
-    }
-
-    //
-    // DROPDOWNS
-    //
 
     // ENTITY SELECT //
 
-    public @NotNull T entityDropdownCallback(@NotNull String name, @NotNull Consumer<EntityDropdownInteractionInfo> onSuccess, @Nullable Runnable onFail, int timeout) {
-        ComponentCallback<EntityDropdownInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.interactions.components.Component.Type.MENTIONABLE_SELECT, onSuccess, onFail, timeout);
+    public @NotNull it entityDropdownCallback(
+            @NotNull String name,
+            boolean userSpecific,
+            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent>> onSuccess,
+            @Nullable Runnable onFail,
+            int timeout
+    ) {
+        var callback = new ComponentCallback<>(name, userSpecific, EntitySelectInteractionEvent.class, onSuccess, onFail, timeout);
         callbacks.add(callback);
-        return This();
-    }
-
-    public @NotNull T entityDropdownCallback(@NotNull String name, @NotNull Consumer<EntityDropdownInteractionInfo> onSuccess, int timeout) {
-        return entityDropdownCallback(name, onSuccess, null, timeout);
+        return it();
     }
 
     // STRING SELECT //
 
-    public @NotNull T stringDropdownCallback(@NotNull String name, @NotNull Consumer<StringDropdownInteractionInfo> onSuccess, @Nullable Runnable onFail, int timeout) {
-        ComponentCallback<StringDropdownInteractionInfo> callback = new ComponentCallback<>(name, net.dv8tion.jda.api.interactions.components.Component.Type.STRING_SELECT, onSuccess, onFail, timeout);
+    public @NotNull it stringDropdownCallback(
+            @NotNull String name,
+            boolean userSpecific,
+            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent>> onSuccess,
+            @Nullable Runnable onFail,
+            int timeout
+    ) {
+        var callback = new ComponentCallback<>(name, userSpecific, StringSelectInteractionEvent.class, onSuccess, onFail, timeout);
         callbacks.add(callback);
-        return This();
+        return it();
     }
 
-    public @NotNull T stringDropdownCallback(@NotNull String name, @NotNull Consumer<StringDropdownInteractionInfo> onSuccess, int timeout) {
-        return stringDropdownCallback(name, onSuccess, null, timeout);
-    }
+    //
+    // BUILD
+    //
 
-    @SuppressWarnings("unchecked")
-    private @NotNull T This() {
-        return (T) this;
-    }
+    public @NotNull MessageCreateData build() {
 
+        StringParser parser = builder.build();
 
-    protected @NotNull MessageCreateData createMessage() {
-        return messageDataSupplier.apply(this);
-    }
-
-    protected @NotNull String componentIdCreator(@NotNull Component component) {
-
-        boolean isStatic = component.isStatic();
-        String name = component.name();
-        String id = isStatic && name != null ? name : UUID.randomUUID().toString();
-
-        if (isStatic) {
-            return id;
+        IMessageTemplate template = builder.getMessages().getMessage(messageKey, builder.getTarget(), true);
+        if (template == null) {
+            return MessageCreateData.fromContent(messageKey);
         }
 
-        ComponentCallback<?> callback = callbacks.stream()
-                .filter(c -> c.name.equals(component.name()))
-                .findAny()
-                .orElse(null);
+        return template.createMessageData(parser, this);
 
-        registerComponentCallback(id, callback);
+    }
+
+    @Override
+    public @NotNull String link(@NotNull MessageInteractableComponentTemplate<?> component) {
+
+        String id = UUID.randomUUID().toString();
+        if (component.isStatic()) {
+            throw new RuntimeException("tried to link static component");
+        }
+
+        callbacks.stream()
+                .filter(c -> c.name.equals(component.getName()))
+                .findAny()
+                .ifPresent(callback -> registerComponentCallback(id, callback));
 
         return id;
 
     }
 
-    @SuppressWarnings("unchecked")
-    private void registerComponentCallback(@NotNull String id, @Nullable ComponentCallback<?> callback) {
+    private <T extends GenericComponentInteractionCreateEvent> void registerComponentCallback(@NotNull String id, @NotNull ComponentCallback<T> callback) {
 
-        if (callback == null) return;
+        boolean userSpecific = callback.userSpecific;
+        Class<T> clazz = callback.clazz;
 
-        Consumer<?> onSuccess = callback.onSuccess;
+        Consumer<ComponentInteractionInfo<T>> onSuccess = callback.onSuccess;
         Runnable onFail = callback.onFail;
+
         int timeout = callback.timeout;
 
-        switch (callback.type) {
-
-            case BUTTON -> {
-                sbds.getButtonInteractionManager().registerPendingInteraction(id, user, (Consumer<ButtonInteractionInfo>) onSuccess, onFail, timeout);
-            }
-
-            case STRING_SELECT -> {
-                sbds.getStringDropdownInteractionManager().registerPendingInteraction(id, user, (Consumer<StringDropdownInteractionInfo>) onSuccess, onFail, timeout);
-            }
-
-            case USER_SELECT, ROLE_SELECT, MENTIONABLE_SELECT, CHANNEL_SELECT -> {
-                sbds.getEntityDropdownInteractionManager().registerPendingInteraction(id, user, (Consumer<EntityDropdownInteractionInfo>) onSuccess, onFail, timeout);
-            }
-
-            default -> throw new RuntimeException("Invalid component type " + callback.type);
-
-        }
+        builder.getMessages().getSbds().getComponentInteractionManager().registerPendingInteraction(
+                id,
+                userSpecific ? builder.getTarget() : null,
+                clazz,
+                onSuccess,
+                onFail,
+                timeout
+        );
 
     }
 
 
-    protected record ComponentCallback<T>(
+    @SuppressWarnings("unchecked")
+    private @NotNull it it() {
+        return (it) this;
+    }
+
+
+    protected record ComponentCallback<event extends GenericComponentInteractionCreateEvent>(
+
             @NotNull String name,
-            @NotNull net.dv8tion.jda.api.interactions.components.Component.Type type,
-            @NotNull Consumer<T> onSuccess,
+
+            boolean userSpecific,
+            Class<event> clazz,
+
+            @NotNull Consumer<ComponentInteractionInfo<event>> onSuccess,
             @Nullable Runnable onFail,
+
             int timeout
+
     ) {}
 
 }

@@ -3,16 +3,16 @@ package net.survivalboom.sbds.modules.voice.commands;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.slash.SlashCommand;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.modules.voice.storage.VoiceCreatorChannels;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "set", description = "Sets a voice for creator in this guild.", translationKey = "voice.command.setup.set", permission = "voice.command.setup")
-public class SetupCommand extends CommandBase implements SlashCommand {
+@CommandClass(name = "set", description = "Sets a voice for creator in this guild.", translationKey = "voice.command.setup.set", permission = "voice.command.setup")
+public class SetupCommand extends CommandBase implements SlashCommandExecutor {
 
     private final VoiceCreatorChannels voiceCreatorChannels;
 
@@ -35,7 +35,7 @@ public class SetupCommand extends CommandBase implements SlashCommand {
 
     }
 
-    @CommandArgument(name = "channel")
+    @ArgumentMethod(name = "channel")
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

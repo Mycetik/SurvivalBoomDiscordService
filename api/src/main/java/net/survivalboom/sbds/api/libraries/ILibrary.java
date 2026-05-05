@@ -1,5 +1,18 @@
 package net.survivalboom.sbds.api.libraries;
 
-// TODO: Можливо додати API для взаємодії із бібліотеками, але з іншої сторони, навіщо воно потрібно?...
+import org.jetbrains.annotations.NotNull;
+
+import java.io.File;
+import java.util.List;
+
 public interface ILibrary {
+
+    @NotNull IPomData getPomData();
+
+    @NotNull File getFile();
+
+    @NotNull List<ILibrary> getDependencies();
+
+    @NotNull ClassLoader getClassLoader();
+
 }

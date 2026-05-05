@@ -138,6 +138,18 @@ public class RegistrationRegistry extends Manager implements IRegistrationRegist
 
     }
 
+    public @NotNull List<Registration<?>> removeModuleRegistrations(@NotNull IModule module) {
+
+        checkValid();
+
+        var regs = getModuleRegistrations(module);
+
+        regs.forEach(this::removeRegistration);
+
+        return regs;
+
+    }
+
     public <T> boolean unregister(@NotNull Registration<T> reg) {
         checkValid();
         return registrationMap.remove(reg.regKey()) != null;

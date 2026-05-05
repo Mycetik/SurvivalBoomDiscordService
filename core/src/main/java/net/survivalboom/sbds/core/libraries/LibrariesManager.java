@@ -1,679 +1,486 @@
 package net.survivalboom.sbds.core.libraries;
 
 import net.survivalboom.sbds.api.libraries.*;
-import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.Placeholders;
-import net.survivalboom.sbds.api.utils.json.JsonConfiguration;
-import net.survivalboom.sbds.core.SBDS;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
+import net.survivalboom.sbds.api.utils.valid.Manager;
+import net.survivalboom.sbds.core.libraries.simple.SimpleLibrariesDownloader;
+import net.survivalboom.sbds.core.libraries.simple.SimpleLibrary;
+import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
-import org.json.XML;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.spongepowered.configurate.ConfigurateException;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.xml.XmlConfigurationLoader;
 
-import java.io.*;
+import java.io.File;
+import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 
-public class LibrariesManager  implements ILibrariesManager {
-
-    private static final Logger log = LoggerFactory.getLogger("LibrariesManager");
+public class LibrariesManager extends Manager implements ILibrariesManager {
 
 
-    private final File dir;
+    private final DynamicClassLoader rootClassLoader;
 
-    private final JarLoader jarLoader;
-
-    private SBDS sbds = null;
+    private final File librariesDir;
 
 
-    private final Map<String, Library> cachedLibraries = new HashMap<>();
+    private final Map<ArtifactAddress, PomData> cachedPoms = new HashMap<>();
 
-    private final List<PomFile> cachedPoms = new ArrayList<>();
+    private final Map<ArtifactAddress, Library> libraryMap = new HashMap<>();
 
 
-    public LibrariesManager(@NotNull File file, @NotNull JarLoader jarLoader) {
-
-        Objects.requireNonNull(file, "file == null");
-        if (file.isFile()) throw new IllegalArgumentException("File object represents an existing file, not a folder. Do you want to fuck yourself?");
-
-        this.jarLoader = jarLoader;
-        this.dir = file;
-
-        //noinspection ResultOfMethodCallIgnored
-        file.mkdirs();
-
-    }
-
-    public void configure(@NotNull SBDS sbds) {
-        if (this.sbds != null) throw new RuntimeException("Пошел нахуй, чурка!");
-        this.sbds = sbds;
-    }
-
-    public @NotNull List<Library> getLibraries() {
-        return new ArrayList<>(cachedLibraries.values());
-    }
-
-    public @NotNull JarLoader getJarLoader() {
-        return jarLoader;
+    public LibrariesManager(
+            @NotNull File librariesDir,
+            @NotNull DynamicClassLoader rootClassLoader
+    ) {
+        this.librariesDir = librariesDir;
+        this.rootClassLoader = rootClassLoader;
     }
 
     //
-    //
+    // MANAGER
     //
 
     @Override
-    public boolean satisfy(@NotNull IModule module, @NotNull ConfigurationSection section) {
-        Objects.requireNonNull(module, "module == null");
-        return satisfy0(module, section, false);
-    }
-
-
-    public synchronized boolean satisfy0(@Nullable IModule module, @NotNull ConfigurationSection librariesSection, boolean ignoreState) {
-
-        Objects.requireNonNull(librariesSection, "section == null");
-
-        if (module != null && !ignoreState) {
-            sbds.getModuleManager().checkModuleEnabled(module, "Disabled module attempted to download libraries.");
-        }
-
-        for (String s : librariesSection.getKeys(false)) {
-
-            ConfigurationSection section = librariesSection.getConfigurationSection(s);
-            if (section == null) continue;
-
-            LibrarySearchInfo searchInfo;
-            try {
-                searchInfo = LibrarySearchInfo.create(section);
-            }
-
-            catch (LibrarySectionParseException e) {
-                log.warn("Invalid library `{}` section. Skipping...", s, e);
-                return false;
-            }
-
-            Library library;
-            try {
-                library = findLibrary(searchInfo, true);
-            }
-
-            catch (UnknownLibraryException e) {
-                log.error("Library `{}` not found in repositories.", s);
-                return false;
-            }
-
-            catch (UnknownDependencyException e) {
-                log.error("Could not find a dependency `{}` from the library `{}`.", e.searchInfo().gradle(), s);
-                return false;
-            }
-
-            try {
-                downloadLibrary(library);
-            }
-
-            catch (LibraryDownloadException e) {
-                log.error("Failed to download `{}`. An exception occurred.", searchInfo);
-                return false;
-            }
-
-
-        }
-
-        downloadPoms();
-
-        return true;
+    protected void init0() {
 
     }
 
+    @Override
+    protected void shutdown0() {
 
-    public @NotNull Library findLibrary(@NotNull LibrarySearchInfo info, boolean resolveDependencies) throws UnknownLibraryException, UnknownDependencyException {
+    }
 
-        String gradleString = info.gradle();
+    // IMPORT LIBRARIES FROM SimpleLibrariesManager //
 
-        if (cachedLibraries.containsKey(gradleString)) {
-            return cachedLibraries.get(gradleString);
+    public void importFromSimpleLibrariesDownloader(@NotNull SimpleLibrariesDownloader downloader) {
+
+        checkValid();
+        Objects.requireNonNull(downloader, "downloader == null");
+
+        for (var simpleLib : downloader.getLibrariesInstalled()) {
+            importSimpleLibrary(simpleLib);
         }
 
-        PomFile pom = findPom(info);
+    }
 
-        List<String> repositories = findRepositories(pom);
+    private @NotNull ILibrary importSimpleLibrary(@NotNull SimpleLibrary simpleLibrary) {
 
-        Library library = new Library(info, repositories, pom);
+        List<ILibrary> dependencies = simpleLibrary.dependencies().stream()
+                .map(this::importSimpleLibrary)
+                .toList();
 
-        Library parent = findParent(library);
-        if (parent != null) library.setParent(parent);
+        String group = simpleLibrary.group();
+        String artifact = simpleLibrary.artifact();
+        String version = simpleLibrary.version();
 
-        Placeholders properties = findProperties(library);
-        library.setProperties(properties);
+        ArtifactAddress address = new ArtifactAddress(group, artifact, version);
+        String repository = simpleLibrary.repository();
 
-        Map<String, String> bomDependenciesVersions = findBomDependenciesVersions(library);
-        library.setBomDependenciesVersions(bomDependenciesVersions);
-
-        List<Library> bomDependencyProviders = findBomProviders(library);
-        library.setDependencyProviders(bomDependencyProviders);
-
-        if (resolveDependencies) {
-            List<Library> dependencies = findDependencies(library);
-            library.setDependencies(dependencies);
+        if (cachedPoms.containsKey(address)) {
+            throw new IllegalStateException("Library with address `" + address + "` already exists");
         }
 
-        else library.setDependencies(new ArrayList<>());
+        File file = simpleLibrary.file();
+        DynamicClassLoader classLoader = simpleLibrary.classLoader();
 
-        cachedLibraries.put(gradleString, library);
+        IPomData pom;
+        try {
+            pom = retrievePom(repository, address);
+        }
+
+        catch (PomResolutionException e) {
+            throw new RuntimeException(e);
+        }
+
+        classLoader.addClassSupplier(name -> rootClassLoader.getClass(name, false, true, false));
+
+        Library library = new Library(pom, file, classLoader, dependencies);
+        libraryMap.put(address, library);
 
         return library;
 
     }
 
     //
-    // downloadLibraries()
+    // LIBRARIES
     //
-    public void downloadLibrary(@NotNull Library library) throws LibraryDownloadException {
 
-        Objects.requireNonNull(library);
+    // DOWNLOAD //
 
-        for (Library dependency : library.getDependencies()) downloadLibrary(dependency);
+    @Override
+    public @NotNull MassDownloadResult downloadLibraries(@NotNull ConfigurationNode node) {
 
-        LibrarySearchInfo info = library.getInfo();
-        File file = info.jarFile(dir);
+        Objects.requireNonNull(node, "node == null");
+        checkValid();
 
-        if (file.exists()) {
-            jarLoader.mountJar(file);
-            return;
-        }
+        MassDownloadResult result = new MassDownloadResult(new ArrayList<>(), new ArrayList<>(), new HashMap<>());
 
-        String url = info.urlJar(library.getPom().url());
+        List<LibraryDeclaration> declarations = new ArrayList<>();
+        for (var section : node.childrenList()) {
 
-        try {
-
-            log.info("Downloading `{}` from `{}`...", file.getName(), url);
-            try (InputStream in = new URI(url).toURL().openStream()) {
-                Files.copy(in, file.toPath());
-            }
-
-            jarLoader.mountJar(file);
-
-        }
-
-        catch (IOException | URISyntaxException e) {
-            throw new LibraryDownloadException(e);
-        }
-
-    }
-
-    public void downloadPoms() {
-
-        for (PomFile pom : cachedPoms) {
-
-            if (checkLocalPom(pom.info())) continue;
-
-            File pomFile = pom.info().pomFile(dir);
-            File urlFile = pom.info().pomUrlFile(dir);
-
-            log.info("Caching `{}` on disk...", pomFile.getName());
-
+            LibraryDeclaration declaration;
             try {
-
-                write(pomFile, pom.original());
-                write(urlFile, pom.url());
-
+                declaration = section.get(LibraryDeclaration.class);
             }
 
-            catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-        }
-
-    }
-
-    private void write(@NotNull File file, @NotNull String string) throws IOException {
-
-        file.createNewFile();
-
-        try (FileOutputStream stream = new FileOutputStream(file)) {
-            stream.write(string.getBytes(StandardCharsets.UTF_8));
-        }
-
-    }
-
-    // TODO Зробити перевірку на вже встановлену нову версію, якщо є, не шукати стару версію.
-    private boolean isNewerVersion(String newVersion, String oldVersion) {
-        if (newVersion == null || oldVersion == null) throw new IllegalArgumentException("Version cannot be null");
-
-        String[] newParts = newVersion.split("[-.]");
-        String[] oldParts = oldVersion.split("[-.]");
-
-        int length = Math.max(newParts.length, oldParts.length);
-
-        for (int i = 0; i < length; i++) {
-            String newPart = i < newParts.length ? newParts[i] : "0";
-            String oldPart = i < oldParts.length ? oldParts[i] : "0";
-
-            // Проверяем, число это или нет
-            boolean isNewNumeric = newPart.matches("\\d+");
-            boolean isOldNumeric = oldPart.matches("\\d+");
-
-            if (isNewNumeric && isOldNumeric) {
-                // Сравниваем числа
-                int newNum = Integer.parseInt(newPart);
-                int oldNum = Integer.parseInt(oldPart);
-                if (newNum > oldNum) return true;
-                if (newNum < oldNum) return false;
-            } else {
-                // Если одно число, а другое строка → число "старше"
-                if (isNewNumeric) return true;
-                if (isOldNumeric) return false;
-
-                // Сравниваем строки (beta, RC, SNAPSHOT)
-                int cmp = newPart.compareTo(oldPart);
-                if (cmp > 0) return true;
-                if (cmp < 0) return false;
-            }
-        }
-
-        return false; // Версии равны
-    }
-
-
-    //
-    // findRepositories();
-    //
-
-    private @NotNull List<String> findRepositories(@NotNull PomFile pom) {
-
-        List<Map<?, ?>> section = pom.pom().getMapList("project.repositories.repository");
-        if (section.isEmpty()) return List.of(ILibrariesManager.MAVEN_CENTRAL_URL);
-
-        List<String> out = new ArrayList<>();
-        out.add(ILibrariesManager.MAVEN_CENTRAL_URL);
-
-        for (Map<?, ?> map : section) {
-            out.add((String) map.get("url"));
-        }
-
-        return out;
-
-    }
-
-    //
-    // findParent();
-    //
-
-    private @Nullable Library findParent(@NotNull Library library) throws UnknownLibraryException, UnknownDependencyException {
-
-        ConfigurationSection parentSection = library.getPom().pom().getConfigurationSection("project.parent");
-        if (parentSection == null) return null;
-
-        String group = parentSection.getString("groupId");
-        String artifact = parentSection.getString("artifactId");
-        String version = parentSection.getString("version");
-
-        Objects.requireNonNull(group, "group == null");
-        Objects.requireNonNull(artifact, "artifact == null");
-        Objects.requireNonNull(version, "version == null");
-
-        LibrarySearchInfo info = new LibrarySearchInfo(group, artifact, version, library.getRepositories());
-
-        return findLibrary(info, false);
-
-    }
-
-    //
-    // findProperties();
-    //
-
-    private @NotNull Placeholders findProperties(@NotNull Library library) {
-
-        Placeholders placeholders = new Placeholders();
-
-        Library parent = library.getParent();
-        if (parent != null) placeholders.addAll(findProperties(parent));
-
-        ConfigurationSection propertiesSection = library.getPom().pom().getConfigurationSection("project.properties");
-        if (propertiesSection != null) placeholders.addAll(getAllProperties(propertiesSection, null));
-
-        return placeholders
-                .add("${project.version}", library.getInfo().version())
-                .add("${project.name}", library.getName())
-                .add("${project.description}", library.getDescription())
-                .add("${project.groupId}", library.getInfo().group())
-                .add("${project.artifactId}", library.getInfo().artifact())
-                .selfParseValues();
-
-    }
-
-    private @NotNull Placeholders getAllProperties(@NotNull ConfigurationSection properties, @Nullable String path) {
-
-        Placeholders out = new Placeholders();
-
-        ConfigurationSection section = path == null ? properties : properties.getConfigurationSection(path);
-        Objects.requireNonNull(section);
-
-        for (String s : section.getKeys(false)) {
-
-            String key = path == null ? s : path + "." + s;
-
-            ConfigurationSection sect = properties.getConfigurationSection(key);
-            if (sect == null) {
-                String pKey = "${" + key.replace("!", "") + "}";
-                String value = properties.getString(key);
-                out.add(pKey, value);
-            }
-
-            else out.addAll(getAllProperties(properties, key));
-
-        }
-
-        out.selfParseValues();
-
-        return out;
-
-    }
-
-    //
-    // findBom()
-    //
-    private @NotNull Map<String, String> findBomDependenciesVersions(@NotNull Library library) {
-
-        Map<String, String> bom = new HashMap<>();
-
-        List<Map<?, ?>> section = library.getPom().pom().getMapList("project.dependencyManagement.dependencies.dependency");
-        if (section.isEmpty()) return bom;
-
-        Placeholders placeholders = library.getProperties();
-
-        for (Map<?, ?> map : section) {
-
-            String group = placeholders.parse((String) map.get("groupId"));
-            String artifact = placeholders.parse((String) map.get("artifactId"));
-            String version = placeholders.parse(map.get("version").toString());
-
-            bom.put(group + ":" + artifact, version);
-
-        }
-
-        return bom;
-
-    }
-
-    private @NotNull List<Library> findBomProviders(@NotNull Library library) throws UnknownDependencyException, UnknownLibraryException {
-
-        List<Library> out = new ArrayList<>();
-
-        List<Map<?, ?>> section = library.getPom().pom().getMapList("project.dependencyManagement.dependencies.dependency");
-        if (section.isEmpty()) return out;
-
-        Placeholders placeholders = library.getProperties();
-
-        for (Map<?, ?> map : section) {
-
-            String scope = (String) map.get("scope");
-            String type = (String) map.get("type");
-
-            if (scope == null || !scope.equals("import") || type == null || !type.equals("pom")) continue;
-
-            String group = placeholders.parse((String) map.get("groupId"));
-            String artifact = placeholders.parse((String) map.get("artifactId"));
-            String version = placeholders.parse(map.get("version").toString());
-
-            LibrarySearchInfo info = new LibrarySearchInfo(group, artifact, version, library.getRepositories());
-
-            Library provider = findLibrary(info, false);
-
-            out.add(provider);
-
-        }
-
-        return out;
-
-    }
-
-    //
-    // findDependencies()
-    //
-
-    private @NotNull List<Library> findDependencies(@NotNull Library library) throws UnknownDependencyException {
-
-        List<Library> out = new ArrayList<>();
-
-        List<String> repositories = library.getRepositories();
-        Placeholders properties = library.getProperties();
-
-        List<Map<?, ?>> section = library.getPom().pom().getMapList("project.dependencies.dependency");
-
-        if (section.isEmpty()) {
-
-            ConfigurationSection dSect = library.getPom().pom().getConfigurationSection("project.dependencies.dependency");
-            if (dSect == null) return out;
-
-            Map<String, String> m = new HashMap<>();
-            for (String key : dSect.getKeys(false)) {
-                m.put(key, dSect.getString(key));
-            }
-
-            section.add(m);
-
-        }
-
-        for (Map<?, ?> map : section) {
-
-            String group = properties.parse((String) map.get("groupId"));
-            String artifact = properties.parse((String) map.get("artifactId"));
-
-            String scope = (String) map.get("scope");
-            if (scope != null && !scope.equals("compile") && !scope.equals("runtime")) {
+            catch (SerializationException e) {
+                String key = (String) section.key();
+                result.failed().put(key, e);
                 continue;
             }
 
-            Boolean optional = (Boolean) map.get("optional");
-            if (optional != null && optional) {
+            declarations.add(declaration);
+
+        }
+
+        List<IPomData> poms = new ArrayList<>();
+        for (var declaration : declarations) {
+
+            ArtifactAddress address = ArtifactAddress.fromDeclaration(declaration);
+            String repository = declaration.source();
+            if (repository == null) {
+                repository = MAVEN_CENTRAL_URL;
+            }
+
+            IPomData pom;
+            try {
+                pom = retrievePom(repository, address);
+            }
+
+            catch (PomResolutionException e) {
+                result.failed().put(address, e);
                 continue;
             }
 
-            String version = map.containsKey("version") ? map.get("version").toString() : library.getBomVersion(group + ":" + artifact);
-            if (version == null) {
-                log.warn("No BOM version found for dependency `{}`. Required by `{}`. Trying to use latest version...", group + ":" + artifact, library);
-                version = findLatestVersion(group, artifact);
-                Objects.requireNonNull(version, "CACUS!");
-            }
-
-            version = properties.parse(version);
-
-            LibrarySearchInfo info = new LibrarySearchInfo(group, artifact, version, repositories);
-
-            Library dependency;
-            try {
-                dependency = findLibrary(info, true);
-            }
-
-            catch (UnknownLibraryException e) {
-                log.error("Could not find dependency `{}` of `{}`", info.gradle(), library.getInfo().gradle(), e);
-                throw new UnknownDependencyException("Could not find library `" + info.gradle() + "`.", info);
-            }
-
-            out.add(dependency);
+            poms.add(pom);
 
         }
 
-        return out;
+        for (var pom : poms) {
 
-
-    }
-
-
-
-    private @Nullable String findLatestVersion(@NotNull String group, @NotNull String artifact) {
-
-        String url = ILibrariesManager.MAVEN_CENTRAL_URL + group.replace(".", "/") + "/" + artifact + "/maven-metadata.xml";
-
-        log.info("Searching for latest version `{}` on `{}`...", group + ":" + artifact, url);
-
-        byte[] bytes;
-        try {
-
-            try (InputStream in = new URI(url).toURL().openStream()) {
-                bytes = in.readAllBytes();
+            ILibrary library = getLibrary(pom);
+            if (library != null) {
+                result.skipped().add(library);
+                continue;
             }
-
-        }
-
-        catch (IOException | URISyntaxException e) {
-            log.warn("Error!", e);
-            return null;
-        }
-
-        String string = new String(bytes, StandardCharsets.UTF_8);
-
-        JSONObject json = XML.toJSONObject(string);
-
-        JsonConfiguration jsonConfiguration = new JsonConfiguration();
-        jsonConfiguration.loadFromJson(json);
-
-        String ver = jsonConfiguration.getString("metadata.versioning.release");
-        if (ver == null) ver = jsonConfiguration.getString("metadata.version");
-
-        return ver;
-
-    }
-
-
-    //
-    // findPom();
-    //
-
-    private @NotNull PomFile findPom(@NotNull LibrarySearchInfo info) throws UnknownLibraryException {
-
-        PomFile cachedPomFile = cachedPoms.stream().filter(p -> p.info().equals(info)).findAny().orElse(null);
-
-        if (cachedPomFile != null) {
-            return cachedPomFile;
-        }
-
-        PomFile pom;
-
-        if (checkLocalPom(info)) {
-            try {
-                pom = loadLocalPom(info);
-            }
-            catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        else {
-
-            List<String> repositories = info.repositories();
-            if (repositories.size() == 1) {
-                pom = findPomInRepository(repositories.getFirst(), info);
-            }
-
-            else {
-
-                pom = findPomInRepositories(info);
-
-            }
-
-        }
-
-        cachedPoms.add(pom);
-
-        return pom;
-
-    }
-
-    private boolean checkLocalPom(@NotNull LibrarySearchInfo info) {
-
-        File pomFile = info.pomFile(dir);
-        File urlFile = info.pomUrlFile(dir);
-
-        return pomFile.exists() && urlFile.exists();
-
-    }
-
-
-    private @NotNull PomFile loadLocalPom(@NotNull LibrarySearchInfo info) throws IOException {
-
-        File pomFile = info.pomFile(dir);
-        File urlFile = info.pomUrlFile(dir);
-
-        byte[] bytes;
-        try (InputStream in = new FileInputStream(pomFile)) {
-            bytes = in.readAllBytes();
-        }
-
-        String url;
-        try (FileInputStream in = new FileInputStream(urlFile)) {
-            url = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        }
-
-        return loadPomFile(info, url, bytes);
-
-    }
-
-    private @NotNull PomFile findPomInRepositories(@NotNull LibrarySearchInfo info) throws UnknownLibraryException {
-
-        List<String> repositories = info.repositories();
-        for (String repo : repositories) {
 
             try {
-
-                return findPomInRepository(repo, info);
-
+                library = downloadLibrary(pom);
             }
 
-            catch (UnknownLibraryException e) {
-                log.warn("Failed to retrieve pom from `{}`.", repo, e);
+            catch (LibraryDownloadException e) {
+                result.failed().put(pom.getAddress(), e);
+                continue;
             }
+
+            result.downloaded().add(library);
 
         }
 
-        throw new UnknownLibraryException("Library `" + info.gradle() + "` was not found in " + repositories.size() + " repositories.");
+        return result;
 
     }
 
-    private @NotNull PomFile findPomInRepository(@NotNull String repo, @NotNull LibrarySearchInfo info) throws UnknownLibraryException {
+    @Override
+    public @NotNull ILibrary downloadLibrary(@NotNull IPomData pom) throws LibraryDownloadException {
 
-        String url = info.urlPom(repo);
+        Objects.requireNonNull(pom, "pom == null");
+        checkValid();
 
-        log.info("Searching `{}` in `{}`", info.gradle(), url);
+        String repository = pom.getRepository();
+        ArtifactAddress address = pom.getAddress();
 
-        byte[] bytes;
+        if (libraryMap.containsKey(address)) {
+            throw new IllegalStateException("Library `" + address + "` already exists");
+        }
 
-        try {
+        String url = address.createRepositoryAddress(repository, "jar");
+        File file = new File(librariesDir, address.toGradleString(ArtifactAddress.DEFAULT_FILESYSTEM_SEPARATOR) + ".jar");
 
-            try (InputStream in = new URI(url).toURL().openStream()) {
-                bytes = in.readAllBytes();
+        List<ILibrary> dependencies = new ArrayList<>();
+
+        for (IPomData dependencyPom : pom.getDependencies()) {
+
+            ILibrary dependency;
+
+            try {
+                dependency = downloadLibrary(dependencyPom);
             }
 
+            catch (LibraryDownloadException e) {
+                throw new LibraryDownloadException("Failed to download dependency `" + pom.getAddress() + "`");
+            }
+
+            dependencies.add(dependency);
+
+        }
+
+        try (InputStream in = new URI(url).toURL().openStream()) {
+            Files.copy(in, file.toPath());
         }
 
         catch (Exception e) {
-            throw new UnknownLibraryException("Library `" + info.gradle() + "` not found in repository `" + repo + "`. " + e);
+            throw new LibraryDownloadException("Failed to download library `" + address + "`", e);
         }
 
-        return loadPomFile(info, repo, bytes);
+        DynamicClassLoader classLoader = new DynamicClassLoader(pom.getAddress().toGradleString(), null);
+        classLoader.addClassSupplier(name -> rootClassLoader.getClass(name, false, true, false));
+
+
+        Library library = new Library(pom, file, classLoader, dependencies);
+
+        libraryMap.put(address, library);
+
+        return library;
 
     }
 
-    private @NotNull PomFile loadPomFile(@NotNull LibrarySearchInfo info, @NotNull String url, byte[] bytes) {
+    // GETTERS //
+
+    @Override
+    public @Nullable ILibrary getLibrary(@NotNull ArtifactAddress address) {
+        checkValid();
+        return libraryMap.get(address);
+    }
+
+    @Override
+    public @NotNull Map<ArtifactAddress, ILibrary> getInstalledLibraries() {
+        checkValid();
+        return new HashMap<>(libraryMap);
+    }
+
+    //
+    // POM
+    //
+
+    @Override
+    @Blocking
+    public @NotNull IPomData retrievePom(@NotNull String repository, @NotNull ArtifactAddress address) throws PomResolutionException {
+
+        Objects.requireNonNull(repository, "repository == null");
+        Objects.requireNonNull(address, "address == null");
+        checkValid();
+
+        IPomData pom = getPom(address);
+        if (pom != null) {
+            return pom;
+        }
+
+        String url = address.createRepositoryAddress(repository, "pom");
+
+        byte[] bytes;
+
+        try (InputStream in = new URI(repository).toURL().openStream()) {
+            bytes = in.readAllBytes();
+        }
+
+        catch (Exception e) {
+            throw new PomResolutionException("POM `" + address + "` not found in `" + url + "`");
+        }
+
+        PomData data = createPomFromBytes(repository, address, bytes);
+
+        cachedPoms.put(address, data);
+
+        return data;
+
+    }
+
+    @Override
+    public @Nullable IPomData getPom(@NotNull ArtifactAddress address) {
+        checkValid();
+        return cachedPoms.get(address);
+    }
+
+    @Override
+    public @NotNull Map<ArtifactAddress, IPomData> getCachedPoms() {
+        checkValid();
+        return new HashMap<>(cachedPoms);
+    }
+
+
+    //
+    // INTERNAL
+    //
+
+    private @NotNull PomData createPomFromBytes(@NotNull String repository, @NotNull ArtifactAddress address, byte[] bytes) throws PomResolutionException {
 
         String string = new String(bytes, StandardCharsets.UTF_8);
 
-        JSONObject json = XML.toJSONObject(string);
-        JsonConfiguration jsonConfiguration = new JsonConfiguration();
-        jsonConfiguration.loadFromJson(json);
+        ConfigurationNode pomData;
+        try {
+            pomData = XmlConfigurationLoader.builder().buildAndLoadString(string);
+        }
 
-        return new PomFile(info, url, jsonConfiguration, string);
+        catch (ConfigurateException e) {
+            throw new PomResolutionException("Invalid POM file. Could not parse XML", e);
+        }
+
+        ConfigurationNode projectSection = pomData.node("project");
+        if (projectSection.virtual()) {
+            throw new PomResolutionException("Invalid POM file. Section `project` not found");
+        }
+
+
+        // Завантажуємо properties у поточному pom.xml //
+
+        Map<String, String> localProperties = new HashMap<>();
+        localProperties.put("project.version", address.version()); // Додаємо деякі системні properties що існують в maven.
+
+        for (var section : projectSection.node("properties").childrenList()) {
+
+            String key = (String) section.key();
+            String value = section.getString();
+
+            localProperties.put(key, value);
+
+        }
+
+        Placeholders propertiesAsPlaceholders = Placeholders.of(localProperties);
+
+        // Дістаємо перелік репозиторіїв //
+
+        List<String> repositories = new ArrayList<>();
+        repositories.add(MAVEN_CENTRAL_URL);
+        for (var section : projectSection.node("repositories").childrenList()) {
+
+            String url = section.node("url").getString();
+            if (url == null) {
+                continue;
+            }
+
+            repositories.add(url);
+
+        }
+
+        // Визначаємо parent цього pom //
+
+        ConfigurationNode parentSection = projectSection.node("parent");
+        IPomData parent;
+        if (!parentSection.virtual()) {
+
+            ArtifactAddress artifactAddress = artifactAddressFromSection(parentSection, address, propertiesAsPlaceholders);
+
+            try {
+                parent = retrievePom(repositories, artifactAddress);
+            }
+
+            catch (Exception e) {
+                throw new PomResolutionException("Failed to resolve parent POM `" + address + "`. Searched in " + repositories.size() + " repositories", e);
+            }
+
+        }
+
+        else {
+            parent = null;
+        }
+
+        // Якщо parent існує, значить десь там є properties...
+        // Використовуємо рекурсивний піздець із parent'ами та доповнюємо наші properties.
+        if (parent != null) {
+            createFullParentRecursivePlaceholders(parent, propertiesAsPlaceholders);
+        }
+
+        propertiesAsPlaceholders.selfParse(); // Перепарсимо properties на самих себе.
+
+        List<IPomData> bombs = new ArrayList<>(); // ХА-ХА! Не BOM, а BOMBs ГІ ГІ ГІ, ГУ ГУ ГУ!!!
+        for (var section : projectSection.node("dependencyManagement").childrenList()) {
+
+            ArtifactAddress bomAddress = artifactAddressFromSection(section, address, propertiesAsPlaceholders);
+
+            IPomData bom;
+
+            try {
+                bom = retrievePom(repositories, bomAddress);
+            }
+
+            catch (Exception e) {
+                throw new PomResolutionException("Failed to retrieve BOM `" + bomAddress + "`");
+            }
+
+            bombs.add(bom);
+
+        }
+
+        List<IPomData> dependencies = new ArrayList<>();
+        for (var section : projectSection.node("dependencies").childrenList()) {
+
+            ArtifactAddress dependencyAddress = artifactAddressFromSection(section, address, propertiesAsPlaceholders);
+
+            IPomData dependency;
+            try {
+                dependency = retrievePom(repository, address);
+            }
+
+            catch (Exception e) {
+                throw new PomResolutionException("Failed to resolve dependency `" + dependencyAddress + "` of `" + address + "`");
+            }
+
+            dependencies.add(dependency);
+
+        }
+
+        return new PomData(repository, address, pomData, repositories, parent, localProperties, bombs, dependencies);
+
+    }
+
+    private @NotNull ArtifactAddress artifactAddressFromSection(@NotNull ConfigurationNode section, @NotNull ArtifactAddress address, @NotNull Placeholders properties) throws PomResolutionException {
+
+        String group = section.node("groupId").getString();
+        String artifact = section.node("artifactId").getString();
+        String version = section.node("version").getString();
+
+        if (group == null || artifact == null || version == null) {
+            throw new PomResolutionException("Artifact `" + address + "` has an invalid BOM");
+        }
+
+        group = properties.parse(group, MAVEN_PROPERTIES_LAYOUT);
+        artifact = properties.parse(artifact, MAVEN_PROPERTIES_LAYOUT);
+        version = properties.parse(version, MAVEN_PROPERTIES_LAYOUT);
+
+        return new ArtifactAddress(group, artifact, version);
+
+    }
+
+    private void createFullParentRecursivePlaceholders(@NotNull IPomData pom, @NotNull Placeholders placeholders) {
+
+        placeholders.add("project.version", pom.getAddress().version());
+
+        IPomData parent = pom.getParent();
+        while (parent != null) {
+
+            for (var entry : parent.getProperties().entrySet()) {
+
+                String key = entry.getKey();
+                String value = entry.getValue();
+
+                if (!placeholders.contains(key)) {
+                    continue;
+                }
+
+                placeholders.add(key, value);
+
+            }
+
+            parent = pom.getParent();
+
+        }
 
     }
 
 
+    //
+    // MISC
+    //
 
+    @Override
+    public @NotNull ClassLoader getClassLoader() {
+        return rootClassLoader;
+    }
 
 }

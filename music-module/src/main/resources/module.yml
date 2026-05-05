@@ -1,6 +1,8 @@
-name: "MusicModule"
+
+id: "musicmodule"
 main: "net.survivalboom.sbds.modules.music.MusicModule"
 
+name: "MusicModule"
 description: "Музичний модуль для SBDS. Музика!"
 version: "1.0"
 

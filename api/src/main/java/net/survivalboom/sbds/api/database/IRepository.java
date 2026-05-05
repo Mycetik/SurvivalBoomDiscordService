@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.api.database;
 
-import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.registrations.Registration;
+import net.survivalboom.sbds.api.utils.valid.IValid;
 import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,33 +10,38 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface IRepository {
+public interface IRepository<T extends DataRecord> extends IValid {
+
+    //
+    // REPOSITORY
+    //
+
+    @NotNull IDatabase getDatabase();
+
+    @NotNull Registration<IRepository<T>> getRegistration();
+
+    @NotNull Class<T> getRecordClass();
 
     //
     // DATABASE QUERIES
     //
 
-    @NotNull Session getSession();
+    // SESSIONS //
 
-    @NotNull <V> CompletableFuture<V> queueSessionRequest(@NotNull Function<Session, V> function);
+    @NotNull Session requestSession();
+
+    @NotNull <V> CompletableFuture<V> queueSessionReturnRequest(@NotNull Function<Session, V> function);
 
     @NotNull CompletableFuture<Void> queueSessionRequest(@NotNull Consumer<Session> consumer);
 
+    // OPERATIONS //
 
-    //
-    // GETTERS
-    //
+    @NotNull CompletableFuture<T> saveRecord(@NotNull T record);
 
-    @NotNull NamespacedKey getName();
+    @NotNull CompletableFuture<Void> deleteRecord(@NotNull T record);
 
-    @NotNull String getNameRaw();
+    @NotNull CompletableFuture<Void> deleteRecord(long id);
 
-    @Nullable IModule getModule();
-
-    @NotNull RepositoryHandler<? extends DataRecord> getHandler();
-
-    @NotNull IDatabase getDatabase();
-
-
+    @NotNull CompletableFuture<@Nullable T> getRecordById(long id);
 
 }

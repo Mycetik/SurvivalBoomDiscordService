@@ -12,16 +12,19 @@ import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.database.users.IUserData;
+import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
 import net.survivalboom.sbds.api.translations.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
 import net.survivalboom.sbds.api.messages.builder.MessageBuilder;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.utils.valid.Manager;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.database.Database;
+import net.survivalboom.sbds.core.database.guilds.GuildDataManager;
 import net.survivalboom.sbds.core.database.guilds.GuildRepositoryHandler;
+import net.survivalboom.sbds.core.database.users.UserDataManager;
 import net.survivalboom.sbds.core.database.users.UserRepositoryHandler;
 import net.survivalboom.sbds.core.translations.Translation;
 import net.survivalboom.sbds.core.translations.TranslationManager;
@@ -38,32 +41,34 @@ import java.util.regex.Pattern;
 public class Messages extends Manager implements IMessages {
 
     private static final Logger log = LoggerFactory.getLogger(Messages.class);
+
     private final SBDS sbds;
 
     private final TranslationManager translationManager;
 
-    private final Database database;
+    private final UserDataManager users = null;
 
-    private UserRepositoryHandler userRepository;
-
-    private GuildRepositoryHandler guildRepository;
+    private final GuildDataManager guilds = null;
 
 
     public Messages(@NotNull SBDS sbds) {
+
         this.sbds = sbds;
+
+//        this.users = sbds.getU
+
         this.translationManager = sbds.getTranslationManager();
-        this.database = sbds.getDatabase();
+
     }
 
     @Override
     protected void init0() {
-        this.userRepository = database.getRepositoryHandler("sbds:users", UserRepositoryHandler.class);
-        this.guildRepository = database.getRepositoryHandler("sbds:guilds", GuildRepositoryHandler.class);
+
     }
 
     @Override
     protected void shutdown0() {
-        this.userRepository = null;
+
     }
 
 
@@ -113,10 +118,10 @@ public class Messages extends Manager implements IMessages {
 
         if (!fallback) return null;
 
-        message = getMessage1(name, translationManager.defaultTranslation());
+        message = getMessage1(name, translationManager.getDefaultTranslation());
         if (message != null) return message;
 
-        message = getMessage1(name, translationManager.fallbackTranslation());
+        message = getMessage1(name, translationManager.getFallbackTranslation());
 
         return message;
 
@@ -127,16 +132,16 @@ public class Messages extends Manager implements IMessages {
 
         IMessage message = null;
         if (guild != null) {
-            ITranslation translation = guildRepository.createGuildData(guild).join().getTranslation();
+            ITranslation translation = guildRepository.createGuildData(guild).join().getDefaultTranslation();
             if (translation != null) message = translation.getMessage(name);
         }
 
         if (!fallback || message != null) return message;
 
-        message = getMessage1(name, translationManager.defaultTranslation());
+        message = getMessage1(name, translationManager.getDefaultTranslation());
         if (message != null) return message;
 
-        message = getMessage1(name, translationManager.fallbackTranslation());
+        message = getMessage1(name, translationManager.getFallbackTranslation());
 
         return message;
 
@@ -202,7 +207,7 @@ public class Messages extends Manager implements IMessages {
     private final Pattern msgReferenceRegex = Pattern.compile("\\$\\[(.*?)]");
 
     @Override
-    public @NotNull String parse(@NotNull String in, @NotNull Function<String, IMessage> supplier, @Nullable Placeholders placeholders) {
+    public @NotNull String parse(@NotNull String in, @NotNull Function<String, IMessageTemplate> supplier, @Nullable Placeholders placeholders) {
 
         Objects.requireNonNull(in, "in == null");
 
@@ -221,7 +226,7 @@ public class Messages extends Manager implements IMessages {
                     .replace("]", "")
                     .replace("$", "");
 
-            IMessage translatedMessage;
+            IMessageTemplate translatedMessage;
 
             String[] args = found.split(":");
             if (args.length == 2) {
@@ -229,7 +234,7 @@ public class Messages extends Manager implements IMessages {
                 String namespace = args[0];
                 String key = args[1];
 
-                Translation translation = translationManager.getTranslation(namespace);
+                ITranslation translation = translationManager.getTranslation(namespace);
                 if (translation == null) {
                     continue;
                 }

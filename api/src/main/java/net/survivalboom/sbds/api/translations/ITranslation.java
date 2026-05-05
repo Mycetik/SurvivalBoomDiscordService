@@ -7,17 +7,11 @@ import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.IValid;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
-import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public interface ITranslation extends IValid {
 
@@ -36,8 +30,10 @@ public interface ITranslation extends IValid {
     @NotNull Map<String, IMessageTemplate> getMessages();
 
     //
-    // POOLS
+    // MESSAGE POOLS
     //
+
+    // CREATION //
 
     @NotNull ITranslationsMessagesPool createMessagesPool(@NotNull IModule module, @NotNull String name);
 
@@ -45,6 +41,18 @@ public interface ITranslation extends IValid {
         return createMessagesPool(module.getModule(), name);
     }
 
+    default @NotNull ITranslationsMessagesPool getOrCreateMessagesPool(@NotNull IModule module, @NotNull String name) {
+
+        var reg = getMessagesPool(NamespacedKey.fromModule(module, name));
+        if (reg == null) {
+            return createMessagesPool(module, name);
+        }
+
+        return reg.object();
+
+    }
+
+    // REMOVE //
 
     boolean removeMessagesPool(@NotNull ITranslationsMessagesPool pool);
 
@@ -65,6 +73,7 @@ public interface ITranslation extends IValid {
         return removeMessagesPool(NamespacedKey.fromString(key));
     }
 
+    // GETTERS //
 
     @Nullable Registration<ITranslationsMessagesPool> getMessagesPool(@NotNull NamespacedKey key);
 
@@ -86,14 +95,22 @@ public interface ITranslation extends IValid {
 
     // DISCORD LOCALE //
 
-    @NotNull DiscordLocale getDiscordLocale();
+    @Nullable DiscordLocale getDiscordLocale();
 
-    void setDiscordLocale(@NotNull DiscordLocale locale);
+    void setDiscordLocale(@Nullable DiscordLocale locale);
 
     // ICON //
 
     @Nullable String getIconEmoji();
 
     void setIconEmoji(@Nullable String icon);
+
+    //
+    // MISC
+    //
+
+    @NotNull ITranslationManager getManager();
+
+    void remove();
 
 }

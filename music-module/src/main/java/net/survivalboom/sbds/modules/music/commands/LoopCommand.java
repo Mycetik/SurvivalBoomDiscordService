@@ -5,12 +5,12 @@ import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
-import net.survivalboom.sbds.api.commands.argument.misc.EnumSelectArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.argument.misc.select.EnumSelectArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.modules.music.bots.BotManager;
 import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
 import net.survivalboom.sbds.modules.music.bots.LoopMode;
@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "loop", description = "Sets a loop mode for current music bot", translationKey = "music.command.loop")
+@CommandClass(name = "loop", description = "Sets a loop mode for current music bot", translationKey = "music.command.loop")
 public class LoopCommand extends AbstractPlayerCommand {
 
     public LoopCommand(@NotNull BotManager botManager) {
@@ -75,13 +75,13 @@ public class LoopCommand extends AbstractPlayerCommand {
         }
     }
 
-    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }
 
 
-    @CommandArgument(name = "mode", description = "Loop mode", index = 1)
+    @ArgumentMethod(name = "mode", description = "Loop mode", index = 1)
     public Argument<?> mode() {
         return new EnumSelectArgument<>(LoopMode.class);
     }

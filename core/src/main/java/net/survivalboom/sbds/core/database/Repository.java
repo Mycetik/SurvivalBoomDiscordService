@@ -3,70 +3,66 @@ package net.survivalboom.sbds.core.database;
 import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
-import net.survivalboom.sbds.core.modules.Module;
-import net.survivalboom.sbds.api.database.RepositoryHandler;
-import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.valid.Valid;
 import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class Repository extends Valid implements IRepository {
+public class Repository<T extends DataRecord> extends Valid implements IRepository<T> {
+
+    private final Class<T> recordClass;
 
     private final Database database;
 
-    private RepositoryHandler<?> handler;
+    protected Registration<IRepository<T>> registration;
 
 
-    private final NamespacedKey name;
-
-    private final Module module;
-
-    private final Logger logger;
-
-
-    public Repository(@Nullable Module module, @NotNull NamespacedKey name, @NotNull Database database) {
-        this.module = module;
-        this.name = name;
+    public Repository(
+            @NotNull Class<T> clazz,
+            @NotNull Database database
+    ) {
+        this.recordClass = clazz;
         this.database = database;
-        this.logger = LoggerFactory.getLogger("Repository-" + name.prefix() + "-" + name.key());
     }
 
-    public void configure(@NotNull RepositoryHandler<?> handler) {
-        if (this.handler != null) throw new RuntimeException("already configured, debil4ik!");
-        this.handler = handler;
-        handler.configure(this);
+    //
+    // REPOSITORY
+    //
+
+    @Override
+    public @NotNull Registration<IRepository<T>> getRegistration() {
+        return registration;
     }
 
-    public void reload() {
+    @Override
+    public @NotNull Class<T> getRecordClass() {
+        return recordClass;
+    }
 
-        try {
-            handler.reload();
-        }
-
-        catch (Throwable t) {
-            logger.error("Failed to reload repository properly. This may cause bugs, memory leaks, exceptions, and data corruption.", t);
-        }
-
+    @Override
+    public @NotNull IDatabase getDatabase() {
+        return database;
     }
 
     //
     // DATABASE QUERIES
     //
 
+    // SESSIONS //
+
     @Override
-    public @NotNull Session getSession() {
+    public @NotNull Session requestSession() {
         return database.requestSession(this);
     }
 
     @Override
-    public @NotNull <V> CompletableFuture<V> queueSessionRequest(@NotNull Function<Session, V> function) {
+    public @NotNull <V> CompletableFuture<V> queueSessionReturnRequest(@NotNull Function<Session, V> function) {
         return database.queueSessionRequest(this, function);
     }
 
@@ -75,36 +71,38 @@ public class Repository extends Valid implements IRepository {
         return database.queueSessionRequest(this, consumer);
     }
 
-    //
-    // GETTERS
-    //
+    // OPERATIONS //
 
     @Override
-    public @NotNull NamespacedKey getName() {
-        return name;
-    }
-
-    @Override
-    public @NotNull String getNameRaw() {
-        return name.toString();
+    public @NotNull CompletableFuture<T> saveRecord(@NotNull T record) {
+        Objects.requireNonNull(record, "record == null");
+        return queueSessionReturnRequest(session -> session.merge(record));
     }
 
     @Override
-    public @Nullable Module getModule() {
-        return module;
+    public @NotNull CompletableFuture<Void> deleteRecord(@NotNull T record) {
+        Objects.requireNonNull(record, "record == null");
+        return queueSessionRequest(session -> session.remove(record));
     }
 
     @Override
-    public @NotNull RepositoryHandler<? extends DataRecord> getHandler() {
-        return handler;
+    public @NotNull CompletableFuture<Void> deleteRecord(long id) {
+
+        return getRecordById(id).thenCompose(record -> {
+
+            if (record == null) {
+                return CompletableFuture.completedFuture(null);
+            }
+
+            return queueSessionRequest(session -> session.remove(record));
+
+        });
+
     }
 
     @Override
-    public @NotNull IDatabase getDatabase() {
-        return database;
+    public @NotNull CompletableFuture<@Nullable T> getRecordById(long id) {
+        return queueSessionReturnRequest(session -> session.get(recordClass, id));
     }
 
-    public void invalid() {
-        setValid(false);
-    }
 }

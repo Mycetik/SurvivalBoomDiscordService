@@ -1,241 +1,104 @@
 package net.survivalboom.sbds.api.commands.base;
 
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.commands.Command;
+import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-// TODO Багато дебілізму, переглянути увесь код й виправити.
 public abstract class CommandBase implements CommandExecutor {
-
-    private static final Logger log = LoggerFactory.getLogger(CommandBase.class);
-    private final String name;
-
-
-    private final String description;
-
-    private final String translationKey;
-
-    private final String usage;
-
-
-    private final String permission;
-
-    private final boolean defaultPermission;
-
-
-    private final boolean global;
-
-    private final boolean guild;
-
-
-    private boolean wasInitialized = false;
-
-
-    private final List<String> aliases = new ArrayList<>();
-
-    private final List<net.survivalboom.sbds.api.commands.CommandArgument> arguments = new ArrayList<>();
 
     private final Set<CommandBase> subcommands = new HashSet<>();
 
 
-    public CommandBase() {
+    public @NotNull Command build() {
 
-        Command info = getInfoAnnotation();
+        CommandClass info = this.getClass().getAnnotation(CommandClass.class);
+        if (info == null) {
+            throw new InvalidCommandException("Annotation `@CommandClass` is not present in CommandBase class `" + getClass().getSimpleName() + "`");
+        }
 
-        this.name = info.name();
+        String name = info.name();
 
-        this.description = info.description().isEmpty() ? null : info.description();
-        this.usage = info.usage().isEmpty() ? null : info.usage();
-        this.translationKey = info.translationKey().isEmpty() ? null : info.translationKey();
+        String description = info.description();
+        String translationKey = info.translationKey();
 
-        this.permission = info.permission().isEmpty() ? null : info.permission();
-        this.defaultPermission = info.defaultPermission();
+        String permission = info.permission();
+        boolean defaultPermission = info.defaultPermission();
 
-        this.global = info.global();
-        this.guild = info.guild();
+        List<String> aliases = List.of(info.aliases());
 
-        Objects.requireNonNull(info.aliases(), "aliases == null");
-        Objects.requireNonNull(name, "name == null");
+        List<CommandArgument> arguments = scanForArguments(translationKey);
 
-        aliases.addAll(List.of(info.aliases()));
-        arguments.addAll(scanForArguments());
+        return new Command(
+                name,
+                this,
+                arguments,
+                aliases,
+                description,
+                translationKey,
+                permission,
+                defaultPermission
+        );
 
     }
 
-    private @NotNull Command getInfoAnnotation() {
-        Command annotation = this.getClass().getAnnotation(Command.class);
-        if (annotation == null) throw new IllegalStateException("Annotation @Command is not present!");
-        return annotation;
-    }
+    private @NotNull List<CommandArgument> scanForArguments(String translationKey) {
 
-    private @NotNull List<net.survivalboom.sbds.api.commands.CommandArgument> scanForArguments() {
-
-
-        List<net.survivalboom.sbds.api.commands.CommandArgument> out = new ArrayList<>();
+        List<CommandArgument> out = new ArrayList<>();
 
         for (Method method : getClass().getDeclaredMethods()) {
 
-            if (!method.isAnnotationPresent(CommandArgument.class)) continue;
+            if (!method.isAnnotationPresent(ArgumentMethod.class)) {
+                continue;
+            }
 
-            CommandArgument argumentInfo = method.getAnnotation(CommandArgument.class);
+            ArgumentMethod argumentInfo = method.getAnnotation(ArgumentMethod.class);
 
-            String name = argumentInfo.name();
-
-            //noinspection ConstantValue
-            if (name == null) throw InvalidCommandException.createInvalidArgumentException(method, "Argument name is null", null);
-
+            String name = method.getName();
 
             Argument<?> argument;
             try {
                 argument = (Argument<?>) method.invoke(this);
             }
 
-            catch (IllegalAccessException e) {
-                throw InvalidCommandException.createInvalidArgumentException(method, "Method must be public", null);
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | ClassCastException e) {
+                throw new InvalidCommandException("Invalid command argument `" + name + "`", e);
             }
 
-            catch (InvocationTargetException e) {
-                throw InvalidCommandException.createInvalidArgumentException(method, "Error occurred", e);
+            if (argument == null) {
+                throw new InvalidCommandException("Received null in argument method `" + method.getName() + "`");
             }
 
-            catch (IllegalArgumentException e) {
-                throw InvalidCommandException.createInvalidArgumentException(method, "Method must not have any parameters", null);
-            }
-
-            catch (ClassCastException e) {
-                throw InvalidCommandException.createInvalidArgumentException(method, "Method return type must be 'Argument<T>'.", null);
-            }
-
-            if (argument == null) throw InvalidCommandException.createInvalidArgumentException(method, "Method returned null", null);
-
-            String argumentTranslationKey = translationKey != null ? translationKey + "." + argumentInfo.name() : null;
-            out.add(new net.survivalboom.sbds.api.commands.CommandArgument(name, argumentInfo.description(), argumentTranslationKey, List.of(argumentInfo.scope()), argument, argumentInfo.index(), argumentInfo.required()));
+            String argumentTranslationKey = translationKey != null ? translationKey + "." + method.getName() : null;
+            out.add(new CommandArgument(
+                    name,
+                    argumentInfo.description(),
+                    argumentTranslationKey,
+                    List.of(argumentInfo.scope()),
+                    argument,
+                    argumentInfo.index(),
+                    argumentInfo.required()
+            ));
 
         }
 
-        out.sort(Comparator.comparing(net.survivalboom.sbds.api.commands.CommandArgument::index));
+        out.sort(Comparator.comparing(CommandArgument::index));
 
         return out;
 
     }
 
-
     public void addSubCommand(@NotNull CommandBase commandBase) {
         subcommands.add(commandBase);
-    }
-
-
-    public @NotNull net.survivalboom.sbds.api.commands.Command build(@NotNull ISBDS sbds, @Nullable IModule module) {
-
-        if (!wasInitialized) {
-
-            try {
-                init(sbds, module);
-            }
-
-            catch (Throwable t) {
-                log.error("Exception was thrown in CommandBase init(). Command may not work.", t);
-            }
-
-            wasInitialized = true;
-
-        }
-
-        net.survivalboom.sbds.api.commands.Command command = new net.survivalboom.sbds.api.commands.Command(name, module, this);
-
-        command
-            .withDescription(description)
-            .withUsage(usage)
-            .withAliases(aliases)
-            .withTranslationKey(translationKey)
-            .withPermission(permission, defaultPermission);
-
-
-        if (!subcommands.isEmpty()) {
-            subcommands.forEach(c -> command.withSubcommand(c, sbds, module));
-            command.executes(this::subcommandProxy);
-            return command;
-        }
-
-        command
-            .withArguments(arguments)
-            .executes(this);
-
-        return command;
-
-    }
-
-    protected void init(@NotNull ISBDS sbds, @Nullable IModule module) {}
-
-
-    private void subcommandProxy(@NotNull CommandExecutionInfo info) {
-
-        net.survivalboom.sbds.api.commands.Command command = Objects.requireNonNull(info.arguments().get("subcommand", net.survivalboom.sbds.api.commands.Command.class));
-
-
-    }
-
-
-
-    @Override
-    public void execute(@NotNull CommandExecutionInfo info) throws Throwable {
-
-        try {
-
-            Method method = this.getClass().getDeclaredMethod("executes", info.getClass());
-
-            method.invoke(this, info);
-
-        }
-
-        catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new InvalidCommandException("Executor for " + info.getClass().getName() + " not found");
-        }
-
-        catch (InvocationTargetException e) {
-            throw e.getCause();
-        }
-
-    }
-
-
-
-    public final @NotNull String getName() {
-        return name;
-    }
-
-    public final @Nullable String getDescription() {
-        return description;
-    }
-
-    public final @Nullable String getTranslationKey() {
-        return translationKey;
-    }
-
-    public final @Nullable String getPermission() {
-        return permission;
-    }
-
-    public final @Nullable String getUsage() {
-        return usage;
-    }
-
-    public final @NotNull List<String> getAliases() {
-        return new ArrayList<>(aliases);
-    }
-
-    public final @NotNull List<net.survivalboom.sbds.api.commands.CommandArgument> getArguments() {
-        return arguments;
     }
 
 }

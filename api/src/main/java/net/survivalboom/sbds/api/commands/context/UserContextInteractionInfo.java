@@ -7,8 +7,11 @@ import org.slf4j.Logger;
 
 public class UserContextInteractionInfo extends ContextInteractionInfo<UserContextInteractionEvent> {
 
-    public UserContextInteractionInfo(@NotNull UserContextInteractionEvent event, @NotNull ISBDS sbds, @NotNull Logger logger) {
-        super(event, sbds, logger);
+    public UserContextInteractionInfo(
+            @NotNull UserContextInteractionEvent event,
+            @NotNull ISBDS sbds
+    ) {
+        super(event, sbds);
     }
 
 }

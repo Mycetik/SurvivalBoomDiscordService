@@ -5,26 +5,28 @@ import jakarta.persistence.Table;
 import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
-import net.survivalboom.sbds.api.database.RepositoryHandler;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.registrations.Registration;
+import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.core.database.guilds.GuildRepositoryHandler;
-import net.survivalboom.sbds.core.database.users.UserRepositoryHandler;
-import net.survivalboom.sbds.core.modules.Module;
-import org.bspfsystems.yamlconfiguration.configuration.Configuration;
+import net.survivalboom.sbds.core.database.guilds.GuildDataRecord;
+import net.survivalboom.sbds.core.database.users.UserDataRecord;
+import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongepowered.configurate.ConfigurationNode;
 
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -35,23 +37,30 @@ public class Database extends Manager implements IDatabase {
     private final SBDS sbds;
 
 
-    @Nullable
-    private Properties properties;
-
-    @Nullable
-    private SessionFactory sessionFactory = null;
+    private @Nullable Properties properties = null;
+    private @Nullable SessionFactory sessionFactory = null;
 
 
-    private final Map<NamespacedKey, Repository> repositoryMap = new HashMap<>();
+    private final InternalRegistrationManager<IRepository<?>> registry;
 
     private final DatabaseQueue queue;
+
+    // repo queue //
+
+    private final Queue<IRepository<?>> repoRebuildQueue = new ConcurrentLinkedQueue<>();
+
+    private ISchedulerTask rebuildQueue = null;
 
 
     public Database(@NotNull SBDS sbds) {
         this.sbds = sbds;
+        this.registry = new InternalRegistrationManager<>(this, "database", null, sbds.getRegistrationRegistry());
         this.queue = new DatabaseQueue(this, sbds.getScheduler());
     }
 
+    //
+    // MANAGER
+    //
 
     @Override
     protected void init0() {
@@ -60,21 +69,12 @@ public class Database extends Manager implements IDatabase {
 
         new File(sbds.getWorkingDir(), "data").mkdirs();
 
-        reloadHibernate();
-
-        createRepository0(null, NamespacedKey.sbds("users"), new UserRepositoryHandler(), false);
-        createRepository0(null, NamespacedKey.sbds("guilds"), new GuildRepositoryHandler(), false);
-
-        try {
-            rebuildSessionFactory();
-        }
-
-        catch (Throwable t) {
-            log.error("Failed to initialize the database. Please ensure that database credentials are correct and your database is online.");
-            throw t;
-        }
+        createRepository0(null, "users", UserDataRecord.class);
+        createRepository0(null, "guilds", GuildDataRecord.class);
 
         queue.init();
+
+        rebuildQueue = sbds.getScheduler().schedule0(null, "RebuildSessionQueue", task -> rebuildQueueTask(), 1000, 500);
 
     }
 
@@ -82,7 +82,11 @@ public class Database extends Manager implements IDatabase {
     protected void shutdown0() {
 
         log.info("Shutting down database...");
-        repositoryMap.clear();
+
+        rebuildQueue.cancel();
+        rebuildQueue = null;
+
+        registry.shutdown();
         queue.shutdown();
 
         if (sessionFactory != null) {
@@ -91,67 +95,88 @@ public class Database extends Manager implements IDatabase {
 
     }
 
-    //
-    // RELOAD
-    //
+    // REBUILD QUEUE //
+
+    private void rebuildQueueTask() {
+
+        List<IRepository<?>> queue = new ArrayList<>(this.repoRebuildQueue);
+        this.repoRebuildQueue.clear();
+
+        try {
+            rebuildSessionFactory(queue);
+        }
+
+        catch (Throwable t) {
+            log.error("Failed to initialize the database. Please ensure that database credentials are correct and your database is online.");
+            throw t;
+        }
+
+    }
+
+    // RELOAD //
 
     @Override
     public void reload(@NotNull IModule module) {
         Objects.requireNonNull(module, "module == null");
-        reload0(module);
+        reload0(module, false);
     }
 
-    public void reload0(@Nullable IModule module) {
+    public void reload0(@Nullable IModule module, boolean silent) {
 
         checkValid();
 
         if (module != null) {
+
             sbds.getModuleManager().checkModuleEnabled(module, "Disabled module attempted to request a database reload");
-            log.info("Module {} requested a database reload. Reloading the database!", module);
+
+            if (!silent) {
+                log.warn("Module {} requested a database reload. Reloading the database!", module);
+            }
+
+        }
+
+        else if (!silent) {
+            log.warn("Requested a database reload! Reloading the database!");
         }
 
         try {
 
-            log.info("Reloading Hibernate...");
-            reloadHibernate();
-
-            log.info("Reloading repositories...");
-            rebuildSessionFactory();
-            getRepositories0().forEach(Repository::reload);
+            loadProperties();
 
         }
 
-        catch (Throwable t) {
+        catch (Exception t) {
             log.error("Failed to reload the database! SBDS will not function properly!");
             log.error("All calls to the database will cause an IllegalStateException. Everything that works with the database will break!", t);
             return;
         }
 
-        log.info("Database reloaded successfully!");
+        if (!silent) {
+            log.info("Database reloaded successfully!");
+        }
 
     }
 
-    private void reloadHibernate() {
+    private void loadProperties() {
 
-        if (sessionFactory != null) {
-            properties = null;
-            sessionFactory.close();
-            sessionFactory = null;
-        }
+        this.properties = null;
 
-        Configuration config = sbds.getConfiguration();
+        ConfigurationNode config = sbds.getConfiguration();
 
-        String jdbcUrl = config.getString("database.jdbc", "null").replace("{SBDS-DIR}", sbds.getWorkingDir().getAbsolutePath());
-        String driver = config.getString("database.driver", "null");
-        String dialect = config.getString("database.dialect");
-        String tableModifier = config.getString("database.table-modify", "none");
+        ConfigurationNode databaseSection = config.node("database");
 
-        String username = config.getString("database.user");
-        String password = config.getString("database.password");
+        String jdbcUrl = databaseSection.node("jdbc").getString("null")
+                .replace("{SBDS-DIR}", sbds.getWorkingDir().getAbsolutePath());
+
+        String driver = databaseSection.node("driver").getString("null");
+        String dialect = databaseSection.node("dialect").getString();
+        String tableModifier = databaseSection.node("mode").getString("none");
+
+        String username = databaseSection.node("user").getString();
+        String password = databaseSection.node("password").getString();
 
 
-
-        Properties properties = CommonUtils.getPropertiesFromYaml(CommonUtils.getOrCreateSection(config, "database.properties"));
+        Properties properties = CommonUtils.getPropertiesFromYaml(databaseSection.node("properties"));
 
         properties.setProperty("hibernate.connection.url", jdbcUrl);
 
@@ -170,7 +195,7 @@ public class Database extends Manager implements IDatabase {
 
     }
 
-    private void rebuildSessionFactory() {
+    private void rebuildSessionFactory(@NotNull Collection<IRepository<?>> toImport) {
 
         Objects.requireNonNull(properties, "properties == null");
 
@@ -182,8 +207,8 @@ public class Database extends Manager implements IDatabase {
         org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration();
         configuration.setProperties(properties);
 
-        for (Repository repository : repositoryMap.values()) {
-            Class<?> clazz = repository.getHandler().getDataRecordClass();
+        for (var repo : toImport) {
+            Class<?> clazz = repo.getRecordClass();
             configuration.addAnnotatedClass(clazz);
         }
 
@@ -195,132 +220,96 @@ public class Database extends Manager implements IDatabase {
     // REPOSITORIES
     //
 
+    // CREATE //
+
     @Override
-    public @NotNull Repository createRepository(@NotNull IModule module, @NotNull String name, @NotNull RepositoryHandler<?> handler) {
+    public <T extends DataRecord> @NotNull Repository<T> createRepository(@NotNull IModule module, @NotNull String name, @NotNull Class<T> clazz) {
 
         Objects.requireNonNull(module, "module == null");
         Objects.requireNonNull(name, "name == null");
-        Objects.requireNonNull(handler, "handler == null");
+        Objects.requireNonNull(clazz, "clazz == null");
 
-        NamespacedKey namespacedKey = NamespacedKey.fromModule(module, name);
-
-        return createRepository0(module, namespacedKey, handler, true);
+        return createRepository0(module, name, clazz);
 
     }
 
-    public synchronized @NotNull Repository createRepository0(@Nullable IModule iModule, @NotNull NamespacedKey namespacedKey, @NotNull RepositoryHandler<?> handler, boolean rebuiltSessionFactory) {
+    @SuppressWarnings("unchecked")
+    public synchronized <T extends DataRecord> @NotNull Repository<T> createRepository0(@Nullable IModule module, @NotNull String name, @NotNull Class<T> clazz) {
 
-        if (repositoryMap.containsKey(namespacedKey)) throw new IllegalArgumentException("Repository with name `" + namespacedKey + "` already exists");
+        checkValid();
 
-        if (!handler.getDataRecordClass().isAnnotationPresent(Entity.class)) throw new IllegalArgumentException("RepositoryHandler's DataRecord class must have jakarta.persistence.Entity annotation");
+        if (!clazz.isAnnotationPresent(Entity.class)) {
+            throw new IllegalArgumentException("DataRecord class must have jakarta.persistence.Entity annotation");
+        }
 
-        Table table = handler.getDataRecordClass().getAnnotation(Table.class);
-        if (table == null) throw new IllegalArgumentException("RepositoryHandler's DataRecord class must have jakarta.persistence.Table annotation");
+        Table table = clazz.getAnnotation(Table.class);
+        if (table == null) {
+            throw new IllegalArgumentException("RepositoryHandler's DataRecord class must have jakarta.persistence.Table annotation");
+        }
 
         String tableName = table.name();
-        if (repositoryMap.values().stream().anyMatch(r -> r.getHandler().getDataRecordClass().getAnnotation(Table.class).name().equals(tableName))) {
+        boolean tableExists = registry.getRegistrations().stream()
+                .map(Registration::object)
+                .map(IRepository::getRecordClass)
+                .anyMatch(cls -> cls.getAnnotation(Table.class).name().equals(tableName));
+
+        if (tableExists) {
             throw new IllegalArgumentException("DataRecord with table name `" + tableName + "` already exist");
         }
 
-        Repository repository;
-        if (iModule != null) {
-            Module module = sbds.getModuleManager().checkModuleEnabled(iModule, "Disabled module attempted to create a repository");
-            repository = new Repository(module, namespacedKey, this);
-            module.getRegistration().add("Repository-" + namespacedKey.key(), () -> removeRepository(repository));
+        if (module != null) {
+            sbds.getModuleManager().checkModuleEnabled(module, "Disabled module attempted to create a repository");
         }
 
-        else repository = new Repository(null, namespacedKey, this);
+        Repository<T> repository = new Repository<>(clazz, this);
+        repository.registration = (Registration<IRepository<T>>) (Registration<?>) registry.register0(module, name, repository);
 
-        repositoryMap.put(namespacedKey, repository);
-
-        repository.configure(handler);
-        if (rebuiltSessionFactory) rebuildSessionFactory();
-        repository.reload();
+        repoRebuildQueue.add(repository);
 
         return repository;
 
     }
 
-    @Override
-    public void removeRepository(@NotNull String name) {
-        removeRepository(NamespacedKey.fromString(name));
-    }
-
-    @Override
-    public void removeRepository(@NotNull IRepository repository) {
-        removeRepository(repository.getName());
-    }
-
-    @Override
-    public synchronized void removeRepository(@NotNull NamespacedKey key) {
-
-        Repository repository = repositoryMap.get(key);
-        if (repository == null) return;
-
-        repository.invalid();
-        repository.getHandler().purgeCache();
-        repositoryMap.remove(key);
-
-        rebuildSessionFactory();
-
-    }
+    // REMOVE //
 
 
     @Override
-    public @NotNull List<IRepository> getRepositories() {
-        return new ArrayList<>(getRepositories0());
+    public synchronized boolean removeRepository(@NotNull IRepository<?> repository) {
+
+        checkValid();
+
+        var reg = registry.unregister(repository);
+
+        return reg != null;
+
     }
 
-    public @NotNull List<Repository> getRepositories0() {
-        return new ArrayList<>(repositoryMap.values());
+    // GETTERS //
+
+    @Override
+    public @Nullable IRepository<?> getRepository(@NotNull NamespacedKey key) {
+
+        checkValid();
+
+        var reg = registry.getRegistration(key);
+        if (reg == null) {
+            return null;
+        }
+
+        return reg.object();
+
     }
 
     @Override
-    public @NotNull List<IRepository> getRepositories(@NotNull IModule module) {
-        return new ArrayList<>(getRepositories0(module));
+    public @NotNull List<IRepository<?>> getRepositories() {
+        return registry.getRegisteredObjects();
     }
-
-    public @NotNull List<Repository> getRepositories0(@NotNull IModule module) {
-        Objects.requireNonNull(module, "module == null");
-        List<Repository> repositories = getRepositories0();
-        repositories.removeIf(r -> !module.equals(r.getModule()));
-        return repositories;
-    }
-
-
-    @Override
-    public @Nullable IRepository getRepository(@NotNull String name) {
-        return getRepository(NamespacedKey.fromString(name));
-    }
-
-    @Override
-    public @Nullable IRepository getRepository(@NotNull NamespacedKey key) {
-        return repositoryMap.get(key);
-    }
-
-
-    @Override
-    public @Nullable <T> T getRepositoryHandler(@NotNull String name, @NotNull Class<T> cast) {
-        return getRepositoryHandler(NamespacedKey.fromString(name), cast);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public @Nullable <T> T getRepositoryHandler(@NotNull NamespacedKey key, @NotNull Class<T> cast) {
-
-        IRepository repository = getRepository(key);
-        if (repository == null) return null;
-
-        return (T) Objects.requireNonNull(repository.getHandler(), "handler == null, something went wrong");
-
-    }
-
 
     //
     // SESSIONS
     //
 
-    public @NotNull Session requestSession(@NotNull Repository repository) {
+    public @NotNull Session requestSession(@NotNull Repository<?> repository) {
 
         checkValid();
         checkRepository(repository);
@@ -346,7 +335,7 @@ public class Database extends Manager implements IDatabase {
         queue.queueRecordSave(record);
     }
 
-    public @NotNull <V> CompletableFuture<V> queueSessionRequest(@NotNull Repository repository, @NotNull Function<Session, V> function) {
+    public @NotNull <V> CompletableFuture<V> queueSessionRequest(@NotNull Repository<?> repository, @NotNull Function<Session, V> function) {
 
         checkValid();
         checkRepository(repository);
@@ -356,7 +345,7 @@ public class Database extends Manager implements IDatabase {
 
     }
 
-    public @NotNull CompletableFuture<Void> queueSessionRequest(@NotNull Repository repository, @NotNull Consumer<Session> consumer) {
+    public @NotNull CompletableFuture<Void> queueSessionRequest(@NotNull Repository<?> repository, @NotNull Consumer<Session> consumer) {
 
         checkValid();
         checkRepository(repository);
@@ -378,16 +367,21 @@ public class Database extends Manager implements IDatabase {
 
         Objects.requireNonNull(record, "record == null");
 
-        if (repositoryMap.values().stream().noneMatch(r -> r.getHandler().getDataRecordClass().equals(record.getClass()))) {
+        if (registry.getRegistrations().stream().noneMatch(reg -> reg.object().getRecordClass().equals(record.getClass()))) {
             throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");
         }
 
     }
 
-    private void checkRepository(@NotNull Repository repository) {
+    private void checkRepository(@NotNull Repository<?> repository) {
 
-        if (!repositoryMap.containsValue(repository)) throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");
-        if (!repository.isValid()) throw new IllegalArgumentException("Repository object is registered, but method Repository#valid returned false. Did you break something?");
+        if (registry.getObjectRegistration(repository) != null) {
+            throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");
+        }
+
+        if (!repository.isValid()) {
+            throw new IllegalArgumentException("Repository object is registered, but method Repository#valid returned false. Did you break something?");
+        }
 
     }
 

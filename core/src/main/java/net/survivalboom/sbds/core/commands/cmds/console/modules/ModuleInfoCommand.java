@@ -1,23 +1,23 @@
 package net.survivalboom.sbds.core.commands.cmds.console.modules;
 
 import net.survivalboom.sbds.api.commands.argument.Argument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.argument.misc.ModuleArgument;
+import net.survivalboom.sbds.api.commands.argument.sbds.ModuleArgument;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.core.modules.Module;
 import net.survivalboom.sbds.core.modules.ModuleManager;
-import net.survivalboom.sbds.core.modules.ModuleMeta;
+import net.survivalboom.sbds.api.modules.ModuleMeta;
 import net.survivalboom.sbds.core.modules.ModuleRegistration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.util.Objects;
 
-@Command(name = "info")
+@CommandClass(name = "info")
 public class ModuleInfoCommand extends CommandBase implements ConsoleCommand {
 
     @Override
@@ -46,7 +46,7 @@ public class ModuleInfoCommand extends CommandBase implements ConsoleCommand {
     }
 
 
-    @CommandArgument(name = "module")
+    @ArgumentMethod(name = "module")
     public Argument<?> module() {
         return new ModuleArgument();
     }

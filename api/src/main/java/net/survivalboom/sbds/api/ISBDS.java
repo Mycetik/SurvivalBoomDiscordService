@@ -4,11 +4,11 @@ import net.dv8tion.jda.api.JDA;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.console.IConsoleListener;
 import net.survivalboom.sbds.api.database.IDatabase;
+import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
+import net.survivalboom.sbds.api.database.users.IUserDataManager;
 import net.survivalboom.sbds.api.events.IEventManager;
-import net.survivalboom.sbds.api.interaction.button.IButtonInteractionManager;
+import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
-import net.survivalboom.sbds.api.interaction.dropdown.entity.IEntityDropdownInteractionManager;
-import net.survivalboom.sbds.api.interaction.dropdown.string.IStringDropdownInteractionManager;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
 import net.survivalboom.sbds.api.libraries.ILibrariesManager;
 import net.survivalboom.sbds.api.messages.IMessages;
@@ -19,9 +19,9 @@ import net.survivalboom.sbds.api.registrations.IRegistrationRegistry;
 import net.survivalboom.sbds.api.scheduler.IScheduler;
 import net.survivalboom.sbds.api.service.IServiceProvider;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
-import org.bspfsystems.yamlconfiguration.configuration.Configuration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.spongepowered.configurate.ConfigurationNode;
 
 import java.io.File;
 
@@ -56,16 +56,17 @@ public interface ISBDS {
     @NotNull IContextCommandManager getContextCommandManager();
 
 
+    @NotNull IComponentInteractionManager getComponentInteractionManager();
+
     @NotNull IModalInteractionManager getModalInteractionManager();
-
-    @NotNull IStringDropdownInteractionManager getStringDropdownInteractionManager();
-
-    @NotNull IEntityDropdownInteractionManager getEntityDropdownInteractionManager();
-
-    @NotNull IButtonInteractionManager getButtonInteractionManager();
 
 
     @NotNull IDatabase getDatabase();
+
+    @NotNull IUserDataManager getUserManager();
+
+    @NotNull IGuildDataManager getGuildManager();
+
 
     @NotNull ITranslationManager getTranslationManager();
 
@@ -74,7 +75,7 @@ public interface ISBDS {
 
     @NotNull File getWorkingDir();
 
-    @NotNull Configuration getConfiguration();
+    @NotNull ConfigurationNode getConfiguration();
 
     @NotNull Logger getLogger();
 

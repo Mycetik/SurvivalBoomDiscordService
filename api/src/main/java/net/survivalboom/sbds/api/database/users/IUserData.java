@@ -1,20 +1,36 @@
 package net.survivalboom.sbds.api.database.users;
 
+import net.dv8tion.jda.api.entities.User;
+import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
 import net.survivalboom.sbds.api.translations.ITranslation;
-import net.survivalboom.sbds.api.utils.NamespacedContainer;
+import net.survivalboom.sbds.api.utils.valid.IValid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface IUserData {
+import java.util.concurrent.CompletableFuture;
 
-    long getID();
+public interface IUserData extends IValid {
+
+    // USER //
+
+    long getId();
+
+    @NotNull User getUser();
+
+    // TRANSLATION //
 
     @Nullable ITranslation getTranslation();
 
     void setTranslation(@Nullable ITranslation translation);
 
+    // DATA //
+
+    @NotNull INamespacedDataContainer container();
+
     void save();
 
-    @NotNull NamespacedContainer container();
+    // MISC //
+
+    @NotNull CompletableFuture<Void> delete();
 
 }

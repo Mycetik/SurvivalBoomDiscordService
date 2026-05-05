@@ -1,10 +1,10 @@
 package net.survivalboom.sbds.core.commands.cmds.console.modules;
 
-import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
 
-@Command(name = "modules")
+@CommandClass(name = "modules")
 public class ModulesCommand extends CommandBase implements ConsoleCommand {
 
     public ModulesCommand() {

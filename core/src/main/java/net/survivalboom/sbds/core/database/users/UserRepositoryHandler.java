@@ -9,10 +9,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
-public class UserRepositoryHandler extends RepositoryHandler<UserData> implements IUserRepositoryHandler {
+public class UserRepositoryHandler extends RepositoryHandler<UserDataRecord> implements IUserRepositoryHandler {
 
     public UserRepositoryHandler() {
-        super(UserData.class);
+        super(UserDataRecord.class);
     }
 
 
@@ -40,7 +40,7 @@ public class UserRepositoryHandler extends RepositoryHandler<UserData> implement
                 return CompletableFuture.completedFuture(v);
             }
 
-            return save(new UserData(id)).thenApply(d -> d);
+            return save(new UserDataRecord(id)).thenApply(d -> d);
 
         });
 
@@ -53,7 +53,7 @@ public class UserRepositoryHandler extends RepositoryHandler<UserData> implement
 
     @Override
     public @NotNull CompletableFuture<Void> deleteUser(@NotNull IUserData userData) {
-        UserData ud = (UserData) userData;
+        UserDataRecord ud = (UserDataRecord) userData;
         return delete(ud);
     }
 

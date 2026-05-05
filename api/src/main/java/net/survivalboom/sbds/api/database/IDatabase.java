@@ -2,43 +2,59 @@ package net.survivalboom.sbds.api.database;
 
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.utils.valid.IManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public interface IDatabase {
+public interface IDatabase extends IManager {
+
+    //
+    // DATABASE
+    //
 
     void reload(@NotNull IModule module);
 
     void queueSave(@NotNull DataRecord record);
 
+    //
+    // REPOSITORIES
+    //
 
-    /*
-        REPOSITORIES
-     */
+    // CREATION //
 
-    @NotNull IRepository createRepository(@NotNull IModule module, @NotNull String name, @NotNull RepositoryHandler<?> handler);
+    @NotNull <T extends DataRecord> IRepository<T> createRepository(@NotNull IModule module, @NotNull String name, @NotNull Class<T> clazz);
 
-    void removeRepository(@NotNull String name);
+    // REMOVE //
 
-    void removeRepository(@NotNull NamespacedKey key);
+    boolean removeRepository(@NotNull IRepository<?> repository);
 
-    void removeRepository(@NotNull IRepository repository);
+    default @Nullable IRepository<?> removeRepository(@NotNull NamespacedKey key) {
 
+        IRepository<?> repository = getRepository(key);
+        if (repository == null) {
+            return null;
+        }
 
-    @NotNull List<IRepository> getRepositories();
+        removeRepository(repository);
 
-    @NotNull List<IRepository> getRepositories(@NotNull IModule module);
+        return repository;
 
+    }
 
-    @Nullable IRepository getRepository(@NotNull String name);
+    default @Nullable IRepository<?> removeRepository(@NotNull String key) {
+        return removeRepository(NamespacedKey.fromString(key));
+    }
 
-    @Nullable IRepository getRepository(@NotNull NamespacedKey key);
+    // GETTERS //
 
+    @Nullable IRepository<?> getRepository(@NotNull NamespacedKey key);
 
-    @Nullable <T> T getRepositoryHandler(@NotNull String name, @NotNull Class<T> cast);
+    default @Nullable IRepository<?> getRepository(@NotNull String name) {
+        return getRepository(NamespacedKey.fromString(name));
+    }
 
-    @Nullable <T> T getRepositoryHandler(@NotNull NamespacedKey key, @NotNull Class<T> cast);
+    @NotNull List<IRepository<?>> getRepositories();
 
 }

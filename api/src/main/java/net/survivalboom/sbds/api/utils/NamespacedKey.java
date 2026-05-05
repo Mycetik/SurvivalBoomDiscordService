@@ -1,10 +1,5 @@
 package net.survivalboom.sbds.api.utils;
 
-import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.SbdsProvider;
-import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
-import net.survivalboom.sbds.api.commands.ICommandManager;
-import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import org.jetbrains.annotations.NotNull;
@@ -68,32 +63,6 @@ public class NamespacedKey {
 
     }
 
-    public static @NotNull NamespacedKey fromModule(@NotNull CommandBase base, @NotNull String key) {
-
-        Objects.requireNonNull(base, "base == null");
-
-        ISBDS sbds = SbdsProvider.getInstance();
-        Objects.requireNonNull(sbds, "sbds == null");
-
-        ICommandManager.RegisteredCommand registeredCommand = sbds.getSlashCommandManager().findByBase(base);
-        if (registeredCommand == null) {
-            registeredCommand = sbds.getConsoleListener().findByBase(base);
-        }
-
-        // TODO: String Command Manager
-
-//        if (registeredCommand == null) {
-//            registeredCommand = sbds.getStringCommandManager().findByBase(base);
-//        }
-
-        if (registeredCommand == null) throw new IllegalArgumentException("No registered command was found for `" + base.getName() + "`");
-
-        IModule module = registeredCommand.registrar();
-
-        return module != null ? fromModule(module, key) : sbds(key);
-
-    }
-
     public static @NotNull NamespacedKey fromModule(@NotNull ModuleMain moduleMain, @NotNull String key) {
 
         Objects.requireNonNull(moduleMain, "moduleMain == null");
@@ -113,11 +82,6 @@ public class NamespacedKey {
 
         return create(prefix, key);
 
-    }
-
-    public static @NotNull NamespacedKey fromModule(@NotNull CommandExecutionInfo info, @NotNull String key) {
-        Objects.requireNonNull(info, "info == null");
-        return fromModule(info.module(), key);
     }
 
     public static @NotNull NamespacedKey sbds(@NotNull String key) {

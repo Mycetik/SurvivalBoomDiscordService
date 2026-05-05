@@ -3,13 +3,13 @@ package net.survivalboom.sbds.core.commands.cmds.common;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
-import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.slash.SlashCommand;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.core.BuildConstants;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.modules.ModuleManager;
@@ -27,8 +27,8 @@ import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.List;
 
-@Command(name = "status", description = "Shows a status of the discord bot.", translationKey = "sbds.command.status", permission = "sbds.commands.status", defaultPermission = true)
-public class StatusCommand extends CommandBase implements SlashCommand, ConsoleCommand {
+@CommandClass(name = "status", description = "Shows a status of the discord bot.", translationKey = "sbds.command.status", permission = "sbds.commands.status", defaultPermission = true)
+public class StatusCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommand {
 
     private final SystemMonitor systemMonitor;
 

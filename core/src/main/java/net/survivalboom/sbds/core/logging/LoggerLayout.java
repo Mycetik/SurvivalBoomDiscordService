@@ -169,9 +169,11 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
 
     }
 
+    //
+    // STATIC
+    //
 
-    public final static LoggerLayout layout = new LoggerLayout();
-
+    public final static LoggerLayout INSTANCE = new LoggerLayout();
 
     public static void setup() {
 
@@ -179,7 +181,7 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
 
         ConsoleAppender<ILoggingEvent> consoleAppender = new ConsoleAppender<>();
         consoleAppender.setContext(context);
-        consoleAppender.setLayout(layout);
+        consoleAppender.setLayout(INSTANCE);
         consoleAppender.start();
 
         ch.qos.logback.classic.Logger rootLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
@@ -188,7 +190,7 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
         rootLogger.setLevel(Level.INFO);
         rootLogger.setAdditive(true);
 
-        layout.rootLogger = rootLogger;
+        INSTANCE.rootLogger = rootLogger;
 
     }
 

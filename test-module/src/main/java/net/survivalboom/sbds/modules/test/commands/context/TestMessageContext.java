@@ -1,14 +1,14 @@
 package net.survivalboom.sbds.modules.test.commands.context;
 
 import net.dv8tion.jda.api.entities.Message;
-import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ContextCommandBase;
 import net.survivalboom.sbds.api.commands.context.MessageContextCommand;
 import net.survivalboom.sbds.api.commands.context.MessageContextInteractionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "test-message")
+@CommandClass(name = "test-message")
 public class TestMessageContext extends ContextCommandBase implements MessageContextCommand {
 
     @Override

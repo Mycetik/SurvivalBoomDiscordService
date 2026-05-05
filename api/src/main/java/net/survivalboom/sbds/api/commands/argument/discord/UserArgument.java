@@ -4,17 +4,17 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
-import net.survivalboom.sbds.api.commands.argument.SimpleArgument;
+import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
 import org.jetbrains.annotations.NotNull;
 
-public class UserArgument extends SimpleArgument<User> {
+public class UserArgument extends Argument<User> {
 
-    @NotNull
     @Override
-    protected User parse0(@NotNull Object input, @NotNull ArgumentResources resources) throws ArgumentParseException {
+    public @NotNull User parse(@NotNull Object input, @NotNull ArgumentParsingContext context) throws ArgumentParseException {
 
-        JDA bot = resources.sbds().getBot();
+        JDA bot = context.sbds().getBot();
 
         if (input instanceof String string) {
             User user = bot.getUserById(string);

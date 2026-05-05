@@ -1,13 +1,13 @@
 package net.survivalboom.sbds.modules.test.commands.context;
 
-import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ContextCommandBase;
 import net.survivalboom.sbds.api.commands.context.UserContextCommand;
 import net.survivalboom.sbds.api.commands.context.UserContextInteractionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "test-user")
+@CommandClass(name = "test-user")
 public class TestUserContext extends ContextCommandBase implements UserContextCommand {
 
     @Override
