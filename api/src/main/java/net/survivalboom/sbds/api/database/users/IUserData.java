@@ -11,9 +11,9 @@ import java.util.concurrent.CompletableFuture;
 
 public interface IUserData extends IValid {
 
-    // USER //
+    @NotNull IUserDataManager getManager();
 
-    long getId();
+    // USER //
 
     @NotNull User getUser();
 
@@ -28,8 +28,6 @@ public interface IUserData extends IValid {
     @NotNull INamespacedDataContainer container();
 
     void save();
-
-    // MISC //
 
     @NotNull CompletableFuture<Void> delete();
 

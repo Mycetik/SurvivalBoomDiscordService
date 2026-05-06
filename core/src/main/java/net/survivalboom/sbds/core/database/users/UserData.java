@@ -1,48 +1,45 @@
-package net.survivalboom.sbds.core.database.guilds;
+package net.survivalboom.sbds.core.database.users;
 
-import net.dv8tion.jda.api.entities.Guild;
-import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
-import net.survivalboom.sbds.api.database.guilds.IGuildData;
-import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
+import net.dv8tion.jda.api.entities.User;
+import net.survivalboom.sbds.api.database.users.IUserData;
+import net.survivalboom.sbds.api.database.users.IUserDataManager;
 import net.survivalboom.sbds.api.translations.ITranslation;
+import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
 import net.survivalboom.sbds.api.utils.valid.Valid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
-public class GuildData extends Valid implements IGuildData {
+public class UserData extends Valid implements IUserData {
 
-    private final GuildDataManager manager;
+    private final UserDataManager manager;
 
-    private final GuildDataRecord record;
-
-    private final Guild guild;
+    private final UserDataRecord record;
 
 
-    public GuildData(
-            @NotNull GuildDataRecord record,
-            @NotNull GuildDataManager manager
-    ) {
+    private final User user;
+
+
+    public UserData(@NotNull UserDataRecord record, @NotNull UserDataManager manager) {
 
         this.record = record;
         this.manager = manager;
 
-        this.guild = manager.getSbds().getBot().getGuildById(record.getGuildId());
+        this.user = manager.getSbds().getBot().getUserById(record.getUserId());
 
     }
 
-
     @Override
-    public @NotNull IGuildDataManager getManager() {
+    public @NotNull IUserDataManager getManager() {
         return manager;
     }
 
-    // GUILD //
+    // USER //
 
     @Override
-    public @NotNull Guild getGuild() {
-        return guild;
+    public @NotNull User getUser() {
+        return user;
     }
 
     // TRANSLATION //
@@ -61,30 +58,28 @@ public class GuildData extends Valid implements IGuildData {
 
     // DATABASE //
 
-    public @NotNull GuildDataRecord getRecord() {
+    public UserDataRecord getRecord() {
         return record;
     }
 
     @Override
     public @NotNull INamespacedDataContainer container() {
         checkValid();
-        return record.getData();
+        return record.getContainer();
     }
 
     @Override
     public void save() {
-        checkValid();
         manager.save(this);
     }
 
     @Override
     public @NotNull CompletableFuture<Void> delete() {
-        checkValid();
         return manager.delete(this);
     }
 
     //
-    // VALID
+    // MISC
     //
 
     @Override

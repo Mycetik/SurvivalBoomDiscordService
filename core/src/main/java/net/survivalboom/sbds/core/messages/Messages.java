@@ -11,27 +11,26 @@ import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
+import net.survivalboom.sbds.api.database.guilds.IGuildData;
 import net.survivalboom.sbds.api.database.users.IUserData;
+import net.survivalboom.sbds.api.messages.parsers.AbstractTextParser;
+import net.survivalboom.sbds.api.messages.parsers.LinkedTextParser;
+import net.survivalboom.sbds.api.messages.parsers.StringParser;
 import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
-import net.survivalboom.sbds.api.translations.IMessage;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
 import net.survivalboom.sbds.api.messages.builder.MessageBuilder;
+import net.survivalboom.sbds.api.messages.template.TextMessageTemplate;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.core.database.Database;
 import net.survivalboom.sbds.core.database.guilds.GuildDataManager;
-import net.survivalboom.sbds.core.database.guilds.GuildRepositoryHandler;
 import net.survivalboom.sbds.core.database.users.UserDataManager;
-import net.survivalboom.sbds.core.database.users.UserRepositoryHandler;
 import net.survivalboom.sbds.core.translations.Translation;
 import net.survivalboom.sbds.core.translations.TranslationManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.function.Function;
@@ -40,24 +39,22 @@ import java.util.regex.Pattern;
 
 public class Messages extends Manager implements IMessages {
 
-    private static final Logger log = LoggerFactory.getLogger(Messages.class);
-
     private final SBDS sbds;
 
     private final TranslationManager translationManager;
 
-    private final UserDataManager users = null;
+    private final UserDataManager users;
 
-    private final GuildDataManager guilds = null;
+    private final GuildDataManager guilds;
 
 
     public Messages(@NotNull SBDS sbds) {
 
         this.sbds = sbds;
-
-//        this.users = sbds.getU
-
         this.translationManager = sbds.getTranslationManager();
+
+        this.users = sbds.getUserManager();
+        this.guilds = sbds.getGuildManager();
 
     }
 
@@ -83,11 +80,14 @@ public class Messages extends Manager implements IMessages {
     }
 
     @Override
-    public @Nullable IMessage getMessage(@NotNull String name, @Nullable IUserData userData, boolean fallback) {
+    public @Nullable IMessageTemplate getMessage(@NotNull String name, @Nullable IUserData userData, boolean fallback) {
 
         checkValid();
 
-        if (userData == null) return getMessage(name, (Translation) null, fallback);
+        if (userData == null) {
+            return getMessage(name, (Translation) null, fallback);
+        }
+
         ITranslation translation = userData.getTranslation();
 
         return getMessage(name, translation, fallback);
@@ -95,22 +95,22 @@ public class Messages extends Manager implements IMessages {
     }
 
     @Override
-    public @Nullable IMessage getMessage(@NotNull String name, @Nullable User user, boolean fallback) {
+    public @Nullable IMessageTemplate getMessage(@NotNull String name, @Nullable User user, boolean fallback) {
 
         checkValid();
 
         if (user == null) return getMessage(name, (IUserData) null, fallback);
 
-        IUserData userData = getUserData(user);
+        IUserData userData = users.get(user).join();
 
         return getMessage(name, userData, fallback);
 
     }
 
     @Override
-    public @Nullable IMessage getMessage(@NotNull String name, @Nullable ITranslation translation, boolean fallback) {
+    public @Nullable IMessageTemplate getMessage(@NotNull String name, @Nullable ITranslation translation, boolean fallback) {
 
-        IMessage message;
+        IMessageTemplate message;
         if (translation != null) {
             message = translation.getMessage(name);
             if (message != null) return message;
@@ -128,12 +128,21 @@ public class Messages extends Manager implements IMessages {
     }
 
     @Override
-    public @Nullable IMessage getMessage(@NotNull String name, @Nullable Guild guild, boolean fallback) {
+    public @Nullable IMessageTemplate getMessage(@NotNull String name, @Nullable Guild guild, boolean fallback) {
 
-        IMessage message = null;
+        IMessageTemplate message = null;
         if (guild != null) {
-            ITranslation translation = guildRepository.createGuildData(guild).join().getDefaultTranslation();
-            if (translation != null) message = translation.getMessage(name);
+
+            IGuildData guildData = guilds.get(guild).join();
+            if (guildData != null) {
+
+                ITranslation translation = guildData.getTranslation();
+                if (translation != null) {
+                    message = translation.getMessage(name);
+                }
+
+            }
+
         }
 
         if (!fallback || message != null) return message;
@@ -147,13 +156,9 @@ public class Messages extends Manager implements IMessages {
 
     }
 
-    private @Nullable IMessage getMessage1(@NotNull String name, @Nullable ITranslation translation) {
+    private @Nullable IMessageTemplate getMessage1(@NotNull String name, @Nullable ITranslation translation) {
         if (translation == null) return null;
         return translation.getMessage(name);
-    }
-
-    private @NotNull IUserData getUserData(@NotNull User user) {
-        return userRepository.createUser(user).join();
     }
 
     //
@@ -161,23 +166,13 @@ public class Messages extends Manager implements IMessages {
     //
 
     @Override
-    public @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> createActionMessage(@NotNull String name, @Nullable User user, @NotNull Function<MessageCreateData, T> function) {
-        return MessageActionBuilder.create(this, name, user, function);
+    public @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> createActionMessage(@NotNull String name, @NotNull User user, @NotNull Function<MessageCreateData, T> function) {
+        return new MessageActionBuilder<>(this, user, name, function);
     }
 
     @Override
-    public @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> createActionMessage(@NotNull String name, @Nullable Guild guild, @NotNull Function<MessageCreateData, T> function) {
-        return MessageActionBuilder.create(this, name, guild, function);
-    }
-
-    @Override
-    public @NotNull MessageBuilder createMessageBuilder(@NotNull String name, @Nullable User user) {
-        return MessageBuilder.create(this, name, user);
-    }
-
-    @Override
-    public @NotNull MessageBuilder createMessageBuilder(@NotNull String name, @Nullable Guild guild) {
-        return MessageBuilder.create(this, name, guild);
+    public @NotNull MessageBuilder createMessageBuilder(@NotNull String name, @NotNull User user) {
+        return new MessageBuilder(this, user, name);
     }
 
     //
@@ -185,18 +180,18 @@ public class Messages extends Manager implements IMessages {
     //
 
     @Override
-    public @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull IReplyCallback callback, @NotNull String name, @Nullable User user) {
-        return MessageActionBuilder.create(this, name, user, callback::reply);
+    public @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull User user) {
+        return new MessageActionBuilder<>(this, user, name, callback::reply);
     }
 
     @Override
-    public @NotNull MessageActionBuilder<MessageEditAction> editMessage(@NotNull Message message, @NotNull String name, @Nullable User user) {
-        return MessageActionBuilder.create(this, name, user, d -> message.editMessage(MessageEditData.fromCreateData(d)));
+    public @NotNull MessageActionBuilder<MessageEditAction> editMessage(@NotNull Message message, @NotNull String name, @NotNull User user) {
+        return new MessageActionBuilder<>(this, user, name, d -> message.editMessage(MessageEditData.fromCreateData(d)));
     }
 
     @Override
-    public @NotNull MessageActionBuilder<MessageCreateAction> sendMessage(@NotNull MessageChannel channel, @NotNull String name, @Nullable User user) {
-        return MessageActionBuilder.create(this, name, user, channel::sendMessage);
+    public @NotNull MessageActionBuilder<MessageCreateAction> sendMessage(@NotNull MessageChannel channel, @NotNull String name, @NotNull User user) {
+        return new MessageActionBuilder<>(this, user, name, channel::sendMessage);
     }
 
     //
@@ -207,19 +202,55 @@ public class Messages extends Manager implements IMessages {
     private final Pattern msgReferenceRegex = Pattern.compile("\\$\\[(.*?)]");
 
     @Override
-    public @NotNull String parse(@NotNull String in, @NotNull Function<String, IMessageTemplate> supplier, @Nullable Placeholders placeholders) {
+    public @NotNull String parse(@NotNull String in, @Nullable AbstractTextParser<?, ?> parser) {
 
         Objects.requireNonNull(in, "in == null");
-
         checkValid();
 
-        in = Placeholders.parse(in, placeholders);
+        User user;
+        if (parser instanceof LinkedTextParser linkedTextParser) {
+            user = linkedTextParser.getTarget();
+        }
+
+        else {
+            user = null;
+        }
+
+        String lastAttempt = in;
+        while (true) {
+
+            String attempt = parseTranslations(in, user);
+
+            if (parser != null) {
+                Placeholders placeholders = parser.getPlaceholders();
+                var parsers = parser.getParsers();
+
+                attempt = placeholders.parse(attempt);
+                attempt = StringParser.stParse(attempt, parsers);
+            }
+
+            if (lastAttempt.equals(attempt)) {
+                break;
+            }
+
+            lastAttempt = attempt;
+
+        }
+
+        return lastAttempt;
+
+    }
+
+    @Override
+    public @NotNull String parseTranslations(@NotNull String in, @Nullable User user) {
+
+        Objects.requireNonNull(in, "in == null");
+        checkValid();
 
         Matcher matcher = msgReferenceRegex.matcher(in);
         StringBuilder parsedText = new StringBuilder();
 
         while (matcher.find()) {
-
 
             String found = matcher.group()
                     .replace("[", "")
@@ -244,18 +275,22 @@ public class Messages extends Manager implements IMessages {
             }
 
             else {
-                translatedMessage = supplier.apply(found);
+                translatedMessage = getMessage(found, user, true);
             }
 
-            if (translatedMessage == null) continue;
+            if (translatedMessage == null) {
+                continue;
+            }
 
-            matcher.appendReplacement(parsedText, translatedMessage.buildString(placeholders));
+            if (translatedMessage instanceof TextMessageTemplate template) {
+                matcher.appendReplacement(parsedText, template.getContent());
+            }
 
         }
 
         matcher.appendTail(parsedText);
 
-        return Placeholders.parse(parsedText.toString(), placeholders);
+        return parsedText.toString();
 
     }
 

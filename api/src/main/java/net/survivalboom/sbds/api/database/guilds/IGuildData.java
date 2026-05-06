@@ -10,27 +10,23 @@ import java.util.concurrent.CompletableFuture;
 
 public interface IGuildData {
 
-    // GUILD //
+    @NotNull IGuildDataManager getManager();
 
-    long getId();
+    // GUILD //
 
     @NotNull Guild getGuild();
 
     // TRANSLATION //
 
-    @Nullable ITranslation getDefaultTranslation();
+    @Nullable ITranslation getTranslation();
 
-    void setDefaultTranslation(@Nullable ITranslation translation);
+    void setTranslation(@Nullable ITranslation translation);
 
     // DATA //
 
     @NotNull INamespacedDataContainer container();
 
     void save();
-
-    // MISC //
-
-    @NotNull IGuildDataManager getManager();
 
     @NotNull CompletableFuture<Void> delete();
 

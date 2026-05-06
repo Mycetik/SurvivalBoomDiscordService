@@ -33,6 +33,8 @@ public interface StringParser {
 
     }
 
+
+
     static @Nullable String stParseNullable(@Nullable StringParser parser, @Nullable String text) {
 
         if (parser == null) {
@@ -50,6 +52,16 @@ public interface StringParser {
         }
 
         return parser.parse(text);
+
+    }
+
+    static @NotNull String stParse(@NotNull String string, @NotNull Collection<StringParser> parsers) {
+
+        for (StringParser parser : parsers) {
+            string = parser.parse(string);
+        }
+
+        return string;
 
     }
 

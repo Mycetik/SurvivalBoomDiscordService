@@ -149,8 +149,8 @@ public class SBDS implements ISBDS {
         this.systemMonitor = new SystemMonitor(scheduler);
 
         this.database = new Database(this);
-        this.userDataManager = new UserDataManager(database);
-        this.guildDataManager = new GuildDataManager(database);
+        this.userDataManager = new UserDataManager(this);
+        this.guildDataManager = new GuildDataManager(this);
 
         this.eventManager = new EventManager(this);
         this.moduleManager = new ModuleManager(this);
@@ -227,7 +227,6 @@ public class SBDS implements ISBDS {
         serviceProvider.init();
         moduleManager.init();
         registrationRegistry.init();
-        slashCommandManager.updateCommands();
 
         bot.getPresence().setPresence(OnlineStatus.IDLE, Activity.customStatus("Running on SBDS v" + BuildConstants.VERSION + "🦖"));
 
@@ -398,12 +397,12 @@ public class SBDS implements ISBDS {
     }
 
     @Override
-    public @NotNull IUserDataManager getUserManager() {
+    public @NotNull UserDataManager getUserManager() {
         return userDataManager;
     }
 
     @Override
-    public @NotNull IGuildDataManager getGuildManager() {
+    public @NotNull GuildDataManager getGuildManager() {
         return guildDataManager;
     }
 

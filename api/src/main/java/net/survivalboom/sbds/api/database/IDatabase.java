@@ -32,7 +32,7 @@ public interface IDatabase extends IManager {
 
     default @Nullable IRepository<?> removeRepository(@NotNull NamespacedKey key) {
 
-        IRepository<?> repository = getRepository(key);
+        IRepository<?> repository = getRepository(key, DataRecord.class);
         if (repository == null) {
             return null;
         }
@@ -49,10 +49,10 @@ public interface IDatabase extends IManager {
 
     // GETTERS //
 
-    @Nullable IRepository<?> getRepository(@NotNull NamespacedKey key);
+    <T extends DataRecord> @Nullable IRepository<T> getRepository(@NotNull NamespacedKey key, @NotNull Class<T> clazz);
 
-    default @Nullable IRepository<?> getRepository(@NotNull String name) {
-        return getRepository(NamespacedKey.fromString(name));
+    default <T extends DataRecord> @Nullable IRepository<T> getRepository(@NotNull String name, @NotNull Class<T> clazz) {
+        return getRepository(NamespacedKey.fromString(name), clazz);
     }
 
     @NotNull List<IRepository<?>> getRepositories();

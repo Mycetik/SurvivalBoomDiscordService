@@ -13,7 +13,6 @@ import net.survivalboom.sbds.core.database.permissions.GroupPermissionRepository
 import net.survivalboom.sbds.core.database.permissions.GroupRecord;
 import net.survivalboom.sbds.core.database.permissions.GroupRepositoryHandler;
 import net.survivalboom.sbds.core.database.permissions.UserPermissionRepositoryHandler;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;

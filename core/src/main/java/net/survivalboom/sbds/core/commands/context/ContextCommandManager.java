@@ -3,52 +3,33 @@ package net.survivalboom.sbds.core.commands.context;
 import net.dv8tion.jda.api.events.interaction.command.GenericContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
-import net.survivalboom.sbds.api.commands.context.ContextCommand;
-import net.survivalboom.sbds.api.commands.context.ContextCommandExecutor;
+import net.survivalboom.sbds.api.commands.Command;
+import net.survivalboom.sbds.api.commands.context.*;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.Listener;
-import net.survivalboom.sbds.api.commands.context.ContextInteractionInfo;
-import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
-import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.valid.Manager;
+import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
+import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
-import net.survivalboom.sbds.core.modules.Module;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
-public class ContextCommandManager extends Manager implements Listener, IContextCommandManager {
-
-    private static final Logger log = LoggerFactory.getLogger(ContextCommandManager.class.getSimpleName());
-
-    private final SBDS sbds;
+public class ContextCommandManager extends AbstractCommandManager<IContextCommandManager.IRegisteredContextCommand, IContextCommandManager> implements IContextCommandManager, Listener {
 
     private final CommandInteractionManager commandInteractionManager;
 
-    private final Set<RegisteredContextCommand> registeredContextCommands = new HashSet<>();
-
     public ContextCommandManager(@NotNull SBDS sbds) {
-        this.sbds = sbds;
+        super(sbds, false);
         this.commandInteractionManager = sbds.getCommandInteractionManager();
     }
 
+    //
+    // MANAGER
+    //
+
     @Override
     protected void init0() {
-
         sbds.getEventManager().registerEvents0(null, this);
-
-        commandInteractionManager.putGuild(this::prepareGuild);
-        commandInteractionManager.putGlobal(this::prepareGlobal);
-
     }
 
     @Override
@@ -56,53 +37,24 @@ public class ContextCommandManager extends Manager implements Listener, IContext
         sbds.getEventManager().unregisterEvents(this);
     }
 
-
-    private List<CommandData> prepareGlobal() {
-        return registeredContextCommands.stream().filter(c -> c.command.global()).map(c -> c.command.build()).toList();
-    }
-
-    private List<CommandData> prepareGuild() {
-        return registeredContextCommands.stream().filter(c -> c.command.guild()).map(c -> c.command.build()).toList();
-    }
-
-
-
     @Override
-    public @NotNull ContextCommandManager.RegisteredContextCommand registerContextCommand(@NotNull IModule module, @NotNull ContextCommand command) {
-
-        Objects.requireNonNull(module, "module == null");
-
-        return registerContextCommand0(module, command);
-
-    }
-
-    public @NotNull ContextCommandManager.RegisteredContextCommand registerContextCommand0(@Nullable IModule imodule, @NotNull ContextCommand command) {
-
-        String name = command.name();
-        Module module = imodule != null ? sbds.getModuleManager().checkModuleEnabled(imodule, "Disabled module tried to register a context command") : null;
-
-        if (registeredContextCommands.stream().anyMatch(c -> c.command.name().equals(name))) {
-            throw new IllegalArgumentException("Command with name `" + name + "` already exists");
-        }
-
-        RegisteredContextCommand registeredContextCommand = new RegisteredContextCommand(module, command);
-
-        registeredContextCommands.add(registeredContextCommand);
-        commandInteractionManager.update();
-
-        if (module != null) {
-            module.getRegistration().add("ContextCommand-" + name, () -> unregisterContextCommand(name));
-        }
-
-        return registeredContextCommand;
-
+    protected @NotNull IContextCommandManager.IRegisteredContextCommand createCommandReg(@NotNull Command command) {
+        return new RegisteredContextCommand(this, command);
     }
 
     @Override
-    public void unregisterContextCommand(@NotNull String name) {
-        registeredContextCommands.removeIf(c -> c.command.name().equals(name));
+    public void onRegister(@NotNull Registration<IRegisteredContextCommand> registration) {
+        commandInteractionManager.requestGlobalUpdate();
     }
 
+    @Override
+    public void unRegister(@NotNull Registration<IRegisteredContextCommand> registration) {
+        commandInteractionManager.requestGlobalUpdate();
+    }
+
+    //
+    // HANDLER
+    //
 
     @EventHandler
     public void onMessageContextInteraction(@NotNull MessageContextInteractionEvent event) {
@@ -117,32 +69,64 @@ public class ContextCommandManager extends Manager implements Listener, IContext
 
     public void onEvent(@NotNull GenericContextInteractionEvent<?> event) {
 
-        if (!sbds.isReady()) return;
+        if (!sbds.isReady()) {
+            return;
+        }
 
         try {
 
             String name = event.getName();
 
-            RegisteredContextCommand registeredContextCommand = registeredContextCommands.stream()
-                    .filter(c -> c.command.name().equals(name) && c.command.type().equals(event.getCommandType()))
-                    .findAny().orElse(null);
+            IRegisteredContextCommand registeredContextCommand = registry.getRegisteredObjects().stream()
+                    .filter(c -> c.getCommand().getName().equals(name))
+                    .findAny()
+                    .orElse(null);
 
-            if (registeredContextCommand == null) return;
+            if (registeredContextCommand == null) {
+                logger.warn("Received unknown context command `{}` execution request.", name);
+                return;
+            }
 
-            ContextCommandExecutor executor = registeredContextCommand.command.executor();
-            ContextInteractionInfo<?> info = executor.createInfo(event, sbds, log);
-            executor.execute(info);
+            var executor = registeredContextCommand.getCommand().getExecutor();
+            switch (event.getCommandType()) {
+
+                case USER -> {
+
+                    UserContextInteractionEvent event0 = (UserContextInteractionEvent) event;
+                    UserContextCommand executor0 = (UserContextCommand) executor;
+                    UserContextInteractionInfo info = new UserContextInteractionInfo(event0, sbds);
+
+                    executor0.execute(info);
+
+                }
+
+                case MESSAGE -> {
+
+                    MessageContextInteractionEvent event0 = (MessageContextInteractionEvent) event;
+                    MessageContextCommand executor0 = (MessageContextCommand) executor;
+                    MessageContextInteractionInfo info = new MessageContextInteractionInfo(event0, sbds);
+
+                    executor0.execute(info);;
+
+                }
+
+            }
 
         }
 
         catch (Throwable t) {
-            log.error("An internal error occurred while attempting to perform context command.", t);
-            sbds.getMessages().reply(event, "common.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t)).send().setEphemeral(true).queue();
+            logger.error("An internal error occurred while attempting to perform context command.", t);
+            sbds.getMessages().reply(event, "common.error", event.getUser()).withPlaceholders(Placeholders.of("{exception}", t)).send().setEphemeral(true).queue();
         }
 
     }
 
+    public static class RegisteredContextCommand extends RegisteredCommand<IRegisteredContextCommand, IContextCommandManager> implements IRegisteredContextCommand {
 
-    public record RegisteredContextCommand(@Nullable IModule module, @NotNull ContextCommand command) implements IContextCommandManager.RegisteredContextCommand {}
+        public RegisteredContextCommand(@NotNull IContextCommandManager manager, @NotNull Command command) {
+            super(manager, command);
+        }
+
+    }
 
 }

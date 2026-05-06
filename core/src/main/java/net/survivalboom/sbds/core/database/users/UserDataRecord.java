@@ -5,6 +5,7 @@ import net.survivalboom.sbds.api.database.converters.NamespacedContainerConverte
 import net.survivalboom.sbds.api.database.converters.TranslationConverter;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.database.DataRecord;
+import net.survivalboom.sbds.api.utils.container.NamespacedDataContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,11 +15,11 @@ public class UserDataRecord extends DataRecord {
 
     @Id
     @Column(nullable = false)
-    private long id;
+    private long userId;
 
     @Column(columnDefinition = "jsonb", nullable = false)
     @Convert(converter = NamespacedContainerConverter.class)
-    private NamespacedContainer data;
+    private NamespacedDataContainer data;
 
     @Column
     @Convert(converter = TranslationConverter.class)
@@ -28,47 +29,26 @@ public class UserDataRecord extends DataRecord {
 
     protected UserDataRecord() {}
 
-    public UserDataRecord(long id) {
-        this.id = id;
-        this.data = NamespacedContainer.empty();
+    public UserDataRecord(long userId) {
+        this.userId = userId;
+        this.data = new NamespacedDataContainer();
         this.translation = null;
     }
 
-    @Override
-    public long getId() {
-        return id;
+    public long getUserId() {
+        return userId;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-
-        if (obj instanceof Long l) {
-            return l.equals(id);
-        }
-
-        return false;
-
-    }
-
-    @Override
-    public void setTranslation(@Nullable ITranslation translation) {
-        this.translation = translation;
-    }
-
-    @Override
-    public @NotNull NamespacedContainer container() {
+    public @NotNull NamespacedDataContainer getContainer() {
         return data;
     }
 
-    @Override
     public @Nullable ITranslation getTranslation() {
         return translation;
     }
 
-
-    @Override
-    public long getId() {
-        return id;
+    public void setTranslation(@Nullable ITranslation translation) {
+        this.translation = translation;
     }
 
 }

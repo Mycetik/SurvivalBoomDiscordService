@@ -5,42 +5,45 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
-import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
-import net.survivalboom.sbds.api.utils.TypeMap;
-import net.survivalboom.sbds.core.commands.AbstractCommandParser;
+import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
+import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
+import net.survivalboom.sbds.api.utils.typemap.TypeMap;
+import net.survivalboom.sbds.api.utils.typemap.UnmodifiableTypeMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class SlashCommandParser extends AbstractCommandParser {
+public class SlashCommandParser {
 
-    private final SlashCommandInteraction interaction;
+    public static @NotNull TypeMap parse(
+            @NotNull ISlashCommandManager.IRegisteredSlashCommand rootCommand,
+            @NotNull Command currentCommand,
+            @NotNull SlashCommandInteraction interaction
+    ) throws ArgumentParseException {
 
-    public SlashCommandParser(@NotNull Command command, @NotNull Argument.ArgumentResources resources, @NotNull SlashCommandInteraction interaction) {
-        super(command, ArgumentScope.SLASH, resources);
-        this.interaction = interaction;
-    }
-
-
-    @Override
-    public void parse() throws ArgumentParseException {
+        List<CommandArgument> arguments = currentCommand.getArguments().stream()
+                .filter(argument -> argument.scopes().contains(ArgumentScope.SLASH))
+                .toList();
 
         Map<String, Object> map = new HashMap<>();
-
-        for (CommandArgument argument : command.arguments().stream().filter(a -> a.scopes().contains(scope)).toList()) {
+        for (CommandArgument argument : arguments) {
 
             OptionMapping mapping = interaction.getOption(argument.name());
-            if (mapping == null) continue;
+            if (mapping == null) {
+                continue;
+            }
 
-            Object object = argument.argument().parse(mapping, resources);
+            ArgumentParsingContext context = new ArgumentParsingContext(rootCommand, currentCommand, argument);
+            Object object = argument.argument().parse(mapping, context);
 
             map.put(argument.name(), object);
 
         }
 
-        arguments = TypeMap.ofMap(map, false);
+        return UnmodifiableTypeMap.ofMap(map);
 
     }
 

@@ -6,13 +6,11 @@ import net.survivalboom.sbds.api.database.converters.NamespacedContainerConverte
 import net.survivalboom.sbds.api.database.converters.TranslationConverter;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.utils.container.NamespacedDataContainer;
-import org.hibernate.annotations.DynamicUpdate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Entity
 @Table(name = "sbds_guilds")
-@DynamicUpdate
 public class GuildDataRecord extends DataRecord {
 
     @Id
