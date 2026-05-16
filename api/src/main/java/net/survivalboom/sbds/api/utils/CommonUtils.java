@@ -28,8 +28,9 @@ import java.util.zip.ZipFile;
 
 public class CommonUtils {
 
-
     public static String STACK_TRACE_FORMAT = "    at {CLASS}.{METHOD}({FILE}:{LINE}) ~[{CLASSLOADER}:{MODULE}]";
+
+    public static final Random RANDOM = new Random();
 
 
     //

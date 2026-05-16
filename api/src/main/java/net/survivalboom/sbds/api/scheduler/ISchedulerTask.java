@@ -1,24 +1,41 @@
 package net.survivalboom.sbds.api.scheduler;
 
-import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.registrations.Registration;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public interface ISchedulerTask {
 
+    @NotNull Registration<ISchedulerTask> getRegistration();
+
+    //
+    // LIFECYCLE
+    //
+
     void cancel();
 
-    void cancelForce();
+    void kill();
 
-    void cancelAndWait();
+    boolean cancelAndWaitOrKill(int timeout, boolean log);
 
-    boolean cancelAndWait(int timeout, boolean force, @NotNull Runnable onKill);
+    default boolean tryCancel() {
+        return cancelAndWaitOrKill(5000, true);
+    }
 
-    boolean cancelAndWait(int timeout, boolean force);
 
-    void waitForCancel();
 
     void waitForCancel(int timeout);
+
+    default void waitForCancel() {
+        waitForCancel(30000);
+    }
+
+    //
+    // PROPERTIES
+    //
+
+    int getDelay();
+
+    int getPeriod();
 
 
     boolean isRunning();
@@ -26,10 +43,6 @@ public interface ISchedulerTask {
     boolean isCancelled();
 
     boolean isStopped();
-
-    @NotNull String getName();
-
-    @Nullable IModule getModule();
 
 
     @NotNull Thread getThread();

@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.scheduler;
 
+import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.modules.Module;
@@ -7,52 +8,62 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class SchedulerTask implements ISchedulerTask {
 
     private final Scheduler scheduler;
 
-    private final String name;
-
-    private final Module module;
-
-    private final Consumer<ISchedulerTask> consumer;
-
     private final Logger logger;
 
+    protected Registration<ISchedulerTask> registration;
+
+
+    private final Consumer<ISchedulerTask> consumer;
 
     private final int delay;
 
     private final int period;
 
 
-    private Thread thread;
-
 
     private boolean run = true;
 
     private boolean stopped = false;
 
+    private Thread thread;
 
 
-    public SchedulerTask(@Nullable Module module, @NotNull Scheduler scheduler, @NotNull String name, @NotNull Consumer<ISchedulerTask> consumer, int delay, int period) {
-        this.name = name;
-        this.module = module;
-        this.scheduler = scheduler;
+
+    public SchedulerTask(
+            @NotNull Consumer<ISchedulerTask> consumer,
+            int delay,
+            int period,
+            @NotNull Scheduler scheduler
+    ) {
+
         this.consumer = consumer;
-        this.logger = scheduler.getLogger();
         this.delay = delay;
         this.period = period;
+
+        this.scheduler = scheduler;
+        this.logger = Scheduler.logger;
+
     }
 
     public void launch() {
 
-        if (thread != null || stopped) throw new IllegalStateException("Already launched");
+        if (thread != null || stopped) {
+            throw new IllegalStateException("Already launched");
+        }
+
+        Objects.requireNonNull(registration);
 
         thread = Thread.startVirtualThread(this::run);
-        thread.setName(name);
+        thread.setName(registration.regKey().toString());
 
     }
 
@@ -111,7 +122,7 @@ public class SchedulerTask implements ISchedulerTask {
         }
 
         catch (Throwable t) {
-            logger.error("An exception was thrown in task {}.", name, t);
+            logger.error("An exception was thrown in task `{}`.", registration.key(), t);
             CommonUtils.sleep(1000);
         }
 
@@ -121,7 +132,7 @@ public class SchedulerTask implements ISchedulerTask {
         run = false;
         stopped = true;
         thread = null;
-        scheduler.unregisterTask(this);
+        scheduler.registry.unregister(this);
     }
 
     @Override
@@ -131,9 +142,11 @@ public class SchedulerTask implements ISchedulerTask {
     }
 
     @Override
-    public void cancelForce() {
+    public void kill() {
 
-        if (stopped) return;
+        if (stopped) {
+            return;
+        }
 
         thread.interrupt();
 
@@ -142,14 +155,11 @@ public class SchedulerTask implements ISchedulerTask {
     }
 
     @Override
-    public void cancelAndWait() {
-        cancelAndWait(-1, false);
-    }
+    public boolean cancelAndWaitOrKill(int timeout, boolean log) {
 
-    @Override
-    public boolean cancelAndWait(int timeout, boolean force, @Nullable Runnable onKill) {
-
-        if (stopped) return false;
+        if (stopped) {
+            return false;
+        }
 
         cancel();
 
@@ -158,10 +168,16 @@ public class SchedulerTask implements ISchedulerTask {
         }
 
         catch (RuntimeException e) {
-            if (!force) throw e;
-            if (onKill != null) onKill.run();
-            cancelForce();
+
+            if (log) {
+                logger.warn("Task `{}` was killed due to timeout of {} milliseconds.", registration.key(), timeout);
+                CommonUtils.logThreadStackTrace(logger, Level.WARN, thread);
+            }
+
+            kill();
+
             return true;
+
         }
 
         return false;
@@ -169,19 +185,14 @@ public class SchedulerTask implements ISchedulerTask {
     }
 
     @Override
-    public boolean cancelAndWait(int timeout, boolean force) {
-        return cancelAndWait(timeout, force, null);
-    }
-
-    @Override
-    public void waitForCancel() {
-        waitForCancel(-1);
-    }
-
-    @Override
     public void waitForCancel(int timeout) {
-        if (stopped) return;
+
+        if (stopped) {
+            return;
+        }
+
         CommonUtils.waitUntil(this::isStopped, timeout);
+
     }
 
 
@@ -201,20 +212,24 @@ public class SchedulerTask implements ISchedulerTask {
     }
 
     @Override
-    public @NotNull String getName() {
-        return name;
+    public int getDelay() {
+        return delay;
     }
 
     @Override
-    public @Nullable Module getModule() {
-        return module;
+    public int getPeriod() {
+        return period;
     }
-
 
     @Override
     public @NotNull Thread getThread() {
         if (thread == null) throw new IllegalStateException("Task is not running");
         return thread;
+    }
+
+    @Override
+    public @NotNull Registration<ISchedulerTask> getRegistration() {
+        return registration;
     }
 
 }
