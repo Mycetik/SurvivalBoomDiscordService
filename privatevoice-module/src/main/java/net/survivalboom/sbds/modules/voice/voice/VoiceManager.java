@@ -3,7 +3,7 @@ package net.survivalboom.sbds.modules.voice.voice;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.Category;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
-import net.survivalboom.sbds.api.events.Listener;
+import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.scheduler.IScheduler;
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class VoiceManager extends Manager implements Listener {
+public class VoiceManager extends Manager implements EventListener {
 
     private static final Logger log = LoggerFactory.getLogger(VoiceManager.class);
 

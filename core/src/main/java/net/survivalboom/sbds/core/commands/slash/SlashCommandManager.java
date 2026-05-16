@@ -10,7 +10,7 @@ import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.events.Listener;
+import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class SlashCommandManager extends AbstractCommandManager<SlashCommandManager.IRegisteredSlashCommand, ISlashCommandManager> implements ISlashCommandManager, Listener {
+public class SlashCommandManager extends AbstractCommandManager<SlashCommandManager.IRegisteredSlashCommand, ISlashCommandManager> implements ISlashCommandManager, EventListener {
 
     private final CommandInteractionManager commandInteractionManager;
 

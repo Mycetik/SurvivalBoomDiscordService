@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEven
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.context.*;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.events.Listener;
+import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
@@ -14,7 +14,7 @@ import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
 import org.jetbrains.annotations.NotNull;
 
-public class ContextCommandManager extends AbstractCommandManager<IContextCommandManager.IRegisteredContextCommand, IContextCommandManager> implements IContextCommandManager, Listener {
+public class ContextCommandManager extends AbstractCommandManager<IContextCommandManager.IRegisteredContextCommand, IContextCommandManager> implements IContextCommandManager, EventListener {
 
     private final CommandInteractionManager commandInteractionManager;
 

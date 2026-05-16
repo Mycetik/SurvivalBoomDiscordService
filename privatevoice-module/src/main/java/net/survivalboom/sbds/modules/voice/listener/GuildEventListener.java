@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.events.Listener;
+import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.modules.voice.voice.PrivateVoice;
 import net.survivalboom.sbds.modules.voice.voice.VoiceManager;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-public class GuildEventListener implements Listener {
+public class GuildEventListener implements EventListener {
 
     private final VoiceManager voiceManager;
 

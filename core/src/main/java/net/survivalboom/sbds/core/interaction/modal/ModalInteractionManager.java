@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.events.Listener;
+import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
 import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
 import net.survivalboom.sbds.api.interaction.modal.ModalInteractionInfo;
@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class ModalInteractionManager extends Manager implements IModalInteractionManager, Listener {
+public class ModalInteractionManager extends Manager implements IModalInteractionManager, EventListener {
 
     private static final Logger log = LoggerFactory.getLogger(ModalInteractionManager.class.getSimpleName());
 

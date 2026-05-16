@@ -4,7 +4,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.events.Listener;
+import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.interaction.ComponentInteractionInfo;
 import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
 import net.survivalboom.sbds.api.modules.IModule;
@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class ComponentInteractionManager extends Manager implements IComponentInteractionManager, Listener {
+public class ComponentInteractionManager extends Manager implements IComponentInteractionManager, EventListener {
 
     private static final Logger log = LoggerFactory.getLogger(ComponentInteractionManager.class.getSimpleName());
 
