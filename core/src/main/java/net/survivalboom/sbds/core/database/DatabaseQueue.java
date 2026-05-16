@@ -48,7 +48,7 @@ public class DatabaseQueue extends Manager {
     @Override
     protected void shutdown0() {
 
-        task.cancelAndWait(10000, false);
+        task.tryCancel();
         task = null;
 
         if (!sessionRequestsQueue.isEmpty() || !recordsSavingQueue.isEmpty()) {

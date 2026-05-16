@@ -3,22 +3,22 @@ package net.survivalboom.sbds.core.commands.cmds.common;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.modules.IModuleManager;
+import net.survivalboom.sbds.api.monitoring.ISystemMonitor;
+import net.survivalboom.sbds.api.monitoring.cpu.ICpuInfo;
+import net.survivalboom.sbds.api.monitoring.cpu.ICpuMonitor;
+import net.survivalboom.sbds.api.monitoring.memory.IMemoryInfo;
+import net.survivalboom.sbds.api.monitoring.os.IOperatingSystemInfo;
+import net.survivalboom.sbds.api.scheduler.IScheduler;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.core.BuildConstants;
-import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.core.modules.ModuleManager;
-import net.survivalboom.sbds.core.monitor.SystemMonitor;
-import net.survivalboom.sbds.core.monitor.cpu.CpuInfo;
-import net.survivalboom.sbds.core.monitor.cpu.CpuMonitor;
-import net.survivalboom.sbds.core.monitor.memory.MemoryInfo;
-import net.survivalboom.sbds.core.monitor.os.OperatingSystemInfo;
-import net.survivalboom.sbds.core.scheduler.Scheduler;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -28,29 +28,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @CommandClass(name = "status", description = "Shows a status of the discord bot.", translationKey = "sbds.command.status", permission = "sbds.commands.status", defaultPermission = true)
-public class StatusCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommand {
-
-    private final SystemMonitor systemMonitor;
-
-    private final ModuleManager moduleManager;
-
-    private final Scheduler scheduler;
-
-    private final JDA jda;
-
-
-    public StatusCommand(@NotNull SBDS sbds) {
-        this.systemMonitor = sbds.getSystemMonitor();
-        this.moduleManager = sbds.getModuleManager();
-        this.scheduler = sbds.getScheduler();
-        this.jda = sbds.getBot();
-    }
-
+public class StatusCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
-        Placeholders placeholders = placeholders();
+        Placeholders placeholders = placeholders(info.sbds());
 
         EmbedBuilder builder = new EmbedBuilder();
         builder.setTitle("Rawr!!! \uD83E\uDD96");
@@ -85,7 +68,7 @@ public class StatusCommand extends CommandBase implements SlashCommandExecutor, 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        Placeholders placeholders = placeholders();
+        Placeholders placeholders = placeholders(info.sbds());
 
         List<String> lines = new ArrayList<>();
 
@@ -103,7 +86,7 @@ public class StatusCommand extends CommandBase implements SlashCommandExecutor, 
         lines.add("  Active threads: {threadCount}");
         lines.add(" ");
         lines.add("> Loaded modules <");
-        lines.addAll(moduleManager.getModules0().stream().map(m -> "- " + m.getName() + " v" + m.getMeta().getVersion() + " ~ " + (m.isEnabled() ? "Enabled" : "Disabled")).toList());
+        lines.addAll(info.sbds().getModuleManager().getModules().stream().map(m -> "- " + m.getName() + " v" + m.getMeta().getVersion() + " ~ " + (m.isEnabled() ? "Enabled" : "Disabled")).toList());
 
         lines = placeholders.parseAll(lines);
 
@@ -113,12 +96,19 @@ public class StatusCommand extends CommandBase implements SlashCommandExecutor, 
 
     }
 
-    private Placeholders placeholders() {
+    private Placeholders placeholders(@NotNull ISBDS sbds) {
 
-        OperatingSystemInfo osInfo = systemMonitor.getOperatingSystemInfo();
-        MemoryInfo memoryInfo = systemMonitor.getMemoryInfo();
-        CpuInfo cpuInfo = systemMonitor.getCpuInfo();
-        CpuMonitor cpuMonitor = systemMonitor.getCpuMonitor();
+        ISystemMonitor systemMonitor = sbds.getSystemMonitor();
+
+        IOperatingSystemInfo osInfo = systemMonitor.getOperatingSystemInfo();
+        IMemoryInfo memoryInfo = systemMonitor.getMemoryInfo();
+        ICpuInfo cpuInfo = systemMonitor.getCpuInfo();
+        ICpuMonitor cpuMonitor = systemMonitor.getCpuMonitor();
+
+        JDA jda = sbds.getBot();
+        IScheduler scheduler = sbds.getScheduler();
+
+        IModuleManager moduleManager = sbds.getModuleManager();
 
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         int threadCount = threadMXBean.getThreadCount();
@@ -137,13 +127,13 @@ public class StatusCommand extends CommandBase implements SlashCommandExecutor, 
                 "{cpuLoadSystem}", Math.floor(cpuMonitor.systemLoad()),
                 "{ping}", jda.getGatewayPing(),
                 "{tasks}", scheduler.getTasks().size(),
-                "{modules}", modulesString()
+                "{modules}", modulesString(moduleManager)
         );
 
     }
 
-    private String modulesString() {
-        return String.join("\n", moduleManager.getModules0().stream().map(m -> "- " + m.getName() + " v" + m.getMeta().getVersion()).toList());
+    private String modulesString(@NotNull IModuleManager manager) {
+        return String.join("\n", manager.getModules().stream().map(m -> "- " + m.getName() + " v" + m.getMeta().getVersion()).toList());
     }
 
     private int toMB(double v) {

@@ -56,7 +56,7 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
     @Override
     protected void shutdown0() {
 
-        task.cancelAndWait(2000, true);
+        task.tryCancel();
         task = null;
 
         registeredCommands.clear();

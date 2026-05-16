@@ -59,7 +59,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
     @Override
     protected void shutdown0() {
 
-        task.cancelAndWait(5000, true);
+        task.tryCancel();
         task = null;
 
         pendingInteractions.clear();

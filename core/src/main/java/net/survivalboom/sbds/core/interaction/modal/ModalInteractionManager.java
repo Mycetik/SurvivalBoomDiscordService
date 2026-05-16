@@ -73,7 +73,7 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
         sbds.getEventManager().unregisterEvents(this);
 
-        task.cancelAndWait(5000, true);
+        task.tryCancel();
         task = null;
 
         pendingModalMap.clear();

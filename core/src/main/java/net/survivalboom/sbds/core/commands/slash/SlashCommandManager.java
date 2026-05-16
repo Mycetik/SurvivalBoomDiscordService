@@ -104,7 +104,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
             SlashExecutionInfo info = new SlashExecutionInfo(event, registeredCommand, command, commandName, arguments);
 
             SlashCommandExecutor executor = (SlashCommandExecutor) command.getExecutor();
-            executor.execute(info);
+            executor.executes(info);
 
             if (!event.isAcknowledged()) {
                 event.reply("Something went wrong. Looks like the executor `" + executor + "` refused to respond to the interaction.").queue();

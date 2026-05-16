@@ -2,7 +2,7 @@ package net.survivalboom.sbds.core.commands.cmds.console.modules;
 
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
 import org.jetbrains.annotations.NotNull;
@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 @CommandClass(name = "list")
-public class ModulesListCommand extends CommandBase implements ConsoleCommand {
+public class ModulesListCommand extends CommandBase implements ConsoleCommandExecutor {
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {

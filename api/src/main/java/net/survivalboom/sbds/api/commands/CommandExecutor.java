@@ -4,6 +4,6 @@ import org.jetbrains.annotations.NotNull;
 
 public interface CommandExecutor<T extends CommandExecutionInfo<?, ?>> {
 
-    void execute(@NotNull T info) throws Exception;
+    default void executes(@NotNull T info) throws Throwable {}
 
 }

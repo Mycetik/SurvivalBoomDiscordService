@@ -1,21 +1,17 @@
 package net.survivalboom.sbds.api.commands.base;
 
-import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
-import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.argument.Argument;
-import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public abstract class CommandBase implements CommandExecutor {
+public abstract class CommandBase {
 
     private final Set<CommandBase> subcommands = new HashSet<>();
 
@@ -42,7 +38,7 @@ public abstract class CommandBase implements CommandExecutor {
 
         return new Command(
                 name,
-                this,
+                (CommandExecutor<?>) this,
                 arguments,
                 aliases,
                 description,

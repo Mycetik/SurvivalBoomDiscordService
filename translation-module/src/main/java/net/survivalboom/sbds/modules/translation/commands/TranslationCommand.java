@@ -10,7 +10,7 @@ import net.survivalboom.sbds.api.commands.argument.sbds.TranslationArgument;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 @CommandClass(name = "translation", description = "Sets translation of the bot for you", translationKey = "translation.command.translation")
-public class TranslationCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommand {
+public class TranslationCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
 
     private final ITranslationManager translationManager;
 

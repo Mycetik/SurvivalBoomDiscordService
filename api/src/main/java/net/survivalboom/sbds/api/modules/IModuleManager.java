@@ -19,27 +19,27 @@ public interface IModuleManager {
 
     // LOADING & UNLOADING //
 
-    @NotNull IModule loadModule(@NotNull File file) throws ModuleLoadingException, ModuleStateCallbackException, ModuleRefusedException;
+    @NotNull IModule loadModule(@NotNull File file) throws ModuleLoadingException, ModuleRefusedException;
 
 
-    void unloadModule(@NotNull IModule module) throws ModuleLoadingException, ModuleStateCallbackException;
+    void unloadModule(@NotNull IModule module) throws ModuleStateCallbackException;
 
-    default void unloadModule(@NotNull ModuleMain moduleMain) throws ModuleLoadingException, ModuleStateCallbackException {
+    default void unloadModule(@NotNull ModuleMain moduleMain) throws ModuleStateCallbackException {
         unloadModule(moduleMain.getModule());
     }
 
     // ENABLING & DISABLING //
 
-    void enableModule(@NotNull IModule module) throws ModuleLoadingException, ModuleStateCallbackException, ModuleRefusedException;
+    void enableModule(@NotNull IModule module) throws ModuleStateCallbackException, ModuleRefusedException;
 
-    default void enableModule(@NotNull ModuleMain moduleMain) throws ModuleLoadingException, ModuleStateCallbackException, ModuleRefusedException {
+    default void enableModule(@NotNull ModuleMain moduleMain) throws ModuleStateCallbackException, ModuleRefusedException {
         enableModule(moduleMain.getModule());
     }
 
 
-    void disableModule(@NotNull IModule module) throws ModuleLoadingException, ModuleStateCallbackException;
+    void disableModule(@NotNull IModule module) throws ModuleStateCallbackException;
 
-    default void disableModule(@NotNull ModuleMain moduleMain) throws ModuleLoadingException, ModuleStateCallbackException {
+    default void disableModule(@NotNull ModuleMain moduleMain) throws ModuleStateCallbackException {
         disableModule(moduleMain.getModule());
     }
 

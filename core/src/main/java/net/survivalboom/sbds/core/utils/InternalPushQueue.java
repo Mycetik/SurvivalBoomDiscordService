@@ -75,7 +75,7 @@ public class InternalPushQueue<obj> extends Manager {
     @Override
     protected void shutdown0() {
 
-        task.cancelAndWait(1000, true);
+        task.tryCancel();
         task = null;
 
     }

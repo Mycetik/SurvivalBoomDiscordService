@@ -74,7 +74,7 @@ public class NetworkMonitor implements INetworkMonitor {
     }
 
     public void stopMonitorTask() {
-        monitorTask.cancelAndWait(1000, true);
+        monitorTask.tryCancel();
         monitorTask = null;
     }
 

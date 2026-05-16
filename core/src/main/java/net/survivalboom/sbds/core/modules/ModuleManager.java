@@ -312,6 +312,8 @@ public class ModuleManager extends Manager implements IModuleManager {
             throw new IllegalStateException("Module is not disabled");
         }
 
+        log.info("Enabling {}...", imodule.getName());
+
         Module module = (Module) imodule;
         module.enabled = true;
 
@@ -341,6 +343,8 @@ public class ModuleManager extends Manager implements IModuleManager {
         }
 
         Module module = (Module) imodule;
+
+        log.info("Disabling {}...", module.getName());
 
         try {
             imodule.getMain().onDisable();

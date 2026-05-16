@@ -6,7 +6,7 @@ import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
 import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
-import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.console.IConsoleListener;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
@@ -56,7 +56,7 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
     @Override
     protected void shutdown0() {
 
-        task.cancelForce();
+        task.tryCancel();
         task = null;
 
         super.shutdown0();
@@ -158,17 +158,17 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
         }
 
         TypeMap ctxArgs = parsingResult.arguments();
-        ConsoleExecutionInfo info = new ConsoleExecutionInfo(rootCommand, command, fullInput, alias, ctxArgs);
+        ConsoleExecutionInfo info = new ConsoleExecutionInfo(rootCommand, command, fullInput, alias, ctxArgs, logger);
 
         try {
 
-            ConsoleCommand consoleCommand = (ConsoleCommand) command.getExecutor();
-            consoleCommand.executes(info);
+            ConsoleCommandExecutor consoleCommandExecutor = (ConsoleCommandExecutor) command.getExecutor();
+            consoleCommandExecutor.executes(info);
 
         }
 
-        catch (Exception e) {
-            logger.error("An unknown error occurred in command `{}`. Command threw an exception.", command.getName(), e);
+        catch (Throwable t) {
+            logger.error("An unknown error occurred in command `{}`. Command threw an exception.", command.getName(), t);
             return;
         }
 

@@ -41,7 +41,7 @@ public class DatabaseSaveQueue extends Manager {
     @Override
     protected void shutdown0() {
 
-        task.cancelAndWait(1000, true);
+        task.tryCancel();
 
         if (!queue.isEmpty()) {
             log.warn("There is {} hibernate entities in queue. Saving...", queue.size());

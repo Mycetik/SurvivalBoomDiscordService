@@ -2,7 +2,7 @@ package net.survivalboom.sbds.modules.moderation.module.commands;
 
 import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 
-public abstract class AbstractModerationCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommand {
+public abstract class AbstractModerationCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
 
     protected static final String NONE = "$[values.none]";
 
