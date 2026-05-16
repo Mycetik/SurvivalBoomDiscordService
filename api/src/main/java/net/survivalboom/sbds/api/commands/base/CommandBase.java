@@ -7,6 +7,7 @@ import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,8 +32,9 @@ public abstract class CommandBase implements CommandExecutor {
         String description = info.description();
         String translationKey = info.translationKey();
 
-        String permission = info.permission();
+        String permissionStr = info.permission();
         boolean defaultPermission = info.defaultPermission();
+        Permission permission = new Permission(permissionStr, defaultPermission);
 
         List<String> aliases = List.of(info.aliases());
 
@@ -45,8 +47,7 @@ public abstract class CommandBase implements CommandExecutor {
                 aliases,
                 description,
                 translationKey,
-                permission,
-                defaultPermission
+                permission
         );
 
     }

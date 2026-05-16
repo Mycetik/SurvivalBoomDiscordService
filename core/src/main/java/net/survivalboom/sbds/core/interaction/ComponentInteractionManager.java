@@ -8,6 +8,7 @@ import net.survivalboom.sbds.api.events.Listener;
 import net.survivalboom.sbds.api.interaction.ComponentInteractionInfo;
 import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
@@ -85,7 +86,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
             log.error("An exception was thrown while tried to process interaction `{}`.", id, t);
 
-            sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getMember())
+            sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser())
                     .withPlaceholders("{exception}", t)
                     .send()
                     .setEphemeral(true)
@@ -120,8 +121,8 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
             return;
         }
 
-        String permission = listener.getPermission();
-        if (member != null && permission != null && !sbds.getPermissionManager().hasPermission(member, permission, false)) {
+        Permission permission = listener.getPermission();
+        if (member != null && permission != null && !sbds.getPermissionManager().hasPermission(member, permission)) {
 
             sbds.getMessages().reply(event, "sbds.no-permission", member)
                     .withPlaceholders("{permission}", permission)
@@ -278,7 +279,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
             @NotNull String name,
             @NotNull Class<event> clazz,
             @NotNull Consumer<ComponentInteractionInfo<event>> executor,
-            @Nullable String permission
+            @Nullable Permission permission
     ) {
 
         Objects.requireNonNull(module, "module == null");
@@ -328,14 +329,14 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
         private final Consumer<ComponentInteractionInfo<event>> executor;
 
-        private final @Nullable String permission;
+        private final @Nullable Permission permission;
 
 
         public RegisteredListener(
                 @NotNull ComponentInteractionManager manager,
                 @NotNull Class<event> clazz,
                 @NotNull Consumer<ComponentInteractionInfo<event>> executor,
-                @Nullable String permission
+                @Nullable Permission permission
         ) {
             this.manager = manager;
             this.clazz = clazz;
@@ -360,7 +361,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         }
 
         @Override
-        public @Nullable String getPermission() {
+        public @Nullable Permission getPermission() {
             return permission;
         }
 

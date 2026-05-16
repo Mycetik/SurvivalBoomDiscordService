@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.commands;
 
+import net.survivalboom.sbds.api.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,9 +26,7 @@ public class Command {
 
     // PERMISSION //
 
-    private final @Nullable String permission;
-
-    private final boolean defaultPermission;
+    private final @Nullable Permission permission;
 
 
     public Command(
@@ -39,8 +38,7 @@ public class Command {
             @Nullable String description,
             @Nullable String translationKey,
 
-            @Nullable String permission,
-            boolean defaultPermission
+            @Nullable Permission permission
     ) {
 
         Objects.requireNonNull(name, "name == null");
@@ -53,7 +51,6 @@ public class Command {
         this.translationKey = translationKey;
 
         this.permission = permission;
-        this.defaultPermission = defaultPermission;
 
         if (arguments != null) {
             this.arguments.addAll(arguments);
@@ -95,12 +92,8 @@ public class Command {
 
     // PERMISSION //
 
-    public @Nullable String getPermission() {
+    public @Nullable Permission getPermission() {
         return permission;
-    }
-
-    public boolean isDefaultPermission() {
-        return defaultPermission;
     }
 
     // COPY //
@@ -138,9 +131,7 @@ public class Command {
 
         // PERMISSION //
 
-        private @Nullable String permission;
-
-        private boolean defaultPermission;
+        private @Nullable Permission permission;
 
 
         private Builder() {}
@@ -157,7 +148,6 @@ public class Command {
             this.translationKey = builder.translationKey;
 
             this.permission = builder.permission;
-            this.defaultPermission = builder.defaultPermission;
 
         }
 
@@ -173,7 +163,6 @@ public class Command {
             this.translationKey = command.translationKey;
 
             this.permission = command.permission;
-            this.defaultPermission = command.defaultPermission;
 
         }
 
@@ -274,30 +263,19 @@ public class Command {
 
         // PERMISSION //
 
-        public @NotNull Builder setPermission(@Nullable String permission) {
+        public @NotNull Builder setPermission(@Nullable Permission permission) {
             this.permission = permission;
             return this;
         }
 
-        public String getPermission() {
+        public Permission getPermission() {
             return permission;
-        }
-
-        // DEFAULT PERMISSION //
-
-        public @NotNull Builder setDefaultPermission(boolean value) {
-            this.defaultPermission = value;
-            return this;
-        }
-
-        public boolean isDefaultPermission() {
-            return defaultPermission;
         }
 
         // BUILD //
 
         public @NotNull Command build() {
-            return new Command(name, executor, arguments, aliases, description, translationKey, permission, defaultPermission);
+            return new Command(name, executor, arguments, aliases, description, translationKey, permission);
         }
 
         public @NotNull Builder copy() {

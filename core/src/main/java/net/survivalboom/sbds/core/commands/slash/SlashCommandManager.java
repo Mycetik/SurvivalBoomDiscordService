@@ -11,6 +11,7 @@ import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.Listener;
+import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
@@ -159,16 +160,18 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
 
     private boolean permissionCheck(@NotNull Command command, @NotNull SlashCommandInteractionEvent event) {
 
-        String permission = command.getPermission();
+        Permission permission = command.getPermission();
         if (event.isFromGuild() && permission != null) {
 
             Member member = event.getMember();
 
             assert member != null;
 
-            boolean hasPermission = permissionManager.hasPermission(member, permission, command.isDefaultPermission());
+            boolean hasPermission = permissionManager.hasPermission(member,  permission);
             if (!hasPermission) {
-                messages.reply(event.getInteraction(),"sbds.no-permission", event.getUser()).withPlaceholders(Placeholders.of("{PERMISSION}", permission)).queue();
+                messages.reply(event.getInteraction(),"sbds.no-permission", event.getUser())
+                        .withPlaceholders("{PERMISSION}", permission)
+                        .queue();
                 return false;
             }
 

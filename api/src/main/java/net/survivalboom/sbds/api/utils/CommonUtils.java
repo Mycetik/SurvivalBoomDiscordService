@@ -578,6 +578,46 @@ public class CommonUtils {
 
     }
 
+    //
+    // HASH
+    //
+
+    public static long longHash(Object... args) {
+
+        if (args == null || args.length == 0) {
+            return 0L;
+        }
+
+        // Начальное значение (seed) на основе золотого сечения для минимизации коллизий
+        long h = 0x9E3779B97F4A7C15L;
+
+        for (Object arg : args) {
+            long value;
+
+            if (arg == null) {
+                value = 0L;
+            } else if (arg instanceof Number) {
+                // Если это Long, Integer и т.д., берем их примитивное значение
+                value = ((Number) arg).longValue();
+            } else {
+                // Для строк и других объектов используем hashCode
+                // Мы "растягиваем" 32-битный hashCode, чтобы он лучше перемешивался
+                value = arg.hashCode();
+            }
+
+            // Качественное перемешивание (Mixer из MurmurHash3)
+            value = (value ^ (value >>> 33)) * -0xae502812aa7333L;
+            value = (value ^ (value >>> 33)) * -0x3b3146010f6d7dL;
+            value = value ^ (value >>> 33);
+
+            // Комбинируем текущий хэш с новым значением
+            h ^= value + 0x9e3779b9 + (h << 6) + (h >> 2);
+        }
+
+        return h;
+
+    }
+
 
 
 

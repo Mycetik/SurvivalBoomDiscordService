@@ -4,12 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-public class Permission {
-
-    private final String permission;
-
-    private final boolean value;
-
+public record Permission(String permission, boolean value) {
 
     public Permission(@NotNull String permission, boolean value) {
         this.permission = permission;
@@ -17,24 +12,21 @@ public class Permission {
     }
 
 
+    @Override
     public @NotNull String permission() {
         return permission;
-    }
-
-    public boolean value() {
-        return value;
     }
 
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof Permission permission)) return false;
-        return permission.value == this.value && permission.permission.equals(this.permission);
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(permission, value);
+        if (!(obj instanceof Permission(String permission1, boolean value1))) {
+            return false;
+        }
+
+        return value1 == this.value && permission1.equals(this.permission);
+
     }
 
     @Override

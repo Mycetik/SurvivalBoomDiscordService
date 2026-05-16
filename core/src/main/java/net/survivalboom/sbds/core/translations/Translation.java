@@ -16,9 +16,7 @@ import java.util.*;
 
 public class Translation extends Valid implements ITranslation, RegistrationManager.Callback<ITranslationsMessagesPool> {
 
-
     private final ITranslationManager manager;
-
 
     protected Registration<ITranslation> registration;
 

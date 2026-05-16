@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.modules.ModuleMain;
+import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.IManager;
@@ -51,7 +52,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull String name,
             @NotNull Class<event> clazz,
             @NotNull Consumer<ComponentInteractionInfo<event>> executor,
-            @Nullable String permission
+            @Nullable Permission permission
     );
 
     default <event extends GenericComponentInteractionCreateEvent> @NotNull IRegisteredListener<event> registerListener(
@@ -68,7 +69,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull String name,
             @NotNull Class<event> clazz,
             @NotNull Consumer<ComponentInteractionInfo<event>> executor,
-            @Nullable String permission
+            @Nullable Permission permission
     ) {
         return registerListener(module.getModule(), name, clazz, executor, permission);
     }
@@ -112,7 +113,7 @@ public interface IComponentInteractionManager extends IManager {
 
         @NotNull Consumer<ComponentInteractionInfo<event>> getExecutor();
 
-        @Nullable String getPermission();
+        @Nullable Permission getPermission();
 
 
         @NotNull IComponentInteractionManager getManager();
