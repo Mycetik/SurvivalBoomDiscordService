@@ -60,7 +60,7 @@ public class SbdsBootstrap {
     public void launch() {
 
         LoggerLayout.setup();
-        LoggerLayout.INSTANCE.colors = true;
+        LoggerLayout.INSTANCE.setColorsSupport(true);
 
         logger.info("");
         logger.info("    ____              _           _____                ");
