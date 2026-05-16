@@ -27,13 +27,15 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
 
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("hh:mm:ss");
 
-    public final String RESET = "\u001B[0m";
-    public final String BRIGHT_RED = "\u001B[91m";
-    public final String RED = "\u001B[31m";
-    public final String YELLOW = "\u001B[33m";
-    public final String GREEN = "\u001B[32m";
-    public final String CYAN = "\u001B[36m";
-    public final String BLUE = "\u001B[34m";
+    // COLORS //
+
+    public static final String RESET = "\u001B[0m";
+    public static final String BRIGHT_RED = "\u001B[91m";
+    public static final String RED = "\u001B[31m";
+    public static final String YELLOW = "\u001B[33m";
+    public static final String GREEN = "\u001B[32m";
+    public static final String CYAN = "\u001B[36m";
+    public static final String BLUE = "\u001B[34m";
 
     public Map<String, String> COLOR_MAP = Map.of(
             "&4", RED,
@@ -45,19 +47,50 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
             "&9", BLUE
     );
 
-    public boolean colors = true;
+    // LAYOUT //
 
-    public ch.qos.logback.classic.Logger rootLogger;
+    private final ch.qos.logback.classic.Logger rootLogger;
 
-    public LoggerFilter loggerFilter;
+    private boolean colors = true;
 
+    private LoggerFilter loggerFilter;
+
+
+    public LoggerLayout(@NotNull ch.qos.logback.classic.Logger rootLogger) {
+        this.rootLogger = rootLogger;
+    }
+
+
+    public boolean isColorsEnabled() {
+        return colors;
+    }
+
+    public void setColorsSupport(boolean value) {
+        this.colors = value;
+    }
+
+
+    public LoggerFilter getLoggerFilter() {
+        return loggerFilter;
+    }
+
+    public void setLoggerFilter(LoggerFilter filter) {
+        this.loggerFilter = filter;
+    }
+
+    //
+    // DO LAYOUT
+    //
 
     @Override
+    @SuppressWarnings("CallToPrintStackTrace") // <-- А не бажаєте сходити до чорта на кулічики, га?
     public String doLayout(ILoggingEvent event) {
 
         try {
 
-            if (loggerFilter != null && loggerFilter.process(event)) return null;
+            if (loggerFilter != null && loggerFilter.process(event)) {
+                return null;
+            }
 
             return doLayout0(event);
 
@@ -70,7 +103,6 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
         }
 
     }
-
 
     private String doLayout0(ILoggingEvent event) {
 
@@ -173,25 +205,29 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
     // STATIC
     //
 
-    public final static LoggerLayout INSTANCE = new LoggerLayout();
+    public final static LoggerLayout INSTANCE;
 
-    public static void setup() {
+    static {
+
+        ch.qos.logback.classic.Logger rootLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+        LoggerLayout loggerLayout = new LoggerLayout(rootLogger);
 
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
 
         ConsoleAppender<ILoggingEvent> consoleAppender = new ConsoleAppender<>();
         consoleAppender.setContext(context);
-        consoleAppender.setLayout(INSTANCE);
+        consoleAppender.setLayout(loggerLayout);
         consoleAppender.start();
 
-        ch.qos.logback.classic.Logger rootLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
         rootLogger.detachAndStopAllAppenders();
         rootLogger.addAppender(consoleAppender);
         rootLogger.setLevel(Level.INFO);
         rootLogger.setAdditive(true);
 
-        INSTANCE.rootLogger = rootLogger;
+        INSTANCE = loggerLayout;
 
     }
+
+    public static void setup() {}
 
 }
