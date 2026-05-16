@@ -7,7 +7,6 @@ import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.registrations.Registration;
-import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
@@ -15,6 +14,7 @@ import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.database.guilds.GuildDataRecord;
 import net.survivalboom.sbds.core.database.users.UserDataRecord;
 import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
+import net.survivalboom.sbds.core.utils.InternalPushQueue;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +26,6 @@ import org.spongepowered.configurate.ConfigurationNode;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -45,17 +44,18 @@ public class Database extends Manager implements IDatabase {
 
     private final DatabaseQueue queue;
 
-    // repo queue //
+    // repo rebuild queue //
 
-    private final Queue<IRepository<?>> repoRebuildQueue = new ConcurrentLinkedQueue<>();
+    private final List<IRepository<?>> currentAttachedRepositories = new ArrayList<>();
 
-    private ISchedulerTask rebuildQueue = null;
+    private final InternalPushQueue<IRepository<?>> rebuildQueue;
 
 
     public Database(@NotNull SBDS sbds) {
         this.sbds = sbds;
         this.registry = new InternalRegistrationManager<>(this, "database", null, sbds.getRegistrationRegistry());
         this.queue = new DatabaseQueue(this, sbds.getScheduler());
+        this.rebuildQueue = new InternalPushQueue<>(this::rebuildQueue, "DatabaseRebuild", 500, sbds);
     }
 
     //
@@ -73,8 +73,7 @@ public class Database extends Manager implements IDatabase {
         createRepository0(null, "guilds", GuildDataRecord.class);
 
         queue.init();
-
-        rebuildQueue = sbds.getScheduler().schedule0(null, "RebuildSessionQueue", task -> rebuildQueueTask(), 1000, 500);
+        rebuildQueue.init();
 
     }
 
@@ -83,8 +82,7 @@ public class Database extends Manager implements IDatabase {
 
         log.info("Shutting down database...");
 
-        rebuildQueue.cancel();
-        rebuildQueue = null;
+        rebuildQueue.shutdown();
 
         registry.shutdown();
         queue.shutdown();
@@ -97,13 +95,10 @@ public class Database extends Manager implements IDatabase {
 
     // REBUILD QUEUE //
 
-    private void rebuildQueueTask() {
-
-        List<IRepository<?>> queue = new ArrayList<>(this.repoRebuildQueue);
-        this.repoRebuildQueue.clear();
+    private void rebuildQueue(InternalPushQueue<IRepository<?>> queue) {
 
         try {
-            rebuildSessionFactory(queue);
+            rebuildSessionFactory(queue.getQueue());
         }
 
         catch (Throwable t) {
@@ -207,10 +202,16 @@ public class Database extends Manager implements IDatabase {
         org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration();
         configuration.setProperties(properties);
 
-        for (var repo : toImport) {
+        List<IRepository<?>> repos = new ArrayList<>(currentAttachedRepositories);
+        repos.addAll(toImport);
+
+        for (var repo : repos) {
             Class<?> clazz = repo.getRecordClass();
             configuration.addAnnotatedClass(clazz);
         }
+
+        this.currentAttachedRepositories.clear();
+        this.currentAttachedRepositories.addAll(repos);
 
         sessionFactory = configuration.buildSessionFactory();
 
@@ -264,7 +265,7 @@ public class Database extends Manager implements IDatabase {
         Repository<T> repository = new Repository<>(clazz, this);
         repository.registration = (Registration<IRepository<T>>) (Registration<?>) registry.register0(module, name, repository);
 
-        repoRebuildQueue.add(repository);
+        rebuildQueue.append(repository);
 
         return repository;
 

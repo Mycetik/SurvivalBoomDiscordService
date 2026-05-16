@@ -49,7 +49,23 @@ public interface IDatabase extends IManager {
 
     // GETTERS //
 
-    <T extends DataRecord> @Nullable IRepository<T> getRepository(@NotNull NamespacedKey key, @NotNull Class<T> clazz);
+    @Nullable IRepository<?> getRepository(@NotNull NamespacedKey key);
+
+    default IRepository<?> getRepository(@NotNull String key) {
+        return getRepository(NamespacedKey.fromString(key));
+    }
+
+    @SuppressWarnings("unchecked") // <- ІДІ НАААХУУУЙЙ!!!!!
+    default <T extends DataRecord> @Nullable IRepository<T> getRepository(@NotNull NamespacedKey key, @NotNull Class<T> clazz) {
+
+        var repository = getRepository(key);
+        if (repository == null) {
+            return null;
+        }
+
+        return (IRepository<T>) repository;
+
+    }
 
     default <T extends DataRecord> @Nullable IRepository<T> getRepository(@NotNull String name, @NotNull Class<T> clazz) {
         return getRepository(NamespacedKey.fromString(name), clazz);
