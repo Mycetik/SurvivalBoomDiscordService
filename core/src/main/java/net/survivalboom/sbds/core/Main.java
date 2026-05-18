@@ -2,7 +2,6 @@ package net.survivalboom.sbds.core;
 
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.libraries.DynamicClassLoader;
-import net.survivalboom.sbds.core.libraries.JarLoader;
 import net.survivalboom.sbds.core.libraries.simple.SimpleLibrariesDownloader;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,21 +21,25 @@ public class Main {
 
         started = true;
 
-        System.out.printf("Starting SBDS v%s ...", BuildConstants.VERSION);
+        System.out.printf("Starting SBDS v%s ...\n", BuildConstants.VERSION);
 
-        File workingDir = CommonUtils.getJarFile(Main.class).getParentFile();
+        File thisFile = CommonUtils.getJarFile(Main.class);
+        File workingDir = thisFile.getParentFile();
 
         DynamicClassLoader classLoader = new DynamicClassLoader("SBDS", Main.class.getClassLoader());
+        classLoader.addParentDelegateClassRule("IgnoreInitClasses", name -> name.equals("net.survivalboom.sbds.core.Main") ||name.contains("DynamicClassLoader") || name.startsWith("net.survivalboom.sbds.core.libraries.simple"));
+        classLoader.addSource(thisFile);
+
         Thread.currentThread().setContextClassLoader(classLoader);
 
-        checkInitialLibraries(workingDir, classLoader);
-        launch(workingDir, classLoader);
+        var lib = checkInitialLibraries(workingDir, classLoader);
+        launch(workingDir, lib, classLoader);
 
         System.exit(0);
 
     }
 
-    private static void checkInitialLibraries(@NotNull File workingDir, @NotNull DynamicClassLoader classLoader) {
+    private static @NotNull SimpleLibrariesDownloader checkInitialLibraries(@NotNull File workingDir, @NotNull DynamicClassLoader classLoader) {
 
         System.out.println("Loading initial libraries...");
 
@@ -66,17 +69,19 @@ public class Main {
         configurateYaml.dependencies().add(configurateCore);
         configurateXml.dependencies().add(configurateCore);
 
+        return librariesDownloader;
+
     }
 
-    private static void launch(@NotNull File workingDir, @NotNull DynamicClassLoader loader) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    private static void launch(@NotNull File workingDir, @NotNull SimpleLibrariesDownloader downloader, @NotNull DynamicClassLoader loader) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
 
-        Class<?> bootstrapClass = loader.getClass("net.survivalboom.sbds.core.SbdsBootstrap", false, false, false);
+        Class<?> bootstrapClass = loader.getClass("net.survivalboom.sbds.core.SbdsBootstrap", false, false);
         if (bootstrapClass == null) {
             throw new ClassNotFoundException("net.survivalboom.sbds.core.SbdsBootstrap");
         }
 
         Constructor<?> constructor = bootstrapClass.getDeclaredConstructors()[0];
-        Object bootstrapInstance = constructor.newInstance(workingDir, loader);
+        Object bootstrapInstance = constructor.newInstance(workingDir, downloader, loader);
 
         bootstrapClass.getMethod("launch").invoke(bootstrapInstance);
 

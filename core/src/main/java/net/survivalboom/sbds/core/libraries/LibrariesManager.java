@@ -8,6 +8,8 @@ import net.survivalboom.sbds.core.libraries.simple.SimpleLibrary;
 import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
@@ -16,16 +18,22 @@ import org.spongepowered.configurate.xml.XmlConfigurationLoader;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.util.*;
 
 public class LibrariesManager extends Manager implements ILibrariesManager {
 
 
+    private static final Logger log = LoggerFactory.getLogger(LibrariesManager.class.getSimpleName());
+
     private final DynamicClassLoader rootClassLoader;
 
     private final File librariesDir;
+
+    private final HttpClient httpClient;
 
 
     private final Map<ArtifactAddress, PomData> cachedPoms = new HashMap<>();
@@ -37,8 +45,12 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             @NotNull File librariesDir,
             @NotNull DynamicClassLoader rootClassLoader
     ) {
+
         this.librariesDir = librariesDir;
         this.rootClassLoader = rootClassLoader;
+
+        this.httpClient = HttpClient.newBuilder().build();
+
     }
 
     //
@@ -62,8 +74,18 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         checkValid();
         Objects.requireNonNull(downloader, "downloader == null");
 
-        for (var simpleLib : downloader.getLibrariesInstalled()) {
-            importSimpleLibrary(simpleLib);
+        List<SimpleLibrary> toImport = downloader.getLibrariesInstalled();
+        for (var lib : List.copyOf(toImport)) {
+
+            boolean remove = toImport.stream().anyMatch(l -> l.dependencies().contains(lib));
+            if (remove) {
+                toImport.remove(lib);
+            }
+
+        }
+
+        for (var lib : toImport) {
+            importSimpleLibrary(lib);
         }
 
     }
@@ -97,7 +119,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             throw new RuntimeException(e);
         }
 
-        classLoader.addClassSupplier(name -> rootClassLoader.getClass(name, false, true, false));
+        classLoader.addClassSupplier(file.getName(), name -> rootClassLoader.getClass(name, false, true));
 
         Library library = new Library(pom, file, classLoader, dependencies);
         libraryMap.put(address, library);
@@ -202,8 +224,9 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         String url = address.createRepositoryAddress(repository, "jar");
         File file = new File(librariesDir, address.toGradleString(ArtifactAddress.DEFAULT_FILESYSTEM_SEPARATOR) + ".jar");
 
-        List<ILibrary> dependencies = new ArrayList<>();
+        log.info("Downloading library from {}", url);
 
+        List<ILibrary> dependencies = new ArrayList<>();
         for (IPomData dependencyPom : pom.getDependencies()) {
 
             ILibrary dependency;
@@ -229,7 +252,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         }
 
         DynamicClassLoader classLoader = new DynamicClassLoader(pom.getAddress().toGradleString(), null);
-        classLoader.addClassSupplier(name -> rootClassLoader.getClass(name, false, true, false));
+        classLoader.addClassSupplier(file.getName(), name -> rootClassLoader.getClass(name, false, true));
 
 
         Library library = new Library(pom, file, classLoader, dependencies);
@@ -273,17 +296,43 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         String url = address.createRepositoryAddress(repository, "pom");
 
-        byte[] bytes;
+        log.info("Retrieving POM from {}", url);
 
-        try (InputStream in = new URI(repository).toURL().openStream()) {
-            bytes = in.readAllBytes();
+        HttpRequest request = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(url))
+                .build();
+
+        HttpResponse<String> response;
+        try {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         }
 
         catch (Exception e) {
-            throw new PomResolutionException("POM `" + address + "` not found in `" + url + "`");
+            throw new PomResolutionException("POM resolution failed. Failed to retrieve POM from repository. " + url);
         }
 
-        PomData data = createPomFromBytes(repository, address, bytes);
+        int status = response.statusCode();
+        if (status != 200) {
+            throw new PomResolutionException("POM resolution failed. Server responded with code " + status + " " + url);
+        }
+
+        String string = response.body();
+
+        PomData data;
+        try {
+            data = createPomFromBytes(repository, address, string);
+        }
+
+        catch (PomResolutionException e) {
+
+            if (e.getMessage().contains("Invalid POM file")) {
+                log.error("Received an invalid POM file. Printing contents below: \n{}", string);
+            }
+
+            throw e;
+
+        }
 
         cachedPoms.put(address, data);
 
@@ -308,9 +357,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     // INTERNAL
     //
 
-    private @NotNull PomData createPomFromBytes(@NotNull String repository, @NotNull ArtifactAddress address, byte[] bytes) throws PomResolutionException {
-
-        String string = new String(bytes, StandardCharsets.UTF_8);
+    private @NotNull PomData createPomFromBytes(@NotNull String repository, @NotNull ArtifactAddress address, @NotNull String string) throws PomResolutionException {
 
         ConfigurationNode pomData;
         try {
@@ -321,11 +368,11 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             throw new PomResolutionException("Invalid POM file. Could not parse XML", e);
         }
 
-        ConfigurationNode projectSection = pomData.node("project");
-        if (projectSection.virtual()) {
-            throw new PomResolutionException("Invalid POM file. Section `project` not found");
-        }
-
+        ConfigurationNode projectSection = pomData; // Я не знаю чому, але configurate ігнорує project секцію та одразу надає її вміст X_X
+//        ConfigurationNode projectSection = pomData.node("project");
+//        if (projectSection.virtual()) {
+//            throw new PomResolutionException("Invalid POM file. Section `project` not found");
+//        }
 
         // Завантажуємо properties у поточному pom.xml //
 
@@ -410,11 +457,21 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         List<IPomData> dependencies = new ArrayList<>();
         for (var section : projectSection.node("dependencies").childrenList()) {
 
+            String scope = section.node("scope").getString();
+            if (scope != null && !scope.equals("compile") && !scope.equals("runtime")) {
+                continue;
+            }
+
+            boolean optional = section.node("optional").getBoolean();
+            if (optional) {
+                continue;
+            }
+
             ArtifactAddress dependencyAddress = artifactAddressFromSection(section, address, propertiesAsPlaceholders);
 
             IPomData dependency;
             try {
-                dependency = retrievePom(repository, address);
+                dependency = retrievePom(repository, dependencyAddress);
             }
 
             catch (Exception e) {
@@ -429,14 +486,18 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
     }
 
-    private @NotNull ArtifactAddress artifactAddressFromSection(@NotNull ConfigurationNode section, @NotNull ArtifactAddress address, @NotNull Placeholders properties) throws PomResolutionException {
+    private @NotNull ArtifactAddress artifactAddressFromSection(
+            @NotNull ConfigurationNode section,
+            @NotNull ArtifactAddress address,
+            @NotNull Placeholders properties
+    ) throws PomResolutionException {
 
         String group = section.node("groupId").getString();
         String artifact = section.node("artifactId").getString();
         String version = section.node("version").getString();
 
         if (group == null || artifact == null || version == null) {
-            throw new PomResolutionException("Artifact `" + address + "` has an invalid BOM");
+            throw new PomResolutionException("Artifact `" + address + "` has an invalid dependency");
         }
 
         group = properties.parse(group, MAVEN_PROPERTIES_LAYOUT);
@@ -467,7 +528,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
             }
 
-            parent = pom.getParent();
+            parent = parent.getParent();
 
         }
 

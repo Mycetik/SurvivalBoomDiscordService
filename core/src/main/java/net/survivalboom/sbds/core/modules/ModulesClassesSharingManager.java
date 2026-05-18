@@ -60,7 +60,7 @@ public class ModulesClassesSharingManager extends Manager {
 
             Module m = (Module) depModule;
 
-            clazz = m.getClassLoader().getClass(name, false, false, false);
+            clazz = m.getClassLoader().getClass(name, false, false);
 
         }
 

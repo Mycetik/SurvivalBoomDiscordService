@@ -228,7 +228,7 @@ public class ModuleManager extends Manager implements IModuleManager {
 
         // Шукаємо головний клас модуля.
         String mainClassName = meta.getMain();
-        Class<? extends ModuleMain> clazz = (Class<? extends ModuleMain>) module.getClassLoader().getClass(mainClassName, false, false, false);
+        Class<? extends ModuleMain> clazz = (Class<? extends ModuleMain>) module.getClassLoader().getClass(mainClassName, false, false);
         if (clazz == null) {
             throw new ModuleLoadingException("Module main class `" + mainClassName + "` not found in module ClassLoader");
         }

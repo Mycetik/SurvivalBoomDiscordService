@@ -3,7 +3,6 @@ package net.survivalboom.sbds.core.libraries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,17 +10,19 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class DynamicClassLoader extends URLClassLoader {
 
-    private static final Logger log = LoggerFactory.getLogger(DynamicClassLoader.class);
+    public static Logger log = null;
 
 
     private final Set<File> sources = new HashSet<>();
 
-    private final Set<ClassSupplier> suppliers = new HashSet<>();
+    private final Map<String, ClassSupplier> classSuppliers = new HashMap<>();
 
-    private final Map<String, ClassSupplier> definedClassSuppliers = new HashMap<>();
+    private final Map<String, ResourceSupplier> resourceSuppliers = new HashMap<>();
 
 
     private boolean wasClosed = false;
@@ -63,66 +64,164 @@ public class DynamicClassLoader extends URLClassLoader {
     }
 
     //
-    // SUPPLIERS
+    // CLASS SUPPLIERS
     //
 
-    public void addClassSupplier(@NotNull ClassSupplier supplier) {
+    public @NotNull ClassSupplier addClassSupplier(@NotNull String name, @NotNull Function<String, Class<?>> supplier) {
 
+        Objects.requireNonNull(name, "name == null");
         Objects.requireNonNull(supplier, "supplier == null");
         checkValid();
 
-        if (suppliers.contains(supplier)) {
-            throw new IllegalStateException("Supplier `" + supplier + "` already registered in this class loader");
+        if (classSuppliers.containsKey(name)) {
+            throw new IllegalStateException("ClassSupplier with name `" + name + "` already exists");
         }
 
-        this.suppliers.add(supplier);
+        ClassSupplier classSupplier = new ClassSupplier(name, null, supplier, false);
+        classSuppliers.put(name, classSupplier);
+
+        return classSupplier;
 
     }
 
-    public boolean removeClassSupplier(@NotNull ClassSupplier supplier) {
+    public @NotNull ClassSupplier addClassSupplier(@NotNull String name, @NotNull Predicate<String> predicate, @NotNull Function<String, Class<?>> supplier) {
+
+        Objects.requireNonNull(name, "name == null");
+        Objects.requireNonNull(predicate, "predicate == null");
+        Objects.requireNonNull(supplier, "supplier == null");
+        checkValid();
+
+        if (classSuppliers.containsKey(name)) {
+            throw new IllegalStateException("ClassSupplier with name `" + name + "` already exists");
+        }
+
+        ClassSupplier classSupplier = new ClassSupplier(name, predicate, supplier, false);
+        classSuppliers.put(name, classSupplier);
+
+        return classSupplier;
+
+    }
+
+    public @NotNull ClassSupplier addParentDelegateClassRule(@NotNull String name, @NotNull Predicate<String> predicate) {
+
+        Objects.requireNonNull(name, "name == null");
+        Objects.requireNonNull(predicate, "predicate == null");
+        checkValid();
+
+        if (classSuppliers.containsKey(name)) {
+            throw new IllegalStateException("ClassSupplier with name `" + name + "` already exists");
+        }
+
+        ClassSupplier classSupplier = new ClassSupplier(name, predicate, null, true);
+        classSuppliers.put(name, classSupplier);
+
+        return classSupplier;
+
+    }
+
+    public void removeClassSupplier(@NotNull ClassSupplier supplier) {
 
         Objects.requireNonNull(supplier, "supplier == null");
         checkValid();
 
-        return suppliers.remove(supplier);
+        String name = supplier.name;
+        if (classSuppliers.containsKey(name)) {
+            throw new IllegalStateException("Supplier with name `" + name + "` does not exist");
+        }
+
+        classSuppliers.remove(name);
 
     }
 
     public @NotNull List<ClassSupplier> getClassSuppliers() {
         checkValid();
-        return new ArrayList<>(suppliers);
+        return new ArrayList<>(classSuppliers.values());
     }
 
-    public void clearClassSuppliers() {
-        suppliers.clear();
+    public @Nullable ClassSupplier getClassSupplier(@NotNull String name) {
+        checkValid();
+        return classSuppliers.get(name);
     }
 
     //
-    // DEFINED CLASS SUPPLIERS
+    // RESOURCES SUPPLIERS
     //
 
-    public void addDefinedClassSupplier(@NotNull String className, @NotNull ClassSupplier supplier) {
+    public @NotNull ResourceSupplier addResourceSupplier(@NotNull String name, @NotNull Function<String, List<URL>> supplier) {
 
-        Objects.requireNonNull(className, "className == null");
+        Objects.requireNonNull(name, "name == null");
         Objects.requireNonNull(supplier, "supplier == null");
         checkValid();
 
-        this.definedClassSuppliers.put(className, supplier);
+        if (resourceSuppliers.containsKey(name)) {
+            throw new IllegalStateException("ResourceSupplier with name `" + name + "` already exists");
+        }
+
+        ResourceSupplier resourceSupplier = new ResourceSupplier(name, null, supplier, false);
+        resourceSuppliers.put(name, resourceSupplier);
+
+        return resourceSupplier;
 
     }
 
-    public @Nullable ClassSupplier removeDefinedClassSupplier(@NotNull String name) {
+    public @NotNull ResourceSupplier addResourceSupplier(@NotNull String name, @NotNull Predicate<String> predicate, @NotNull Function<String, List<URL>> supplier) {
 
+        Objects.requireNonNull(name, "name == null");
+        Objects.requireNonNull(predicate, "predicate == null");
+        Objects.requireNonNull(supplier, "supplier == null");
         checkValid();
 
-        return this.definedClassSuppliers.remove(name);
+        if (resourceSuppliers.containsKey(name)) {
+            throw new IllegalStateException("ResourceSupplier with name `" + name + "` already exists");
+        }
+
+        ResourceSupplier resourceSupplier = new ResourceSupplier(name, predicate, supplier, false);
+        resourceSuppliers.put(name, resourceSupplier);
+
+        return resourceSupplier;
 
     }
 
-    public @NotNull Map<String, ClassSupplier> getDefinedClassSuppliers() {
-        return new HashMap<>(definedClassSuppliers);
+    public @NotNull ResourceSupplier addParentDelegateResourceRule(@NotNull String name, @NotNull Predicate<String> predicate) {
+
+        Objects.requireNonNull(name, "name == null");
+        Objects.requireNonNull(predicate, "predicate == null");
+        checkValid();
+
+        if (resourceSuppliers.containsKey(name)) {
+            throw new IllegalStateException("RresourceSupplier with name `" + name + "` already exists");
+        }
+
+        ResourceSupplier resourceSupplier = new ResourceSupplier(name, predicate, null, true);
+        resourceSuppliers.put(name, resourceSupplier);
+
+        return resourceSupplier;
+
     }
 
+    public void removeResourceSupplier(@NotNull ResourceSupplier supplier) {
+
+        Objects.requireNonNull(supplier, "supplier == null");
+        checkValid();
+
+        String name = supplier.name;
+        if (resourceSuppliers.containsKey(name)) {
+            throw new IllegalStateException("Supplier with name `" + name + "` does not exist");
+        }
+
+        resourceSuppliers.remove(name);
+
+    }
+
+    public @NotNull List<ResourceSupplier> getResourceSuppliers() {
+        checkValid();
+        return new ArrayList<>(resourceSuppliers.values());
+    }
+
+    public @Nullable ResourceSupplier getResourceSupplier(@NotNull String name) {
+        checkValid();
+        return resourceSuppliers.get(name);
+    }
 
     //
     // CLASSES
@@ -135,7 +234,7 @@ public class DynamicClassLoader extends URLClassLoader {
             throw new ClassNotFoundException("ClassLoader `" + this + "` was closed");
         }
 
-        Class<?> clazz = getClass(name, true, true, true);
+        Class<?> clazz = getClass(name, true, true);
 
         if (clazz != null) {
 
@@ -143,21 +242,24 @@ public class DynamicClassLoader extends URLClassLoader {
                 resolveClass(clazz);
             }
 
+//            String cn = clazz.getClassLoader() != null ? clazz.getClassLoader().getName() : "null";
+//            System.out.println(name + " - " + cn);
+
             return clazz;
 
         }
 
-        throw new ClassNotFoundException("Class `" + name + "was not found in `" + this + "`");
+        throw new ClassNotFoundException("Class `" + name + "` was not found in `" + this + "`");
 
     }
 
     public @Nullable Class<?> getClass(
             @NotNull String name,
-            boolean definedSuppliers,
             boolean suppliers,
             boolean parent
     ) {
 
+        Objects.requireNonNull(name, "name == null");
         checkValid();
 
         // Шукаємо чи був цей клас вже завантажений цим об'єктом раніше. Якщо так, повертаємо його.
@@ -167,49 +269,81 @@ public class DynamicClassLoader extends URLClassLoader {
             return clazz;
         }
 
+        ClassLoader parentClassLoader = getParent();
+
+        // Перевіряємо parent delegate rules //
+
+        if (suppliers) {
+
+            boolean delegateToParent = classSuppliers.values().stream()
+                    .anyMatch(supplier -> supplier.delegateToParent && supplier.predicate.test(name));
+
+
+            if (delegateToParent && parentClassLoader != null) {
+
+                try {
+                    return parentClassLoader.loadClass(name);
+                }
+
+                catch (ClassNotFoundException ignored) {}
+
+                catch (Exception e) {
+                    log.error("An exception was thrown in parent class loader `{}` when tried to load class `{}`.", parentClassLoader, name, e);
+                }
+
+            }
+
+        }
+
         // Шукаємо клас у sources поточного class loader.
+
         try {
             clazz = findClass(name);
         }
 
         catch (ClassNotFoundException ignored) {}
 
+        // Обробка ClassSuppliers //
 
-        // Шукаємо клас у defined class suppliers
-        if (definedSuppliers) {
-
-            ClassSupplier supplier = definedClassSuppliers.get(name);
-            if (supplier != null) {
-
-                try {
-                    clazz = supplier.supplyClass(name);
-                }
-
-                catch (Exception e) {
-                    log.error("An exception was thrown in `{}` when tried to load class `{}`.", supplier, name, e);
-                }
-
-            }
-
-        }
-
-
-        // Шукаємо клас у class suppliers
         if (suppliers) {
 
-            if (clazz != null) {
+            for (ClassSupplier supplier : classSuppliers.values()) {
 
-                for (ClassSupplier sup4ik : this.suppliers) {
+                if (clazz != null) {
+                    break;
+                }
+
+                if (supplier.delegateToParent) {
+                    continue;
+                }
+
+                Predicate<String> predicate = supplier.predicate;
+                if (predicate != null) {
 
                     try {
-                        clazz = sup4ik.supplyClass(name);
+
+                        if (!predicate.test(name)) {
+                            continue;
+                        }
+
                     }
 
                     catch (Exception e) {
-                        log.error("An exception was thrown in `{}` when tried to load class `{}`.", sup4ik, name, e);
+                        log.error("An exception was thrown in ClassSupplier `{}` predicate.", supplier.name, e);
                     }
 
-                    break;
+                }
+
+                var function = supplier.supplier;
+                if (function != null) {
+
+                    try {
+                        clazz = function.apply(name);
+                    }
+
+                    catch (Exception e) {
+                        log.error("An exception was thrown in `{}` when tried to load class `{}`.", supplier.name, name, e);
+                    }
 
                 }
 
@@ -217,24 +351,16 @@ public class DynamicClassLoader extends URLClassLoader {
 
         }
 
-        // Шукаємо клас у parent classloader
-        if (parent) {
+        if (clazz == null && parent && parentClassLoader != null) {
 
-            ClassLoader parentClassLoader = getParent();
-            if (clazz != null && parentClassLoader != null) {
+            try {
+                clazz = parentClassLoader.loadClass(name);
+            }
 
-                try {
-                    clazz = parentClassLoader.loadClass(name);
-                }
+            catch (ClassNotFoundException ignored) {}
 
-                catch (ClassNotFoundException ignored) {
-
-                }
-
-                catch (Exception e) {
-                    log.error("An exception was thrown in parent class loader `{}` when tried to load class `{}`.", parent, name, e);
-                }
-
+            catch (Exception e) {
+                log.error("An exception was thrown in parent class loader `{}` when tried to load class `{}`.", parentClassLoader, name, e);
             }
 
         }
@@ -242,6 +368,112 @@ public class DynamicClassLoader extends URLClassLoader {
         return clazz;
 
     }
+
+    //
+    // RESOURCES
+    //
+
+    @Override
+    public Enumeration<URL> findResources(String name) {
+        return Collections.enumeration(findResources(name, true, false));
+    }
+
+    public List<URL> findResources(@NotNull String name, boolean suppliers, boolean parent) {
+
+        Objects.requireNonNull(name, "name == null");
+        checkValid();
+
+        ClassLoader parentClassLoader = getParent();
+
+        // Оброблюємо переспрямовування до parent //
+
+        if (suppliers) {
+
+            boolean delegateToParent = resourceSuppliers.values().stream()
+                    .anyMatch(supplier -> supplier.delegateToParent && supplier.predicate.test(name));
+
+            if (delegateToParent) {
+
+                try {
+                    return Collections.list(parentClassLoader.getResources(name));
+                }
+
+                catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+
+        }
+
+
+        // Шукаємо ресурси у цьому ClassLoader //
+
+        Enumeration<URL> enumeration;
+        try {
+            enumeration = super.findResources(name);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        List<URL> result = Collections.list(enumeration);
+
+        // Шукаємо ресурси у ResourceSuppliers //
+
+        if (suppliers) {
+            for (ResourceSupplier supplier : resourceSuppliers.values()) {
+
+                if (supplier.delegateToParent) {
+                    continue;
+                }
+
+                Predicate<String> predicate = supplier.predicate;
+                if (predicate != null) {
+
+                    try {
+                        if (!predicate.test(name)) {
+                            continue;
+                        }
+                    } catch (Exception e) {
+                        log.error("An exception was thrown in ResourceSupplier `{}` predicate.", supplier.name, e);
+                    }
+
+                }
+
+                var function = supplier.supplier;
+                if (function != null) {
+
+                    try {
+                        result.addAll(function.apply(name));
+                    } catch (Exception e) {
+                        log.error("An exception was thrown in `{}` when tried to load resource `{}`.", supplier.name, name, e);
+                    }
+
+                }
+
+
+            }
+
+        }
+
+        // Шукаємо ресурси у parent //
+
+        if (parent) {
+
+            try {
+                result.addAll(Collections.list(parentClassLoader.getResources(name)));
+            }
+
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+        }
+
+        return result;
+
+    }
+
 
     //
     // CLOSABLE
@@ -263,7 +495,7 @@ public class DynamicClassLoader extends URLClassLoader {
         }
 
         this.sources.clear();
-        this.suppliers.clear();
+        this.classSuppliers.clear();
 
     }
 
@@ -278,29 +510,31 @@ public class DynamicClassLoader extends URLClassLoader {
     }
 
     //
-    // CUSTOM CLASS SOURCE
-    //
-
-    public interface ClassSupplier {
-
-        @Nullable Class<?> supplyClass(@NotNull String name);
-
-    }
-
-
-    //
     // MISC
     //
 
     @Override
     public String toString() {
         return String.format(
-                "DynamicClassLoader{name=%s, sources=%s, suppliers=%s, definedSuppliers=%s}",
+                "DynamicClassLoader{name=%s, sources=%s, class-suppliers=%s}",
                 getName(),
                 sources.size(),
-                suppliers.size(),
-                definedClassSuppliers.size()
+                classSuppliers.size()
         );
     }
+
+    public record ClassSupplier(
+            @NotNull String name,
+            @Nullable Predicate<String> predicate,
+            @Nullable Function<String, Class<?>> supplier,
+            boolean delegateToParent
+    ) {}
+
+    public record ResourceSupplier(
+            @NotNull String name,
+            @Nullable Predicate<String> predicate,
+            @Nullable Function<String, List<URL>> supplier,
+            boolean delegateToParent
+    ) {}
 
 }

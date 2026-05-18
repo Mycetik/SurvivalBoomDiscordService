@@ -2,10 +2,8 @@ package net.survivalboom.sbds.core;
 
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.libraries.DynamicClassLoader;
-import net.survivalboom.sbds.core.libraries.JarLoader;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
 import net.survivalboom.sbds.core.libraries.simple.SimpleLibrariesDownloader;
-import net.survivalboom.sbds.core.logging.LoggerFilter;
 import net.survivalboom.sbds.core.logging.LoggerLayout;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,8 +29,6 @@ public class SbdsBootstrap {
 
     private final SimpleLibrariesDownloader simpleLibrariesDownloader;
 
-    private final DynamicClassLoader rootClassLoader;
-
 
     private ConfigurationNode configuration;
 
@@ -46,10 +42,11 @@ public class SbdsBootstrap {
             @NotNull DynamicClassLoader rootClassLoader
     ) {
 
+        DynamicClassLoader.log = LoggerFactory.getLogger(DynamicClassLoader.class);
+
         this.logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         this.workingDir = workingDir;
 
-        this.rootClassLoader = rootClassLoader;
         this.simpleLibrariesDownloader = downloader;
 
         this.librariesManager = new LibrariesManager(new File(workingDir, "libraries"), rootClassLoader);
@@ -148,6 +145,7 @@ public class SbdsBootstrap {
 
         logger.info("Loading libraries...");
 
+        librariesManager.init();
         librariesManager.importFromSimpleLibrariesDownloader(simpleLibrariesDownloader);
 
         ConfigurationNode section = configuration.node("libraries");

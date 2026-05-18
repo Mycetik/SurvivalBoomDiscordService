@@ -57,13 +57,11 @@ public class SimpleLibrariesDownloader {
         Objects.requireNonNull(version, "version == null");
 
         String name = group + "-" + artifact;
-        String fileName = name + "-" + version + ".jar";
+        String fileName = artifact + "-" + version + ".jar";
 
         File jarFile = new File(dir, fileName);
 
-        DynamicClassLoader libraryClassLoader = new DynamicClassLoader(name, null);
-        SimpleLibrary library = new SimpleLibrary(name, group, artifact, version, repository, jarFile, libraryClassLoader, new ArrayList<>());
-
+        // Якщо jar файл не існує, завантажуємо з репозиторія.
         if (!jarFile.exists()) {
 
             String repositoryFormatted = repository.endsWith("/") ? repository : repository + "/";
@@ -85,14 +83,36 @@ public class SimpleLibrariesDownloader {
 
         }
 
+        DynamicClassLoader libraryClassLoader = new DynamicClassLoader(name, null);
+        SimpleLibrary library = new SimpleLibrary(name, group, artifact, version, repository, jarFile, libraryClassLoader, new ArrayList<>());
+
         libraries.add(library);
-
         libraryClassLoader.addSource(jarFile);
-        libraryClassLoader.addClassSupplier(cn -> classLoader.getClass(cn, true, true, true));
 
-        System.out.printf("* Mounted " + fileName);
+        // 1 - Додаємо головний ClassLoader усього SBDS як джерело для пошуку класів.
+        // 2 - Додаємо у головний ClassLoader поточний ClassLoader бібліотеки як джерело для пошуку класів
+        // Важливо! Виконуємо пошук тільки по класам самої бібліотеки, не залежностей і не parent!
+        libraryClassLoader.addClassSupplier("GLOBAL", cn -> classLoader.getClass(cn, true, true));
+        classLoader.addClassSupplier(fileName, cn -> libraryClassLoader.getClass(cn, false, false));
+
+        // Додаємо правильну підтримку SPI //
+        libraryClassLoader.addResourceSupplier("SPI", n -> n.startsWith("META-INF/services/"), this::findGlobalSPIMetaInf);
+
+        System.out.println("* Mounted " + fileName);
 
         return library;
+
+    }
+
+    private List<URL> findGlobalSPIMetaInf(@NotNull String name) {
+
+        List<URL> result = new ArrayList<>();
+
+        for (var lib : libraries) {
+            result.addAll(lib.classLoader().findResources(name, false, false));
+        }
+
+        return result;
 
     }
 
