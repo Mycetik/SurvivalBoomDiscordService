@@ -26,26 +26,31 @@ public interface ILibrariesManager extends IManager {
     // LIBRARIES
     //
 
+    // DOWNLOAD //
+
     @NotNull MassDownloadResult downloadLibraries(@NotNull ConfigurationNode node);
 
     @NotNull ILibrary downloadLibrary(@NotNull IPomData pom) throws LibraryDownloadException;
 
+    // GETTERS //
 
-    @Nullable ILibrary getLibrary(@NotNull ArtifactAddress address);
+    @Nullable ILibrary getLoadedLibrary(@NotNull ArtifactAddress address);
 
-    default @Nullable ILibrary getLibrary(@NotNull IPomData pom) {
-        return getLibrary(pom.getAddress());
+    default @Nullable ILibrary getLoadedLibrary(@NotNull IPomData pom) {
+        return getLoadedLibrary(pom.getAddress());
     }
 
-    default @Nullable ILibrary getLibrary(@NotNull String gradleString) {
-        return getLibrary(ArtifactAddress.fromGradleString(gradleString));
+    default @Nullable ILibrary getLoadedLibrary(@NotNull String gradleString) {
+        return getLoadedLibrary(ArtifactAddress.fromGradleString(gradleString));
     }
 
-    @NotNull Map<ArtifactAddress, ILibrary> getInstalledLibraries();
+    @NotNull Map<ArtifactAddress, ILibrary> getLoadedLibraries();
 
     //
     // POM
     //
+
+    // RETRIEVE //
 
     @NotNull IPomData retrievePom(@NotNull String repository, @NotNull ArtifactAddress address) throws PomResolutionException;
 
@@ -96,14 +101,15 @@ public interface ILibrariesManager extends IManager {
         return retrievePom(repository, ArtifactAddress.fromGradleString(gradleString));
     }
 
+    // GETTERS //
 
-    @Nullable IPomData getPom(@NotNull ArtifactAddress address);
+    @Nullable IPomData getLoadedPom(@NotNull ArtifactAddress address);
 
-    default @Nullable IPomData getPom(@NotNull String gradleString) {
-        return getPom(ArtifactAddress.fromGradleString(gradleString));
+    default @Nullable IPomData getLoadedPom(@NotNull String gradleString) {
+        return getLoadedPom(ArtifactAddress.fromGradleString(gradleString));
     }
 
-    @NotNull Map<ArtifactAddress, IPomData> getCachedPoms();
+    @NotNull Map<ArtifactAddress, IPomData> getLoadedPoms();
 
 
     record MassDownloadResult(

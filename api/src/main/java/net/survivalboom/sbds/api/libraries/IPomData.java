@@ -11,7 +11,7 @@ public interface IPomData {
 
     // INFO //
 
-    @NotNull String getRepository();
+    @NotNull String getSourceRepository();
 
     @NotNull ArtifactAddress getAddress();
 
@@ -19,13 +19,15 @@ public interface IPomData {
 
     // DATA //
 
-    @NotNull List<String> getRepositories();
-
-    @Nullable IPomData getParent();
+    @NotNull List<String> getDeclaredRepositories();
 
     @NotNull Map<String, String> getProperties();
 
-    @NotNull List<IPomData> getBOMs();
+    @Nullable IPomData getParent();
+
+    @NotNull List<IPomData> getBOMbSources();
+
+    @NotNull List<ArtifactAddress> getBOMbArtifacts();
 
     @NotNull List<IPomData> getDependencies();
 

@@ -53,8 +53,8 @@ public class Placeholders implements StringParser {
     //
 
     @NotNull
-    public List<String> get() {
-        return new ArrayList<>(placeholders.keySet());
+    public Map<String, Object> getAsMap() {
+        return new HashMap<>(placeholders);
     }
 
     @Nullable
@@ -125,15 +125,38 @@ public class Placeholders implements StringParser {
     }
 
     @NotNull
-    public Placeholders putAll(@Nullable Map<String, String> map) {
+    public Placeholders addAll(@Nullable Map<String, String> map) {
         if (map != null) this.placeholders.putAll(map);
         return this;
     }
 
     //
-    // PARSE
+    // REMOVE
     //
 
+    public @NotNull Placeholders remove(@NotNull String key) {
+        this.placeholders.remove(key);
+        return this;
+    }
+
+    public @NotNull Placeholders removeAll(@NotNull Collection<String> keys) {
+        keys.forEach(placeholders::remove);
+        return this;
+    }
+
+    public @NotNull Placeholders removeAll(@NotNull String... keys) {
+
+        for (String key : keys) {
+            this.placeholders.remove(key);
+        }
+
+        return this;
+
+    }
+
+    //
+    // PARSE
+    //
 
     @Override
     public @NotNull String parse(@NotNull String string) {

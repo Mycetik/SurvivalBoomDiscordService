@@ -38,7 +38,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
     private final Map<ArtifactAddress, PomData> cachedPoms = new HashMap<>();
 
-    private final Map<ArtifactAddress, Library> libraryMap = new HashMap<>();
+    private final Map<ArtifactAddress, ILibrary> libraryMap = new HashMap<>();
 
 
     public LibrariesManager(
@@ -64,27 +64,20 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
     @Override
     protected void shutdown0() {
-
+        libraryMap.clear();
+        cachedPoms.clear();
     }
 
+    //
     // IMPORT LIBRARIES FROM SimpleLibrariesManager //
+    //
 
     public void importFromSimpleLibrariesDownloader(@NotNull SimpleLibrariesDownloader downloader) {
 
         checkValid();
         Objects.requireNonNull(downloader, "downloader == null");
 
-        List<SimpleLibrary> toImport = downloader.getLibrariesInstalled();
-        for (var lib : List.copyOf(toImport)) {
-
-            boolean remove = toImport.stream().anyMatch(l -> l.dependencies().contains(lib));
-            if (remove) {
-                toImport.remove(lib);
-            }
-
-        }
-
-        for (var lib : toImport) {
+        for (var lib : downloader.getLibrariesInstalled()) {
             importSimpleLibrary(lib);
         }
 
@@ -100,15 +93,17 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         String artifact = simpleLibrary.artifact();
         String version = simpleLibrary.version();
 
-        ArtifactAddress address = new ArtifactAddress(group, artifact, version);
-        String repository = simpleLibrary.repository();
+        ArtifactAddress address = ArtifactAddress.create(group, artifact, version);
 
-        if (cachedPoms.containsKey(address)) {
-            throw new IllegalStateException("Library with address `" + address + "` already exists");
+        ILibrary library = getLoadedLibrary(address);
+        if (library != null) {
+            return library;
         }
 
         File file = simpleLibrary.file();
         DynamicClassLoader classLoader = simpleLibrary.classLoader();
+
+        String repository = simpleLibrary.repository();
 
         IPomData pom;
         try {
@@ -121,7 +116,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         classLoader.addClassSupplier(file.getName(), name -> rootClassLoader.getClass(name, false, true));
 
-        Library library = new Library(pom, file, classLoader, dependencies);
+        library = new Library(pom, file, classLoader, dependencies);
         libraryMap.put(address, library);
 
         return library;
@@ -185,7 +180,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         for (var pom : poms) {
 
-            ILibrary library = getLibrary(pom);
+            ILibrary library = getLoadedLibrary(pom);
             if (library != null) {
                 result.skipped().add(library);
                 continue;
@@ -214,7 +209,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         Objects.requireNonNull(pom, "pom == null");
         checkValid();
 
-        String repository = pom.getRepository();
+        String repository = pom.getSourceRepository();
         ArtifactAddress address = pom.getAddress();
 
         if (libraryMap.containsKey(address)) {
@@ -266,13 +261,13 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     // GETTERS //
 
     @Override
-    public @Nullable ILibrary getLibrary(@NotNull ArtifactAddress address) {
+    public @Nullable ILibrary getLoadedLibrary(@NotNull ArtifactAddress address) {
         checkValid();
         return libraryMap.get(address);
     }
 
     @Override
-    public @NotNull Map<ArtifactAddress, ILibrary> getInstalledLibraries() {
+    public @NotNull Map<ArtifactAddress, ILibrary> getLoadedLibraries() {
         checkValid();
         return new HashMap<>(libraryMap);
     }
@@ -289,7 +284,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         Objects.requireNonNull(address, "address == null");
         checkValid();
 
-        IPomData pom = getPom(address);
+        IPomData pom = getLoadedPom(address);
         if (pom != null) {
             return pom;
         }
@@ -321,7 +316,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         PomData data;
         try {
-            data = createPomFromBytes(repository, address, string);
+            data = createPomFromString(repository, address, string);
         }
 
         catch (PomResolutionException e) {
@@ -330,8 +325,12 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
                 log.error("Received an invalid POM file. Printing contents below: \n{}", string);
             }
 
-            throw e;
+            throw new PomResolutionException("Failed to resolve `" + address + "`", e);
 
+        }
+
+        catch (Exception e) {
+            throw new PomResolutionException("An internal error occurred! Maybe a bug?", e);
         }
 
         cachedPoms.put(address, data);
@@ -341,13 +340,20 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     }
 
     @Override
-    public @Nullable IPomData getPom(@NotNull ArtifactAddress address) {
+    public @Nullable IPomData getLoadedPom(@NotNull ArtifactAddress address) {
+
         checkValid();
+
+        if (!address.isComplete()) {
+            throw new IllegalArgumentException("ArtifactAddress `" + address + "` is not complete");
+        }
+
         return cachedPoms.get(address);
+
     }
 
     @Override
-    public @NotNull Map<ArtifactAddress, IPomData> getCachedPoms() {
+    public @NotNull Map<ArtifactAddress, IPomData> getLoadedPoms() {
         checkValid();
         return new HashMap<>(cachedPoms);
     }
@@ -357,44 +363,46 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     // INTERNAL
     //
 
-    private @NotNull PomData createPomFromBytes(@NotNull String repository, @NotNull ArtifactAddress address, @NotNull String string) throws PomResolutionException {
+    private @NotNull PomData createPomFromString(@NotNull String repository, @NotNull ArtifactAddress address, @NotNull String string) throws PomResolutionException {
 
         ConfigurationNode pomData;
         try {
-            pomData = XmlConfigurationLoader.builder().buildAndLoadString(string);
-        }
-
-        catch (ConfigurateException e) {
+            pomData = XmlConfigurationLoader.builder().buildAndLoadString(string); // Я не знаю чому, але configurate ігнорує project секцію та одразу надає її вміст X_X
+        } catch (ConfigurateException e) {
             throw new PomResolutionException("Invalid POM file. Could not parse XML", e);
         }
 
-        ConfigurationNode projectSection = pomData; // Я не знаю чому, але configurate ігнорує project секцію та одразу надає її вміст X_X
-//        ConfigurationNode projectSection = pomData.node("project");
-//        if (projectSection.virtual()) {
-//            throw new PomResolutionException("Invalid POM file. Section `project` not found");
-//        }
+        //
+        // Завантажуємо properties з поточного pom.xml //
+        //
 
-        // Завантажуємо properties у поточному pom.xml //
+        Placeholders properties = new Placeholders();
 
-        Map<String, String> localProperties = new HashMap<>();
-        localProperties.put("project.version", address.version()); // Додаємо деякі системні properties що існують в maven.
+        // Додаємо деякі системні змінні.
+        String version = address.version().orElseThrow();
+        properties.add("project.version", version);
+        properties.add("version", version);
 
-        for (var section : projectSection.node("properties").childrenList()) {
+        for (var entry : pomData.node("properties").childrenMap().entrySet()) {
 
-            String key = (String) section.key();
-            String value = section.getString();
+            String key = (String) entry.getKey();
+            String value = entry.getValue().getString();
 
-            localProperties.put(key, value);
+            properties.add(key, value);
 
         }
 
-        Placeholders propertiesAsPlaceholders = Placeholders.of(localProperties);
+        Map<String, String> propertiesAsMap = new HashMap<>();
+        properties.getAsMap().forEach((key, value) -> propertiesAsMap.put(key, (String) value));
 
+        //
         // Дістаємо перелік репозиторіїв //
+        //
 
         List<String> repositories = new ArrayList<>();
         repositories.add(MAVEN_CENTRAL_URL);
-        for (var section : projectSection.node("repositories").childrenList()) {
+
+        for (var section : pomData.node("repositories").childrenList()) {
 
             String url = section.node("url").getString();
             if (url == null) {
@@ -405,132 +413,246 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         }
 
-        // Визначаємо parent цього pom //
+        //
+        // Визначаємо parent цього POM //
+        //
 
-        ConfigurationNode parentSection = projectSection.node("parent");
-        IPomData parent;
+        ConfigurationNode parentSection = pomData.node("parent");
+        IPomData parent = null;
         if (!parentSection.virtual()) {
 
-            ArtifactAddress artifactAddress = artifactAddressFromSection(parentSection, address, propertiesAsPlaceholders);
+            ArtifactAddress parentAddress;
+            try {
+
+                parentAddress = ArtifactAddress.fromPom(parentSection, properties);
+
+                if (!parentAddress.isComplete()) {
+                    throw new IllegalArgumentException("Invalid POM section, version not found");
+                }
+
+            }
+
+            catch (IllegalArgumentException e) {
+                throw new PomResolutionException("Invalid POM parent: `" + e.getMessage() + "`");
+            }
 
             try {
-                parent = retrievePom(repositories, artifactAddress);
+                parent = retrievePom(repositories, parentAddress);
             }
 
-            catch (Exception e) {
-                throw new PomResolutionException("Failed to resolve parent POM `" + address + "`. Searched in " + repositories.size() + " repositories", e);
+            catch (PomResolutionException e) {
+                throw new PomResolutionException("Failed to resolve parent `" + parentAddress + "`", e);
             }
 
         }
 
-        else {
-            parent = null;
-        }
-
-        // Якщо parent існує, значить десь там є properties...
-        // Використовуємо рекурсивний піздець із parent'ами та доповнюємо наші properties.
+        // Додаємо деякі системні змінні.
         if (parent != null) {
-            createFullParentRecursivePlaceholders(parent, propertiesAsPlaceholders);
+            String parentVersion = parent.getAddress().version().orElseThrow();
+            properties.add("parent.version", parentVersion);
+            properties.add("project.parent.version", parentVersion);
         }
 
-        propertiesAsPlaceholders.selfParse(); // Перепарсимо properties на самих себе.
+        //
+        // Створюємо глобально properties рекурсивно з усіх parent //
+        //
 
-        List<IPomData> bombs = new ArrayList<>(); // ХА-ХА! Не BOM, а BOMBs ГІ ГІ ГІ, ГУ ГУ ГУ!!!
-        for (var section : projectSection.node("dependencyManagement").childrenList()) {
+        Placeholders globalProperties = parent != null ? createGlobalPlaceholdersRecursive(parent) : new Placeholders();
+        globalProperties.addAll(properties);
 
-            ArtifactAddress bomAddress = artifactAddressFromSection(section, address, propertiesAsPlaceholders);
+        //
+        // Завантажуємо BOM //
+        //
 
-            IPomData bom;
+        List<IPomData> bombSources = new ArrayList<>();
+        List<ArtifactAddress> bombArtifacts = new ArrayList<>();
 
+        for (var section : pomData.node("dependencyManagement", "dependencies").childrenList()) {
+
+            ArtifactAddress bomAddress;
             try {
-                bom = retrievePom(repositories, bomAddress);
+                bomAddress = ArtifactAddress.fromPom(section, globalProperties);
             }
 
-            catch (Exception e) {
-                throw new PomResolutionException("Failed to retrieve BOM `" + bomAddress + "`");
+            catch (IllegalArgumentException e) {
+                throw new PomResolutionException("An invalid BOM at index " + section.key() + " -> " + e.getMessage());
             }
 
-            bombs.add(bom);
+            boolean isSource = Objects.equals(section.node("scope").getString(), "import");
+
+            if (isSource) {
+                IPomData bom;
+
+                try {
+                    bom = retrievePom(repositories, bomAddress);
+                }
+
+                catch (PomResolutionException e) {
+                    throw new PomResolutionException("Failed to resolve BOM artifact`" + bomAddress + "`", e);
+                }
+
+                bombSources.add(bom);
+
+            }
+
+            else {
+
+                if (!bomAddress.isComplete()) {
+                    throw new PomResolutionException("Invalid BOM `" + bomAddress + "`. No version is present and no import scope is defined");
+                }
+
+                bombArtifacts.add(bomAddress);
+
+            }
 
         }
+
+        //
+        // Нарешті, завантажуємо залежності //
+        //
 
         List<IPomData> dependencies = new ArrayList<>();
-        for (var section : projectSection.node("dependencies").childrenList()) {
+        for (var section : pomData.node("dependencies").childrenList()) {
 
             String scope = section.node("scope").getString();
             if (scope != null && !scope.equals("compile") && !scope.equals("runtime")) {
                 continue;
             }
 
-            boolean optional = section.node("optional").getBoolean();
-            if (optional) {
-                continue;
+            ArtifactAddress dependencyAddress;
+            try {
+                dependencyAddress = ArtifactAddress.fromPom(section, globalProperties);
             }
 
-            ArtifactAddress dependencyAddress = artifactAddressFromSection(section, address, propertiesAsPlaceholders);
+            catch (IllegalArgumentException e) {
+                throw new PomResolutionException("An invalid dependency at index " + section.key() + " -> " + e.getMessage());
+            }
+
+            ArtifactAddress completeDependencyAddress = findCompleteArtifact(dependencyAddress, parent, bombSources, bombArtifacts, properties);
+            if (completeDependencyAddress == null) {
+                throw new PomResolutionException("Dependency `" + dependencyAddress + "` has no version defined. Tried to find version in BOM, no results found");
+            }
 
             IPomData dependency;
             try {
-                dependency = retrievePom(repository, dependencyAddress);
+                dependency = retrievePom(repositories, completeDependencyAddress);
             }
 
-            catch (Exception e) {
-                throw new PomResolutionException("Failed to resolve dependency `" + dependencyAddress + "` of `" + address + "`");
+            catch (PomResolutionException e) {
+                throw new PomResolutionException("Failed to resolve dependency `" + completeDependencyAddress + "`", e);
             }
 
             dependencies.add(dependency);
 
         }
 
-        return new PomData(repository, address, pomData, repositories, parent, localProperties, bombs, dependencies);
+        return new PomData(repository, address, pomData, repositories, propertiesAsMap, parent, bombSources, bombArtifacts, dependencies);
 
     }
 
-    private @NotNull ArtifactAddress artifactAddressFromSection(
-            @NotNull ConfigurationNode section,
+    private @Nullable ArtifactAddress findCompleteArtifact(
             @NotNull ArtifactAddress address,
+            @Nullable IPomData parent,
+            @Nullable List<IPomData> bombSources,
+            @Nullable List<ArtifactAddress> bombArtifacts,
             @NotNull Placeholders properties
-    ) throws PomResolutionException {
+    ) {
 
-        String group = section.node("groupId").getString();
-        String artifact = section.node("artifactId").getString();
-        String version = section.node("version").getString();
-
-        if (group == null || artifact == null || version == null) {
-            throw new PomResolutionException("Artifact `" + address + "` has an invalid dependency");
+        if (address.isComplete()) {
+            return address;
         }
 
-        group = properties.parse(group, MAVEN_PROPERTIES_LAYOUT);
-        artifact = properties.parse(artifact, MAVEN_PROPERTIES_LAYOUT);
-        version = properties.parse(version, MAVEN_PROPERTIES_LAYOUT);
+        ArtifactAddress result = null;
 
-        return new ArtifactAddress(group, artifact, version);
+        // Спочатку шукаємо артефакт у деклараціях артефактів BOM.
+        if (bombArtifacts != null) {
+            result = bombArtifacts.stream()
+                    .filter(artifact -> artifact.group().equals(address.group()) && artifact.artifact().equals(address.artifact()))
+                    .map(artifact -> artifact.applyProperties(properties))
+                    .findAny()
+                    .orElse(null);
+        }
 
-    }
+        // Якщо не знайшли, рекурсивно пробігаємось по BOMb sources.
+        if (result == null && bombSources != null) {
 
-    private void createFullParentRecursivePlaceholders(@NotNull IPomData pom, @NotNull Placeholders placeholders) {
+            for (IPomData source : bombSources) {
 
-        placeholders.add("project.version", pom.getAddress().version());
-
-        IPomData parent = pom.getParent();
-        while (parent != null) {
-
-            for (var entry : parent.getProperties().entrySet()) {
-
-                String key = entry.getKey();
-                String value = entry.getValue();
-
-                if (!placeholders.contains(key)) {
-                    continue;
+                result = findCompleteArtifact(address, null, source.getBOMbSources(), source.getBOMbArtifacts(), properties);
+                if (result != null) {
+                    break;
                 }
-
-                placeholders.add(key, value);
 
             }
 
-            parent = parent.getParent();
+        }
+
+        // Якщо все ще не знайшли, дивимось у parent
+        if (result == null && parent != null) {
+            result = findCompleteArtifact(address, parent.getParent(), parent.getBOMbSources(), parent.getBOMbArtifacts(), properties);
+        }
+
+        return result;
+
+    }
+
+    private @NotNull Placeholders createGlobalPlaceholdersRecursive(@NotNull IPomData pom) {
+
+        Placeholders result = new Placeholders();
+        IPomData current = pom;
+
+        while (current != null) {
+
+            Placeholders placeholders = createPomPlaceholders(current);
+
+            for (var entry : placeholders.getAsMap().entrySet()) {
+
+                String key = entry.getKey();
+                String value = (String) entry.getValue();
+
+                if (!result.contains(key)) {
+                    continue;
+                }
+
+                result.add(key, value);
+
+            }
+
+            current = current.getParent();
 
         }
+
+        return result;
+
+    }
+
+    private @NotNull Placeholders createPomPlaceholders(@NotNull IPomData pom) {
+
+        Placeholders placeholders = new Placeholders();
+
+        String version = pom.getAddress().version().orElseThrow();
+        placeholders.add("project.version", version);
+        placeholders.add("version", version);
+
+        IPomData parent = pom.getParent();
+        if (parent != null) {
+            String parentVersion = parent.getAddress().version().orElseThrow();
+            placeholders.add("parent.version", parentVersion);
+            placeholders.add("project.parent.version", parentVersion);
+        }
+
+        placeholders.addAll(pom.getProperties());
+
+        placeholders.selfParse();
+
+        placeholders.removeAll(
+                "project.version",
+                "version",
+                "parent.version",
+                "project.parent.version"
+        );
+
+        return placeholders;
 
     }
 

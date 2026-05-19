@@ -19,11 +19,13 @@ public class PomData implements IPomData {
 
     private final List<String> repositories = new ArrayList<>();
 
-    private final @Nullable IPomData parent;
-
     private final Map<String, String> properties = new HashMap<>();
 
-    private final List<IPomData> boms = new ArrayList<>();
+    private final @Nullable IPomData parent;
+
+    private final List<IPomData> bombSources = new ArrayList<>();
+
+    private final List<ArtifactAddress> bombArtifacts = new ArrayList<>();
 
     private final List<IPomData> dependencies = new ArrayList<>();
 
@@ -33,9 +35,10 @@ public class PomData implements IPomData {
             @NotNull ArtifactAddress address,
             @NotNull ConfigurationNode data,
             @Nullable Collection<String> repositories,
-            @Nullable IPomData parent,
             @Nullable Map<String, String> properties,
-            @Nullable Collection<IPomData> boms,
+            @Nullable IPomData parent,
+            @Nullable Collection<IPomData> bombSources,
+            @Nullable Collection<ArtifactAddress> bombArtifacts,
             @Nullable Collection<IPomData> dependencies
     ) {
 
@@ -55,8 +58,12 @@ public class PomData implements IPomData {
             this.repositories.addAll(repositories);
         }
 
-        if (boms != null) {
-            this.boms.addAll(boms);
+        if (bombSources != null) {
+            this.bombSources.addAll(bombSources);
+        }
+
+        if (bombArtifacts != null) {
+            this.bombArtifacts.addAll(bombArtifacts);
         }
 
         if (dependencies != null) {
@@ -66,7 +73,7 @@ public class PomData implements IPomData {
     }
 
     @Override
-    public @NotNull String getRepository() {
+    public @NotNull String getSourceRepository() {
         return repository;
     }
 
@@ -81,7 +88,7 @@ public class PomData implements IPomData {
     }
 
     @Override
-    public @NotNull List<String> getRepositories() {
+    public @NotNull List<String> getDeclaredRepositories() {
         return new ArrayList<>(repositories);
     }
 
@@ -96,8 +103,13 @@ public class PomData implements IPomData {
     }
 
     @Override
-    public @NotNull List<IPomData> getBOMs() {
-        return new ArrayList<>(boms);
+    public @NotNull List<IPomData> getBOMbSources() {
+        return new ArrayList<>(bombSources);
+    }
+
+    @Override
+    public @NotNull List<ArtifactAddress> getBOMbArtifacts() {
+        return new ArrayList<>(bombArtifacts);
     }
 
     @Override
@@ -109,11 +121,12 @@ public class PomData implements IPomData {
     @Override
     public String toString() {
         return String.format(
-                "PomData{address=%s, repositories=%s, parent=%s, boms=%s, dependencies=%s}",
+                "PomData{address=%s, repositories=%s, parent=%s, bombSources=%s, bombArtifacts=%s dependencies=%s}",
                 address,
                 repositories,
                 parent,
-                boms,
+                bombSources,
+                bombArtifacts,
                 dependencies
         );
     }

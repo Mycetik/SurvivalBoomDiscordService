@@ -1,17 +1,33 @@
 package net.survivalboom.sbds.api.libraries;
 
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.spongepowered.configurate.ConfigurationNode;
 
 import java.util.Objects;
+import java.util.Optional;
 
-public record ArtifactAddress(@NotNull String group, @NotNull String artifact, @NotNull String version) {
+public record ArtifactAddress(
+        @NotNull String group,
+        @NotNull String artifact,
+        @NotNull Optional<String> version
+) {
+
+    public ArtifactAddress {
+
+        Objects.requireNonNull(group, "group == null");
+        Objects.requireNonNull(artifact, "artifact == null");
+        Objects.requireNonNull(version, "version == null");
+
+    }
 
     public @NotNull String toGradleString() {
         return toGradleString(DEFAULT_GRADLE_SEPARATOR);
     }
 
     public @NotNull String toGradleString(@NotNull String separator) {
-        return group + separator + artifact + separator + version;
+        return group + separator + artifact + separator + version.orElse(null);
     }
 
     public @NotNull String createRepositoryAddress(@NotNull String repository, @NotNull String fileType) {
@@ -20,7 +36,27 @@ public record ArtifactAddress(@NotNull String group, @NotNull String artifact, @
             repository += "/";
         }
 
+        if (!isComplete()) {
+            throw new IllegalStateException("ArtifactAddress `" + this + "` is not complete");
+        }
+
+        String version = this.version.orElseThrow();
+
         return repository + group.replace(".", "/") + "/" + artifact + "/" + version + "/" + artifact + "-" + version + "." + fileType;
+
+    }
+
+    public boolean isComplete() {
+        return version.isPresent();
+    }
+
+    public @NotNull ArtifactAddress applyProperties(@NotNull Placeholders properties) {
+
+        String group = properties.parse(this.group);
+        String artifact = properties.parse(this.artifact);
+        String version = this.version.map(properties::parse).orElse(null);
+
+        return create(group, artifact, version);
 
     }
 
@@ -32,7 +68,7 @@ public record ArtifactAddress(@NotNull String group, @NotNull String artifact, @
     @Override
     public boolean equals(Object o) {
 
-        if (!(o instanceof ArtifactAddress(String group1, String artifact1, String version1))) {
+        if (!(o instanceof ArtifactAddress(String group1, String artifact1, Optional<String> version1) )) {
             return false;
         }
 
@@ -54,6 +90,14 @@ public record ArtifactAddress(@NotNull String group, @NotNull String artifact, @
     public static final String DEFAULT_GRADLE_SEPARATOR = ":";
 
 
+    public static @NotNull ArtifactAddress create(
+            @NotNull String group,
+            @NotNull String artifact,
+            @Nullable String version
+    ) {
+        return new ArtifactAddress(group, artifact, Optional.ofNullable(version));
+    }
+
     public static @NotNull ArtifactAddress fromDeclaration(@NotNull LibraryDeclaration declaration) {
 
         String group, artifact, version;
@@ -62,7 +106,7 @@ public record ArtifactAddress(@NotNull String group, @NotNull String artifact, @
         artifact = declaration.artifact();
         version = declaration.version();
 
-        return new ArtifactAddress(group, artifact, version);
+        return create(group, artifact, version);
 
     }
 
@@ -84,7 +128,37 @@ public record ArtifactAddress(@NotNull String group, @NotNull String artifact, @
         String artifact = parts[1];
         String version = parts[2];
 
-        return new ArtifactAddress(group, artifact, version);
+        return new ArtifactAddress(group, artifact, Optional.of(version));
+
+    }
+
+    public static @NotNull ArtifactAddress fromPom(@NotNull ConfigurationNode section, @Nullable Placeholders properties) {
+
+        String group = section.node("groupId").getString();
+        String artifact = section.node("artifactId").getString();
+        String version = section.node("version").getString();
+
+        if (group == null) {
+            throw new IllegalArgumentException("Invalid POM section, groupId not found");
+        }
+
+        if (artifact == null) {
+            throw new IllegalArgumentException("Invalid POM section, artifactId not found");
+        }
+
+
+        if (properties != null) {
+
+            group = properties.parse(group, ILibrariesManager.MAVEN_PROPERTIES_LAYOUT);
+            artifact = properties.parse(artifact, ILibrariesManager.MAVEN_PROPERTIES_LAYOUT);
+
+            if (version != null) {
+                version = properties.parse(version, ILibrariesManager.MAVEN_PROPERTIES_LAYOUT);
+            }
+
+        }
+
+        return create(group, artifact, version);
 
     }
 
