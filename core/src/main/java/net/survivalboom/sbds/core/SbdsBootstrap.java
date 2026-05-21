@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core;
 
+import net.survivalboom.sbds.api.libraries.LibraryDeclaration;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.libraries.DynamicClassLoader;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
@@ -147,6 +148,7 @@ public class SbdsBootstrap {
 
         librariesManager.init();
         librariesManager.importFromSimpleLibrariesDownloader(simpleLibrariesDownloader);
+        librariesManager.setupRootClassLoader();
 
         ConfigurationNode section = configuration.node("libraries");
         if (section.virtual()) {
@@ -154,12 +156,30 @@ public class SbdsBootstrap {
             return;
         }
 
-        var result = librariesManager.downloadLibraries(section);
+        boolean failure = false;
+        LibraryDeclaration.MassLoadResult declarations = LibraryDeclaration.fromMultiSection(section);
+        if (!declarations.failed().isEmpty()) {
+
+            for (var entry : declarations.failed().entrySet()) {
+                logger.error("Found an invalid LibraryDeclaration `{}`.", entry.getKey(), entry.getValue());
+            }
+
+            failure = true;
+
+        }
+
+        var result = librariesManager.downloadLibraries(declarations.loaded());
         if (!result.failed().isEmpty()) {
 
             for (var entry : result.failed().entrySet()) {
                 logger.error("Failed to load library `{}`. An exception occurred.", entry.getKey(), entry.getValue());
             }
+
+            failure = true;
+
+        }
+
+        if (failure) {
 
             logger.error("Some libraries were failed to download. Refusing to start.");
 

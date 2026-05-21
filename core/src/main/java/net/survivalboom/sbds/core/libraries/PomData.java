@@ -23,7 +23,7 @@ public class PomData implements IPomData {
 
     private final @Nullable IPomData parent;
 
-    private final List<IPomData> bombSources = new ArrayList<>();
+    private final List<ArtifactAddress> bombSources = new ArrayList<>();
 
     private final List<ArtifactAddress> bombArtifacts = new ArrayList<>();
 
@@ -37,7 +37,7 @@ public class PomData implements IPomData {
             @Nullable Collection<String> repositories,
             @Nullable Map<String, String> properties,
             @Nullable IPomData parent,
-            @Nullable Collection<IPomData> bombSources,
+            @Nullable Collection<ArtifactAddress> bombSources,
             @Nullable Collection<ArtifactAddress> bombArtifacts,
             @Nullable Collection<IPomData> dependencies
     ) {
@@ -103,7 +103,7 @@ public class PomData implements IPomData {
     }
 
     @Override
-    public @NotNull List<IPomData> getBOMbSources() {
+    public @NotNull List<ArtifactAddress> getBOMbSources() {
         return new ArrayList<>(bombSources);
     }
 

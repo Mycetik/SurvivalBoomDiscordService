@@ -5,7 +5,9 @@ public abstract class Valid implements IValid {
     private boolean valid = true;
 
     protected void checkValid() {
-        if (!valid) throw new IllegalStateException("Object is no longer valid");
+        if (!valid) {
+            throw new IllegalStateException("Object `" + this + "` is no longer valid");
+        }
     }
 
     protected void setValid(boolean v) {

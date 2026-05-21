@@ -42,7 +42,7 @@ public class DatabaseQueue extends Manager {
 
     @Override
     protected void init0() {
-        task = scheduler.schedule0(null, "SBDS-DatabaseQueue", task -> pushAll(), 0, 150);
+        task = scheduler.schedule0(null, "sbds_database_queue", task -> pushAll(), 0, 150);
     }
 
     @Override

@@ -372,11 +372,6 @@ public final class ModuleMeta {
             return this;
         }
 
-        public @NotNull Builder addLibrary(@NotNull String group, @NotNull String artifact, @NotNull String version, @Nullable String source) {
-            this.libraries.add(new LibraryDeclaration(group, artifact, version, source));
-            return this;
-        }
-
         public @NotNull Builder setLibraries(@Nullable Collection<LibraryDeclaration> libraries) {
 
             this.libraries.clear();

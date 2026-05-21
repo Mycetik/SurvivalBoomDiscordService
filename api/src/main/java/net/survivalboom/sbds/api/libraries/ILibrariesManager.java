@@ -3,7 +3,6 @@ package net.survivalboom.sbds.api.libraries;
 import net.survivalboom.sbds.api.utils.valid.IManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.ConfigurationNode;
 
 import java.util.Collection;
 import java.util.List;
@@ -28,7 +27,7 @@ public interface ILibrariesManager extends IManager {
 
     // DOWNLOAD //
 
-    @NotNull MassDownloadResult downloadLibraries(@NotNull ConfigurationNode node);
+    @NotNull ILibrariesManager.MassLibraryDownloadResult downloadLibraries(@NotNull List<LibraryDeclaration> declarations);
 
     @NotNull ILibrary downloadLibrary(@NotNull IPomData pom) throws LibraryDownloadException;
 
@@ -86,7 +85,7 @@ public interface ILibrariesManager extends IManager {
 
         Objects.requireNonNull(declaration, "declaration == null");
 
-        ArtifactAddress address = ArtifactAddress.fromDeclaration(declaration);
+        ArtifactAddress address = declaration.address();
         String repository = declaration.source();
 
         if (repository == null) {
@@ -112,10 +111,10 @@ public interface ILibrariesManager extends IManager {
     @NotNull Map<ArtifactAddress, IPomData> getLoadedPoms();
 
 
-    record MassDownloadResult(
+    record MassLibraryDownloadResult(
             @NotNull List<ILibrary> downloaded,
             @NotNull List<ILibrary> skipped,
-            @NotNull Map<Object, Exception> failed
+            @NotNull Map<LibraryDeclaration, Exception> failed
     ) {}
 
 }

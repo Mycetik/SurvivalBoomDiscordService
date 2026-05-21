@@ -32,6 +32,11 @@ public class DynamicClassLoader extends URLClassLoader {
         super(name, new URL[0], parent);
     }
 
+    public void resetSuppliers() {
+        this.classSuppliers.clear();
+        this.resourceSuppliers.clear();
+    }
+
     //
     // SOURCES
     //
@@ -516,10 +521,11 @@ public class DynamicClassLoader extends URLClassLoader {
     @Override
     public String toString() {
         return String.format(
-                "DynamicClassLoader{name=%s, sources=%s, class-suppliers=%s}",
+                "DynamicClassLoader{name=%s, sources=%s, class-suppliers=%s, resource-suppliers=%s}",
                 getName(),
                 sources.size(),
-                classSuppliers.size()
+                classSuppliers.size(),
+                resourceSuppliers.size()
         );
     }
 

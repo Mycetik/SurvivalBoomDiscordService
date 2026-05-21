@@ -15,19 +15,20 @@ import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.xml.XmlConfigurationLoader;
 
-import java.io.File;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 public class LibrariesManager extends Manager implements ILibrariesManager {
 
-
     private static final Logger log = LoggerFactory.getLogger(LibrariesManager.class.getSimpleName());
+
 
     private final DynamicClassLoader rootClassLoader;
 
@@ -36,7 +37,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     private final HttpClient httpClient;
 
 
-    private final Map<ArtifactAddress, PomData> cachedPoms = new HashMap<>();
+    private final Map<ArtifactAddress, IPomData> cachedPoms = new HashMap<>();
 
     private final Map<ArtifactAddress, ILibrary> libraryMap = new HashMap<>();
 
@@ -64,9 +65,15 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
     @Override
     protected void shutdown0() {
-        libraryMap.clear();
-        cachedPoms.clear();
+
     }
+
+    public void setupRootClassLoader() {
+        rootClassLoader.resetSuppliers();
+        rootClassLoader.addClassSupplier("ROOT", this::rootClassRequest);
+        rootClassLoader.addResourceSupplier("SPI", n -> n.startsWith("META-INF/services/"), this::findGlobalSPIMetaInf);
+    }
+
 
     //
     // IMPORT LIBRARIES FROM SimpleLibrariesManager //
@@ -95,6 +102,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         ArtifactAddress address = ArtifactAddress.create(group, artifact, version);
 
+        // Якщо ми вже завантажили таку бібліотеку, повертаємо її.
         ILibrary library = getLoadedLibrary(address);
         if (library != null) {
             return library;
@@ -102,9 +110,9 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         File file = simpleLibrary.file();
         DynamicClassLoader classLoader = simpleLibrary.classLoader();
-
         String repository = simpleLibrary.repository();
 
+        // Отримуємо повний POM файл бібліотеки.
         IPomData pom;
         try {
             pom = retrievePom(repository, address);
@@ -114,10 +122,10 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             throw new RuntimeException(e);
         }
 
-        classLoader.addClassSupplier(file.getName(), name -> rootClassLoader.getClass(name, false, true));
-
         library = new Library(pom, file, classLoader, dependencies);
         libraryMap.put(address, library);
+
+        configureLibraryClassLoader(library, classLoader);
 
         return library;
 
@@ -130,35 +138,16 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     // DOWNLOAD //
 
     @Override
-    public @NotNull MassDownloadResult downloadLibraries(@NotNull ConfigurationNode node) {
+    public @NotNull ILibrariesManager.MassLibraryDownloadResult downloadLibraries(@NotNull List<LibraryDeclaration> declarations) {
 
-        Objects.requireNonNull(node, "node == null");
+        Objects.requireNonNull(declarations, "declarations == null");
         checkValid();
 
-        MassDownloadResult result = new MassDownloadResult(new ArrayList<>(), new ArrayList<>(), new HashMap<>());
+        MassLibraryDownloadResult result = new MassLibraryDownloadResult(new ArrayList<>(), new ArrayList<>(), new HashMap<>());
 
-        List<LibraryDeclaration> declarations = new ArrayList<>();
-        for (var section : node.childrenList()) {
-
-            LibraryDeclaration declaration;
-            try {
-                declaration = section.get(LibraryDeclaration.class);
-            }
-
-            catch (SerializationException e) {
-                String key = (String) section.key();
-                result.failed().put(key, e);
-                continue;
-            }
-
-            declarations.add(declaration);
-
-        }
-
-        List<IPomData> poms = new ArrayList<>();
         for (var declaration : declarations) {
 
-            ArtifactAddress address = ArtifactAddress.fromDeclaration(declaration);
+            ArtifactAddress address = declaration.address();
             String repository = declaration.source();
             if (repository == null) {
                 repository = MAVEN_CENTRAL_URL;
@@ -170,28 +159,17 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             }
 
             catch (PomResolutionException e) {
-                result.failed().put(address, e);
+                result.failed().put(declaration, e);
                 continue;
             }
 
-            poms.add(pom);
-
-        }
-
-        for (var pom : poms) {
-
-            ILibrary library = getLoadedLibrary(pom);
-            if (library != null) {
-                result.skipped().add(library);
-                continue;
-            }
-
+            ILibrary library;
             try {
                 library = downloadLibrary(pom);
             }
 
             catch (LibraryDownloadException e) {
-                result.failed().put(pom.getAddress(), e);
+                result.failed().put(declaration, e);
                 continue;
             }
 
@@ -219,40 +197,47 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         String url = address.createRepositoryAddress(repository, "jar");
         File file = new File(librariesDir, address.toGradleString(ArtifactAddress.DEFAULT_FILESYSTEM_SEPARATOR) + ".jar");
 
-        log.info("Downloading library from {}", url);
-
         List<ILibrary> dependencies = new ArrayList<>();
         for (IPomData dependencyPom : pom.getDependencies()) {
 
-            ILibrary dependency;
+            ILibrary dependency = getLoadedLibrary(dependencyPom);
+            if (dependency == null) {
 
-            try {
-                dependency = downloadLibrary(dependencyPom);
-            }
+                try {
+                    dependency = downloadLibrary(dependencyPom);
+                }
 
-            catch (LibraryDownloadException e) {
-                throw new LibraryDownloadException("Failed to download dependency `" + pom.getAddress() + "`");
+                catch (LibraryDownloadException e) {
+                    throw new LibraryDownloadException("Failed to download dependency `" + pom.getAddress() + "`");
+                }
+
             }
 
             dependencies.add(dependency);
 
         }
 
-        try (InputStream in = new URI(url).toURL().openStream()) {
-            Files.copy(in, file.toPath());
-        }
+        if (!file.exists()) {
 
-        catch (Exception e) {
-            throw new LibraryDownloadException("Failed to download library `" + address + "`", e);
+            log.info("Downloading library from {}", url);
+
+            try (InputStream in = new URI(url).toURL().openStream()) {
+                Files.copy(in, file.toPath());
+            }
+
+            catch (Exception e) {
+                throw new LibraryDownloadException("Failed to download library `" + address + "`", e);
+            }
+
         }
 
         DynamicClassLoader classLoader = new DynamicClassLoader(pom.getAddress().toGradleString(), null);
-        classLoader.addClassSupplier(file.getName(), name -> rootClassLoader.getClass(name, false, true));
-
+        classLoader.addSource(file);
 
         Library library = new Library(pom, file, classLoader, dependencies);
-
         libraryMap.put(address, library);
+
+        configureLibraryClassLoader(library, classLoader);
 
         return library;
 
@@ -284,10 +269,26 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         Objects.requireNonNull(address, "address == null");
         checkValid();
 
+        // Спочатку намагаємось дістати POM із кешу або диску //
+
         IPomData pom = getLoadedPom(address);
         if (pom != null) {
             return pom;
         }
+
+        try {
+            pom = loadPomFromDisk(address);
+        }
+
+        catch (Throwable t) {
+            log.error("Failed to load POM of `{}` from disk.", address, t);
+        }
+
+        if (pom != null) {
+            return pom;
+        }
+
+        // Завантажуємо POM з інтернету //
 
         String url = address.createRepositoryAddress(repository, "pom");
 
@@ -333,6 +334,16 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             throw new PomResolutionException("An internal error occurred! Maybe a bug?", e);
         }
 
+        // Зберігаємо POM на диску //
+
+        try {
+            savePomToDisk(repository, data);
+        }
+
+        catch (Throwable t) {
+            log.error("Failed to save POM `{}` to the disk.", address, t);
+        }
+
         cachedPoms.put(address, data);
 
         return data;
@@ -358,6 +369,51 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         return new HashMap<>(cachedPoms);
     }
 
+    private @Nullable IPomData loadPomFromDisk(@NotNull ArtifactAddress address) throws IOException, PomResolutionException {
+
+        if (cachedPoms.containsKey(address)) {
+            throw new IllegalStateException("Already exists `" + address + "`");
+        }
+
+        String addressRaw = address.toGradleString(ArtifactAddress.DEFAULT_FILESYSTEM_SEPARATOR);
+        String pomFileName = addressRaw + ".pom";
+        String urlFileName = addressRaw + ".url";
+
+        File pomFile = new File(librariesDir, pomFileName);
+        File urlFile = new File(librariesDir, urlFileName);
+
+        if (!pomFile.exists() || !pomFile.isFile() || !urlFile.exists() || !urlFile.isFile()) {
+            return null;
+        }
+
+        String pomDataRaw = Files.readString(pomFile.toPath());
+        String url = Files.readString(urlFile.toPath());
+
+        IPomData pomData = createPomFromString(url, address, pomDataRaw);
+        cachedPoms.put(address, pomData);
+
+        return pomData;
+
+    }
+
+    private void savePomToDisk(@NotNull String repository, @NotNull IPomData pomData) throws IOException {
+
+        String addressRaw = pomData.getAddress().toGradleString(ArtifactAddress.DEFAULT_FILESYSTEM_SEPARATOR);
+        String pomFileName = addressRaw + ".pom";
+        String urlFileName = addressRaw + ".url";
+
+        File pomFile = new File(librariesDir, pomFileName);
+        File urlFile = new File(librariesDir, urlFileName);
+
+        XmlConfigurationLoader loader = XmlConfigurationLoader.builder()
+                .path(pomFile.toPath())
+                .build();
+
+        loader.save(pomData.getData());
+        Files.writeString(urlFile.toPath(), repository, StandardOpenOption.CREATE);
+
+    }
+
 
     //
     // INTERNAL
@@ -377,23 +433,20 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         //
 
         Placeholders properties = new Placeholders();
+        createMergePomProperties(address, null, properties);
 
-        // Додаємо деякі системні змінні.
-        String version = address.version().orElseThrow();
-        properties.add("project.version", version);
-        properties.add("version", version);
-
+        Map<String, String> propertiesMap = new HashMap<>();
         for (var entry : pomData.node("properties").childrenMap().entrySet()) {
 
             String key = (String) entry.getKey();
             String value = entry.getValue().getString();
 
-            properties.add(key, value);
+            propertiesMap.put(key, value);
 
         }
 
-        Map<String, String> propertiesAsMap = new HashMap<>();
-        properties.getAsMap().forEach((key, value) -> propertiesAsMap.put(key, (String) value));
+        properties.addAll(propertiesMap);
+        properties.selfParse(100, MAVEN_PROPERTIES_LAYOUT);
 
         //
         // Дістаємо перелік репозиторіїв //
@@ -409,7 +462,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
                 continue;
             }
 
-            repositories.add(url);
+            repositories.add(properties.parse(url));
 
         }
 
@@ -448,30 +501,30 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         // Додаємо деякі системні змінні.
         if (parent != null) {
-            String parentVersion = parent.getAddress().version().orElseThrow();
-            properties.add("parent.version", parentVersion);
-            properties.add("project.parent.version", parentVersion);
+            createMergePomProperties(address, parent, properties);
         }
 
         //
         // Створюємо глобально properties рекурсивно з усіх parent //
         //
 
-        Placeholders globalProperties = parent != null ? createGlobalPlaceholdersRecursive(parent) : new Placeholders();
-        globalProperties.addAll(properties);
+        if (parent != null) {
+            properties = createGlobalPlaceholdersRecursive(parent).addAll(properties);
+            properties.selfParse(100, MAVEN_PROPERTIES_LAYOUT);
+        }
 
         //
         // Завантажуємо BOM //
         //
 
-        List<IPomData> bombSources = new ArrayList<>();
+        List<ArtifactAddress> bombSources = new ArrayList<>();
         List<ArtifactAddress> bombArtifacts = new ArrayList<>();
 
         for (var section : pomData.node("dependencyManagement", "dependencies").childrenList()) {
 
             ArtifactAddress bomAddress;
             try {
-                bomAddress = ArtifactAddress.fromPom(section, globalProperties);
+                bomAddress = ArtifactAddress.fromPom(section, properties);
             }
 
             catch (IllegalArgumentException e) {
@@ -481,18 +534,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             boolean isSource = Objects.equals(section.node("scope").getString(), "import");
 
             if (isSource) {
-                IPomData bom;
-
-                try {
-                    bom = retrievePom(repositories, bomAddress);
-                }
-
-                catch (PomResolutionException e) {
-                    throw new PomResolutionException("Failed to resolve BOM artifact`" + bomAddress + "`", e);
-                }
-
-                bombSources.add(bom);
-
+                bombSources.add(bomAddress);
             }
 
             else {
@@ -515,20 +557,30 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         for (var section : pomData.node("dependencies").childrenList()) {
 
             String scope = section.node("scope").getString();
-            if (scope != null && !scope.equals("compile") && !scope.equals("runtime")) {
+            boolean optional = section.node("optional").getBoolean();
+
+            if (scope != null && !scope.equals("compile") && !scope.equals("runtime") || optional) {
                 continue;
             }
 
             ArtifactAddress dependencyAddress;
             try {
-                dependencyAddress = ArtifactAddress.fromPom(section, globalProperties);
+                dependencyAddress = ArtifactAddress.fromPom(section, properties);
             }
 
             catch (IllegalArgumentException e) {
                 throw new PomResolutionException("An invalid dependency at index " + section.key() + " -> " + e.getMessage());
             }
 
-            ArtifactAddress completeDependencyAddress = findCompleteArtifact(dependencyAddress, parent, bombSources, bombArtifacts, properties);
+            ArtifactAddress completeDependencyAddress;
+            try {
+                completeDependencyAddress = findCompleteArtifact(repositories, dependencyAddress, parent, bombSources, bombArtifacts, properties);
+            }
+
+            catch (PomResolutionException e) {
+                throw new PomResolutionException("Dependency `" + dependencyAddress + "` has no version defined. Tried tp find version in BOM, but an exception occurred", e);
+            }
+
             if (completeDependencyAddress == null) {
                 throw new PomResolutionException("Dependency `" + dependencyAddress + "` has no version defined. Tried to find version in BOM, no results found");
             }
@@ -546,17 +598,18 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         }
 
-        return new PomData(repository, address, pomData, repositories, propertiesAsMap, parent, bombSources, bombArtifacts, dependencies);
+        return new PomData(repository, address, pomData, repositories, propertiesMap, parent, bombSources, bombArtifacts, dependencies);
 
     }
 
     private @Nullable ArtifactAddress findCompleteArtifact(
+            @NotNull List<String> repositories,
             @NotNull ArtifactAddress address,
             @Nullable IPomData parent,
-            @Nullable List<IPomData> bombSources,
+            @Nullable List<ArtifactAddress> bombSources,
             @Nullable List<ArtifactAddress> bombArtifacts,
             @NotNull Placeholders properties
-    ) {
+    ) throws PomResolutionException {
 
         if (address.isComplete()) {
             return address;
@@ -576,9 +629,18 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         // Якщо не знайшли, рекурсивно пробігаємось по BOMb sources.
         if (result == null && bombSources != null) {
 
-            for (IPomData source : bombSources) {
+            for (ArtifactAddress source : bombSources) {
 
-                result = findCompleteArtifact(address, null, source.getBOMbSources(), source.getBOMbArtifacts(), properties);
+                IPomData pom;
+                try {
+                    pom = retrievePom(repositories, source);
+                }
+
+                catch (PomResolutionException e) {
+                    throw new PomResolutionException("Failed to resolve BOM source `" + source + "`");
+                }
+
+                result = findCompleteArtifact(pom.getDeclaredRepositories(), source, null, pom.getBOMbSources(), pom.getBOMbArtifacts(), properties);
                 if (result != null) {
                     break;
                 }
@@ -589,7 +651,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         // Якщо все ще не знайшли, дивимось у parent
         if (result == null && parent != null) {
-            result = findCompleteArtifact(address, parent.getParent(), parent.getBOMbSources(), parent.getBOMbArtifacts(), properties);
+            result = findCompleteArtifact(parent.getDeclaredRepositories(), address, parent.getParent(), parent.getBOMbSources(), parent.getBOMbArtifacts(), properties);
         }
 
         return result;
@@ -603,14 +665,15 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         while (current != null) {
 
-            Placeholders placeholders = createPomPlaceholders(current);
+            Placeholders properties = new Placeholders();
+            createMergePomProperties(pom.getAddress(), pom.getParent(), properties);
 
-            for (var entry : placeholders.getAsMap().entrySet()) {
+            for (var entry : current.getProperties().entrySet()) {
 
                 String key = entry.getKey();
-                String value = (String) entry.getValue();
+                String value = entry.getValue();
 
-                if (!result.contains(key)) {
+                if (result.contains(key)) {
                     continue;
                 }
 
@@ -618,6 +681,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
             }
 
+            result.selfParse(100, MAVEN_PROPERTIES_LAYOUT);
             current = current.getParent();
 
         }
@@ -626,36 +690,107 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
     }
 
-    private @NotNull Placeholders createPomPlaceholders(@NotNull IPomData pom) {
+    private void createMergePomProperties(
+            @NotNull ArtifactAddress address,
+            @Nullable IPomData parent,
+            @NotNull Placeholders properties
+    ) {
 
-        Placeholders placeholders = new Placeholders();
+        String version = address.version().orElseThrow();
+        properties.add("project.version", version);
+        properties.add("version", version);
 
-        String version = pom.getAddress().version().orElseThrow();
-        placeholders.add("project.version", version);
-        placeholders.add("version", version);
+        String groupId = address.group();
+        properties.add("project.groupId", groupId);
+        properties.add("groupId", groupId);
 
-        IPomData parent = pom.getParent();
+        String artifactId = address.artifact();
+        properties.add("project.artifactId", artifactId);
+        properties.add("artifactId", artifactId);
+
         if (parent != null) {
+
             String parentVersion = parent.getAddress().version().orElseThrow();
-            placeholders.add("parent.version", parentVersion);
-            placeholders.add("project.parent.version", parentVersion);
+            properties.add("parent.version", parentVersion);
+            properties.add("project.parent.version", parentVersion);
+
+            String parentGroupId = address.group();
+            properties.add("project.parent.groupId", parentGroupId);
+            properties.add("parent.groupId", parentGroupId);
+
+            String parentArtifactId = address.artifact();
+            properties.add("project.parent.artifactId", parentArtifactId);
+            properties.add("parent.artifactId", parentArtifactId);
+
         }
 
-        placeholders.addAll(pom.getProperties());
-
-        placeholders.selfParse();
-
-        placeholders.removeAll(
-                "project.version",
-                "version",
-                "parent.version",
-                "project.parent.version"
-        );
-
-        return placeholders;
+        properties.selfParse(100, MAVEN_PROPERTIES_LAYOUT);
 
     }
 
+    //
+    // CLASSLOADER
+    //
+
+    // Переналаштовуємо ClassLoader бібліотеки.
+    // 1. Повністю очищаємо усі налаштування, які встановив SimpleLibrariesDownloader.
+    // 2. Налаштовуємо вже повноцінну систему доступів до класів.
+    private void configureLibraryClassLoader(@NotNull ILibrary library, @NotNull DynamicClassLoader classLoader) {
+        classLoader.resetSuppliers();
+        classLoader.addClassSupplier("MAIN", name -> requestClass(library, name));
+        classLoader.addResourceSupplier("SPI", n -> n.startsWith("META-INF/services/"), this::findGlobalSPIMetaInf);
+    }
+
+    private @Nullable Class<?> requestClass(@NotNull ILibrary library, @NotNull String name) {
+
+        DynamicClassLoader libraryClassLoader = (DynamicClassLoader) library.getClassLoader();
+        Class<?> result = libraryClassLoader.getClass(name, false, false);
+        if (result != null) {
+            return result;
+        }
+
+        for (ILibrary dependency : library.getDependencies()) {
+
+            result = requestClass(dependency, name);
+            if (result != null) {
+                return result;
+            }
+
+        }
+
+        result = rootClassLoader.getClass(name, false, true);
+
+        return result;
+
+    }
+
+    private @Nullable Class<?> rootClassRequest(@NotNull String name) {
+
+        for (ILibrary library : libraryMap.values()) {
+
+            DynamicClassLoader dynamicClassLoader = (DynamicClassLoader) library.getClassLoader();
+            Class<?> clazz = dynamicClassLoader.getClass(name, false, false);
+            if (clazz != null) {
+                return clazz;
+            }
+
+        }
+
+        return null;
+
+    }
+
+    private List<URL> findGlobalSPIMetaInf(@NotNull String name) {
+
+        List<URL> result = new ArrayList<>();
+        for (var lib : this.libraryMap.values()) {
+            DynamicClassLoader classLoader = (DynamicClassLoader) lib.getClassLoader();
+            result.addAll(classLoader.findResources(name, false, false));
+        }
+
+        return result;
+
+    }
 
     //
     // MISC

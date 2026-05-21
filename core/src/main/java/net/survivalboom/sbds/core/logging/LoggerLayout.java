@@ -99,7 +99,7 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
         catch (Throwable t) {
             System.err.println("[LoggerLayout] An exception was thrown while attempting to parse ` " + event.getMessage() + "`");
             t.printStackTrace();
-            throw t;
+            return null;
         }
 
     }

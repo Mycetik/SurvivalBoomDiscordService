@@ -132,9 +132,9 @@ public class Scheduler extends Manager implements IScheduler, RegistrationManage
 
         int number = CommonUtils.RANDOM.nextInt(9999);
 
-        if (name == null) name = "Task";
+        if (name == null) name = "task";
 
-        return name + "-" + number;
+        return name + "_" + number;
 
     }
 

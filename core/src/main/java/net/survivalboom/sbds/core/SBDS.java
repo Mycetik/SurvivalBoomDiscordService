@@ -143,6 +143,7 @@ public class SBDS implements ISBDS {
 
         this.librariesManager = librariesManager;
 
+        this.registrationRegistry = new RegistrationRegistry(this);
         this.loggerFilter = new LoggerFilter(this);
 
         this.scheduler = new Scheduler(this);
@@ -154,7 +155,6 @@ public class SBDS implements ISBDS {
 
         this.eventManager = new EventManager(this);
         this.moduleManager = new ModuleManager(this);
-        this.registrationRegistry = new RegistrationRegistry(this);
         this.serviceProvider = new ServiceProvider(this);
 
         this.translationManager = new TranslationManager(this);
@@ -179,10 +179,13 @@ public class SBDS implements ISBDS {
 
     public synchronized void launch() throws InterruptedException {
 
-        if (started) throw new IllegalStateException("Already started");
+        if (started) {
+            throw new IllegalStateException("Already started");
+        }
 
         started = true;
 
+        registrationRegistry.init();
         loggerFilter.init();
 
         scheduler.init();
@@ -226,7 +229,6 @@ public class SBDS implements ISBDS {
 
         serviceProvider.init();
         moduleManager.init();
-        registrationRegistry.init();
 
         bot.getPresence().setPresence(OnlineStatus.IDLE, Activity.customStatus("Running on SBDS v" + BuildConstants.VERSION + "🦖"));
 
@@ -265,7 +267,6 @@ public class SBDS implements ISBDS {
 
         bot.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.customStatus("Shutting down SBDS v" + BuildConstants.VERSION + "..."));
 
-        registrationRegistry.shutdown();
         moduleManager.shutdown();
 
         consoleListener.shutdown();
@@ -289,6 +290,8 @@ public class SBDS implements ISBDS {
         systemMonitor.shutdown();
 
         scheduler.shutdown();
+
+        registrationRegistry.shutdown();
 
         logger.info("Stopping bot...");
 

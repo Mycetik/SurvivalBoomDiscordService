@@ -98,18 +98,6 @@ public record ArtifactAddress(
         return new ArtifactAddress(group, artifact, Optional.ofNullable(version));
     }
 
-    public static @NotNull ArtifactAddress fromDeclaration(@NotNull LibraryDeclaration declaration) {
-
-        String group, artifact, version;
-
-        group = declaration.group();
-        artifact = declaration.artifact();
-        version = declaration.version();
-
-        return create(group, artifact, version);
-
-    }
-
     public static @NotNull ArtifactAddress fromGradleString(@NotNull String string) {
         return fromGradleString(string, DEFAULT_GRADLE_SEPARATOR);
     }
@@ -119,7 +107,7 @@ public record ArtifactAddress(
         Objects.requireNonNull(string, "string == null");
         Objects.requireNonNull(separator, "separator == null");
 
-        String[] parts = separator.split(separator);
+        String[] parts = string.split(separator);
         if (parts.length < 3) {
             throw new IllegalArgumentException("Invalid format; Separator: `" + separator + "`; Expected length: 3, Got " + parts.length + "; " + string);
         }

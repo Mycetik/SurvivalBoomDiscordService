@@ -163,7 +163,7 @@ public class Placeholders implements StringParser {
         return parse(string, DEFAULT_LAYOUT);
     }
 
-    public @NotNull String parse(@NotNull String text, @Nullable String layout) {
+    public @NotNull String parse(@NotNull String text, @NotNull String layout) {
 
         var map = prepareRecursivePlaceholders(this.placeholders, "");
 
@@ -256,10 +256,10 @@ public class Placeholders implements StringParser {
 
 
     public @NotNull Placeholders selfParse() {
-        return selfParse(100);
+        return selfParse(100, DEFAULT_LAYOUT);
     }
 
-    public @NotNull Placeholders selfParse(int attempts) {
+    public @NotNull Placeholders selfParse(int attempts, @NotNull String layout) {
 
         for (var entry : placeholders.entrySet()) {
 
@@ -273,7 +273,7 @@ public class Placeholders implements StringParser {
                     continue;
                 }
 
-                String parsedValue = parse(string);
+                String parsedValue = parse(string, layout);
                 if (parsedValue.equals(lastParsedAttempt)) {
                     break;
                 }
@@ -284,7 +284,7 @@ public class Placeholders implements StringParser {
 
                 lastParsedAttempt = parsedValue;
 
-                entry.setValue(value);
+                entry.setValue(parsedValue);
 
             }
 

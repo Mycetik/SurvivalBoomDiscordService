@@ -25,7 +25,7 @@ public interface IPomData {
 
     @Nullable IPomData getParent();
 
-    @NotNull List<IPomData> getBOMbSources();
+    @NotNull List<ArtifactAddress> getBOMbSources();
 
     @NotNull List<ArtifactAddress> getBOMbArtifacts();
 

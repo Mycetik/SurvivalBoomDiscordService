@@ -184,60 +184,16 @@ predefined-permissions:
 # Якщо вам потрібна якась бібліотека, можете дописати цю секцію.
 # Але зазвичай, бібліотеки мають бути вказані у секції `libraries` в module.yml для кожного модуля.
 # При запуску SBDS перевіряє та завантажує усе бібліотеки.
+#
+# SBDS завантажує деякі драйвери для підключення до баз даних.
+# Ви можете додати необхідні вам чи прибрати зайві.
+#
 libraries:
-
-  ignore-missing-libraries: false # Ігнорувати помилки при завантаженні бібліотек.
-
-  # JDA - фреймворк для розробки discord ботів на java
-  jda:
-    group: "net.dv8tion"
-    artifact: "JDA"
-    version: "5.2.2"
-
-  # Hibernate - фреймворк для роботи із базою даних.
-  hibernate:
-    group: "org.hibernate.orm"
-    artifact: "hibernate-core"
-    version: "6.6.9.Final"
-
-  # HikariCP - дуже ефективний pool з'єднань із базою даних.
-  hikariCP:
-    group: "com.zaxxer"
-    artifact: "HikariCP"
-    version: "6.2.1"
-
-  # Підтримка HikariCP для Hibernate.
-  hibernate-hikari:
-    group: "org.hibernate.orm"
-    artifact: "hibernate-hikaricp"
-    version: "6.6.9.Final"
-
-  # Діаклекти Hibernate для підтримки різних типів баз даних, наприклад SQLite.
-  hibernateDialects:
-    group: "org.hibernate.orm"
-    artifact: "hibernate-community-dialects"
-    version: "6.6.9.Final"
-
-
-  #
-  # Драйвери для підключення до баз даних.
-  # Ви можете прибрати якісь із них для економії місця якщо не користуєтесь.
-  #
-
-  # Драйвер JDBC для підключення до PostgreSQL.
-  postgresql-driver-jdbc:
-    group: "org.postgresql"
-    artifact: "postgresql"
-    version: "42.7.5"
-
-  # Драйвер JDBC для підключення до MySQL
-  mysql-driver-jdbc:
-    group: "com.mysql"
-    artifact: "mysql-connector-j"
-    version: "9.2.0"
-
-  # Драйвер JDBC для підключення до SQLite.
-  sqlite-driver-jdbc:
-    group: "org.xerial"
-    artifact: "sqlite-jdbc"
-    version: "3.49.1.0"
+  - "net.dv8tion:JDA:5.2.2" # JDA - фреймворк для розробки discord ботів на java
+  - "org.hibernate.orm:hibernate-core:6.6.9.Final" # Hibernate - фреймворк для роботи із базою даних.
+  - "com.zaxxer:HikariCP:6.2.1" # HikariCP - дуже ефективний pool з'єднань із базою даних.
+  - "org.hibernate.orm:hibernate-hikaricp:6.6.9.Final" # Підтримка HikariCP для Hibernate.
+  - "org.hibernate.orm:hibernate-community-dialects:6.6.9.Final" # Діаклекти Hibernate для підтримки різних типів баз даних, наприклад SQLite.
+  - "org.postgresql:postgresql:42.7.5" # Драйвер JDBC для підключення до PostgreSQL.
+  - "com.mysql:mysql-connector-j:9.2.0" # Драйвер JDBC для підключення до MySQL
+  - "org.xerial:sqlite-jdbc:3.49.1.0" # Драйвер JDBC для підключення до SQLite.

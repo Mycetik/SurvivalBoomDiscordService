@@ -69,11 +69,13 @@ public class Database extends Manager implements IDatabase {
 
         new File(sbds.getWorkingDir(), "data").mkdirs();
 
+        registry.init();
+        rebuildQueue.init();
+
         createRepository0(null, "users", UserDataRecord.class);
         createRepository0(null, "guilds", GuildDataRecord.class);
 
         queue.init();
-        rebuildQueue.init();
 
     }
 
@@ -82,9 +84,9 @@ public class Database extends Manager implements IDatabase {
 
         log.info("Shutting down database...");
 
-        rebuildQueue.shutdown();
-
         registry.shutdown();
+
+        rebuildQueue.shutdown();
         queue.shutdown();
 
         if (sessionFactory != null) {
