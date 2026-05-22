@@ -27,7 +27,7 @@ public class LoggerFilter extends Manager {
 
     private final InternalRegistrationManager<RegisteredLoggerFilter> registry;
 
-    private Level minimalLoggingLevel = org.slf4j.event.Level.INFO;
+    private Level minimalLoggingLevel = Level.INFO;
 
 
     public LoggerFilter(@NotNull SBDS sbds) {
@@ -164,7 +164,7 @@ public class LoggerFilter extends Manager {
 
         MassLoadResult result = new MassLoadResult(new ArrayList<>(), new HashMap<>());
 
-        for (ConfigurationNode rule : section.childrenList()) {
+        for (ConfigurationNode rule : section.childrenMap().values()) {
 
             try {
 
