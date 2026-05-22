@@ -189,11 +189,16 @@ predefined-permissions:
 # Ви можете додати необхідні вам чи прибрати зайві.
 #
 libraries:
-  - "net.dv8tion:JDA:5.2.2" # JDA - фреймворк для розробки discord ботів на java
-  - "org.hibernate.orm:hibernate-core:6.6.9.Final" # Hibernate - фреймворк для роботи із базою даних.
-  - "com.zaxxer:HikariCP:6.2.1" # HikariCP - дуже ефективний pool з'єднань із базою даних.
-  - "org.hibernate.orm:hibernate-hikaricp:6.6.9.Final" # Підтримка HikariCP для Hibernate.
-  - "org.hibernate.orm:hibernate-community-dialects:6.6.9.Final" # Діаклекти Hibernate для підтримки різних типів баз даних, наприклад SQLite.
-  - "org.postgresql:postgresql:42.7.5" # Драйвер JDBC для підключення до PostgreSQL.
-  - "com.mysql:mysql-connector-j:9.2.0" # Драйвер JDBC для підключення до MySQL
-  - "org.xerial:sqlite-jdbc:3.49.1.0" # Драйвер JDBC для підключення до SQLite.
+
+  pinned:
+    - "org.slf4j:slf4j-api:2.0.16"
+
+  dependencies:
+    - "net.dv8tion:JDA:5.2.2" # JDA - фреймворк для розробки discord ботів на java
+    - "org.hibernate.orm:hibernate-core:6.6.9.Final" # Hibernate - фреймворк для роботи із базою даних.
+    - "com.zaxxer:HikariCP:6.2.1" # HikariCP - дуже ефективний pool з'єднань із базою даних.
+    - "org.hibernate.orm:hibernate-hikaricp:6.6.9.Final" # Підтримка HikariCP для Hibernate.
+    - "org.hibernate.orm:hibernate-community-dialects:6.6.9.Final" # Діаклекти Hibernate для підтримки різних типів баз даних, наприклад SQLite.
+    - "org.postgresql:postgresql:42.7.5" # Драйвер JDBC для підключення до PostgreSQL.
+    - "com.mysql:mysql-connector-j:9.2.0" # Драйвер JDBC для підключення до MySQL
+    - "org.xerial:sqlite-jdbc:3.49.1.0" # Драйвер JDBC для підключення до SQLite.

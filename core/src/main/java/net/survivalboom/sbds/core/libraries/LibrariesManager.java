@@ -905,24 +905,51 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
     private @Nullable Class<?> requestClass(@NotNull ILibrary library, @NotNull String name) {
 
+        // Шаг 1: Если это базовый класс Java, не пускаем его в циклы и рекурсии вообще!
+        if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("sun.") || name.startsWith("jdk.")) {
+            return rootClassLoader.getClass(name, false, true);
+        }
+
+        return requestClass0(library, name, new HashSet<>());
+
+    }
+
+    private @Nullable Class<?> requestClass0(@NotNull ILibrary library, @NotNull String name, @NotNull Set<ILibrary> visited) {
+
+        // Защита от бесконечного цикла (StackOverflowError) между А и Б
+        if (!visited.add(library)) {
+            return null;
+        }
+
         DynamicClassLoader libraryClassLoader = (DynamicClassLoader) library.getClassLoader();
+
+        // 1. Ищем локально в самом JAR-нике библиотеки
         Class<?> result = libraryClassLoader.getClass(name, false, false);
         if (result != null) {
             return result;
         }
 
-        for (ILibrary dependency : library.getDependencies()) {
+        // 2. Ищем в зависимостях (копируем список, чтобы избежать мутации)
+        List<ILibrary> maxDependencies = new ArrayList<>(library.getDependencies());
 
-            result = requestClass(dependency, name);
+        // Подтягиваем связанные через settings.yml / обратные зависимости
+        List<ILibrary> connectedLibs = libraryMap.values().stream()
+                .filter(lib -> lib.getDependencies().contains(library))
+                .toList();
+        maxDependencies.addAll(connectedLibs);
+
+        for (ILibrary dependency : maxDependencies) {
+            result = requestClass0(dependency, name, visited);
             if (result != null) {
                 return result;
             }
-
         }
 
-        result = rootClassLoader.getClass(name, false, true);
-
-        return result;
+        // 3. Фоллбек: Если мы обошли весь изолированный граф этой группы библиотек
+        // и так ничего и не нашли — отдаем запрос в rootClassLoader.
+        // Условие visited.size() == 1 убираем, так как root должен быть доступен всем,
+        // но благодаря Set<ILibrary> visited мы защищены от зацикливания.
+        return rootClassLoader.getClass(name, false, true);
 
     }
 
