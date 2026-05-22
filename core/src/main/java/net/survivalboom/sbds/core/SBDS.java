@@ -7,8 +7,6 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
-import net.survivalboom.sbds.api.database.users.IUserDataManager;
 import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.commands.context.ContextCommandManager;
@@ -487,11 +485,11 @@ public class SBDS implements ISBDS {
 
         EnumSet<GatewayIntent> privileged = EnumSet.copyOf(PRIVILEGED_GATEWAY_INTENTS);
         privileged.retainAll(parsed);
-        if (!privileged.isEmpty()) {
-            logger.warn("Privileged gateway intents requested: {}. Ensure they are enabled in the Discord developer portal.", privileged);
-        }
+//        if (!privileged.isEmpty()) {
+//            logger.warn("Privileged gateway intents requested: {}. Ensure they are enabled in the Discord developer portal.", privileged);
+//        }
 
-        logger.info("Using configured gateway intents: {}", parsed);
+//        logger.info("Using configured gateway intents: {}", parsed);
         return parsed;
     }
 
