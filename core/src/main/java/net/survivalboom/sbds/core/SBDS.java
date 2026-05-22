@@ -192,6 +192,9 @@ public class SBDS implements ISBDS {
         systemMonitor.init();
 
         database.init();
+        if (database.isFailed()) {
+            throw new RuntimeException("Database initialization failed");
+        }
 
         logger.info("Logging in...");
 

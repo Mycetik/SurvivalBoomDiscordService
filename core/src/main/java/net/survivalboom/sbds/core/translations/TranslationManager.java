@@ -43,7 +43,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
 
     public TranslationManager(@NotNull SBDS sbds) {
         this.sbds = sbds;
-        this.registry = new InternalRegistrationManager<>(this, null, sbds.getRegistrationRegistry());
+        this.registry = new InternalRegistrationManager<>(this, "translation", null, sbds.getRegistrationRegistry());
         this.sbdsTranslationsDir = new File(sbds.getWorkingDir(), "translations");
     }
 
@@ -60,7 +60,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
         var translations = registry.getRegistrations();
         if (!translations.isEmpty()) {
             String strings = String.join(", ", translations.stream()
-                    .map(Registration::regKey)
+                    .map(Registration::key)
                     .map(NamespacedKey::toString)
                     .toList()
             );
@@ -192,13 +192,13 @@ public class TranslationManager extends Manager implements ITranslationManager {
         // Завантажуємо стандартний та резервний переклади.
 
         String defaultTranslationName = sbds.getConfiguration().node("translations", "default").getString("null");
-        defaultTranslation = getTranslation(defaultTranslationName);
+        defaultTranslation = findTranslationByInvalidName0(defaultTranslationName);
         if (defaultTranslation == null) {
             log.warn("Default translation with name `{}` not found.", defaultTranslationName);
         }
 
         String fallbackTranslationName = sbds.getConfiguration().node("translations", "fallback").getString("null");
-        fallbackTranslation = getTranslation(fallbackTranslationName);
+        fallbackTranslation = findTranslationByInvalidName0(fallbackTranslationName);
         if (fallbackTranslation == null) {
             log.warn("Fallback translation with name `{}` not found.", fallbackTranslationName);
         }
@@ -210,6 +210,18 @@ public class TranslationManager extends Manager implements ITranslationManager {
                 importModuleMessages(module);
             }
 
+        }
+
+    }
+
+    private @Nullable ITranslation findTranslationByInvalidName0(String str) {
+
+        try {
+            return getTranslation(str);
+        }
+
+        catch (Exception e) {
+            return null;
         }
 
     }

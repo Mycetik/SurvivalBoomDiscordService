@@ -50,6 +50,8 @@ public class Database extends Manager implements IDatabase {
 
     private final InternalPushQueue<IRepository<?>> rebuildQueue;
 
+    private boolean failed = false;
+
 
     public Database(@NotNull SBDS sbds) {
         this.sbds = sbds;
@@ -68,6 +70,8 @@ public class Database extends Manager implements IDatabase {
         log.info("Loading database...");
 
         new File(sbds.getWorkingDir(), "data").mkdirs();
+
+        reload0(null, true);
 
         registry.init();
         rebuildQueue.init();
@@ -95,6 +99,10 @@ public class Database extends Manager implements IDatabase {
 
     }
 
+    public boolean isFailed() {
+        return failed;
+    }
+
     // REBUILD QUEUE //
 
     private void rebuildQueue(InternalPushQueue<IRepository<?>> queue) {
@@ -104,7 +112,7 @@ public class Database extends Manager implements IDatabase {
         }
 
         catch (Throwable t) {
-            log.error("Failed to initialize the database. Please ensure that database credentials are correct and your database is online.");
+            log.error("Failed to build the SessionFactory. Please ensure that database credentials are correct and your database is online.", t);
             throw t;
         }
 
@@ -139,14 +147,18 @@ public class Database extends Manager implements IDatabase {
         try {
 
             loadProperties();
+            rebuildSessionFactory(null);
 
         }
 
         catch (Exception t) {
+            failed = true;
             log.error("Failed to reload the database! SBDS will not function properly!");
             log.error("All calls to the database will cause an IllegalStateException. Everything that works with the database will break!", t);
             return;
         }
+
+        failed = false;
 
         if (!silent) {
             log.info("Database reloaded successfully!");
@@ -192,7 +204,7 @@ public class Database extends Manager implements IDatabase {
 
     }
 
-    private void rebuildSessionFactory(@NotNull Collection<IRepository<?>> toImport) {
+    private void rebuildSessionFactory(@Nullable Collection<IRepository<?>> toImport) {
 
         Objects.requireNonNull(properties, "properties == null");
 
@@ -205,7 +217,9 @@ public class Database extends Manager implements IDatabase {
         configuration.setProperties(properties);
 
         List<IRepository<?>> repos = new ArrayList<>(currentAttachedRepositories);
-        repos.addAll(toImport);
+        if (toImport != null) {
+            repos.addAll(toImport);
+        }
 
         for (var repo : repos) {
             Class<?> clazz = repo.getRecordClass();
@@ -389,7 +403,11 @@ public class Database extends Manager implements IDatabase {
     }
 
     private void checkDatabase() {
-        Objects.requireNonNull(sessionFactory, "Datasource is not present. Looks like database was reloaded incorrectly.");
+
+        if (sessionFactory == null) {
+            throw new IllegalStateException("Datasource is not present. Looks like database was reloaded incorrectly.");
+        }
+
     }
 
 }

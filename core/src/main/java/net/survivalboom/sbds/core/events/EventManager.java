@@ -7,6 +7,7 @@ import net.survivalboom.sbds.api.events.IEventManager;
 import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.registrations.Registration;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.ThrowingConsumer;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.valid.Manager;
@@ -175,7 +176,7 @@ public class EventManager extends Manager implements net.dv8tion.jda.api.hooks.E
 
             ThrowingConsumer<?> consumer = obj -> method.invoke(listener, obj);
 
-            String name = UUID.randomUUID().toString();
+            String name = String.valueOf(CommonUtils.RANDOM.nextInt(999999));
 
             RegisteredEventHandler registeredEventHandler = new RegisteredEventHandler(eventClass, consumer, clazz, info.priority(), info.ignoreCancelled(), this);
             registeredEventHandler.registration = registry.register0(module, name, registeredEventHandler);
