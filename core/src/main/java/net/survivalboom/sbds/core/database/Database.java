@@ -71,7 +71,7 @@ public class Database extends Manager implements IDatabase {
 
         new File(sbds.getWorkingDir(), "data").mkdirs();
 
-        reload0(null, true);
+        reload0(null, true, false);
 
         registry.init();
         rebuildQueue.init();
@@ -123,10 +123,10 @@ public class Database extends Manager implements IDatabase {
     @Override
     public void reload(@NotNull IModule module) {
         Objects.requireNonNull(module, "module == null");
-        reload0(module, false);
+        reload0(module, false, true);
     }
 
-    public void reload0(@Nullable IModule module, boolean silent) {
+    public void reload0(@Nullable IModule module, boolean silent, boolean rebuildSessionFactory) {
 
         checkValid();
 
@@ -147,7 +147,10 @@ public class Database extends Manager implements IDatabase {
         try {
 
             loadProperties();
-            rebuildSessionFactory(null);
+
+            if (rebuildSessionFactory) {
+                rebuildSessionFactory(null);
+            }
 
         }
 
@@ -207,6 +210,14 @@ public class Database extends Manager implements IDatabase {
     private void rebuildSessionFactory(@Nullable Collection<IRepository<?>> toImport) {
 
         Objects.requireNonNull(properties, "properties == null");
+
+        if (toImport == null) {
+            log.info("Rebuilding SessionFactory...");
+        }
+
+        else {
+            log.info("Rebuilding SessionFactory to include {} new repositories.", toImport.size());
+        }
 
         if (sessionFactory != null) {
             sessionFactory.close();

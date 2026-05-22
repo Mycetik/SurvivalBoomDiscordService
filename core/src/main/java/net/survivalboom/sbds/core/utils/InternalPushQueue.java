@@ -92,7 +92,6 @@ public class InternalPushQueue<obj> extends Manager {
         }
 
         List<obj> queue = new ArrayList<>(this.queue);
-        this.queue.clear();
 
         try {
             consumer.accept(this);
@@ -101,6 +100,8 @@ public class InternalPushQueue<obj> extends Manager {
         catch (Throwable t) {
             log.error("Failed to push the queue of {} objects!", queue.size(), t);
         }
+
+        this.queue.clear();
 
     }
 
