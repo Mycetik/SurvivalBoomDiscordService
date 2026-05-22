@@ -9,17 +9,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Менеджер бібілотек SurvivalBoom Discord Service.
+ * Займається завантаженням необхідних бібліотек та бібліотек для модулів.
+ * Також відіграє важливу роль у взаємодії ClassLoader бібілотек (пошук класів, ресурсів)
+ */
 public interface ILibrariesManager extends IManager {
 
-    String MAVEN_CENTRAL_URL = "https://repo1.maven.org/maven2/";
+    /**
+     * Стандартне посилання на репозиторії Maven.
+     */
+    String MAVEN_REPO_URL = "https://repo1.maven.org/maven2/";
 
+    /**
+     * Шаблон для плейсхолдерів з maven properties.
+     */
     String MAVEN_PROPERTIES_LAYOUT = "${$p$}";
 
-    //
-    // CLASS
-    //
 
-    @NotNull ClassLoader getClassLoader();
+    /**
+     * @return Повертає головний ClassLoader для SurvivalBoom Discord Service.
+     */
+
+    @NotNull ClassLoader getRootClassLoader();
 
     //
     // LIBRARIES
@@ -27,9 +39,23 @@ public interface ILibrariesManager extends IManager {
 
     // DOWNLOAD //
 
-    @NotNull ILibrariesManager.MassLibraryDownloadResult downloadLibraries(@NotNull List<LibraryDeclaration> declarations);
+    @NotNull MassLibraryDownloadResult satisfy(@NotNull LibrarySatisfyConfiguration configuration);
 
-    @NotNull ILibrary downloadLibrary(@NotNull IPomData pom) throws LibraryDownloadException;
+    /**
+     * Завантажує вказану бібліотеку на диск.
+     * Ви можете вказати закріплені артефакти, щоб бібліотека використовувала саме вказану версію бібліотек для своїх залежностей.
+     * Якщо jar файл бібліотеки вже існує, але бібліотека ще не була завантажена, буде використаний такий файл замість завантаження з репозиторія.
+     * @param pom POM файл бібліотеки
+     * @param findOptimal Увімкнути пошук схожих по версії бібліотек замість завантаження нових.
+     * @return Завантажена бібліотека.
+     * @throws LibraryDownloadException Якщо щось пішло не так під час завантаження бібліотеки.
+     * @throws IllegalStateException Якщо така бібліотека вже завантажена.
+     */
+    @NotNull ILibrary downloadLibrary(
+            @NotNull IPomData pom,
+            @Nullable Collection<LibraryDeclaration> pinnedArtifacts,
+            boolean findOptimal
+    ) throws LibraryDownloadException;
 
     // GETTERS //
 
@@ -89,7 +115,7 @@ public interface ILibrariesManager extends IManager {
         String repository = declaration.source();
 
         if (repository == null) {
-            repository = MAVEN_CENTRAL_URL;
+            repository = MAVEN_REPO_URL;
         }
 
         return retrievePom(repository, address);

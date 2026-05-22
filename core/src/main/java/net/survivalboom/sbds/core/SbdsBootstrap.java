@@ -1,6 +1,6 @@
 package net.survivalboom.sbds.core;
 
-import net.survivalboom.sbds.api.libraries.LibraryDeclaration;
+import net.survivalboom.sbds.api.libraries.LibrarySatisfyConfiguration;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.libraries.DynamicClassLoader;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
@@ -16,6 +16,7 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -148,6 +149,7 @@ public class SbdsBootstrap {
 
         librariesManager.init();
         librariesManager.importFromSimpleLibrariesDownloader(simpleLibrariesDownloader);
+        librariesManager.loadLibrariesFromDisk();
         librariesManager.setupRootClassLoader();
 
         ConfigurationNode section = configuration.node("libraries");
@@ -156,19 +158,14 @@ public class SbdsBootstrap {
             return;
         }
 
+        LibrarySatisfyConfiguration.MassLoadResult request = LibrarySatisfyConfiguration.fromSection(section);
         boolean failure = false;
-        LibraryDeclaration.MassLoadResult declarations = LibraryDeclaration.fromMultiSection(section);
-        if (!declarations.failed().isEmpty()) {
 
-            for (var entry : declarations.failed().entrySet()) {
-                logger.error("Found an invalid LibraryDeclaration `{}`.", entry.getKey(), entry.getValue());
-            }
+        Map<String, Exception> failed = new HashMap<>();
+        failed.putAll(request.declarationsFailed());
+        failed.putAll(request.pinnedFailed());
 
-            failure = true;
-
-        }
-
-        var result = librariesManager.downloadLibraries(declarations.loaded());
+        var result = librariesManager.satisfy(request.result());
         if (!result.failed().isEmpty()) {
 
             for (var entry : result.failed().entrySet()) {
@@ -179,13 +176,21 @@ public class SbdsBootstrap {
 
         }
 
-        if (failure) {
+        if (!failed.isEmpty()) {
 
-            logger.error("Some libraries were failed to download. Refusing to start.");
+            for (var entry : failed.entrySet()) {
+                logger.error("Found an invalid LibraryDeclaration `{}`.", entry.getKey(), entry.getValue());
+            }
 
-            throw new RuntimeException();
+            failure = true;
 
         }
+
+        if (failure) {
+            logger.error("Some libraries were failed to download. Refusing to start.");
+            throw new RuntimeException();
+        }
+
 
     }
 

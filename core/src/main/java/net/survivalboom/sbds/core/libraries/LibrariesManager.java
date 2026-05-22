@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.core.libraries;
 
 import net.survivalboom.sbds.api.libraries.*;
+import net.survivalboom.sbds.api.utils.SemanticVersion;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.libraries.simple.SimpleLibrariesDownloader;
@@ -12,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
-import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.xml.XmlConfigurationLoader;
 
 import java.io.*;
@@ -72,6 +72,39 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         rootClassLoader.resetSuppliers();
         rootClassLoader.addClassSupplier("ROOT", this::rootClassRequest);
         rootClassLoader.addResourceSupplier("SPI", n -> n.startsWith("META-INF/services/"), this::findGlobalSPIMetaInf);
+    }
+
+    public void loadLibrariesFromDisk() {
+
+        List<File> pomFiles = Arrays.stream(librariesDir.listFiles())
+                .filter(file -> file.isFile() && file.getName().endsWith(".pom"))
+                .toList();
+
+        for (File file : pomFiles) {
+
+            String fileName = file.getName().replace(".pom", "");
+
+            try {
+
+                ArtifactAddress address = ArtifactAddress.fromGradleString(fileName, ArtifactAddress.DEFAULT_FILESYSTEM_SEPARATOR);
+
+                // Можливо у поточний момент POM вже завантажений
+                if (cachedPoms.containsKey(address)) {
+                    continue;
+                }
+
+                IPomData pom = loadPomFromDisk(address);
+
+                Objects.requireNonNull(pom, "POM was not imported. Possibly .url file does not exist.");
+
+            }
+
+            catch (Throwable t) {
+                log.error("Failed to import POM `{}` from disk. Did you break something?", file.getName(), t);
+            }
+
+        }
+
     }
 
 
@@ -138,19 +171,21 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     // DOWNLOAD //
 
     @Override
-    public @NotNull ILibrariesManager.MassLibraryDownloadResult downloadLibraries(@NotNull List<LibraryDeclaration> declarations) {
+    public @NotNull ILibrariesManager.MassLibraryDownloadResult satisfy(@NotNull LibrarySatisfyConfiguration request) {
 
-        Objects.requireNonNull(declarations, "declarations == null");
+        Objects.requireNonNull(request, "request == null");
         checkValid();
 
         MassLibraryDownloadResult result = new MassLibraryDownloadResult(new ArrayList<>(), new ArrayList<>(), new HashMap<>());
 
-        for (var declaration : declarations) {
+        var pinned = request.getPinnedLibraries();
+
+        for (var declaration : request.getLibraries()) {
 
             ArtifactAddress address = declaration.address();
             String repository = declaration.source();
             if (repository == null) {
-                repository = MAVEN_CENTRAL_URL;
+                repository = MAVEN_REPO_URL;
             }
 
             IPomData pom;
@@ -163,14 +198,18 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
                 continue;
             }
 
-            ILibrary library;
-            try {
-                library = downloadLibrary(pom);
-            }
+            ILibrary library = getLoadedLibrary(pom);
+            if (library == null) {
 
-            catch (LibraryDownloadException e) {
-                result.failed().put(declaration, e);
-                continue;
+                try {
+                    library = downloadLibrary(pom, pinned, true);
+                }
+
+                catch (LibraryDownloadException e) {
+                    result.failed().put(declaration, e);
+                    continue;
+                }
+
             }
 
             result.downloaded().add(library);
@@ -182,7 +221,11 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     }
 
     @Override
-    public @NotNull ILibrary downloadLibrary(@NotNull IPomData pom) throws LibraryDownloadException {
+    public @NotNull ILibrary downloadLibrary(
+            @NotNull IPomData pom,
+            @Nullable Collection<LibraryDeclaration> pinned,
+            boolean findOptimal
+    ) throws LibraryDownloadException {
 
         Objects.requireNonNull(pom, "pom == null");
         checkValid();
@@ -194,17 +237,54 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             throw new IllegalStateException("Library `" + address + "` already exists");
         }
 
+        ILibrary lib = findOptimalLoadedLibrary(address);
+        if (lib != null) {
+            return lib;
+        }
+
         String url = address.createRepositoryAddress(repository, "jar");
         File file = new File(librariesDir, address.toGradleString(ArtifactAddress.DEFAULT_FILESYSTEM_SEPARATOR) + ".jar");
 
         List<ILibrary> dependencies = new ArrayList<>();
         for (IPomData dependencyPom : pom.getDependencies()) {
 
-            ILibrary dependency = getLoadedLibrary(dependencyPom);
+            boolean modified = false;
+            if (pinned != null) {
+
+                ArtifactAddress pomAddress = dependencyPom.getAddress();
+                LibraryDeclaration pinnedAddr = pinned.stream()
+                        .filter(l -> l.address().group().equals(pomAddress.group()) && l.address().artifact().equals(pomAddress.artifact()))
+                        .findAny()
+                        .orElse(null);
+
+                if (pinnedAddr != null) {
+                    modified = true;
+
+                    try {
+                        dependencyPom = retrievePom(pinnedAddr);
+                    }
+
+                    catch (PomResolutionException e) {
+                        throw new LibraryDownloadException("Failed to resolve pinned artifact `" + pinnedAddr + "`");
+                    }
+
+                }
+
+            }
+
+            ILibrary dependency = null;
+            if (!modified && findOptimal) {
+                dependency = findOptimalLoadedLibrary(dependencyPom.getAddress());
+            }
+
+            if (dependency == null) {
+                dependency = getLoadedLibrary(dependencyPom);
+            }
+
             if (dependency == null) {
 
                 try {
-                    dependency = downloadLibrary(dependencyPom);
+                    dependency = downloadLibrary(dependencyPom, pinned, findOptimal);
                 }
 
                 catch (LibraryDownloadException e) {
@@ -241,6 +321,14 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         return library;
 
+    }
+
+    private @Nullable ILibrary findOptimalLoadedLibrary(@NotNull ArtifactAddress address) {
+        return libraryMap.values().stream()
+                .filter(lib -> lib.getPomData().getAddress().group().equals(address.group()) && lib.getPomData().getAddress().artifact().equals(address.artifact()))
+                .filter(lib -> lib.getPomData().getAddress().version().major() == address.version().major())
+                .min(Comparator.comparing(l -> l.getPomData().getAddress().version()))
+                .orElse(null);
     }
 
     // GETTERS //
@@ -352,15 +440,8 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
     @Override
     public @Nullable IPomData getLoadedPom(@NotNull ArtifactAddress address) {
-
         checkValid();
-
-        if (!address.isComplete()) {
-            throw new IllegalArgumentException("ArtifactAddress `" + address + "` is not complete");
-        }
-
         return cachedPoms.get(address);
-
     }
 
     @Override
@@ -423,9 +504,14 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         ConfigurationNode pomData;
         try {
-            pomData = XmlConfigurationLoader.builder().buildAndLoadString(string); // Я не знаю чому, але configurate ігнорує project секцію та одразу надає її вміст X_X
+            pomData = XmlConfigurationLoader.builder().buildAndLoadString(string);
         } catch (ConfigurateException e) {
             throw new PomResolutionException("Invalid POM file. Could not parse XML", e);
+        }
+
+        ConfigurationNode projectData = pomData.node("project");
+        if (projectData.virtual()) {
+            projectData = pomData;
         }
 
         //
@@ -436,7 +522,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         createMergePomProperties(address, null, properties);
 
         Map<String, String> propertiesMap = new HashMap<>();
-        for (var entry : pomData.node("properties").childrenMap().entrySet()) {
+        for (var entry : projectData.node("properties").childrenMap().entrySet()) {
 
             String key = (String) entry.getKey();
             String value = entry.getValue().getString();
@@ -453,9 +539,9 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         //
 
         List<String> repositories = new ArrayList<>();
-        repositories.add(MAVEN_CENTRAL_URL);
+        repositories.add(MAVEN_REPO_URL);
 
-        for (var section : pomData.node("repositories").childrenList()) {
+        for (var section : матьЕбал(projectData, "repositories")) {
 
             String url = section.node("url").getString();
             if (url == null) {
@@ -470,19 +556,13 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         // Визначаємо parent цього POM //
         //
 
-        ConfigurationNode parentSection = pomData.node("parent");
+        ConfigurationNode parentSection = projectData.node("parent");
         IPomData parent = null;
         if (!parentSection.virtual()) {
 
             ArtifactAddress parentAddress;
             try {
-
                 parentAddress = ArtifactAddress.fromPom(parentSection, properties);
-
-                if (!parentAddress.isComplete()) {
-                    throw new IllegalArgumentException("Invalid POM section, version not found");
-                }
-
             }
 
             catch (IllegalArgumentException e) {
@@ -520,7 +600,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         List<ArtifactAddress> bombSources = new ArrayList<>();
         List<ArtifactAddress> bombArtifacts = new ArrayList<>();
 
-        for (var section : pomData.node("dependencyManagement", "dependencies").childrenList()) {
+        for (var section : матьЕбал(projectData, "dependencyManagement", "dependencies")) {
 
             ArtifactAddress bomAddress;
             try {
@@ -538,13 +618,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             }
 
             else {
-
-                if (!bomAddress.isComplete()) {
-                    throw new PomResolutionException("Invalid BOM `" + bomAddress + "`. No version is present and no import scope is defined");
-                }
-
                 bombArtifacts.add(bomAddress);
-
             }
 
         }
@@ -554,65 +628,107 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         //
 
         List<IPomData> dependencies = new ArrayList<>();
-        for (var section : pomData.node("dependencies").childrenList()) {
+        for (ConfigurationNode node : матьЕбал(projectData, "dependencies")) {
 
-            String scope = section.node("scope").getString();
-            boolean optional = section.node("optional").getBoolean();
-
-            if (scope != null && !scope.equals("compile") && !scope.equals("runtime") || optional) {
+            IPomData dependency = resolveDependency(node, repositories, parent, bombSources, bombArtifacts, properties);
+            if (dependency == null) {
                 continue;
-            }
-
-            ArtifactAddress dependencyAddress;
-            try {
-                dependencyAddress = ArtifactAddress.fromPom(section, properties);
-            }
-
-            catch (IllegalArgumentException e) {
-                throw new PomResolutionException("An invalid dependency at index " + section.key() + " -> " + e.getMessage());
-            }
-
-            ArtifactAddress completeDependencyAddress;
-            try {
-                completeDependencyAddress = findCompleteArtifact(repositories, dependencyAddress, parent, bombSources, bombArtifacts, properties);
-            }
-
-            catch (PomResolutionException e) {
-                throw new PomResolutionException("Dependency `" + dependencyAddress + "` has no version defined. Tried tp find version in BOM, but an exception occurred", e);
-            }
-
-            if (completeDependencyAddress == null) {
-                throw new PomResolutionException("Dependency `" + dependencyAddress + "` has no version defined. Tried to find version in BOM, no results found");
-            }
-
-            IPomData dependency;
-            try {
-                dependency = retrievePom(repositories, completeDependencyAddress);
-            }
-
-            catch (PomResolutionException e) {
-                throw new PomResolutionException("Failed to resolve dependency `" + completeDependencyAddress + "`", e);
             }
 
             dependencies.add(dependency);
 
         }
 
-        return new PomData(repository, address, pomData, repositories, propertiesMap, parent, bombSources, bombArtifacts, dependencies);
+        return new PomData(repository, address, projectData, repositories, propertiesMap, parent, bombSources, bombArtifacts, dependencies);
 
     }
 
+    private @Nullable IPomData resolveDependency(
+            @NotNull ConfigurationNode section,
+            @NotNull List<String> repositories,
+            @Nullable IPomData parent,
+            @NotNull List<ArtifactAddress> bombSources,
+            @NotNull List<ArtifactAddress> bombArtifacts,
+            @NotNull Placeholders properties
+    ) throws PomResolutionException {
+
+        String scope = section.node("scope").getString();
+        boolean optional = section.node("optional").getBoolean();
+
+        if (scope != null && !scope.equals("compile") && !scope.equals("runtime") || optional) {
+            return null;
+        }
+
+        IncompleteArtifactAddress incompleteArtifactAddress;
+        try {
+            incompleteArtifactAddress = IncompleteArtifactAddress.fromPom(section, properties);
+        }
+
+        catch (IllegalArgumentException e) {
+            throw new PomResolutionException("An invalid dependency at index " + section.key() + " -> " + e.getMessage());
+        }
+
+        ArtifactAddress completeDependencyAddress;
+        try {
+            completeDependencyAddress = findCompleteArtifact(repositories, incompleteArtifactAddress, parent, bombSources, bombArtifacts, properties);
+        }
+
+        catch (PomResolutionException e) {
+            throw new PomResolutionException("Dependency `" + incompleteArtifactAddress + "` has no version defined. Tried tp find version in BOM, but an exception occurred", e);
+        }
+
+        if (completeDependencyAddress == null) {
+            throw new PomResolutionException("Dependency `" + incompleteArtifactAddress + "` has no version defined. Tried to find version in BOM, no results found");
+        }
+
+        IPomData dependency;
+        try {
+            dependency = retrievePom(repositories, completeDependencyAddress);
+        }
+
+        catch (PomResolutionException e) {
+            throw new PomResolutionException("Failed to resolve dependency `" + completeDependencyAddress + "`", e);
+        }
+
+        return dependency;
+
+    }
+
+    // Розробники Configurate кончені підараси, я їбав їх у рот, пізду та сраку.
+    // Не можна було блять зробити просто щоб section.childrenList() видавав усі ключі??? Треба блять обов'язково childrenMap і isList()???
+    // Кончені довбойоби блять.
+    private @NotNull List<? extends ConfigurationNode> матьЕбал(@NotNull ConfigurationNode node, @NotNull String... target) {
+
+        ConfigurationNode section = node.node(target);
+        if (section.virtual()) {
+            return new ArrayList<>();
+        }
+
+        if (section.isList()) {
+            return section.childrenList();
+        }
+
+        var sex = new ArrayList<>(section.childrenMap().values());
+        if (sex.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return List.of(sex.getFirst());
+
+    }
+
+
     private @Nullable ArtifactAddress findCompleteArtifact(
             @NotNull List<String> repositories,
-            @NotNull ArtifactAddress address,
+            @NotNull IncompleteArtifactAddress address,
             @Nullable IPomData parent,
             @Nullable List<ArtifactAddress> bombSources,
             @Nullable List<ArtifactAddress> bombArtifacts,
             @NotNull Placeholders properties
     ) throws PomResolutionException {
 
-        if (address.isComplete()) {
-            return address;
+        if (address.version.isPresent()) {
+            return new ArtifactAddress(address.group, address.artifact, address.version.get());
         }
 
         ArtifactAddress result = null;
@@ -640,7 +756,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
                     throw new PomResolutionException("Failed to resolve BOM source `" + source + "`");
                 }
 
-                result = findCompleteArtifact(pom.getDeclaredRepositories(), source, null, pom.getBOMbSources(), pom.getBOMbArtifacts(), properties);
+                result = findCompleteArtifact(pom.getDeclaredRepositories(), address, null, pom.getBOMbSources(), pom.getBOMbArtifacts(), properties);
                 if (result != null) {
                     break;
                 }
@@ -696,7 +812,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             @NotNull Placeholders properties
     ) {
 
-        String version = address.version().orElseThrow();
+        String version = address.version().toString();
         properties.add("project.version", version);
         properties.add("version", version);
 
@@ -710,7 +826,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
         if (parent != null) {
 
-            String parentVersion = parent.getAddress().version().orElseThrow();
+            String parentVersion = parent.getAddress().version().toString();
             properties.add("parent.version", parentVersion);
             properties.add("project.parent.version", parentVersion);
 
@@ -725,6 +841,52 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         }
 
         properties.selfParse(100, MAVEN_PROPERTIES_LAYOUT);
+
+    }
+
+    private record IncompleteArtifactAddress(@NotNull String group, @NotNull String artifact, @NotNull Optional<SemanticVersion> version) {
+
+        public static @NotNull IncompleteArtifactAddress fromPom(@NotNull ConfigurationNode section, @Nullable Placeholders properties) {
+
+            String group = section.node("groupId").getString();
+            String artifact = section.node("artifactId").getString();
+            String versionRaw = section.node("version").getString();
+
+            if (group == null) {
+                throw new IllegalArgumentException("Invalid POM section, groupId not found");
+            }
+
+            if (artifact == null) {
+                throw new IllegalArgumentException("Invalid POM section, artifactId not found");
+            }
+
+            if (properties != null) {
+
+                group = properties.parse(group, ILibrariesManager.MAVEN_PROPERTIES_LAYOUT);
+                artifact = properties.parse(artifact, ILibrariesManager.MAVEN_PROPERTIES_LAYOUT);
+
+                if (versionRaw != null) {
+                    versionRaw = properties.parse(versionRaw, ILibrariesManager.MAVEN_PROPERTIES_LAYOUT);
+                }
+
+            }
+
+            SemanticVersion version = null;
+            if (versionRaw != null) {
+
+                try {
+                    version = SemanticVersion.fromString(versionRaw);
+                }
+
+                catch (Exception e) {
+                    throw new IllegalArgumentException("Invalid POM: " + e.getMessage());
+                }
+
+            }
+
+            return new IncompleteArtifactAddress(group, artifact, Optional.ofNullable(version));
+
+        }
 
     }
 
@@ -797,7 +959,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     //
 
     @Override
-    public @NotNull ClassLoader getClassLoader() {
+    public @NotNull ClassLoader getRootClassLoader() {
         return rootClassLoader;
     }
 
