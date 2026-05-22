@@ -29,12 +29,14 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
     @Override
     protected void init0() {
+        super.init0();
         sbds.getEventManager().registerEvents0(null, this);
     }
 
     @Override
     protected void shutdown0() {
         sbds.getEventManager().unregisterEvents(this);
+        super.shutdown0();
     }
 
     @Override

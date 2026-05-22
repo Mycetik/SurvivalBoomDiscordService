@@ -12,7 +12,7 @@ public class Command {
 
     private final String name;
 
-    private final CommandExecutor<?> executor;
+    private final CommandExecutor executor;
 
     private final List<CommandArgument> arguments = new ArrayList<>();
 
@@ -31,7 +31,7 @@ public class Command {
 
     public Command(
             @NotNull String name,
-            @NotNull CommandExecutor<?> executor,
+            @NotNull CommandExecutor executor,
             @Nullable Collection<CommandArgument> arguments,
             @Nullable Collection<String> aliases,
 
@@ -68,7 +68,7 @@ public class Command {
         return name;
     }
 
-    public @NotNull CommandExecutor<?> getExecutor() {
+    public @NotNull CommandExecutor getExecutor() {
         return executor;
     }
 
@@ -117,7 +117,7 @@ public class Command {
 
         private String name;
 
-        private CommandExecutor<?> executor;
+        private CommandExecutor executor;
 
         private final List<CommandArgument> arguments = new ArrayList<>();
 
@@ -179,12 +179,12 @@ public class Command {
 
         // EXECUTOR //
 
-        public @NotNull Builder setExecutor(@NotNull CommandExecutor<?> executor) {
+        public @NotNull Builder setExecutor(@NotNull CommandExecutor executor) {
             this.executor = executor;
             return this;
         }
 
-        public CommandExecutor<?> getExecutor() {
+        public CommandExecutor getExecutor() {
             return executor;
         }
 

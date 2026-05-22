@@ -11,7 +11,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public abstract class CommandBase {
+public abstract class CommandBase implements CommandExecutor {
 
     private final Set<CommandBase> subcommands = new HashSet<>();
 
@@ -38,7 +38,7 @@ public abstract class CommandBase {
 
         return new Command(
                 name,
-                (CommandExecutor<?>) this,
+                this,
                 arguments,
                 aliases,
                 description,

@@ -147,7 +147,7 @@ public class LoggerFilter extends Manager {
 
         }
 
-        ConfigurationNode rulesSection = section.node("rule");
+        ConfigurationNode rulesSection = section.node("rules");
         if (!rulesSection.virtual()) {
 
             var result = loadFromSection0(null, rulesSection);

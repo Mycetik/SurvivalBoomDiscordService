@@ -58,7 +58,7 @@ public class NamespacedKey {
         Objects.requireNonNull(key, "key == null");
 
         String prefix0 = prefix.toLowerCase();
-        String key0 = key.toLowerCase();
+        String key0 = key.toLowerCase().replace("-", "_");
 
         if (!checkFormat(prefix0)) {
             throw new IllegalArgumentException("Prefix `" + prefix0 + "` contains illegal characters. Allowed characters: " + String.join(" ", ALLOWED_CHARACTERS));

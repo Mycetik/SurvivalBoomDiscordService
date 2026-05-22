@@ -108,15 +108,15 @@ logging:
 
     # Правило для Hibernate аби він не срав у консоль своєю нахуй не потрібною хуйнею.
     hibernate:
-      target: org.hibernate
+      pattern: org.hibernate
       level: WARN
 
     hikari:
-      target: com.zaxxer.hikari
+      pattern: com.zaxxer.hikari
       level: WARN
 
     jda:
-      target: net.dv8tion.jda
+      pattern: net.dv8tion.jda
       level: WARN
 
 # Налаштування Discord gateway intents.

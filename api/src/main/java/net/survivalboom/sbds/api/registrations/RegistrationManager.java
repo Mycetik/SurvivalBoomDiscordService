@@ -171,6 +171,16 @@ public class RegistrationManager<T> extends Manager implements IRegistrationMana
     }
 
     //
+    // MISC
+    //
+
+    @Override
+    public String toString() {
+        return String.format("%s{name=%s, registrations=%s}", this.getClass().getSimpleName(), sourceName, registrationMap.size());
+    }
+
+
+    //
     // CALLBACK
     //
 

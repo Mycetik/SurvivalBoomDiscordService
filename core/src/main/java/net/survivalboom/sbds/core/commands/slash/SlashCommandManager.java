@@ -40,6 +40,8 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
     @Override
     protected void init0() {
 
+        super.init0();
+
         sbds.getEventManager().registerEvents0(null, this);
 
         registerCommand0(null, new StatusCommand().build());
@@ -49,6 +51,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
     @Override
     protected void shutdown0() {
         sbds.getEventManager().unregisterEvents(this);
+        super.shutdown0();
     }
 
     @Override
