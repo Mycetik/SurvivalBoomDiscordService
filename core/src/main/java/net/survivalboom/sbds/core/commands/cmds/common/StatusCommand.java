@@ -114,20 +114,20 @@ public class StatusCommand extends CommandBase implements SlashCommandExecutor, 
         int threadCount = threadMXBean.getThreadCount();
 
         return Placeholders.of(
-                "{version}", BuildConstants.VERSION,
-                "{bot}", jda.getSelfUser().getName() + "#" + jda.getSelfUser().getDiscriminator(),
-                "{servers}", jda.getGuilds().size(),
-                "{runtime}", osInfo.fullName(),
-                "{threadCount}", threadCount,
-                "{usedMemory}", formatBytes(memoryInfo.getUsedPhysicalMemory()),
-                "{freeMemory}", formatBytes(memoryInfo.getAvailablePhysicalMemory()),
-                "{maxMemory}", formatBytes(memoryInfo.getTotalPhysicalMemory()),
-                "{cpuModel}", cpuInfo.model(),
-                "{cpuLoadProcess}", Math.floor(cpuMonitor.processLoad()),
-                "{cpuLoadSystem}", Math.floor(cpuMonitor.systemLoad()),
-                "{ping}", jda.getGatewayPing(),
-                "{tasks}", scheduler.getTasks().size(),
-                "{modules}", modulesString(moduleManager)
+                "version", BuildConstants.VERSION,
+                "bot", jda.getSelfUser().getName() + "#" + jda.getSelfUser().getDiscriminator(),
+                "servers", jda.getGuilds().size(),
+                "runtime", osInfo.fullName(),
+                "threadCount", threadCount,
+                "usedMemory", formatBytes(memoryInfo.getUsedPhysicalMemory()),
+                "freeMemory", formatBytes(memoryInfo.getAvailablePhysicalMemory()),
+                "maxMemory", formatBytes(memoryInfo.getTotalPhysicalMemory()),
+                "cpuModel", cpuInfo.model(),
+                "cpuLoadProcess", Math.floor(cpuMonitor.processLoad()),
+                "cpuLoadSystem", Math.floor(cpuMonitor.systemLoad()),
+                "ping", jda.getGatewayPing(),
+                "tasks", scheduler.getTasks().size(),
+                "modules", modulesString(moduleManager)
         );
 
     }
