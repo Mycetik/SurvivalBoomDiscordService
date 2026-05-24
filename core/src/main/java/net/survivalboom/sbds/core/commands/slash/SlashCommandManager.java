@@ -15,6 +15,7 @@ import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
+import net.survivalboom.sbds.core.BuildConstants;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
@@ -117,9 +118,34 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
         }
 
         catch (Throwable t) {
+
             logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName(), commandName, t);
-            if (!event.isAcknowledged()) messages.reply(event, "sbds.error", event.getUser()).withPlaceholders(Placeholders.of("{exception}", t.toString())).queue();
-            else messages.createActionMessage("sbds.error", event.getUser(), d -> event.getHook().editOriginal(MessageEditData.fromCreateData(d))).withPlaceholders(Placeholders.of("{exception}", t.toString())).queue();
+
+            try {
+
+                if (!event.isAcknowledged()) {
+                    messages.reply(event, "sbds.error", event.getUser())
+                            .withPlaceholders(Placeholders.of("{exception}", t.toString()))
+                            .queue();
+                } else {
+                    messages.createActionMessage("sbds.error", event.getUser(), d -> event.getHook().editOriginal(MessageEditData.fromCreateData(d)))
+                            .withPlaceholders(Placeholders.of("{exception}", t.toString()))
+                            .queue();
+                }
+            }
+
+            catch (Exception e) {
+                event.reply(
+                    """ 
+                    **SurvivalBoom Discord Service** *v{v}*
+                    A low-level fatal error occurred in SurvivalBoom Discord Service while attempting to process your request!
+                    This is an internal error. Looks like something went wrong completely wrong!
+                    `{e}`
+                    """.replace("{v}", BuildConstants.VERSION).replace("{e}", e.toString())
+                ).queue();
+                throw e;
+            }
+
         }
 
     }
