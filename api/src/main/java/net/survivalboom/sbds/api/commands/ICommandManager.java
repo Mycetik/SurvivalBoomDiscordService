@@ -83,7 +83,7 @@ public interface ICommandManager<
     @NotNull List<reg> getCommands();
 
     default @Nullable reg getByAlias(@NotNull String alias) {
-        return getCommands().stream().filter(reg -> reg.getCommand().getAliases().contains(alias)).findAny().orElse(null);
+        return getCommands().stream().filter(reg -> reg.getCommand().getAliases().contains(alias) || reg.getCommand().getName().equals(alias)).findAny().orElse(null);
     }
 
     //

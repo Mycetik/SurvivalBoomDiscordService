@@ -33,7 +33,7 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
 
 
     public ConsoleListener(@NotNull SBDS sbds) {
-        super(sbds, true);
+        super(sbds);
     }
 
 

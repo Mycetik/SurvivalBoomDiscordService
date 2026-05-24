@@ -3,14 +3,12 @@ package net.survivalboom.sbds.core.commands;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.ICommandManager;
-import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.registrations.RegistrationManager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.messages.Messages;
-import net.survivalboom.sbds.core.modules.Module;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.permissions.PermissionManager;
 import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
@@ -42,12 +40,8 @@ public abstract class AbstractCommandManager<
     protected final Logger rootLogger;
 
 
-    protected final boolean subcommandsAllowed;
-
-
     public AbstractCommandManager(
-            @NotNull SBDS sbds,
-            boolean subcommandsAllowed
+            @NotNull SBDS sbds
     ) {
 
         this.sbds = sbds;
@@ -55,12 +49,10 @@ public abstract class AbstractCommandManager<
         this.permissionManager = sbds.getPermissionManager();
         this.messages = sbds.getMessages();
 
-        this.registry = new InternalRegistrationManager<>(this, null, sbds.getRegistrationRegistry());
+        this.registry = new InternalRegistrationManager<>(this, this, sbds.getRegistrationRegistry());
 
         this.rootLogger = sbds.getLogger();
         this.logger = LoggerFactory.getLogger(getManagerName());
-
-        this.subcommandsAllowed = subcommandsAllowed;
 
     }
 
@@ -100,6 +92,25 @@ public abstract class AbstractCommandManager<
 
         Objects.requireNonNull(command, "command == null");
         checkValid();
+
+        for (var reg : registry.getRegisteredObjects()) {
+
+            Command cmd = reg.getCommand();
+            if (cmd.getName().equals(command.getName())) {
+                throw new IllegalStateException("Command with name `" + command.getName() + "` already exists (" + reg.getRegistration().key() + ")");
+            }
+
+
+            String alias = cmd.getAliases().stream()
+                    .filter(a -> command.getAliases().contains(a))
+                    .findAny()
+                    .orElse(null);
+
+            if (alias != null) {
+                throw new IllegalStateException("Command with alias `" + alias + "` already exists (" + reg.getRegistration().key() + ")");
+            }
+
+        }
 
         var cmdReg = createCommandReg(command);
         var oinkOinkOink = (RegisteredCommand<reg, manager>) cmdReg;

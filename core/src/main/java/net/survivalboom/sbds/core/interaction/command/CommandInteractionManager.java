@@ -7,10 +7,9 @@ import net.dv8tion.jda.api.interactions.commands.Command.Type;
 import net.survivalboom.sbds.api.commands.*;
 import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.interaction.command.ICommandInteractionManager;
-import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.core.commands.AbstractCommandManager;
+import net.survivalboom.sbds.core.utils.InternalUpdateQueue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -22,26 +21,21 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
 
     private static final Logger log = LoggerFactory.getLogger(CommandInteractionManager.class.getSimpleName());
 
-    private static final int QUEUE_INTERVAL = 5000;
-
 
     private final SBDS sbds;
 
     private final CommandLocalizator localizator;
 
-    private final Map<AbstractCommandManager.RegisteredCommand<?, ?>, RegisteredCommandData> registeredCommands = new HashMap<>();
+    private final Map<ICommandManager.IRegisteredCommand<?, ?>, RegisteredCommandData> registeredCommands = new HashMap<>();
 
 
-    private ISchedulerTask task;
-
-    private boolean updateRequested = false;
-
-    private long lastTimestamp;
+    private final InternalUpdateQueue queue;
 
 
     public CommandInteractionManager(@NotNull SBDS sbds) {
         this.sbds = sbds;
         this.localizator = new CommandLocalizator(sbds.getTranslationManager());
+        this.queue = new InternalUpdateQueue(this::updateGlobal, "CommandInteractionManager-UpdateQueue", 1000, sbds.getScheduler());
     }
 
     //
@@ -50,17 +44,13 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
 
     @Override
     protected void init0() {
-        this.task = sbds.getScheduler().schedule0(null, "CommandInteractionManagerQueue", task -> task(), 6000, 1000);
+        this.queue.init();
     }
 
     @Override
     protected void shutdown0() {
-
-        task.tryCancel();
-        task = null;
-
+        this.queue.shutdown();
         registeredCommands.clear();
-
     }
 
     //
@@ -68,7 +58,7 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
     //
 
     public synchronized @NotNull RegisteredCommandData registerCommand(
-            @NotNull AbstractCommandManager.RegisteredCommand<?, ?> reg,
+            @NotNull ICommandManager.IRegisteredCommand<?, ?> reg,
             @NotNull Type type
     ) {
 
@@ -91,17 +81,24 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
         RegisteredCommandData registeredCommandData = new RegisteredCommandData(reg, commandData, type, this);
         registeredCommands.put(reg, registeredCommandData);
 
+        queue.requestUpdate();
+
         return registeredCommandData;
 
     }
 
-    public synchronized void unregisterCommand(@NotNull AbstractCommandManager.RegisteredCommand<?, ?> command) {
+    public synchronized void unregisterCommand(@NotNull ICommandManager.IRegisteredCommand<?, ?> command) {
+
+        Objects.requireNonNull(command, "command == null");
+        checkValid();
 
         if (!registeredCommands.containsKey(command)) {
             throw new IllegalArgumentException("Command object `" + command + "` is not registered");
         }
 
         registeredCommands.remove(command);
+
+        queue.requestUpdate();
 
     }
 
@@ -112,53 +109,33 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
     @Override
     public void requestGlobalUpdate() {
         checkValid();
-        this.updateRequested = true;
-    }
-
-    private void task() {
-
-        if (!updateRequested) {
-            return;
-        }
-
-        long time = System.currentTimeMillis();
-        if (lastTimestamp + QUEUE_INTERVAL > time) {
-            return;
-        }
-
-        this.lastTimestamp = time;
-        this.updateRequested = false;
-
-        log.info("Updating globally {} commands...", registeredCommands.size());
-        try {
-            updateGlobal();
-        }
-
-        catch (RuntimeException e) {
-            log.error("Failed to update commands. Your commands are broken!", e);
-        }
-
+        this.queue.requestUpdate();
     }
 
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void updateGlobal() {
 
+        JDA bot = sbds.getBot();
+
         List<CommandData> global = registeredCommands.values().stream()
                 .filter(command -> command.isGlobal)
                 .map(command -> command.commandData)
                 .toList();
 
-        JDA bot = sbds.getBot();
+        log.info("Updating {} commands...", registeredCommands.size());
 
         bot.updateCommands().addCommands(global).queue();
-
-        bot.getGuilds().forEach(this::updateGuild);
+        bot.getGuilds().forEach(guild -> updateGuild(guild, true));
 
     }
 
     @Override
     public synchronized void updateGuild(@NotNull Guild guild) {
+        updateGuild(guild, false);
+    }
+
+    private synchronized void updateGuild(@NotNull Guild guild, boolean silent) {
 
         Objects.requireNonNull(guild, "guild == null");
         checkValid();
@@ -168,7 +145,9 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
                 .map(command -> command.commandData)
                 .toList();
 
-        log.info("Updating commands for `{}`. Registering {} commands.", guild, list.size());
+        if (!silent) {
+            log.info("Updating commands for `{}`. Registering {} commands.", guild, list.size());
+        }
 
         guild.updateCommands().addCommands(list).queue();
 

@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.core.utils;
 
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
@@ -8,18 +9,16 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 
-public class InternalPushQueue<obj> extends Manager {
+public class InternalOperationQueue<obj> extends Manager {
 
     private final Scheduler scheduler;
 
     private final String name;
 
-    private final Consumer<InternalPushQueue<obj>> consumer;
+    private final Consumer<InternalOperationQueue<obj>> consumer;
 
     private final Logger log;
 
@@ -28,14 +27,14 @@ public class InternalPushQueue<obj> extends Manager {
 
     private ISchedulerTask task;
 
-    private final List<obj> queue = new ArrayList<>();
+    private final Map<String, Set<obj>> queue = new HashMap<>();
 
     private long lastAppend = 0;
 
 
 
-    public InternalPushQueue(
-            @NotNull Consumer<InternalPushQueue<obj>> consumer,
+    public InternalOperationQueue(
+            @NotNull Consumer<InternalOperationQueue<obj>> consumer,
             @NotNull String name,
             int delay,
             @NotNull Scheduler scheduler
@@ -54,8 +53,8 @@ public class InternalPushQueue<obj> extends Manager {
 
     }
 
-    public InternalPushQueue(
-            @NotNull Consumer<InternalPushQueue<obj>> consumer,
+    public InternalOperationQueue(
+            @NotNull Consumer<InternalOperationQueue<obj>> consumer,
             @NotNull String name,
             int delay,
             @NotNull SBDS sbds
@@ -74,10 +73,8 @@ public class InternalPushQueue<obj> extends Manager {
 
     @Override
     protected void shutdown0() {
-
         task.tryCancel();
         task = null;
-
     }
 
     private void task() {
@@ -91,14 +88,12 @@ public class InternalPushQueue<obj> extends Manager {
             return;
         }
 
-        List<obj> queue = new ArrayList<>(this.queue);
-
         try {
             consumer.accept(this);
         }
 
         catch (Throwable t) {
-            log.error("Failed to push the queue of {} objects!", queue.size(), t);
+            log.error("Failed to execute an update on {} objects in the queue!", queue.size(), t);
         }
 
         this.queue.clear();
@@ -109,23 +104,20 @@ public class InternalPushQueue<obj> extends Manager {
     // QUEUE
     //
 
-    public void append(@NotNull obj obj) {
+    public void append(@NotNull String operation, @NotNull obj obj) {
 
         Objects.requireNonNull(obj, "obj == null");
+        Objects.requireNonNull(operation, "operation == null");
         checkValid();
 
-        if (queue.contains(obj)) {
-            return;
-        }
-
-        this.queue.add(obj);
+        this.queue.computeIfAbsent(operation, k -> new HashSet<>()).add(obj);
         this.lastAppend = System.currentTimeMillis();
 
     }
 
-    public @NotNull List<obj> getQueue() {
+    public @NotNull Map<String, Set<obj>> getQueue() {
         checkValid();
-        return new ArrayList<>(queue);
+        return CommonUtils.deepCopy(this.queue);
     }
 
 }

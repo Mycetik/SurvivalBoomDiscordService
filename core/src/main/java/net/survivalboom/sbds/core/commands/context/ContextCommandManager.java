@@ -19,7 +19,7 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
     private final CommandInteractionManager commandInteractionManager;
 
     public ContextCommandManager(@NotNull SBDS sbds) {
-        super(sbds, false);
+        super(sbds);
         this.commandInteractionManager = sbds.getCommandInteractionManager();
     }
 

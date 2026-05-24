@@ -29,7 +29,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
     private final CommandInteractionManager commandInteractionManager;
 
     public SlashCommandManager(@NotNull SBDS sbds) {
-        super(sbds, true);
+        super(sbds);
         this.commandInteractionManager = sbds.getCommandInteractionManager();
     }
 
@@ -61,12 +61,12 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
 
     @Override
     public void onRegister(@NotNull Registration<IRegisteredSlashCommand> registration) {
-        commandInteractionManager.requestGlobalUpdate();
+        commandInteractionManager.registerCommand(registration.object(), net.dv8tion.jda.api.interactions.commands.Command.Type.SLASH);
     }
 
     @Override
     public void unRegister(@NotNull Registration<IRegisteredSlashCommand> registration) {
-        commandInteractionManager.requestGlobalUpdate();
+        commandInteractionManager.unregisterCommand(registration.object());
     }
 
     //
