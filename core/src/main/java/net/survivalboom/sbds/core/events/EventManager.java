@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.*;
@@ -85,9 +86,9 @@ public class EventManager extends Manager implements net.dv8tion.jda.api.hooks.E
     }
 
     @SuppressWarnings("unchecked") // <- Сасі хуй і нє псіхуй.
-    private <T> void sex(@NotNull ThrowingConsumer<?> consumer, @NotNull T you) {
+    private <T> void sex(@NotNull ThrowingConsumer<?> consumer, @NotNull T you) throws Throwable {
         var dragonGayPorn = (ThrowingConsumer<T>) consumer;
-        dragonGayPorn.accept(you);
+        dragonGayPorn.acceptThrowing(you);
     }
 
     //
@@ -174,7 +175,18 @@ public class EventManager extends Manager implements net.dv8tion.jda.api.hooks.E
             Parameter parameter = parameters[0];
             Class eventClass = parameter.getType();
 
-            ThrowingConsumer<?> consumer = obj -> method.invoke(listener, obj);
+            ThrowingConsumer<?> consumer = obj -> {
+
+                try {
+                    method.invoke(listener, obj);
+                }
+
+                // Нам потрібно щоб в консоль висиралась саме причина цієї помилки, а не сама InvocationTargetException.
+                catch (InvocationTargetException e) {
+                    throw e.getCause();
+                }
+
+            };
 
             String name = String.valueOf(CommonUtils.RANDOM.nextInt(999999));
 
