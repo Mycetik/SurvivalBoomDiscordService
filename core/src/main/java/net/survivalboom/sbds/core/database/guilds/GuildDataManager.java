@@ -36,7 +36,7 @@ public class GuildDataManager extends Manager implements IGuildDataManager {
 
     @Override
     protected void init0() {
-        this.repository = sbds.getDatabase().getRepository("sbds:guilds", GuildDataRecord.class);
+        this.repository = sbds.getDatabase().createRepository0(null, "guilds", GuildDataRecord.class);
     }
 
     @Override

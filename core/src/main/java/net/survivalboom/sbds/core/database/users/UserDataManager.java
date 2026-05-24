@@ -36,7 +36,7 @@ public class UserDataManager extends Manager implements IUserDataManager {
 
     @Override
     protected void init0() {
-        this.repository = sbds.getDatabase().getRepository("sbds:users", UserDataRecord.class);
+        this.repository = sbds.getDatabase().createRepository0(null, "users", UserDataRecord.class);
     }
 
     @Override

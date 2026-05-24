@@ -127,7 +127,7 @@ public class PermissionManager extends Manager implements IPermissionManager {
         // Дістаємо усі дозволи які нам потрібні //
 
         IMemberPermissions memberPermissions = getMemberPermissions(guildId, userId).join();
-        List<IGuildPermissionsGroup> memberGroups = getGuildGroups(guildId).join().stream()
+        List<IGuildPermissionsGroup> guildGroups = getGuildGroups(guildId).join().stream()
                 .filter(memberPermissions::hasGroup)
                 .sorted(Comparator.comparing(IGuildPermissionsGroup::getWeight))
                 .toList();
@@ -139,7 +139,7 @@ public class PermissionManager extends Manager implements IPermissionManager {
         Map<String, Permission> permissionMap = new HashMap<>();
 
         globalGroups.forEach(group -> permissionMap.putAll(group.getPermissions()));
-        memberGroups.forEach(group -> permissionMap.putAll(group.getPermissions()));
+        guildGroups.forEach(group -> permissionMap.putAll(group.getPermissions()));
         permissionMap.putAll(memberPermissions.getPermissions());
 
         cachedUsersPermissionMaps.put(userPermMapHash, permissionMap);
@@ -287,7 +287,7 @@ public class PermissionManager extends Manager implements IPermissionManager {
 
             var guildIdPredicate = cb.equal(root.get("guildId"), guildId);
 
-            query.select(root.get("name")).where(guildIdPredicate);
+            query.select(root.get("groupName")).where(guildIdPredicate);
 
             return session.createQuery(query).getResultList();
 
