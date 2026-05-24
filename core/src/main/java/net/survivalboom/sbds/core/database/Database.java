@@ -76,9 +76,6 @@ public class Database extends Manager implements IDatabase {
         registry.init();
         rebuildQueue.init();
 
-        createRepository0(null, "users", UserDataRecord.class);
-        createRepository0(null, "guilds", GuildDataRecord.class);
-
         queue.init();
 
     }
@@ -182,7 +179,7 @@ public class Database extends Manager implements IDatabase {
 
         String driver = databaseSection.node("driver").getString("null");
         String dialect = databaseSection.node("dialect").getString();
-        String tableModifier = databaseSection.node("mode").getString("none");
+        String tableModifier = databaseSection.node("mode").getString("validate");
 
         String username = databaseSection.node("user").getString();
         String password = databaseSection.node("password").getString();
@@ -403,7 +400,7 @@ public class Database extends Manager implements IDatabase {
 
     private void checkRepository(@NotNull Repository<?> repository) {
 
-        if (registry.getObjectRegistration(repository) != null) {
+        if (registry.getObjectRegistration(repository) == null) {
             throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");
         }
 
