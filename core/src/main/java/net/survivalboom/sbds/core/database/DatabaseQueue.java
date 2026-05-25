@@ -82,8 +82,6 @@ public class DatabaseQueue extends Manager {
                     var result = function.apply(session);
                     future.complete(result);
 
-                    log.info("PUSH! {}", result);
-
                 }
 
                 catch (Throwable t) {
