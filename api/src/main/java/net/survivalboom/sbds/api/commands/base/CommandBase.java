@@ -13,9 +13,6 @@ import java.util.*;
 
 public abstract class CommandBase implements CommandExecutor {
 
-    private final Set<CommandBase> subcommands = new HashSet<>();
-
-
     public @NotNull Command build() {
 
         CommandClass info = this.getClass().getAnnotation(CommandClass.class);
@@ -24,15 +21,13 @@ public abstract class CommandBase implements CommandExecutor {
         }
 
         String name = info.name();
+        List<String> aliases = List.of(info.aliases());
 
-        String description = info.description();
-        String translationKey = info.translationKey();
+        String description = info.description().isBlank() ? null : info.description();
+        String translationKey = info.translationKey().isBlank() ? null : info.translationKey() ;
 
         String permissionStr = info.permission();
-        boolean defaultPermission = info.defaultPermission();
-        Permission permission = new Permission(permissionStr, defaultPermission);
-
-        List<String> aliases = List.of(info.aliases());
+        Permission permission = !permissionStr.isBlank() ? new Permission(permissionStr, info.defaultPermission()) : null;
 
         List<CommandArgument> arguments = scanForArguments(translationKey);
 
@@ -51,7 +46,6 @@ public abstract class CommandBase implements CommandExecutor {
     private @NotNull List<CommandArgument> scanForArguments(String translationKey) {
 
         List<CommandArgument> out = new ArrayList<>();
-
         for (Method method : getClass().getDeclaredMethods()) {
 
             if (!method.isAnnotationPresent(ArgumentMethod.class)) {
@@ -92,10 +86,6 @@ public abstract class CommandBase implements CommandExecutor {
 
         return out;
 
-    }
-
-    public void addSubCommand(@NotNull CommandBase commandBase) {
-        subcommands.add(commandBase);
     }
 
 }

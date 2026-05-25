@@ -1,6 +1,8 @@
 package net.survivalboom.sbds.core.commands.cmds.console;
 
+import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
+import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
@@ -37,28 +39,38 @@ public class HelpCommand extends CommandBase implements ConsoleCommandExecutor {
 
     }
 
-    private String formatCommand(net.survivalboom.sbds.api.commands.Command command) {
-        String usage = genUsage(command);
+    private String formatCommand(Command command) {
+        String usage = command.getArguments().isEmpty() ? "" : " " + genUsage(command);
         String description = Objects.requireNonNullElse(command.getDescription(), "Command has no description.");
-        return String.format("> %s - %s", usage, description);
+        return String.format("> %s%s - %s", command.getName(), usage, description);
     }
 
-    private @NotNull String genUsage(@NotNull net.survivalboom.sbds.api.commands.Command command) {
+    private @NotNull String genUsage(@NotNull Command command) {
 
-//        String usage = command.getUusage();
-//        if (usage != null) {
-//            return usage;
-//        }
+        List<String> stringList = new ArrayList<>();
+        for (CommandArgument argument : command.getArguments()) {
 
-//        if (command.hasSubcommands()) {
-//            return command.getName() + " " + "<" + String.join("/", command.subcommands().stream().map(net.survivalboom.sbds.api.commands.Command::getName).toList()) + ">";
-//        }
-//
-//        else {
-//            return command.getName() + " " + String.join(" ", command.arguments().stream().map(this::wrapArgument).toList());
-//        }
+            String name;
+            if (argument.isSubCommand()) {
+                List<String> strings = ((SubCommandArgument) argument.argument()).getSubcommands().stream().map(Command::getName).toList();
+                name = String.join("/", strings);
+            }
 
-        return "<null/usage>"; // TODO Тимчасова заглушка.
+            else {
+                name = argument.name();
+            }
+
+            if (argument.required()) {
+                stringList.add("<" + name + ">");
+            }
+
+            else {
+                stringList.add("[" + name + "]");
+            }
+
+        }
+
+        return String.join(" ", stringList);
 
     }
 

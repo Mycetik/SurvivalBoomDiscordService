@@ -71,6 +71,7 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
         }
 
         Command command = reg.getCommand();
+        checkSubCommands(command, 0); // Потрібно перевірити чи не має команда неправильну конструкцію суб-команд для Discord
 
         CommandData commandData = switch (type) {
             case SLASH -> createSlashCommandData(command);
@@ -99,6 +100,27 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
         registeredCommands.remove(command);
 
         queue.requestUpdate();
+
+    }
+
+    private void checkSubCommands(@NotNull Command command, int level) {
+
+        var subcommands = command.getSubCommands();
+        if (subcommands.isEmpty()) {
+            return;
+        }
+
+        if (subcommands.size() > 1) {
+            throw new IllegalArgumentException("Unsupported subcommands scheme. Command `" + command.getName() + "` must have only ony SubCommandArgument");
+        }
+
+        if (level > 2) {
+            throw new IllegalArgumentException("Unsupported subcommands scheme. Too many subcommands. Maximum allowed is 2 subcommands depth from base command");
+        }
+
+        for (Command subcommand : ((SubCommandArgument) subcommands.getFirst().argument()).getSubcommands()) {
+            checkSubCommands(subcommand, level + 1);
+        }
 
     }
 
@@ -172,23 +194,15 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
 
         commandData.setLocalizationFunction(localizator.createLocalizationFunction(command));
 
-        List<CommandArgument> subcommandArguments = command.getArguments().stream()
-                .filter(argument -> argument.argument() instanceof SubCommandArgument)
-                .toList();
+        List<CommandArgument> subcommandArguments = command.getSubCommands();
+        List<Command> subcommands = !subcommandArguments.isEmpty() ? ((SubCommandArgument) subcommandArguments.getFirst().argument()).getSubcommands() : null;
 
-        if (subcommandArguments.size() > 1) {
-            throw new IllegalArgumentException("Provided command has more than 1 subcommand");
-        }
-
-        boolean hasSubCommands = !subcommandArguments.isEmpty();
-
-        if (hasSubCommands) {
-            List<Command> subcommands = ((SubCommandArgument) subcommandArguments.getFirst().argument()).getSubcommands();
-            addSlashSubCommands(commandData, subcommands);
+        if (subcommands == null) {
+            commandData.addOptions(createSlashCommandOptions(command));
         }
 
         else {
-            commandData.addOptions(createSlashCommandOptions(command));
+            addSlashSubCommands(commandData, subcommands);
         }
 
         return commandData;
@@ -197,31 +211,23 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
 
     private void addSlashSubCommands(@NotNull SlashCommandData slash, @NotNull List<Command> subcommands) {
 
-        for (Command command : subcommands) {
+        for (Command subcommand : subcommands) {
 
-            String name = command.getName();
-            String description = Objects.requireNonNullElse(command.getDescription(), "- ");
+            String name = subcommand.getName();
+            String description = Objects.requireNonNullElse(subcommand.getDescription(), "- ");
 
-            List<CommandArgument> subcommandArguments = command.getArguments().stream()
-                    .filter(argument -> argument.argument() instanceof SubCommandArgument)
-                    .toList();
+            List<CommandArgument> subcommandArguments = subcommand.getSubCommands();
+            List<Command> subsubcommands = !subcommandArguments.isEmpty() ? ((SubCommandArgument) subcommandArguments.getFirst().argument()).getSubcommands() : null;
 
-            if (subcommandArguments.size() > 1) {
-                throw new IllegalArgumentException("Provided sub-command`" + name + "` has more than 1 subcommand");
-            }
-
-            boolean hasSubCommands = !subcommandArguments.isEmpty();
-
-            if (!hasSubCommands) {
-                slash.addSubcommands(new SubcommandData(name, description).addOptions(createSlashCommandOptions(command)));
+            if (subsubcommands.isEmpty()) {
+                slash.addSubcommands(new SubcommandData(name, description).addOptions(createSlashCommandOptions(subcommand)));
                 continue;
             }
 
-            List<Command> subCommands = ((SubCommandArgument) subcommandArguments.getFirst().argument()).getSubcommands();
             SubcommandGroupData subcommandGroup = new SubcommandGroupData(name, description);
 
-            for (Command subcommand : subcommands) {
-                subcommandGroup.addSubcommands(new SubcommandData(subcommand.getName(), Objects.requireNonNullElse(subcommand.getDescription(), "- ")).addOptions(createSlashCommandOptions(subcommand)));
+            for (Command subsubsubcommand : subsubcommands) {
+                subcommandGroup.addSubcommands(new SubcommandData(subsubsubcommand.getName(), Objects.requireNonNullElse(subsubsubcommand.getDescription(), "- ")).addOptions(createSlashCommandOptions(subsubsubcommand)));
             }
 
             slash.addSubcommandGroups(subcommandGroup);

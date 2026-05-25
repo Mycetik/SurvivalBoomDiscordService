@@ -8,11 +8,10 @@ import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentExecutionContext;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> {
@@ -20,7 +19,23 @@ public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> 
     private final List<Command> subcommands = new ArrayList<>();
 
     public SubCommandArgument(@NotNull Collection<Command> subcommands) {
+
+        Objects.requireNonNull(subcommands, "subcommands == null");
+
+        if (subcommands.isEmpty()) {
+            throw new IllegalArgumentException("subcommands are empty!");
+        }
+
         this.subcommands.addAll(subcommands);
+
+    }
+
+    public SubCommandArgument(@NotNull Command... subcommands) {
+        this(List.of(subcommands));
+    }
+
+    public SubCommandArgument(@NotNull CommandBase... subcommands) {
+        this(Arrays.stream(subcommands).map(CommandBase::build).toList());
     }
 
     @Override

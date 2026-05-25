@@ -5,30 +5,87 @@ import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
+import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import net.survivalboom.sbds.api.utils.typemap.UnmodifiableTypeMap;
+import net.survivalboom.sbds.core.commands.cmds.console.modules.ModuleInfoCommand;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class StringCommandParser {
 
 
     public static @NotNull Result parseInput(
             @NotNull String input,
+            @NotNull Command command,
+            @NotNull ArgumentScope scope,
+            @NotNull Function<CommandArgument, ArgumentParsingContext> contextCreator
+    ) throws ArgumentParsingException, NotEnoughArgumentsException {
+
+        var result = parseInput0(input, scope, command.getArguments(), contextCreator);
+
+        Map<String, Object> args = result.arguments.entrySet().stream()
+                .collect(Collectors.toMap(entry -> entry.getKey().name(), Map.Entry::getValue));
+        TypeMap map = UnmodifiableTypeMap.ofMap(args);
+
+        return new Result(map, result.arguments, result.foundSubcommands);
+
+    }
+
+
+    private static ParsingResult parseInput0(
+            @NotNull String input,
             @NotNull ArgumentScope scope,
             @NotNull List<CommandArgument> arguments,
             @NotNull Function<CommandArgument, ArgumentParsingContext> contextCreator
-    ) throws ArgumentParsingException {
+    ) throws ArgumentParsingException, NotEnoughArgumentsException {
+
+        input = input.trim();
 
         var splitResult = splitToParts(input, scope, arguments);
-        var parseResult = parseArgumentParts(splitResult.splitArguments, contextCreator);
+        if (splitResult.splitArguments.size() < arguments.size()) {
+            throw new NotEnoughArgumentsException(splitResult.splitArguments, arguments);
+        }
 
-        return new Result(parseResult.arguments, parseResult.arguments2, splitResult.remaining);
+        var parsingResult = parseArgumentParts(splitResult.splitArguments, contextCreator);
+
+        List<SubCommandArgument.SubCommand> subcommands = parsingResult.entrySet().stream()
+                .filter(entry -> entry.getKey().argument() instanceof SubCommandArgument)
+                .map(entry -> (SubCommandArgument.SubCommand) entry.getValue())
+                .toList();
+
+        List<SubCommandArgument.SubCommand> foundSubcommands = new ArrayList<>(subcommands);
+
+        String remaining = splitResult.remaining;
+        for (SubCommandArgument.SubCommand subcommand : subcommands) {
+
+            ParsingResult result;
+            try {
+                result = parseInput0(remaining, scope, subcommand.command().getArguments(), contextCreator);
+            }
+
+            catch (NotEnoughArgumentsException e) {
+
+                var got = splitResult.splitArguments;
+                var expected = arguments;
+
+                got.putAll(e.got);
+                expected.addAll(e.expected);
+
+                throw new NotEnoughArgumentsException(got, arguments);
+
+            }
+
+            remaining = result.remaining;
+            parsingResult.putAll(result.arguments);
+            foundSubcommands.addAll(result.foundSubcommands);
+
+        }
+
+        return new ParsingResult(parsingResult, remaining, foundSubcommands);
 
     }
 
@@ -40,7 +97,7 @@ public class StringCommandParser {
     ) {
 
         if (input.isBlank()) {
-            throw new IllegalArgumentException("input is blank");
+            return new SplitResult(new HashMap<>(), "");
         }
 
         List<CommandArgument> argumentsSorted = arguments.stream()
@@ -85,13 +142,12 @@ public class StringCommandParser {
 
     }
 
-    private static @NotNull ParseResult parseArgumentParts(
+    private static @NotNull Map<CommandArgument, Object> parseArgumentParts(
             @NotNull Map<CommandArgument, String> map,
             @NotNull Function<CommandArgument, ArgumentParsingContext> contextFunction
     ) throws ArgumentParsingException {
 
-        Map<String, Object> out = new HashMap<>();
-        Map<CommandArgument, Object> out2 = new HashMap<>();
+        Map<CommandArgument, Object> out = new HashMap<>();
 
         for (Map.Entry<CommandArgument, String> entry : map.entrySet()) {
 
@@ -109,12 +165,11 @@ public class StringCommandParser {
                 throw new ArgumentParsingException(argument, raw, e);
             }
 
-            out.put(argument.name(), object);
-            out2.put(argument, object);
+            out.put(argument, object);
 
         }
 
-        return new ParseResult(UnmodifiableTypeMap.ofMap(out), out2);
+        return out;
 
     }
 
@@ -128,10 +183,50 @@ public class StringCommandParser {
     }
 
 
+    private record ParsingResult(@NotNull Map<CommandArgument, Object> arguments, @NotNull String remaining, @NotNull List<SubCommandArgument.SubCommand> foundSubcommands) {}
+
     private record SplitResult(@NotNull Map<CommandArgument, String> splitArguments, @NotNull String remaining) {}
 
-    private record ParseResult(@NotNull TypeMap arguments, @NotNull Map<CommandArgument, Object> arguments2) {}
+    public record Result(@NotNull TypeMap arguments, @NotNull Map<CommandArgument, Object> arguments2, @NotNull List<SubCommandArgument.SubCommand> foundSubcommands) {}
 
-    public record Result(@NotNull TypeMap arguments, @NotNull Map<CommandArgument, Object> arguments2, @NotNull String remaining) {}
+
+    public static class NotEnoughArgumentsException extends Exception {
+
+        public final Map<CommandArgument, String> got;
+
+        public final List<CommandArgument> expected;
+
+
+        public NotEnoughArgumentsException(
+                @NotNull Map<CommandArgument, String> got,
+                @NotNull List<CommandArgument> expected
+        ) {
+            this.got = got;
+            this.expected = expected;
+        }
+
+    }
+
+    public static class ArgumentParsingException extends Exception {
+
+        private final CommandArgument argument;
+
+        private final String input;
+
+        public ArgumentParsingException(@NotNull CommandArgument argument, @NotNull String input, Exception e) {
+            super(e);
+            this.argument = argument;
+            this.input = input;
+        }
+
+        public @NotNull CommandArgument getArgument() {
+            return argument;
+        }
+
+        public @NotNull String getInput() {
+            return input;
+        }
+
+    }
 
 }

@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.commands;
 
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,6 +72,11 @@ public class CommandArgument {
 
     public @NotNull List<ArgumentScope> scopes() {
         return scopes;
+    }
+
+
+    public boolean isSubCommand() {
+        return argument instanceof SubCommandArgument;
     }
 
 

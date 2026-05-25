@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.commands;
 
+import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -68,17 +69,24 @@ public class Command {
         return name;
     }
 
+    public @NotNull List<String> getAliases() {
+        return new ArrayList<>(aliases);
+    }
+
     public @NotNull CommandExecutor getExecutor() {
         return executor;
     }
+
+    // ARGUMENTS //
 
     public @NotNull List<CommandArgument> getArguments() {
         return new ArrayList<>(arguments);
     }
 
-    public @NotNull List<String> getAliases() {
-        return new ArrayList<>(aliases);
+    public @NotNull List<CommandArgument> getSubCommands() {
+        return arguments.stream().filter(arg -> arg.argument() instanceof SubCommandArgument).toList();
     }
+
 
     // COMMAND INFO //
 
