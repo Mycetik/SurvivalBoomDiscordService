@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.commands.Command;
+import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
@@ -62,7 +63,16 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
 
     @Override
     public void onRegister(@NotNull Registration<IRegisteredSlashCommand> registration) {
+
+        Command command = registration.object().getCommand();
+        CommandExecutor executor = command.getExecutor();
+
+        if (!(executor instanceof SlashCommandExecutor)) {
+            throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a slash command");
+        }
+
         commandInteractionManager.registerCommand(registration.object(), net.dv8tion.jda.api.interactions.commands.Command.Type.SLASH);
+
     }
 
     @Override

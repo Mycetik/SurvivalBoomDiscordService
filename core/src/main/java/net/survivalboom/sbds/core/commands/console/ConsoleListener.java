@@ -139,12 +139,12 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
                 return;
             }
 
-            logger.error("Invalid input `{}` for argument `{}`: {}", inputRaw, argumentName, argumentParseException.toString());
+            logger.error("Invalid input `{}` for argument `{}`: {}", inputRaw, argumentName, argumentParseException.getMessage());
 
         }
 
         catch (StringCommandParser.NotEnoughArgumentsException e) {
-            logger.error("Incomplete command. Expected {} arguments, got {}. Usage: `{}`", e.expected.size(), e.got.size(), createUsage(e.expected, e.got));
+            logger.error("Incomplete command. Expected {} arguments, got {}. Usage: `{}`", e.expected.size(), e.got.size(), createUsage(prefix, e.expected, e.got));
         }
 
         catch (Throwable t) {
@@ -153,12 +153,27 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
 
     }
 
-    private String createUsage(@NotNull List<CommandArgument> args, @NotNull Map<CommandArgument, String> parsed) {
+    private String createUsage(@NotNull String prefix, @NotNull List<CommandArgument> args, @NotNull Map<CommandArgument, String> parsed) {
 
         List<String> strings = new ArrayList<>();
         for (CommandArgument argument : args) {
 
-            String str = argument.argument() instanceof SubCommandArgument ? parsed.get(argument) : argument.name();
+            String str;
+            if (argument.isSubCommand()) {
+
+                str = parsed.get(argument);
+                if (str != null) {
+                    strings.add(str);
+                    continue;
+                }
+
+                str = String.join("/", ((SubCommandArgument) argument.argument()).getSubcommands().stream().map(Command::getName).toList());
+
+            }
+
+            else {
+                str = argument.name();
+            }
 
             if (argument.required()) {
                 strings.add("<" + str + ">");
@@ -170,7 +185,7 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
 
         }
 
-        return String.join(" ", strings);
+        return prefix + " " + String.join(" ", strings);
 
     }
 

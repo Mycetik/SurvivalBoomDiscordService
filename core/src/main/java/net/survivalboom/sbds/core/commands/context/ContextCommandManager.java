@@ -4,7 +4,9 @@ import net.dv8tion.jda.api.events.interaction.command.GenericContextInteractionE
 import net.dv8tion.jda.api.events.interaction.command.MessageContextInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.survivalboom.sbds.api.commands.Command;
+import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.context.*;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.registrations.Registration;
@@ -46,7 +48,16 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
     @Override
     public void onRegister(@NotNull Registration<IRegisteredContextCommand> registration) {
+
+        Command command = registration.object().getCommand();
+        CommandExecutor executor = command.getExecutor();
+
+        if (!(executor instanceof ContextCommandExecutor<?>)) {
+            throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a context command");
+        }
+
         commandInteractionManager.requestGlobalUpdate();
+
     }
 
     @Override
