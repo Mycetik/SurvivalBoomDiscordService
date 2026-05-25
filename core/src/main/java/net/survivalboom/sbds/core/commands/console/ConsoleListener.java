@@ -55,7 +55,7 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
     @Override
     protected void shutdown0() {
 
-        task.tryCancel();
+        task.cancelAndWaitOrKill(100, false);
         task = null;
 
         super.shutdown0();

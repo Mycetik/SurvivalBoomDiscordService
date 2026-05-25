@@ -100,6 +100,8 @@ public class SBDS implements ISBDS {
 
     private boolean ready = false;
 
+    private boolean shutdownInitiated = false;
+
 
     private final JDABuilder jdaBuilder;
 
@@ -175,7 +177,7 @@ public class SBDS implements ISBDS {
     // LIFECYCLE
     //
 
-    public synchronized void launch() throws InterruptedException {
+    public synchronized void run() throws InterruptedException {
 
         if (started) {
             throw new IllegalStateException("Already started");
@@ -239,11 +241,8 @@ public class SBDS implements ISBDS {
 
         ready = true;
 
-    }
-
-    public synchronized void shutdown() {
-
-        if (!started) return;
+        // Входимо у нескінченний цикл очікування запиту на вимкнення бота //
+        CommonUtils.waitUntil(() -> shutdownInitiated, 0, 1000, null);
 
         ready = false;
 
@@ -253,12 +252,15 @@ public class SBDS implements ISBDS {
 
         catch (Throwable t) {
             logger.error("Failed to shutdown SBDS properly! This may cause data loss.", t);
-            logger.error("Using System.exit() to shut down...");
-            Main.exit();
         }
 
         started = false;
 
+    }
+
+    @Override
+    public void shutdown() {
+        this.shutdownInitiated = true;
     }
 
     private void shutdown0() {
@@ -303,10 +305,6 @@ public class SBDS implements ISBDS {
 
         logger.info("Bye bye!");
 
-    }
-
-    public void blockThread() {
-        CommonUtils.waitUntil(() -> !started);
     }
 
     //

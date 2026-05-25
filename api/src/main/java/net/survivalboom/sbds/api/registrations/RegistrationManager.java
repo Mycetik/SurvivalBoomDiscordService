@@ -150,7 +150,7 @@ public class RegistrationManager<T> extends Manager implements IRegistrationMana
             return false;
         }
 
-        registry.unregister(registration);
+        registry.removeRegistration(registration);
 
         return true;
 

@@ -80,7 +80,7 @@ public class SbdsBootstrap {
 
             checkLibraries();
 
-            sbdsStart().blockThread();
+            sbdsRun();
 
         }
 
@@ -194,14 +194,14 @@ public class SbdsBootstrap {
 
     }
 
-    private @NotNull SBDS sbdsStart() throws InterruptedException {
+    private @NotNull SBDS sbdsRun() throws InterruptedException {
 
         logger.info("Starting SBDS...");
 
         SBDS sbds = new SBDS(logger, librariesManager, configuration, workingDir, token);
         SBDS.sbds = sbds;
 
-        sbds.launch();
+        sbds.run();
 
         return sbds;
 

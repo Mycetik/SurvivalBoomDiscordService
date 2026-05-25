@@ -28,7 +28,7 @@ import java.util.zip.ZipFile;
 
 public class CommonUtils {
 
-    public static String STACK_TRACE_FORMAT = "    at {CLASS}.{METHOD}({FILE}:{LINE}) ~[{CLASSLOADER}:{MODULE}]";
+    public static String STACK_TRACE_FORMAT = "    at {class}.{method}({file}:{line}) ~[{classloader}}:{module}]";
 
     public static final Random RANDOM = new Random();
 
@@ -187,12 +187,12 @@ public class CommonUtils {
         String classLoader = element.getClassLoaderName();
 
         Placeholders placeholders = new Placeholders();
-        placeholders.add("{CLASS}", element.getClassName());
-        placeholders.add("{METHOD}", element.getMethodName());
-        placeholders.add("{FILE}", Objects.requireNonNullElse(element.getFileName(), "?"));
-        placeholders.add("{LINE}", element.getLineNumber());
-        placeholders.add("{CLASSLOADER}", classLoader == null ? "?" : classLoader);
-        placeholders.add("{MODULE}", module == null ? "?" : module);
+        placeholders.add("class", element.getClassName());
+        placeholders.add("method", element.getMethodName());
+        placeholders.add("file", Objects.requireNonNullElse(element.getFileName(), "?"));
+        placeholders.add("line", element.getLineNumber());
+        placeholders.add("classloader", classLoader == null ? "?" : classLoader);
+        placeholders.add("module", module == null ? "?" : module);
 
         return placeholders.parse(STACK_TRACE_FORMAT);
 
