@@ -15,7 +15,7 @@ import java.util.Objects;
 @ConfigSerializable
 public class TextMessageTemplate implements IMessageTemplate {
 
-    private @Setting("content") String content;
+    private final String content;
 
     public TextMessageTemplate(@NotNull String text) {
 
@@ -25,19 +25,6 @@ public class TextMessageTemplate implements IMessageTemplate {
         }
 
         this.content = text;
-
-    }
-
-    @ApiStatus.Internal
-    public TextMessageTemplate() {
-
-    }
-
-    private void validate() throws SerializationException {
-
-        if (content == null || content.isBlank()) {
-            throw new SerializationException("text is empty");
-        }
 
     }
 

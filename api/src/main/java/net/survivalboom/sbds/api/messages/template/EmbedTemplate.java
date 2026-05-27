@@ -3,49 +3,44 @@ package net.survivalboom.sbds.api.messages.template;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.PostProcess;
-import org.spongepowered.configurate.objectmapping.meta.Setting;
-import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.ConfigurationNode;
 
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
 
-@ConfigSerializable
 public class EmbedTemplate {
 
     // AUTHOR //
 
-    private @Setting("author") @Nullable String author;
-    private @Setting("author-url") @Nullable String authorUrl;
-    private @Setting("author-icon") @Nullable String authorIconUrl;
+    private final @Nullable String author;
+    private final @Nullable String authorUrl;
+    private final @Nullable String authorIconUrl;
 
     // BODY //
 
-    private @Setting("title") @Nullable String title;
-    private @Setting("description") @Nullable String description;
+    private final @Nullable String title;
+    private final @Nullable String description;
 
-    private @Setting("url") @Nullable String url;
-    private @Setting("thumbnail") @Nullable String thumbnailUrl;
+    private final @Nullable String url;
+    private final @Nullable String thumbnailUrl;
 
-    private @Setting("color") @Nullable Color color;
+    private final @Nullable Color color;
 
     // FOOTER //
 
-    private @Setting("footer") @Nullable String footer;
-    private @Setting("footer-icon") @Nullable String footIconUrl;
+    private final @Nullable String footer;
+    private final @Nullable String footIconUrl;
 
-    private @Setting("timestamp") @Nullable String timestamp;
+    private final @Nullable String timestamp;
 
     // FIELDS //
 
-    @Setting("fields")
-    private @NotNull List<EmbedField> fields = new ArrayList<>();
+    private final @NotNull List<EmbedField> fields = new ArrayList<>();
 
 
     public EmbedTemplate(
@@ -89,14 +84,6 @@ public class EmbedTemplate {
         if (fields != null) {
             this.fields.addAll(fields);
         }
-
-    }
-
-    @ApiStatus.Internal
-    public EmbedTemplate() {}
-
-    @PostProcess
-    private void validate() throws SerializationException {
 
     }
 
@@ -154,16 +141,57 @@ public class EmbedTemplate {
     // FIELDS
     //
 
-    @ConfigSerializable
     public record EmbedField(
-            @Setting("name") @NotNull String name,
-            @Setting("value") @NotNull String value,
-            @Setting("inline") boolean inline
+            @NotNull String name,
+            @Nullable String value,
+            boolean inline
     ) {}
 
     //
     // BUILDER
     //
+
+    public static @NotNull Builder fromSection(@NotNull ConfigurationNode section) {
+
+        String author = section.node("author").getString();
+        String authorUrl = section.node("author-url").getString();
+        String authorIconUrl = section.node("author-icon").getString();
+
+        String title = section.node("title").getString();
+        String description = section.node("description").getString();
+        String colorRaw = section.node("color").getString();
+        String url = section.node("url").getString();
+        String thumbnailUrl = section.node("thumbnail").getString();
+
+        String footer = section.node("footer").getString();
+        String footerIconUrl = section.node("footer-url").getString();
+        String timestamp = section.node("timestamp").getString();
+
+        Color color = CommonUtils.parseColor(colorRaw);
+
+        ConfigurationNode fieldsSection = section.node("fields");
+        List<EmbedField> fields = new ArrayList<>();
+        for (ConfigurationNode node : fieldsSection.childrenList()) {
+
+            String name = node.node("name").getString();
+            String value = node.node("value").getString();
+            boolean inline = node.node("inline").getBoolean(false);
+
+            EmbedField field = new EmbedField(name, value, inline);
+            fields.add(field);
+
+        }
+
+        return builder()
+                .setAuthor(author, authorUrl, authorIconUrl)
+                .setBody(title, description, thumbnailUrl)
+                .setUrl(url)
+                .setColor(color)
+                .setFooter(footer, footerIconUrl)
+                .setTimestamp(timestamp)
+                .setFields(fields);
+
+    }
 
     public static Builder builder() {
         return new Builder();

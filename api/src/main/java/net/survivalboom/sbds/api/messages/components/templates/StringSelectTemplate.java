@@ -7,34 +7,28 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.survivalboom.sbds.api.messages.components.MessageInteractableComponentTemplate;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.Setting;
+import org.spongepowered.configurate.ConfigurationNode;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-@ConfigSerializable
 public class StringSelectTemplate implements MessageInteractableComponentTemplate<StringSelectMenu> {
 
-    private String name;
+    private final String name;
 
-    @Setting("min")
-    private int minCount = 1;
+    private final int minCount;
 
-    @Setting("max")
-    private int maxCount = 1;
+    private final int maxCount;
 
-    private int row = 1;
+    private final int row;
 
-    @Setting("static")
-    private boolean isStatic = false;
+    private final boolean isStatic;
 
-    private String placeholder;
+    private final String placeholder;
 
     private final List<Option> options = new ArrayList<>();
 
@@ -68,11 +62,6 @@ public class StringSelectTemplate implements MessageInteractableComponentTemplat
         if (options != null) {
             this.options.addAll(options);
         }
-
-    }
-
-    @ApiStatus.Internal
-    public StringSelectTemplate() {
 
     }
 
@@ -137,8 +126,13 @@ public class StringSelectTemplate implements MessageInteractableComponentTemplat
     // OPTION
     //
 
-    @ConfigSerializable
-    public record Option(@NotNull String id, @NotNull String title, @Nullable String description, @Nullable Emoji emoji, @Setting("default") boolean isDefault) {
+    public record Option(
+            @NotNull String id,
+            @NotNull String title,
+            @Nullable String description,
+            @Nullable Emoji emoji,
+            boolean isDefault
+    ) {
 
         public Option {
             Objects.requireNonNull(id, "id == null");
@@ -150,6 +144,46 @@ public class StringSelectTemplate implements MessageInteractableComponentTemplat
     //
     // BUILDER
     //
+
+    public static @NotNull Builder fromSection(@NotNull ConfigurationNode section) {
+
+        String name = section.node("node").getString();
+
+        int row = section.node("row").getInt();
+        int min = section.node("min").getInt();
+        int max = section.node("max").getInt();
+
+        boolean isStatic = section.node("static").getBoolean();
+
+        String placeholder = section.node("placeholder").getString();
+
+        var builder = builder();
+
+        ConfigurationNode optionsSection = section.node("options");
+        for (ConfigurationNode node : optionsSection.childrenList()) {
+
+            String id = node.node("id").getString();
+            String title = node.node("title").getString();
+            String description = node.node("description").getString();
+
+            String emojiRaw = node.node("emoji").getString();
+            Emoji emoji = emojiRaw != null ? Emoji.fromUnicode(emojiRaw) : null;
+
+            boolean isDefault = node.node("default").getBoolean();
+
+            builder.addOption(id, title, description, emoji, isDefault);
+
+        }
+
+        return builder
+                .setName(name)
+                .setRow(row)
+                .setMinCount(min)
+                .setMaxCount(max)
+                .setStatic(isStatic)
+                .setPlaceholder(placeholder);
+
+    }
 
     public static @NotNull Builder builder() {
         return new Builder();
@@ -280,8 +314,14 @@ public class StringSelectTemplate implements MessageInteractableComponentTemplat
                 @Nullable Emoji emoji,
                 boolean isDefault
         ) {
+
+            Objects.requireNonNull(id, "id == null");
+            Objects.requireNonNull(title, "title == null");
+
             options.add(new Option(id, title, description, emoji, isDefault));
+
             return this;
+
         }
 
         public @NotNull Builder addOptions(@NotNull Collection<Option> options) {

@@ -5,35 +5,30 @@ import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
 import net.survivalboom.sbds.api.messages.components.MessageInteractableComponentTemplate;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.PostProcess;
-import org.spongepowered.configurate.objectmapping.meta.Setting;
-import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.ConfigurationNode;
 
 import java.util.Objects;
 
-@ConfigSerializable
 public class EntitySelectTemplate implements MessageInteractableComponentTemplate<EntitySelectMenu> {
 
-    private String name;
+    private final String name;
 
-    @Setting("min")
-    private int minCount = 1;
+    private final int minCount;
 
-    @Setting("max")
-    private int maxCount = 1;
+    private final int maxCount;
 
-    private int row = 1;
+    private final int row;
 
-    @Setting("static")
-    private boolean isStatic = false;
+    private final boolean isStatic;
 
-    private @Nullable String placeholder;
-    private EntitySelectMenu.SelectTarget target;
+    private final @Nullable String placeholder;
 
-    private Component.Type type;
+    private final EntitySelectMenu.SelectTarget target;
+
+    private final Component.Type type;
 
 
     public EntitySelectTemplate(
@@ -55,23 +50,6 @@ public class EntitySelectTemplate implements MessageInteractableComponentTemplat
         this.isStatic = isStatic;
         this.placeholder = placeholder;
         this.target = target;
-
-        this.type = switch (target) {
-            case USER -> Component.Type.USER_SELECT;
-            case ROLE -> Component.Type.ROLE_SELECT;
-            case CHANNEL -> Component.Type.CHANNEL_SELECT;
-        };
-
-    }
-
-    public EntitySelectTemplate() {}
-
-    @PostProcess
-    private void validate() throws SerializationException {
-
-        if (target == null) {
-            throw new SerializationException("Target is null");
-        }
 
         this.type = switch (target) {
             case USER -> Component.Type.USER_SELECT;
@@ -125,6 +103,32 @@ public class EntitySelectTemplate implements MessageInteractableComponentTemplat
     //
     // BUILDER
     //
+
+    public static @NotNull Builder fromSection(@NotNull ConfigurationNode section) {
+
+        String name = section.node("name").getString();
+
+        int min = section.node("min").getInt();
+        int max = section.node("max").getInt();
+
+        int row = section.node("row").getInt();
+        boolean isStatic = section.node("static").getBoolean();
+
+        String placeholder = section.node("placeholder").getString();
+
+        String targetRaw = section.node("target").getString();
+        EntitySelectMenu.SelectTarget target = CommonUtils.getEnumValue(EntitySelectMenu.SelectTarget.class, targetRaw);
+
+        return builder()
+                .setName(name)
+                .setMinCount(min)
+                .setMaxCount(max)
+                .setRow(row)
+                .setStatic(isStatic)
+                .setPlaceholder(placeholder)
+                .setTarget(target);
+
+    }
 
     public static @NotNull Builder builder() {
         return new Builder();

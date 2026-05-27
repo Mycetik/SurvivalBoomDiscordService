@@ -6,7 +6,7 @@
 $name: "ukrainian"
 $display-name: "$[lang.ukrainian]"
 $icon: "🇺🇦"
-$discord-locale: UKRAINIAN
+$locale: UKRAINIAN
 
 lang:
   ukrainian: "Українська"

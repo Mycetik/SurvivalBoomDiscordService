@@ -17,14 +17,16 @@ public interface IMessageTemplate {
 
     static @NotNull IMessageTemplate fromSection(@NotNull ConfigurationNode section) throws SerializationException {
 
-        boolean hasContent = section.hasChild("content");
-        boolean hasEmbeds = section.hasChild("embeds");
-        boolean hasComponents = section.hasChild("components");
+        boolean hasContent = section.hasChild("$content");
+        boolean hasEmbeds = section.hasChild("$embed") || section.hasChild("$embeds");
+        boolean hasComponents = section.hasChild("$components");
+
+        String content = section.getString();
 
         IMessageTemplate template;
 
         if (hasEmbeds) {
-            template = section.get(EmbedMessageTemplate.class);
+            template = EmbedMessageTemplate.fromSection(section).build();
         }
 
         else if (hasComponents) {
@@ -32,7 +34,11 @@ public interface IMessageTemplate {
         }
 
         else if (hasContent) {
-            template = section.get(TextMessageTemplate.class);
+            template = new TextMessageTemplate(section.node("$content").getString("null"));
+        }
+
+        else if (content != null) {
+            template = new TextMessageTemplate(content);
         }
 
         else {

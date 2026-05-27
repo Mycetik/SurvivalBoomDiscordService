@@ -294,14 +294,14 @@ public class SBDS implements ISBDS {
 
         scheduler.shutdown();
 
-        registrationRegistry.shutdown();
-
         logger.info("Stopping bot...");
 
         bot.shutdown();
         bot = null;
 
         loggerFilter.shutdown();
+
+        registrationRegistry.shutdown();
 
         logger.info("Bye bye!");
 

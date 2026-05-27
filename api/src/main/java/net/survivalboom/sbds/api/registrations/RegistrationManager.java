@@ -103,20 +103,11 @@ public class RegistrationManager<T> extends Manager implements IRegistrationMana
 
         var reg = registry.register(module, object, this::unreg0, sourceName, name);
 
-        if (callback == null) {
-            registrationMap.put(reg.regKey(), reg);
-            return reg;
-        }
-
-        try {
+        if (callback != null) {
             callback.onRegister(reg);
         }
 
-        catch (Exception e) {
-            log.error("An exception was thrown in register callback for registration `{}`.", reg, e);
-        }
-
-        registrationMap.put(reg.regKey(), reg);
+        registrationMap.put(reg.key(), reg);
 
         return reg;
 
@@ -146,11 +137,14 @@ public class RegistrationManager<T> extends Manager implements IRegistrationMana
         Objects.requireNonNull(registration, "registration == null");
         checkValid();
 
-        if (!registrationMap.containsKey(registration.regKey())) {
+        NamespacedKey key = registration.key();
+
+        if (!registrationMap.containsKey(registration.key())) {
             return false;
         }
 
         registry.removeRegistration(registration);
+        registrationMap.remove(key);
 
         return true;
 

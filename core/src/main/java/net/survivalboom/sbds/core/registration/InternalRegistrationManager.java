@@ -68,20 +68,11 @@ public class InternalRegistrationManager<T> extends RegistrationManager<T> {
         RegistrationRegistry registry = (RegistrationRegistry) this.registry;
         var reg = registry.register0(module, object, this::unreg0, sourceName, name);
 
-        if (callback == null) {
-            registrationMap.put(reg.regKey(), reg);
-            return reg;
-        }
-
-        try {
+        if (callback != null) {
             callback.onRegister(reg);
         }
 
-        catch (Exception e) {
-            log.error("An exception was thrown in register callback for registration `{}`.", reg, e);
-        }
-
-        registrationMap.put(reg.regKey(), reg);
+        registrationMap.put(reg.key(), reg);
 
         return reg;
 

@@ -6,6 +6,7 @@ import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
 import net.survivalboom.sbds.api.translations.ITranslationsMessagesPool;
+import net.survivalboom.sbds.api.translations.InvalidTranslationException;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.Manager;
@@ -107,6 +108,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
 
             modulesToRegister = regs.stream()
                     .flatMap(reg -> reg.object().getMessagePools().stream())
+                    .map(ITranslationsMessagesPool::getRegistration)
                     .map(Registration::module)
                     .filter(Objects::nonNull)
                     .toList();
@@ -142,50 +144,16 @@ public class TranslationManager extends Manager implements ITranslationManager {
         for (File file : sbdsTranslationsDir.listFiles()) {
 
             if (!file.getName().endsWith(".yml")) {
-                log.warn("File `{}` is not a YAML file. Skipping...", file.getName());
                 continue;
             }
 
-            YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
-                    .path(file.toPath())
-                    .build();
-
-            ConfigurationNode section;
             try {
-                section = loader.load();
+                loadTranslation0(null, file);
             }
 
-            catch (ConfigurateException e) {
-                log.error("Failed to load translation file `{}`.", file.getName(), e);
-                continue;
+            catch (Exception e) {
+                log.error("Failed to load translation file `{}`. Skipping...", file.getName(), e);
             }
-
-            String name = section.node("$name").getString();
-            if (name == null) {
-                log.error("Failed to load translation file `{}`. Key `$name` not found.", file.getName());
-                continue;
-            }
-
-            if (getTranslation(NamespacedKey.sbds(name)) != null) {
-                log.warn("Translation with name `{}` already exists. Skipping file `{}`...", name, file.getName());
-                continue;
-            }
-
-            var reg = createTranslation0(null, name);
-            ITranslation translation = reg.object();
-
-            String displayName = section.node("$displayName").getString();
-            String translationEmoji = section.node("$icon").getString();
-            DiscordLocale locale;
-            try {
-                locale = section.node("$locale").get(DiscordLocale.class);
-            } catch (SerializationException e) {
-                locale = null;
-            }
-
-            translation.setDisplayName(displayName);
-            translation.setIconEmoji(translationEmoji);
-            translation.setDiscordLocale(locale);
 
         }
 
@@ -226,7 +194,6 @@ public class TranslationManager extends Manager implements ITranslationManager {
 
     }
 
-
     //
     // TRANSLATIONS MANAGEMENT
     //
@@ -234,21 +201,102 @@ public class TranslationManager extends Manager implements ITranslationManager {
     // REGISTRATION //
 
     @Override
-    public @NotNull Registration<ITranslation> createTranslation(@NotNull IModule module, @NotNull String name) {
+    public @NotNull ITranslation createTranslation(@NotNull IModule module, @NotNull String name) {
         Objects.requireNonNull(module, "module == null");
         return createTranslation0(module, name);
     }
 
-    public @NotNull Registration<ITranslation> createTranslation0(@Nullable IModule module, @NotNull String name) {
+    public @NotNull Translation createTranslation0(@Nullable IModule module, @NotNull String name) {
 
+        Objects.requireNonNull(name, "name == null");
         checkValid();
+
+        if (module != null) {
+            sbds.getModuleManager().checkModuleEnabled(module, "Disabled module attempted to create a translation");
+        }
 
         Translation translation = new Translation(name, this);
         translation.registration = registry.register0(module, name, translation);
 
-        return translation.registration;
+        return translation;
 
     }
+
+    // LOADING //
+
+    @Override
+    public @NotNull ITranslation loadTranslation(@NotNull IModule module, @NotNull ConfigurationNode section) throws InvalidTranslationException {
+        Objects.requireNonNull(module, "module == null");
+        return loadTranslation0(module, section);
+    }
+
+    public @NotNull ITranslation loadTranslation0(@Nullable IModule module, @NotNull ConfigurationNode section) throws InvalidTranslationException {
+
+        Objects.requireNonNull(section, "section == null");
+        checkValid();
+
+        String name = section.node("$name").getString();
+        if (name == null) {
+            throw new InvalidTranslationException("Invalid translation. Key `$name` not found");
+        }
+
+        NamespacedKey key;
+        try {
+            key = module != null ? NamespacedKey.fromModule(module, name) : NamespacedKey.sbds(name);
+        }
+
+        catch (IllegalArgumentException e) {
+            throw new InvalidTranslationException("Invalid translation name `" + name + "`. " + e.getMessage());
+        }
+
+        if (getTranslation(key) != null) {
+            throw new IllegalStateException("Translation with name `" + name + "` already exists");
+        }
+
+        Translation translation = createTranslation0(null, name);
+
+        String displayName = section.node("$displayName").getString();
+        String translationEmoji = section.node("$icon").getString();
+        DiscordLocale locale;
+        try {
+            locale = section.node("$locale").get(DiscordLocale.class);
+        } catch (SerializationException e) {
+            locale = null;
+        }
+
+        translation.setDisplayName(displayName);
+        translation.setIconEmoji(translationEmoji);
+        translation.setDiscordLocale(locale);
+
+        // Завантажуємо повідомлення перекладу //
+
+        var result = translation.createMessagesPool0(null, "messages").load(section, true);
+        for (var entry : result.failed().entrySet()) {
+            log.error("[{}] Failed to load message `{}`. Skipping...", key, entry.getKey(), entry.getValue());
+        }
+
+        return translation;
+
+    }
+
+    @Override
+    public @NotNull ITranslation loadTranslation(@NotNull IModule module, @NotNull File file) throws ConfigurateException, InvalidTranslationException {
+        Objects.requireNonNull(module, "module == null");
+        return loadTranslation0(module, file);
+    }
+
+    public @NotNull ITranslation loadTranslation0(@Nullable IModule module, @NotNull File file) throws ConfigurateException, InvalidTranslationException {
+
+        YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
+                .path(file.toPath())
+                .build();
+
+        ConfigurationNode node = loader.load();
+
+        return loadTranslation0(module, node);
+
+    }
+
 
     // REMOVING //
 
@@ -265,16 +313,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
 
     @Override
     public @Nullable ITranslation getTranslation(@NotNull NamespacedKey key) {
-
-        checkValid();
-
-        var reg = registry.getRegistration(key);
-        if (reg == null) {
-            return null;
-        }
-
-        return reg.object();
-
+        return registry.getRegistrationAsObject(key);
     }
 
     @Override
@@ -347,7 +386,6 @@ public class TranslationManager extends Manager implements ITranslationManager {
         for (File file : dir.listFiles()) {
 
             if (!file.getName().endsWith(".yml")) {
-                log.warn("File `{}` is not a YAML file. Skipping...", file.getName());
                 continue;
             }
 
@@ -373,7 +411,7 @@ public class TranslationManager extends Manager implements ITranslationManager {
 
             NamespacedKey key;
             try {
-                key = name.contains(":") ? NamespacedKey.fromString(name) : NamespacedKey.sbds(name);
+                key = NamespacedKey.fromString(name);
             }
 
             catch (IllegalArgumentException e) {
@@ -386,8 +424,12 @@ public class TranslationManager extends Manager implements ITranslationManager {
                 continue;
             }
 
-            ITranslationsMessagesPool pool = translation.getOrCreateMessagesPool(module, dirName);
-            pool.load(section, true);
+            ITranslationsMessagesPool pool = translation.obtainMessagesPool(module, dirName);
+            var result = pool.load(section, true);
+
+            for (var entry : result.failed().entrySet()) {
+                log.error("[{}] Failed to load message `{}`. Skipping...", key, entry.getKey(), entry.getValue());
+            }
 
         }
 

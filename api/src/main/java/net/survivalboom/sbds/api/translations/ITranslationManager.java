@@ -7,7 +7,11 @@ import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.configurate.ConfigurateException;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
+import java.io.File;
 import java.util.List;
 import java.util.Set;
 
@@ -29,11 +33,17 @@ public interface ITranslationManager {
 
     // REGISTRATION //
 
-    @NotNull Registration<ITranslation> createTranslation(@NotNull IModule module, @NotNull String name);
+    @NotNull ITranslation createTranslation(@NotNull IModule module, @NotNull String name);
 
-    default @NotNull Registration<ITranslation> createTranslation(@NotNull ModuleMain module, @NotNull String name) {
+    default @NotNull ITranslation createTranslation(@NotNull ModuleMain module, @NotNull String name) {
         return createTranslation(module.getModule(), name);
     }
+
+    // LOAD //
+
+    @NotNull ITranslation loadTranslation(@NotNull IModule module, @NotNull ConfigurationNode section) throws InvalidTranslationException;
+
+    @NotNull ITranslation loadTranslation(@NotNull IModule module, @NotNull File file) throws ConfigurateException, InvalidTranslationException;
 
     // REMOVING //
 

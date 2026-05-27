@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.event.Level;
 import org.spongepowered.configurate.ConfigurationNode;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -619,6 +621,30 @@ public class CommonUtils {
 
     }
 
+    //
+    // COLOR
+    //
+
+    public static @Nullable Color parseColor(@Nullable String hex) {
+
+        if (hex == null) {
+            return null;
+        }
+
+        int resultRed, resultGreen, resultBlue;
+        try {
+            resultRed = Integer.valueOf(hex.substring(0, 2), 16);
+            resultGreen = Integer.valueOf(hex.substring(2, 4), 16);
+            resultBlue = Integer.valueOf(hex.substring(4, 6), 16);
+        }
+
+        catch (NumberFormatException e) {
+            return null;
+        }
+
+        return new Color(resultRed, resultGreen, resultBlue);
+
+    }
 
 
 

@@ -10,12 +10,10 @@ import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.ComponentTemplate;
 import net.survivalboom.sbds.api.messages.components.templates.ButtonTemplate;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.PostProcess;
-import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.*;
 import java.util.function.Function;
@@ -23,11 +21,12 @@ import java.util.function.Function;
 @ConfigSerializable
 public class EmbedMessageTemplate implements IMessageTemplate {
 
-    private @Nullable String content = null;
-
     private final List<EmbedTemplate> embeds = new ArrayList<>();
 
     private final List<MessageInteractableComponentTemplate<? extends ActionRowChildComponent>> components = new ArrayList<>();
+
+    @Nullable
+    private String content;
 
 
     public EmbedMessageTemplate(
@@ -70,18 +69,6 @@ public class EmbedMessageTemplate implements IMessageTemplate {
                 throw new IllegalArgumentException("One row can only contain one dropdown. Got: `" + templates + "`");
             }
 
-        }
-
-    }
-
-    @ApiStatus.Internal
-    public EmbedMessageTemplate() {}
-
-    @PostProcess
-    private void validate() throws SerializationException {
-
-        if ((content == null || content.isBlank()) && this.embeds.isEmpty() && this.components.isEmpty()) {
-            throw new SerializationException("content is empty && embeds are empty && component are empty; what are you trying to send?");
         }
 
     }
@@ -161,6 +148,36 @@ public class EmbedMessageTemplate implements IMessageTemplate {
     //
     // BUILDER
     //
+
+    public static @NotNull Builder fromSection(@NotNull ConfigurationNode section) {
+
+        String content = section.node("$content").getString();
+
+        var builder = builder();
+
+        builder.setContent(content);
+
+        ConfigurationNode componentsSection = section.node("$components");
+        for (ConfigurationNode node : componentsSection.childrenList()) {
+            MessageInteractableComponentTemplate<?> template = MessageInteractableComponentTemplate.fromSection(node);
+            builder.addComponent(template);
+        }
+
+        ConfigurationNode embedSection = section.node("$embed");
+        if (!embedSection.virtual()) {
+            EmbedTemplate template = EmbedTemplate.fromSection(embedSection).build();
+            return builder.addEmbed(template);
+        }
+
+        ConfigurationNode embedsSection = section.node("$embeds");
+        for (ConfigurationNode node : embedsSection.childrenList()) {
+            EmbedTemplate template = EmbedTemplate.fromSection(node).build();
+            builder.addEmbed(template);
+        }
+
+        return builder;
+
+    }
 
     public static @NotNull Builder builder() {
         return new Builder();

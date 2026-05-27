@@ -78,7 +78,7 @@ public class RegistrationRegistry extends Manager implements IRegistrationRegist
             throw new IllegalArgumentException("No name provided");
         }
 
-        String name = nameList.getFirst();
+        String name = nameList.getLast();
         String regName = String.join(".", names);
 
         NamespacedKey key = createKey(module, name);

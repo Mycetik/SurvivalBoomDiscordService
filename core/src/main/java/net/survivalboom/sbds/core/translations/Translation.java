@@ -89,28 +89,20 @@ public class Translation extends Valid implements ITranslation, RegistrationMana
 
     @Override
     public boolean removeMessagesPool(@NotNull ITranslationsMessagesPool pool) {
-
         checkValid();
+        return registry.unregister(pool) != null;
+    }
 
-        boolean result = registry.unregister(pool) != null;
-        if (result) {
-            cacheFullRecalculate();
-        }
-
-        return result;
-
+    @Override
+    public void unRegister(@NotNull Registration<ITranslationsMessagesPool> registration) {
+        cacheFullRecalculate();
     }
 
     private void cacheFullRecalculate() {
 
         Map<String, IMessageTemplate> out = new HashMap<>();
-        for (var reg : getMessagePools()) {
-
-            var pool = reg.object();
-            var m = pool.getMessages();
-
-            out.putAll(m);
-
+        for (var pool : getMessagePools()) {
+            out.putAll(pool.getMessages());
         }
 
         this.cache.clear();
@@ -121,16 +113,38 @@ public class Translation extends Valid implements ITranslation, RegistrationMana
     // getters //
 
     @Override
-    public @Nullable Registration<ITranslationsMessagesPool> getMessagesPool(@NotNull NamespacedKey key) {
+    public @Nullable ITranslationsMessagesPool getMessagesPool(@NotNull NamespacedKey key) {
         checkValid();
-        return registry.getRegistration(key);
+        return registry.getRegistrationAsObject(key);
     }
 
     @Override
-    public @NotNull List<Registration<ITranslationsMessagesPool>> getMessagePools() {
+    public @NotNull List<ITranslationsMessagesPool> getMessagePools() {
         checkValid();
-        return registry.getRegistrations();
+        return registry.getRegisteredObjects();
     }
+
+    // obtain //
+
+    @Override
+    public @NotNull ITranslationsMessagesPool obtainMessagesPool(@NotNull IModule module, @NotNull String name) {
+        Objects.requireNonNull(module, "module == null");
+        return obtainMessagesPool0(module, name);
+    }
+
+    public @NotNull ITranslationsMessagesPool obtainMessagesPool0(@Nullable IModule module, @NotNull String name) {
+
+        NamespacedKey key = module != null ? NamespacedKey.fromModule(module, name) : NamespacedKey.sbds(name);
+
+        var pool = getMessagesPool(key);
+        if (pool == null) {
+            return createMessagesPool0(module, name);
+        }
+
+        return pool;
+
+    }
+
 
     //
     // PROPERTIES

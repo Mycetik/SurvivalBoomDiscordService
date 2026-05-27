@@ -41,16 +41,7 @@ public interface ITranslation extends IValid {
         return createMessagesPool(module.getModule(), name);
     }
 
-    default @NotNull ITranslationsMessagesPool getOrCreateMessagesPool(@NotNull IModule module, @NotNull String name) {
-
-        var reg = getMessagesPool(NamespacedKey.fromModule(module, name));
-        if (reg == null) {
-            return createMessagesPool(module, name);
-        }
-
-        return reg.object();
-
-    }
+    @NotNull ITranslationsMessagesPool obtainMessagesPool(@NotNull IModule module, @NotNull String name);
 
     // REMOVE //
 
@@ -63,9 +54,9 @@ public interface ITranslation extends IValid {
             return null;
         }
 
-        removeMessagesPool(pool.object());
+        removeMessagesPool(pool);
 
-        return pool.object();
+        return pool;
 
     }
 
@@ -75,13 +66,13 @@ public interface ITranslation extends IValid {
 
     // GETTERS //
 
-    @Nullable Registration<ITranslationsMessagesPool> getMessagesPool(@NotNull NamespacedKey key);
+    @Nullable ITranslationsMessagesPool getMessagesPool(@NotNull NamespacedKey key);
 
-    default @Nullable Registration<ITranslationsMessagesPool> getMessagesPool(@NotNull String key) {
+    default @Nullable ITranslationsMessagesPool getMessagesPool(@NotNull String key) {
         return getMessagesPool(NamespacedKey.fromString(key));
     }
 
-    @NotNull List<Registration<ITranslationsMessagesPool>> getMessagePools();
+    @NotNull List<ITranslationsMessagesPool> getMessagePools();
 
     //
     // PROPERTIES

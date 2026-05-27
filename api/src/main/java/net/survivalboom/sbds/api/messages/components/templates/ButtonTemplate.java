@@ -7,30 +7,26 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.survivalboom.sbds.api.messages.components.MessageInteractableComponentTemplate;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.PostProcess;
-import org.spongepowered.configurate.objectmapping.meta.Setting;
-import org.spongepowered.configurate.serialize.SerializationException;
+import org.spongepowered.configurate.ConfigurationNode;
 
 import java.util.Objects;
 
-@ConfigSerializable
 public class ButtonTemplate implements MessageInteractableComponentTemplate<Button> {
 
-    private @Setting @Nullable String name;
-    private @Setting @Nullable String url;
+    private final @Nullable String name;
+    private final @Nullable String url;
 
-    private @Setting @Nullable String label;
-    private @Setting @Nullable Emoji emoji;
-    private @Setting @NotNull ButtonStyle style = ButtonStyle.SECONDARY;
+    private final @Nullable String label;
+    private final @Nullable Emoji emoji;
+    private final @NotNull ButtonStyle style;
 
-    private @Setting int row = 1;
-    private @Setting int index = 1;
+    private final int row;
+    private final int index;
 
-    private @Setting("static") boolean isStatic = false;
+    private final boolean isStatic;
 
 
     public ButtonTemplate(
@@ -82,22 +78,6 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
         this.index = index;
 
         this.isStatic = true;
-
-    }
-
-    @ApiStatus.Internal
-    public ButtonTemplate() {}
-
-    @PostProcess
-    private void validate() throws SerializationException {
-
-        if (name == null && url == null) {
-            throw new SerializationException("url and name both are null; fuck you!");
-        }
-
-        if (label == null && emoji == null) {
-            throw new SerializationException("Button label and emoji cannot both be null");
-        }
 
     }
 
@@ -183,6 +163,39 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
     // BUILDER
     //
 
+    public static @NotNull Builder fromSection(@NotNull ConfigurationNode section) {
+
+        String name = section.node("name").getString();
+        String url = section.node("url").getString();
+
+        String label = section.node("label").getString();
+
+        String styleRaw = section.node("style").getString();
+        ButtonStyle style = styleRaw != null ? CommonUtils.getEnumValue(ButtonStyle.class, styleRaw) : ButtonStyle.SECONDARY;
+        if (style == null) {
+            throw new IllegalArgumentException("Unknown ButtonStyle `" + styleRaw + "`");
+        }
+
+        String emojiRaw = section.node("emoji").getString();
+        Emoji emoji = emojiRaw != null ? Emoji.fromUnicode(emojiRaw) : null;
+
+        int row = section.node("row").getInt();
+        int index = section.node("index").getInt();
+
+        boolean isStatic = section.node("static").getBoolean();
+
+        return builder()
+                .setName(name)
+                .setUrl(url)
+                .setLabel(label)
+                .setStyle(style)
+                .setEmoji(emoji)
+                .setRow(row)
+                .setIndex(index)
+                .setStatic(isStatic);
+
+    }
+
     public static @NotNull Builder builder() {
         return new Builder();
     }
@@ -202,7 +215,7 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
 
         private int index;
 
-        private int slot;
+        private int row;
 
         private boolean isStatic;
 
@@ -219,7 +232,7 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
             this.style = builder.style;
 
             this.index = builder.index;
-            this.slot = builder.slot;
+            this.row = builder.row;
 
             this.isStatic = builder.isStatic;
 
@@ -235,7 +248,7 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
             this.style = template.style;
 
             this.index = template.row;
-            this.slot = template.index;
+            this.row = template.index;
 
             this.isStatic = template.isStatic;
 
@@ -298,20 +311,20 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
         
         // SLOT //
 
-        public @NotNull Builder setSlot(int slot) {
+        public @NotNull Builder setRow(int row) {
 
-            if (slot < 1 || slot > 5) {
-                throw new IllegalArgumentException("Slot must be between 1 and 5, got " + slot);
+            if (row < 1 || row > 5) {
+                throw new IllegalArgumentException("Slot must be between 1 and 5, got " + row);
             }
 
-            this.slot = slot;
+            this.row = row;
 
             return this;
 
         }
         
-        public int getSlot() {
-            return slot;
+        public int getRow() {
+            return row;
         }
         
         // INDEX //
@@ -341,10 +354,10 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
         public @NotNull ButtonTemplate build() {
 
             if (url != null) {
-                return new ButtonTemplate(url, label, emoji, style, index, slot);
+                return new ButtonTemplate(url, label, emoji, style, index, row);
             }
 
-            return new ButtonTemplate(name, label, emoji, style, index, slot, isStatic);
+            return new ButtonTemplate(name, label, emoji, style, index, row, isStatic);
 
         }
 

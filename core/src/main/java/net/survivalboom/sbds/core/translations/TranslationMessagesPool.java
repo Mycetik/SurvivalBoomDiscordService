@@ -2,6 +2,7 @@ package net.survivalboom.sbds.core.translations;
 
 import net.survivalboom.sbds.api.messages.template.EmbedMessageTemplate;
 import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
+import net.survivalboom.sbds.api.messages.template.TextMessageTemplate;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.ITranslationsMessagesPool;
@@ -14,6 +15,8 @@ import org.spongepowered.configurate.serialize.SerializationException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class TranslationMessagesPool extends Valid implements ITranslationsMessagesPool {
 
@@ -104,6 +107,7 @@ public class TranslationMessagesPool extends Valid implements ITranslationsMessa
         }
 
         this.messagesMap.putAll(result.loaded());
+        translation.cache.putAll(result.loaded());
 
         return result;
 
@@ -113,7 +117,7 @@ public class TranslationMessagesPool extends Valid implements ITranslationsMessa
 
         for (ConfigurationNode child : node.childrenMap().values()) {
 
-            String curPath = child.path().toString();
+            String curPath = createPath(child);
 
             if (child.isMap()) {
 
@@ -145,10 +149,14 @@ public class TranslationMessagesPool extends Valid implements ITranslationsMessa
 
             else {
                 String content = child.getString("null");
-                result.loaded().put(curPath, EmbedMessageTemplate.ofString(content).build());
+                result.loaded().put(curPath, new TextMessageTemplate(content));
             }
 
         }
+    }
+
+    private String createPath(@NotNull ConfigurationNode node) {
+        return String.join(".", StreamSupport.stream(node.path().spliterator(), false).map(Object::toString).toList());
     }
 
 
