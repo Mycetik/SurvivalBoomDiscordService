@@ -5,7 +5,6 @@ import net.survivalboom.sbds.api.registrations.IRegistrationRegistry;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.core.modules.ModuleManager;
 import net.survivalboom.sbds.api.registrations.Registration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,11 +19,11 @@ public class RegistrationRegistry extends Manager implements IRegistrationRegist
     private static final Logger log = LoggerFactory.getLogger(RegistrationRegistry.class);
     private final Map<NamespacedKey, Registration<?>> registrationMap = new HashMap<>();
 
-    private final ModuleManager moduleManager;
+    private final SBDS sbds;
 
 
     public RegistrationRegistry(@NotNull SBDS sbds) {
-        this.moduleManager = sbds.getModuleManager();
+        this.sbds = sbds;
     }
 
 
@@ -85,7 +84,7 @@ public class RegistrationRegistry extends Manager implements IRegistrationRegist
         NamespacedKey regKey = createKey(module, regName);
 
         if (module != null) {
-            moduleManager.checkModuleEnabled(module, "Disabled module `" + module.getName() + "` tried to register `" + regName + "`");
+            sbds.getModuleManager().checkModuleEnabled(module, "Disabled module `" + module.getName() + "` tried to register `" + regName + "`");
         }
 
         if (registrationMap.containsKey(regKey)) {

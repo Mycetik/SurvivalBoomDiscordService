@@ -208,6 +208,8 @@ public class Database extends Manager implements IDatabase {
 
         Objects.requireNonNull(properties, "properties == null");
 
+        CommonUtils.waitUntil(sbds::isReady); // Чекаємо поки SBDS запуститься.
+
         if (toImport == null) {
             log.info("Rebuilding SessionFactory...");
         }

@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 
 public class Scheduler extends Manager implements IScheduler, RegistrationManager.Callback<ISchedulerTask> {
 
-    protected static final Logger logger = LoggerFactory.getLogger(Scheduler.class);
+    protected static final Logger logger = LoggerFactory.getLogger(Scheduler.class.getSimpleName());
 
 
     private final SBDS sbds;

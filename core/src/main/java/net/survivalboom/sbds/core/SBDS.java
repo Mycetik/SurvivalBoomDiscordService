@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
+import net.survivalboom.sbds.api.utils.placeholders.IPlaceholderRegistry;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.core.commands.context.ContextCommandManager;
 import net.survivalboom.sbds.core.commands.slash.SlashCommandManager;
@@ -25,6 +26,7 @@ import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.ModuleManager;
 import net.survivalboom.sbds.core.monitor.SystemMonitor;
 import net.survivalboom.sbds.core.permissions.PermissionManager;
+import net.survivalboom.sbds.core.utils.placeholders.PlaceholderRegistry;
 import net.survivalboom.sbds.core.registration.RegistrationRegistry;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
 import net.survivalboom.sbds.api.SbdsProvider;
@@ -95,6 +97,8 @@ public class SBDS implements ISBDS {
 
     private final Messages messages;
 
+    private final PlaceholderRegistry placeholderRegistry;
+
 
     private boolean started = false;
 
@@ -159,6 +163,7 @@ public class SBDS implements ISBDS {
 
         this.translationManager = new TranslationManager(this);
         this.messages = new Messages(this);
+        this.placeholderRegistry = new PlaceholderRegistry(this);
 
         this.consoleListener = new ConsoleListener(this);
         this.permissionManager = new PermissionManager(this);
@@ -218,6 +223,7 @@ public class SBDS implements ISBDS {
 
         translationManager.init();
         messages.init();
+        placeholderRegistry.init();
 
         permissionManager.init();
         eventManager.init();
@@ -281,6 +287,7 @@ public class SBDS implements ISBDS {
         componentInteractionManager.shutdown();
         modalInteractionManager.shutdown();
 
+        placeholderRegistry.shutdown();
         translationManager.shutdown();
         messages.shutdown();
 
@@ -416,6 +423,11 @@ public class SBDS implements ISBDS {
     @Override
     public @NotNull Messages getMessages() {
         return messages;
+    }
+
+    @Override
+    public @NotNull IPlaceholderRegistry getPlaceholderRegistry() {
+        return placeholderRegistry;
     }
 
     @Override

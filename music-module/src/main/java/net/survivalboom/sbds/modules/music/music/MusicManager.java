@@ -1,25 +1,29 @@
-package net.survivalboom.sbds.modules.music.bots;
+package net.survivalboom.sbds.modules.music.music;
 
 import dev.arbjerg.lavalink.client.NodeOptions;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.database.guilds.IGuildData;
-import net.survivalboom.sbds.api.database.guilds.IGuildRepositoryHandler;
+import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
 import net.survivalboom.sbds.api.utils.*;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.modules.music.MusicModule;
-import net.survivalboom.sbds.modules.music.lavalink.AutoSetup;
+import net.survivalboom.sbds.modules.music.music.lavalink.AutoSetup;
+import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class BotManager extends Manager {
+public class MusicManager extends Manager {
 
 
     private final MusicModule module;
@@ -31,7 +35,7 @@ public class BotManager extends Manager {
     private final File botsFolder;
 
 
-    private final IGuildRepositoryHandler guildRepository;
+    private final IGuildDataManager guildData;
 
     private final NamespacedKey key;
 
@@ -41,15 +45,15 @@ public class BotManager extends Manager {
     private final Set<NodeOptions> nodeInfos = new HashSet<>();
 
 
-    public BotManager(@NotNull MusicModule module, @NotNull AutoSetup autoSetup) {
+    public MusicManager(@NotNull MusicModule module, @NotNull AutoSetup autoSetup) {
 
         this.module = module;
         this.autoSetup = autoSetup;
 
-        this.logger = module.getModule().getLogger();
+        this.logger = module.getLogger();
         this.botsFolder = new File(module.getModule().getDataFolder(), "bots");
 
-        this.guildRepository = module.getSbds().getDatabase().getRepositoryHandler("sbds:guilds", IGuildRepositoryHandler.class);
+        this.guildData = module.getSbds().getGuildManager();
         this.key = NamespacedKey.fromModule(module, "music_module");
 
     }
@@ -71,14 +75,16 @@ public class BotManager extends Manager {
             return;
         }
 
-        List<TypeMap> nodes = CommonUtils.typeMap(module.getConfig().getMapList("nodes"));
-        for (TypeMap map : nodes) {
+        for (ConfigurationNode node : module.getConfig().node("nodes").childrenList()) {
 
-            String name = map.getCastOrNull("name", String.class);
-            String url = map.getCastOrNull("url", String.class);
-            String password = map.getCastOrNull("password", String.class);
+            String name = node.node("name").getString();
+            String url = node.node("url").getString();
+            String password = node.node("password").getString();
 
-            if (name == null || url == null || password == null) continue;
+            if (name == null || url == null || password == null) {
+                logger.warn("Invalid node {}. Skipping...", node.key());
+                continue;
+            }
 
             NodeOptions.Builder builder = new NodeOptions.Builder();
             builder.setName(name);
@@ -88,6 +94,7 @@ public class BotManager extends Manager {
             nodeInfos.add(builder.build());
 
         }
+
     }
 
     private void loadBots() {
@@ -98,7 +105,9 @@ public class BotManager extends Manager {
         for (File file : Objects.requireNonNull(botsFolder.listFiles())) {
 
             String fileName = file.getName();
-            if (!fileName.endsWith(".token")) continue;
+            if (!fileName.endsWith(".token")) {
+                continue;
+            }
 
             String name = fileName.replace(".token", "");
 
@@ -108,7 +117,7 @@ public class BotManager extends Manager {
                 String token = loadToken(file);
                 bot = new MusicBot(this, nodeInfos, name, token);
 
-                bot.start();
+                bot.init();
 
             }
 
@@ -179,6 +188,7 @@ public class BotManager extends Manager {
     public @NotNull List<MusicBot> findFreeBots(@NotNull AudioChannelUnion channel) {
 
         Objects.requireNonNull(channel, "channel == null");
+        checkValid();
 
         List<MusicBot> botsInGuild = findBotsInGuild(channel.getGuild());
         if (botsInGuild.isEmpty()) return botsInGuild;
@@ -187,45 +197,67 @@ public class BotManager extends Manager {
 
         return botsInGuild.stream().filter(bot -> {
             GuildPlayer player = bot.getPlayer(guild);
-            return player == null || !player.isActive();
+            return player == null || !player.isValid();
         }).toList();
 
     }
 
     public @Nullable GuildPlayer findCurrentPlayer(@NotNull AudioChannelUnion channel) {
+
         Objects.requireNonNull(channel, "channel == null");
+        checkValid();
+
         Guild guild = channel.getGuild();
         return musicBots
                 .stream()
                 .map(bot -> bot.getPlayer(guild))
                 .filter(Objects::nonNull)
-                .filter(GuildPlayer::isActive)
+                .filter(GuildPlayer::isValid)
                 .filter(p -> channel.getIdLong() == Objects.requireNonNull(p.getChannel()).getIdLong())
                 .findFirst()
                 .orElse(null);
     }
 
     public @NotNull List<MusicBot> findBotsInGuild(@NotNull Guild guild) {
-
+        checkValid();
         //        Collections.shuffle(bots); <--- не прикольно і не зручно;
-
-        return new ArrayList<>(musicBots.stream().filter(bot -> bot.getBot().getGuilds().contains(guild)).toList());
-
+        return musicBots.stream()
+                .filter(bot -> bot.getBot().getGuilds().contains(guild))
+                .collect(Collectors.toList());
     }
 
+    //
+    // MUSIC BAN
+    //
 
+    @Blocking
     public boolean isMusicBanned(@NotNull Guild guild, @NotNull User user) {
-        IGuildData guildData = guildRepository.createGuildData(guild).join();
-        return Objects.requireNonNullElse((Boolean) guildData.container().getOrCreate(key).get(user.getId()), false);
+
+        IGuildData guildData = this.guildData.get(guild).join();
+        if (guildData == null) {
+            return false;
+        }
+
+        return guildData.container().obtainNode(key).node(user.getId()).getBoolean(false);
+
     }
 
+    @Blocking
     public void setMusicBanned(@NotNull Guild guild, @NotNull User user, boolean state) {
 
-        IGuildData guildData = guildRepository.createGuildData(guild).join();
-        TypeMap map = guildData.container().getOrCreate(key);
+        IGuildData guildData = this.guildData.obtain(guild).join();
 
-        if (state) map.put(user.getId(), true);
-        else map.remove(user.getId());
+        ConfigurationNode node = guildData.container().obtainNode(key).node(user.getId());
+
+        try {
+            if (state) {
+                node.set(true);
+            } else {
+                node.set(null);
+            }
+        } catch (SerializationException e) {
+            throw new RuntimeException(e);
+        }
 
         guildData.save();
 

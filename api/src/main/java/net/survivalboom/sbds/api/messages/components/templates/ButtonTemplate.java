@@ -190,7 +190,7 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
                 .setLabel(label)
                 .setStyle(style)
                 .setEmoji(emoji)
-                .setRow(row)
+                .setSlot(row)
                 .setIndex(index)
                 .setStatic(isStatic);
 
@@ -215,7 +215,7 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
 
         private int index;
 
-        private int row;
+        private int slot;
 
         private boolean isStatic;
 
@@ -232,7 +232,7 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
             this.style = builder.style;
 
             this.index = builder.index;
-            this.row = builder.row;
+            this.slot = builder.slot;
 
             this.isStatic = builder.isStatic;
 
@@ -248,7 +248,7 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
             this.style = template.style;
 
             this.index = template.row;
-            this.row = template.index;
+            this.slot = template.index;
 
             this.isStatic = template.isStatic;
 
@@ -311,20 +311,20 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
         
         // SLOT //
 
-        public @NotNull Builder setRow(int row) {
+        public @NotNull Builder setSlot(int slot) {
 
-            if (row < 1 || row > 5) {
-                throw new IllegalArgumentException("Slot must be between 1 and 5, got " + row);
+            if (slot < 0 || slot > 5) {
+                throw new IllegalArgumentException("Slot must be between 0 and 5, got " + slot);
             }
 
-            this.row = row;
+            this.slot = slot;
 
             return this;
 
         }
         
-        public int getRow() {
-            return row;
+        public int getSlot() {
+            return slot;
         }
         
         // INDEX //
@@ -354,10 +354,10 @@ public class ButtonTemplate implements MessageInteractableComponentTemplate<Butt
         public @NotNull ButtonTemplate build() {
 
             if (url != null) {
-                return new ButtonTemplate(url, label, emoji, style, index, row);
+                return new ButtonTemplate(url, label, emoji, style, index, slot);
             }
 
-            return new ButtonTemplate(name, label, emoji, style, index, row, isStatic);
+            return new ButtonTemplate(name, label, emoji, style, index, slot, isStatic);
 
         }
 

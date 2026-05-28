@@ -39,9 +39,20 @@ public class CommonUtils {
     // FILES
     //
 
+    public static void checkFiles(@NotNull Class<?> origin, @NotNull File workingDir, @Nullable Logger logger, String... args) {
+        Map<String, String> map = mapOf((Object[]) args);
+        checkFiles(origin, workingDir, map, logger);
+    }
+
     public static void checkFiles(@NotNull Class<?> origin, @NotNull File workingDir, @NotNull Map<String, String> files, @Nullable Logger logger) {
 
-        if (workingDir.isFile()) throw new IllegalArgumentException(String.format("File at %s is a file!", workingDir.getPath()));
+        Objects.requireNonNull(origin, "origin == null");
+        Objects.requireNonNull(workingDir, "workingDir == null");
+        Objects.requireNonNull(files, "files == null");
+
+        if (workingDir.isFile()) {
+            throw new IllegalArgumentException(String.format("File at %s is a file!", workingDir.getPath()));
+        }
 
         try {
 
@@ -358,6 +369,31 @@ public class CommonUtils {
     //
     // MAP
     //
+
+    @SuppressWarnings("unchecked")
+    public static @NotNull <K, V> Map<K, V> mapOf(Object... args) {
+
+        Map<K, V> map = new HashMap<>();
+
+        if ((args.length % 2) != 0) {
+            throw new IllegalArgumentException("Invalid count of arguments " + args.length);
+        }
+
+        int index = 0;
+        while (index < args.length) {
+
+            Object key = args[index];
+            Object value = args[index + 1];
+
+            map.put((K) key, (V) value);
+
+            index += 2;
+
+        }
+
+        return map;
+
+    }
 
     @SuppressWarnings("unchecked")
     public static <T> T deepCopy(T object) {

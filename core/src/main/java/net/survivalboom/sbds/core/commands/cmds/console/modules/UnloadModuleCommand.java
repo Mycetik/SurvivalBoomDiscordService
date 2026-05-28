@@ -19,6 +19,18 @@ public class UnloadModuleCommand extends CommandBase implements ConsoleCommandEx
 
         IModule module = info.arguments().getCast("module", IModule.class).orElseThrow();
 
+        if (module.isEnabled()) {
+
+            try {
+                info.sbds().getModuleManager().disableModule(module);
+            }
+
+            catch (ModuleStateCallbackException e) {
+                info.logger().error("Failed to disable module `{}` properly. An exception was thrown!", module.getName(), e);
+            }
+
+        }
+
         try {
             info.sbds().getModuleManager().unloadModule(module);
         }

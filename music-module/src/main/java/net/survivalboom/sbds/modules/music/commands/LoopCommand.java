@@ -10,19 +10,16 @@ import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
-import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
-import net.survivalboom.sbds.modules.music.bots.LoopMode;
+import net.survivalboom.sbds.modules.music.music.MusicManager;
+import net.survivalboom.sbds.modules.music.music.GuildPlayer;
+import net.survivalboom.sbds.modules.music.music.LoopMode;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Objects;
 
 @CommandClass(name = "loop", description = "Sets a loop mode for current music bot", translationKey = "music.command.loop")
 public class LoopCommand extends AbstractPlayerCommand {
 
-    public LoopCommand(@NotNull BotManager botManager) {
-        super(botManager);
+    public LoopCommand(@NotNull MusicManager musicManager) {
+        super(musicManager);
     }
 
     @Override
@@ -33,31 +30,29 @@ public class LoopCommand extends AbstractPlayerCommand {
             return;
         }
 
-        if (checkBannedOrLocked(info, player, false)) return;
+        if (checkBannedOrLocked(info, player, false)) {
+            return;
+        }
 
-        LoopMode loop = info.arguments().get("mode", LoopMode.class);
-        Objects.requireNonNull(loop);
+        LoopMode loop = info.arguments().getCast("mode", LoopMode.class).orElseThrow();
 
         player.loop(loop);
 
         User botUser = player.getBot().getBot().getSelfUser();
-        Placeholders placeholders = new Placeholders()
-                .add("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator())
-                .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl())
-                .add("{MODE}", loop);
 
-        info.reply("music.command.loop.success").withPlaceholders(placeholders).queue();
+        info.reply("music.command.loop.success")
+                .withPlaceholders(
+                        "bot", botUser,
+                        "mode", loop
+                )
+                .queue();
 
     }
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
-        if (channel == null) {
-            info.logger().error("Channel argument is missing or invalid.");
-            return;
-        }
+        AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
 
         GuildPlayer player = getPlayer(info, channel, false);
         if (player == null) {
@@ -69,19 +64,20 @@ public class LoopCommand extends AbstractPlayerCommand {
         player.adminLock(newState);
 
         if (newState) {
-            info.logger().info("Music bot is now **locked** for staff-only use.");
+            info.logger().info("Music bot is now &clocked &rfor staff-only use.");
         } else {
-            info.logger().info("Music bot is now **unlocked** for all users.");
+            info.logger().info("Music bot is now &aunlocked &rfor all users.");
         }
+
     }
 
-    @ArgumentMethod(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }
 
 
-    @ArgumentMethod(name = "mode", description = "Loop mode", index = 1)
+    @ArgumentMethod(description = "Loop mode", index = 1)
     public Argument<?> mode() {
         return new EnumSelectArgument<>(LoopMode.class);
     }

@@ -10,17 +10,19 @@ import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
-import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
+import net.survivalboom.sbds.modules.music.music.MusicManager;
+import net.survivalboom.sbds.modules.music.music.GuildPlayer;
+import net.survivalboom.sbds.modules.music.music.MusicTrack;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Objects;
 
 @CommandClass(name = "playlist", description = "Shows current playlist", translationKey = "music.command.playlist")
 public class PlaylistCommand extends AbstractPlayerCommand {
 
-    public PlaylistCommand(@NotNull BotManager botManager) {
-        super(botManager);
+    public PlaylistCommand(@NotNull MusicManager musicManager) {
+        super(musicManager);
     }
 
     @Override
@@ -31,24 +33,24 @@ public class PlaylistCommand extends AbstractPlayerCommand {
             return;
         }
 
-        String playListStr = createTracksString(player.getPlaylist(), true, 100);
+        List<MusicTrack> playlist = player.getPlaylist();
+        String playListStr = createTracksString(playlist, 100);
         User botUser = player.getBot().getBot().getSelfUser();
 
-        Placeholders placeholders = new Placeholders();
-        placeholders
-                .add("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator())
-                .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl())
-                .add("{COUNT}", player.getPlaylistSize())
-                .add("{PLAYLIST}", playListStr);
-
-        info.reply("music.command.playlist.success").withPlaceholders(placeholders).queue();
+        info.reply("music.command.playlist.success")
+                .withPlaceholders(
+                        "bot", botUser,
+                        "playlist", playListStr,
+                        "playlist.size", playlist.size()
+                )
+                .queue();
 
     }
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
+        AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
         Objects.requireNonNull(channel);
 
         GuildPlayer player = getPlayer(info, channel, false);
@@ -62,12 +64,20 @@ public class PlaylistCommand extends AbstractPlayerCommand {
             return;
         }
 
-        String playlistStr = createTracksString(player.getPlaylist(), true, 100);
+        List<MusicTrack> playlist = player.getPlaylist();
 
-        info.logger().info("Playlist ({} tracks):\n{}", player.getPlaylistSize(), playlistStr);
+        info.logger().info("--- --- < Playlist > --- ---");
+
+        for (int i = 0; i < playlist.size(); i++) {
+            MusicTrack track = playlist.get(i);
+            info.logger().info("{}. {} {} -> {}", i, track.getDurationFormated(), track.getTitle(), track.getLink());
+        }
+
+        info.logger().info("--- --- -----  ----- --- ---");
+
     }
 
-    @ArgumentMethod(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

@@ -1,12 +1,13 @@
-package net.survivalboom.sbds.modules.music.lavalink;
+package net.survivalboom.sbds.modules.music.music.lavalink;
 
 import dev.arbjerg.lavalink.client.NodeOptions;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.valid.Manager;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,12 +19,11 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Map;
 import java.util.Random;
 
 public class AutoSetup extends Manager {
 
-    public static final URI DOWNLOAD_LINK = URI.create("https://github.com/lavalink-devs/Lavalink/releases/download/4.1.1/Lavalink.jar");
+    public static final URI DOWNLOAD_LINK = URI.create("https://github.com/lavalink-devs/Lavalink/releases/download/4.2.2/Lavalink.jar");
 
     private final ModuleMain module;
 
@@ -59,7 +59,7 @@ public class AutoSetup extends Manager {
     @Override
     protected void init0() {
 
-        enabled = !module.getConfig().getBoolean("manual-setup");
+        enabled = !module.getConfig().node("manual-setup").getBoolean();
         if (!enabled) {
             logger.info("Manual lavalink setup! You are on your own!");
             return;
@@ -68,21 +68,20 @@ public class AutoSetup extends Manager {
         if (!lavalinkFile.exists()) {
 
             logger.info("Downloading lavalink from `{}`...", DOWNLOAD_LINK);
-            module.checkFiles(Map.of("application.yml", "lavalink/application.yml"));
+            module.checkFiles("application.yml", "lavalink/application.yml");
 
             try (HttpClient httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build()) {
 
                 HttpRequest request = HttpRequest.newBuilder().uri(DOWNLOAD_LINK).header("User-Agent", "Mozilla/5.0").GET().build();
-
                 HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
-                int statusCode = response.statusCode();
-                if (statusCode != 200) {
-                    logger.error("Failed to download lavalink! Status code: {}; {}", statusCode, new String(response.body().readAllBytes()));
-                    throw new RuntimeException("Automatic lavalink setup failed");
-                }
-
                 try (InputStream stream = response.body()) {
+
+                    int statusCode = response.statusCode();
+                    if (statusCode != 200) {
+                        logger.error("Failed to download lavalink! Status code: {}; {}", statusCode, new String(stream.readAllBytes()));
+                        throw new RuntimeException("Automatic lavalink setup failed");
+                    }
 
                     try (FileOutputStream out = new FileOutputStream(lavalinkFile)) {
                         stream.transferTo(out);
@@ -106,12 +105,19 @@ public class AutoSetup extends Manager {
             throw new RuntimeException("Automatic lavalink setup failed");
         }
 
-        YamlConfiguration yamlConfiguration = new YamlConfiguration();
+        YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
+                .path(lavalinkConfig.toPath())
+                .build();
+
         try {
-            yamlConfiguration.load(lavalinkConfig);
-            yamlConfiguration.set("server.port", port);
-            yamlConfiguration.set("lavalink.server.password", "survivalboom");
-            yamlConfiguration.save(lavalinkConfig);
+
+            ConfigurationNode node = loader.load();
+
+            node.node("server", "port").set(port);
+            node.node("lavalink", "server", "password").set("survivalboom");
+
+            loader.save(node);
+
         }
 
         catch (Exception e) {

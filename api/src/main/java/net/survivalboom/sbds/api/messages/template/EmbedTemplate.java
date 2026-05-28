@@ -101,7 +101,7 @@ public class EmbedTemplate {
 
         builder.setTitle(
                 StringParser.stParseNullable(parser, title),
-                StringParser.stParseNullable(parser, title)
+                StringParser.stParseNullable(parser, url)
         );
 
         builder.setThumbnail(StringParser.stParseNullable(parser, thumbnailUrl));

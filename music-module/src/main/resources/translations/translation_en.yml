@@ -3,7 +3,7 @@
 #  English | By TIMURishche
 #
 
-$name: "english"
+$name: sbds:english
 
 music:
 
@@ -38,7 +38,7 @@ music:
         $embed:
           title: "Failed to connect :("
           description: |
-            Bot {BOT} could not connect to {CHANNEL}.
+            Bot {bot.name} could not connect to {CHANNEL}.
             Maybe bot does not have enough permissions?
           color: ff0000
 
@@ -69,8 +69,8 @@ music:
 
       playlist-added-single:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Added to Playlist!"
           color: 8f00ff
           description: |
@@ -80,13 +80,13 @@ music:
             - `{PLAYING-NAME}`
           fields:
             - name: "Duration"
-              value: "`{ADDED-DURATION}`"
+              value: "`{added.duration}`"
               inline: true
             - name: "Source"
-              value: "[{ADDED-SOURCE}]({ADDED-LINK})"
+              value: "[{added.source}]({added.link})"
               inline: true
             - name: "Playlist Size"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -118,9 +118,9 @@ music:
 
       playlist-added:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
-          title: "`{TRACKS-COUNT}` Tracks Added to Playlist!"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
+          title: "`{count}` Tracks Added to Playlist!"
           color: 8f00ff
           description: |
             Added:
@@ -130,13 +130,13 @@ music:
             - `{PLAYING-NAME}`
           fields:
             - name: "Duration"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
             - name: "Source"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
             - name: "Playlist Size"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -168,8 +168,8 @@ music:
 
       connected:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Free Bot Found!"
           color: 8f00ff
           description: |
@@ -177,13 +177,13 @@ music:
             - `{PLAYING-NAME}`
           fields:
             - name: "Duration"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
             - name: "Source"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
             - name: "Playlist Size"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -229,26 +229,26 @@ music:
         $embed:
           title: "Invalid Index"
           color: ff0000
-          description: "Specify a valid index from `0` to `{PLAYLIST-SIZE}`."
+          description: "Specify a valid index from `0` to `{playlist.size}`."
 
       multiple:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
-          title: "`{SKIP}` Songs Skipped!"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
+          title: "`{count}` Songs Skipped!"
           color: 8f00ff
           description: |
             Now playing:
             - `{PLAYING-NAME}`
           fields:
             - name: "Duration"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
             - name: "Source"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
             - name: "Playlist Size"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -280,8 +280,8 @@ music:
 
       single:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Song Skipped!"
           color: 8f00ff
           description: |
@@ -291,13 +291,13 @@ music:
             - `{PLAYING-NAME}`
           fields:
             - name: "Duration"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
             - name: "Source"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
             - name: "Playlist Size"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -335,22 +335,22 @@ music:
 
       multiple:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
-          title: "`{SKIP}` Songs Skipped!"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
+          title: "`{count}` Songs Skipped!"
           color: 8f00ff
           description: |
             Now playing:
             - `{PLAYING-NAME}`
           fields:
             - name: "Duration"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
             - name: "Source"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
             - name: "Playlist Size"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -382,8 +382,8 @@ music:
 
       single:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Song Skipped!"
           color: 8f00ff
           description: |
@@ -393,13 +393,13 @@ music:
             - `{PLAYING-NAME}`
           fields:
             - name: "Duration"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
             - name: "Source"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
             - name: "Playlist Size"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -433,8 +433,8 @@ music:
       description: "Displays the current music bot playlist."
       success:
         $embed:
-          title: "Playlist of `{COUNT}` songs."
-          description: "{PLAYLIST}"
+          title: "Playlist of `{playlist.size}` songs."
+          description: "{playlist}"
 
     loop:
       description: "Sets the loop mode for tracks in the music bot."
@@ -449,34 +449,34 @@ music:
 
       success:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Loop Mode"
           color: 8f00ff
-          description: "Loop mode changed to `{MODE}`."
+          description: "Loop mode changed to `{mode}`."
 
     lock:
       description: "Locks the current music bot to be used only by admin."
       denied:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Bot is Locked!"
           color: ff0000
           description: "Only staff can control it."
 
       locked:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Music Bot Locked!"
           color: 8f00ff
           description: "Only staff can control it now."
 
       unlocked:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Music Bot Unlocked!"
           color: 8f00ff
           description: "Anyone can control it now."
@@ -514,16 +514,16 @@ music:
 
       paused:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Paused!"
           color: 8f00ff
           description: "Current track paused."
 
       resumed:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "Resumed!"
           color: 8f00ff
           description: "Resumed playback of current track."
@@ -533,16 +533,16 @@ music:
 
       enable:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "24/7 Mode Enabled!"
           color: 8f00ff
           description: "Bot will now stay in the channel and repeat the playlist."
 
       disable:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
           title: "24/7 Mode Disabled!"
           color: 8f00ff
           description: "Bot will now leave the channel after the playlist ends."

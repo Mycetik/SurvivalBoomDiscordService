@@ -1,8 +1,10 @@
 package net.survivalboom.sbds.core.modules;
 
+import net.survivalboom.sbds.api.libraries.ILibrary;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.modules.dependencies.ModuleDependency;
 import net.survivalboom.sbds.api.utils.valid.Manager;
+import net.survivalboom.sbds.core.libraries.LibrariesManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,15 +12,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-public class ModulesClassesSharingManager extends Manager {
+public class ModulesClasspath extends Manager {
 
     private final ModuleManager moduleManager;
+
+    private final LibrariesManager librariesManager;
 
     private final Map<String, Class<?>> recentClasses = new WeakHashMap<>();
 
 
-    public ModulesClassesSharingManager(@NotNull ModuleManager moduleManager) {
+    public ModulesClasspath(@NotNull ModuleManager moduleManager) {
         this.moduleManager = moduleManager;
+        this.librariesManager = moduleManager.getSbds().getLibrariesManager();;
     }
 
     //
@@ -32,6 +37,10 @@ public class ModulesClassesSharingManager extends Manager {
 
     @Override
     protected void shutdown0() {
+        purgeCache();
+    }
+
+    public void purgeCache() {
         recentClasses.clear();
     }
 
@@ -44,8 +53,26 @@ public class ModulesClassesSharingManager extends Manager {
         checkValid();
         moduleManager.checkModuleValid(module);
 
-        // TODO 25.4.2026 9:28 -> Реалізувати кешування.
+        // Шукаємо у кешу //
 
+        if (recentClasses.containsKey(name)) {
+            return recentClasses.get(name);
+        }
+
+        // Намагаємось виконати пошук класу по бібліотекам модуля //
+
+        List<ILibrary> libraries = module.getLibraries();
+
+        Class<?> clazz = null;
+        for (ILibrary library : libraries) {
+            clazz = librariesManager.requestClass(library, name);
+        }
+
+        if (clazz != null) {
+            return clazz;
+        }
+
+        // Шукаємо запитуваний клас у всіх модулях, що приписані у залежностях. //
         // Отримуємо список усіх завантажених модулів та відсіюємо ті які не прописані у залежностях модуля що запитує клас.
 
         List<IModule> modules = moduleManager.getModules();
@@ -53,15 +80,9 @@ public class ModulesClassesSharingManager extends Manager {
 
         modules.removeIf(m -> dependencies.stream().noneMatch(dependency -> dependency.id().equals(module.getName()) && dependency.joinClasspath()));
 
-        // Шукаємо запитуваний клас у всіх модулях, що приписані у залежностях.
-
-        Class<?> clazz = null;
         for (IModule depModule : modules) {
-
             Module m = (Module) depModule;
-
             clazz = m.getClassLoader().getClass(name, false, false);
-
         }
 
         recentClasses.put(name, clazz); // Не забуваємо додати у кеш результат. Навіть якщо null.

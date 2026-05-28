@@ -1,7 +1,6 @@
 package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
-import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
@@ -9,52 +8,29 @@ import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.interaction.IInteractionInfo;
-import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
-import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
-import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
+import net.survivalboom.sbds.modules.music.music.MusicManager;
+import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 @CommandClass(name = "stop", description = "Stops current playing music bot", translationKey = "music.command.stop")
 public class StopCommand extends AbstractPlayerCommand {
 
-    public StopCommand(@NotNull BotManager botManager) {
-        super(botManager);
-    }
-
-    @Override
-    protected void init(@NotNull ISBDS sbds, @Nullable IModule module) {
-        Objects.requireNonNull(module);
-        sbds.getButtonInteractionManager().registerListener(module, "stop", this::onButtonClick);
-    }
-
-    public void onButtonClick(@NotNull ButtonInteractionInfo info) {
-        executes0(info, true);
+    public StopCommand(@NotNull MusicManager musicManager) {
+        super(musicManager);
     }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
-        executes0(info, false);
-    }
 
-
-    private void executes0(@NotNull IInteractionInfo info, boolean ephemeral) {
-
-        GuildPlayer player = getPlayer(info, false, ephemeral);
+        GuildPlayer player = getPlayer(info, false, false);
         if (player == null) return;
 
-        if (checkBannedOrLocked(info, player, ephemeral)) return;
+        if (checkBannedOrLocked(info, player, false)) return;
 
-        player.stop();
+        player.shutdown();
         info.reply("music.command.stop.success")
-                .withPlaceholders(Placeholders.of("{BOT}", player.getBot().getBot().getSelfUser().getAsMention()))
-                .send()
-                .setEphemeral(ephemeral)
+                .withPlaceholders("bot", player.getBot().getBot().getSelfUser().getAsMention())
                 .queue();
 
     }
@@ -62,8 +38,7 @@ public class StopCommand extends AbstractPlayerCommand {
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
-        Objects.requireNonNull(channel);
+        AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
 
         GuildPlayer player = getPlayer(info, channel, false);
         if (player == null) {
@@ -71,12 +46,12 @@ public class StopCommand extends AbstractPlayerCommand {
             return;
         }
 
-        player.stop();
+        player.shutdown();
         info.logger().info("Stopping `{}`.", player.getBot().getBot().getSelfUser().getEffectiveName());
 
     }
 
-    @ArgumentMethod(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

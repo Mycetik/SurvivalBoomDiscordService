@@ -44,8 +44,6 @@ public class SbdsBootstrap {
             @NotNull DynamicClassLoader rootClassLoader
     ) {
 
-        DynamicClassLoader.log = LoggerFactory.getLogger(DynamicClassLoader.class);
-
         this.logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         this.workingDir = workingDir;
 
@@ -190,6 +188,8 @@ public class SbdsBootstrap {
             logger.error("Some libraries were failed to download. Refusing to start.");
             throw new RuntimeException();
         }
+
+        librariesManager.addGlobalPinned(request.result().getPinnedLibraries());
 
 
     }

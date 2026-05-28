@@ -1,10 +1,13 @@
 package net.survivalboom.sbds.api.utils.placeholders;
 
+import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Placeholders implements StringParser {
@@ -198,6 +201,7 @@ public class Placeholders implements StringParser {
 
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, Object> prepareRecursivePlaceholders(@NotNull Map<String, Object> map, String prefix) {
 
         Map<String, Object> out = new HashMap<>();
@@ -211,9 +215,28 @@ public class Placeholders implements StringParser {
             }
 
             if (object instanceof IPlaceholders ip) {
+
                 var pl = ip.placeholders().placeholders;
                 out.putAll(prepareRecursivePlaceholders(pl, prefix + key + "."));
+
                 continue;
+
+            }
+
+            ISBDS sbds = SbdsProvider.getInstance(); // LibrariesManager використовує плейсходери ще до того моменту коли SBDS взагалі починає існувати.
+            if (sbds != null && object != null) {
+
+                IPlaceholderRegistry.IRegisteredPlaceholderProvider<?> provider = sbds.getPlaceholderRegistry().getProviderFor(object);
+                if (provider != null) {
+
+                    Function<Object, IPlaceholders> function = (Function<Object, IPlaceholders>) provider.getFunction();
+                    var pl = function.apply(object).placeholders().placeholders;
+                    out.putAll(prepareRecursivePlaceholders(pl, prefix + key + "."));
+
+                    continue;
+
+                }
+
             }
 
             out.put(prefix + key, object);

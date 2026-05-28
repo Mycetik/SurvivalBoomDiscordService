@@ -41,6 +41,8 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
     private final Map<ArtifactAddress, ILibrary> libraryMap = new HashMap<>();
 
+    private final List<LibraryDeclaration> globalPinned = new ArrayList<>();
+
 
     public LibrariesManager(
             @NotNull File librariesDir,
@@ -72,6 +74,10 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         rootClassLoader.resetSuppliers();
         rootClassLoader.addClassSupplier("ROOT", this::rootClassRequest);
         rootClassLoader.addResourceSupplier("SPI", n -> n.startsWith("META-INF/services/"), this::findGlobalSPIMetaInf);
+    }
+
+    public void addGlobalPinned(@NotNull Collection<LibraryDeclaration> declarations) {
+        this.globalPinned.addAll(declarations);
     }
 
     public void loadLibrariesFromDisk() {
@@ -245,29 +251,31 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         String url = address.createRepositoryAddress(repository, "jar");
         File file = new File(librariesDir, address.toGradleString(ArtifactAddress.DEFAULT_FILESYSTEM_SEPARATOR) + ".jar");
 
+        List<LibraryDeclaration> pinned0 = new ArrayList<>(globalPinned);
+        if (pinned != null) {
+            pinned0.addAll(pinned);
+        }
+
         List<ILibrary> dependencies = new ArrayList<>();
         for (IPomData dependencyPom : pom.getDependencies()) {
 
             boolean modified = false;
-            if (pinned != null) {
 
-                ArtifactAddress pomAddress = dependencyPom.getAddress();
-                LibraryDeclaration pinnedAddr = pinned.stream()
-                        .filter(l -> l.address().group().equals(pomAddress.group()) && l.address().artifact().equals(pomAddress.artifact()))
-                        .findAny()
-                        .orElse(null);
+            ArtifactAddress pomAddress = dependencyPom.getAddress();
+            LibraryDeclaration pinnedAddr = pinned0.stream()
+                    .filter(l -> l.address().group().equals(pomAddress.group()) && l.address().artifact().equals(pomAddress.artifact()))
+                    .findAny()
+                    .orElse(null);
 
-                if (pinnedAddr != null) {
-                    modified = true;
+            if (pinnedAddr != null) {
+                modified = true;
 
-                    try {
-                        dependencyPom = retrievePom(pinnedAddr);
-                    }
+                try {
+                    dependencyPom = retrievePom(pinnedAddr);
+                }
 
-                    catch (PomResolutionException e) {
-                        throw new LibraryDownloadException("Failed to resolve pinned artifact `" + pinnedAddr + "`");
-                    }
-
+                catch (PomResolutionException e) {
+                    throw new LibraryDownloadException("Failed to resolve pinned artifact `" + pinnedAddr + "`");
                 }
 
             }
@@ -284,7 +292,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             if (dependency == null) {
 
                 try {
-                    dependency = downloadLibrary(dependencyPom, pinned, findOptimal);
+                    dependency = downloadLibrary(dependencyPom, pinned0, findOptimal);
                 }
 
                 catch (LibraryDownloadException e) {
@@ -903,7 +911,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         classLoader.addResourceSupplier("SPI", n -> n.startsWith("META-INF/services/"), this::findGlobalSPIMetaInf);
     }
 
-    private @Nullable Class<?> requestClass(@NotNull ILibrary library, @NotNull String name) {
+    public @Nullable Class<?> requestClass(@NotNull ILibrary library, @NotNull String name) {
 
         // Шаг 1: Если это базовый класс Java, не пускаем его в циклы и рекурсии вообще!
         if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("sun.") || name.startsWith("jdk.")) {
@@ -929,8 +937,8 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
             return result;
         }
 
-        // 2. Ищем в зависимостях (копируем список, чтобы избежать мутации)
-        List<ILibrary> maxDependencies = new ArrayList<>(library.getDependencies());
+        // 2. Ищем в зависимостях
+        List<ILibrary> maxDependencies = library.getDependencies();
 
         // Подтягиваем связанные через settings.yml / обратные зависимости
         List<ILibrary> connectedLibs = libraryMap.values().stream()

@@ -2,7 +2,6 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
-import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
@@ -10,73 +9,43 @@ import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.interaction.IInteractionInfo;
-import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
-import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
-import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
+import net.survivalboom.sbds.modules.music.music.MusicManager;
+import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 @CommandClass(name = "music-lock", description = "Locks current music bot for staff usage only", translationKey = "music.command.lock", permission = "music.command.lock")
 public class LockCommand extends AbstractPlayerCommand {
 
-    public LockCommand(@NotNull BotManager botManager) {
-        super(botManager);
+    public LockCommand(@NotNull MusicManager musicManager) {
+        super(musicManager);
     }
 
-    @Override
-    protected void init(@NotNull ISBDS sbds, @Nullable IModule module) {
-        Objects.requireNonNull(module);
-        sbds.getButtonInteractionManager().registerListener(module, "lock", this::onButtonClick, getPermission());
-    }
-
-    public void onButtonClick(@NotNull ButtonInteractionInfo info) {
-        executes0(info, true);
-    }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
-        executes0(info, false);
-    }
 
-
-    private void executes0(@NotNull IInteractionInfo info, boolean ephemeral) {
-
-        GuildPlayer player = getPlayer(info, false, ephemeral);
+        GuildPlayer player = getPlayer(info, false, false);
         if (player == null) {
             return;
         }
 
         boolean state = !player.adminLock();
-
         player.adminLock(state);
 
         User botUser = player.getBot().getBot().getSelfUser();
-        Placeholders placeholders = new Placeholders()
-                .add("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator())
-                .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl());
-
 
         String str = state ? "music.command.lock.locked" : "music.command.lock.unlocked";
         info.reply(str)
-                .withPlaceholders(placeholders)
-                .send()
-                .setEphemeral(ephemeral)
+                .withPlaceholders("bot", botUser)
                 .queue();
 
     }
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
-        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
-        if (channel == null) {
-            info.logger().error("Channel argument is missing or invalid.");
-            return;
-        }
+
+        AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
 
         GuildPlayer player = getPlayer(info, channel, false);
         if (player == null) {
@@ -92,7 +61,7 @@ public class LockCommand extends AbstractPlayerCommand {
 
     }
 
-    @ArgumentMethod(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

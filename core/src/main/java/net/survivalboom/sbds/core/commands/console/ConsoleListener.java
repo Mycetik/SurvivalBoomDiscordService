@@ -69,6 +69,10 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
         Command command = registration.object().getCommand();
         CommandExecutor executor = command.getExecutor();
 
+        if (executor == null) {
+            return;
+        }
+
         if (!(executor instanceof ConsoleCommandExecutor)) {
             throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a console command");
         }
@@ -122,7 +126,11 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
             for (SubCommandArgument.SubCommand execute : toExecute) {
 
                 ConsoleExecutionInfo info = new ConsoleExecutionInfo(cmdReg, execute.command(), input, execute.alias(), result.arguments(), rootLogger);
-                ((ConsoleCommandExecutor) execute.command().getExecutor()).executes(info);
+                ConsoleCommandExecutor executor = (ConsoleCommandExecutor) execute.command().getExecutor();
+
+                if (executor != null) {
+                    executor.executes(info);
+                }
 
             }
 

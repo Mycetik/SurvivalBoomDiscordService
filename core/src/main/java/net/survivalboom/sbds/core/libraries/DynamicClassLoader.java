@@ -1,8 +1,8 @@
 package net.survivalboom.sbds.core.libraries;
 
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,10 +12,11 @@ import java.net.URLClassLoader;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 
 public class DynamicClassLoader extends URLClassLoader {
 
-    public static Logger log = null;
+    private final Logger log;
 
 
     private final Set<File> sources = new HashSet<>();
@@ -30,6 +31,7 @@ public class DynamicClassLoader extends URLClassLoader {
 
     public DynamicClassLoader(@NotNull String name, @Nullable ClassLoader parent) {
         super(name, new URL[0], parent);
+        this.log = Logger.getLogger(name);
     }
 
     public void resetSuppliers() {
@@ -293,7 +295,8 @@ public class DynamicClassLoader extends URLClassLoader {
                 catch (ClassNotFoundException ignored) {}
 
                 catch (Exception e) {
-                    log.error("An exception was thrown in parent class loader `{}` when tried to load class `{}`.", parentClassLoader, name, e);
+                    log.severe("An exception was thrown in parent class loader `" + parentClassLoader + "` when tried to load class `" + name + "`.");
+                    e.printStackTrace();
                 }
 
             }
@@ -334,7 +337,8 @@ public class DynamicClassLoader extends URLClassLoader {
                     }
 
                     catch (Exception e) {
-                        log.error("An exception was thrown in ClassSupplier `{}` predicate.", supplier.name, e);
+                        log.severe("An exception was thrown in ClassSupplier `" + supplier.name + "` predicate.");
+                        e.printStackTrace();
                     }
 
                 }
@@ -347,7 +351,8 @@ public class DynamicClassLoader extends URLClassLoader {
                     }
 
                     catch (Exception e) {
-                        log.error("An exception was thrown in `{}` when tried to load class `{}`.", supplier.name, name, e);
+                        log.severe("An exception was thrown in `" + supplier.name + "` when tried to load class `" + name + "`.");
+                        e.printStackTrace();
                     }
 
                 }
@@ -365,7 +370,8 @@ public class DynamicClassLoader extends URLClassLoader {
             catch (ClassNotFoundException ignored) {}
 
             catch (Exception e) {
-                log.error("An exception was thrown in parent class loader `{}` when tried to load class `{}`.", parentClassLoader, name, e);
+                log.severe("An exception was thrown in parent class loader `" + parentClassLoader +  "` when tried to load class `" + name + "`.");
+                e.printStackTrace();
             }
 
         }
@@ -440,7 +446,8 @@ public class DynamicClassLoader extends URLClassLoader {
                             continue;
                         }
                     } catch (Exception e) {
-                        log.error("An exception was thrown in ResourceSupplier `{}` predicate.", supplier.name, e);
+                        log.severe("An exception was thrown in ResourceSupplier `" + supplier.name + "` predicate.");
+                        e.printStackTrace();
                     }
 
                 }
@@ -451,7 +458,8 @@ public class DynamicClassLoader extends URLClassLoader {
                     try {
                         result.addAll(function.apply(name));
                     } catch (Exception e) {
-                        log.error("An exception was thrown in `{}` when tried to load resource `{}`.", supplier.name, name, e);
+                        log.severe("An exception was thrown in `" + supplier.name + "` when tried to load resource `" + name + "`.");
+                        e.printStackTrace();
                     }
 
                 }
@@ -496,7 +504,8 @@ public class DynamicClassLoader extends URLClassLoader {
         }
 
         catch (IOException e) {
-            log.warn("There was an exception thrown in URLClassLoader.close(). Maybe something went wrong. This error can cause memory leaks and weird behaviour!", e);
+            log.severe("There was an exception thrown in URLClassLoader.close(). Maybe something went wrong. This error can cause memory leaks and weird behaviour!");
+            e.printStackTrace();
         }
 
         this.sources.clear();

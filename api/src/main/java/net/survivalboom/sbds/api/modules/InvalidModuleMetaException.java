@@ -10,4 +10,8 @@ public class InvalidModuleMetaException extends Exception {
         super(cause);
     }
 
+    public InvalidModuleMetaException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }

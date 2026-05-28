@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.interactions.commands.Command.Type;
 import net.survivalboom.sbds.api.commands.*;
 import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.interaction.command.ICommandInteractionManager;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.utils.InternalUpdateQueue;
@@ -137,6 +138,8 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void updateGlobal() {
+
+        CommonUtils.waitUntil(sbds::isReady);
 
         JDA bot = sbds.getBot();
 

@@ -1,8 +1,11 @@
 package net.survivalboom.sbds.core.modules;
 
+import net.survivalboom.sbds.api.libraries.ILibrary;
+import net.survivalboom.sbds.api.libraries.LibrarySatisfyConfiguration;
 import net.survivalboom.sbds.api.modules.*;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.valid.Manager;
+import net.survivalboom.sbds.core.libraries.DynamicClassLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -26,11 +29,12 @@ public class ModuleManager extends Manager implements IModuleManager {
 
     private final Map<String, Module> modules = new HashMap<>();
 
-    private final ModulesClassesSharingManager classesSharingManager = new ModulesClassesSharingManager(this);
+    private final ModulesClasspath modulesClasspath;
 
 
     public ModuleManager(@NotNull SBDS sbds) {
         this.sbds = sbds;
+        this.modulesClasspath = new ModulesClasspath(this);
         this.modulesDir = new File(sbds.getWorkingDir(), "modules");
     }
 
@@ -40,6 +44,8 @@ public class ModuleManager extends Manager implements IModuleManager {
 
     @Override
     protected void init0() {
+
+        modulesClasspath.init();
 
         log.info("Loading modules...");
         modulesDir.mkdirs();
@@ -129,6 +135,8 @@ public class ModuleManager extends Manager implements IModuleManager {
 
         }
 
+        modulesClasspath.shutdown();
+
     }
 
     //
@@ -214,22 +222,47 @@ public class ModuleManager extends Manager implements IModuleManager {
             dataDir = new File(modulesDir, meta.getName());
         }
 
-        if (!dataDir.isDirectory()) {
+        if (dataDir.isFile()) {
             throw new IllegalArgumentException("Module data directory `" + dataDir.getPath() + "` is not a directory");
+        }
+
+        // Завантажуємо бібліотеки модуля //
+
+        LibrarySatisfyConfiguration libraries = meta.getLibraries();
+        List<ILibrary> loadedLibraries = null;
+        if (libraries != null && !libraries.isEmpty()) {
+
+            var result = sbds.getLibrariesManager().satisfy(libraries);
+
+            for (var entry : result.failed().entrySet()) {
+                throw new ModuleLoadingException("Failed to download module library `" + entry.getKey() + "`", entry.getValue());
+            }
+
+            loadedLibraries = new ArrayList<>();
+            loadedLibraries.addAll(result.downloaded());
+            loadedLibraries.addAll(result.skipped());
+
         }
 
         // Створюємо модуль //
 
-        Module module = new Module(meta, file, dataDir, this);
+        Module module = new Module(meta, file, dataDir, loadedLibraries, this);
+
+        DynamicClassLoader classLoader = module.getClassLoader();
+        classLoader.addClassSupplier("MODULES-CLASSPATH", cl -> modulesClasspath.request(cl, module));
 
         if (file != null) {
-            module.getClassLoader().addSource(file.file());
+            classLoader.addSource(file.file());
         }
+
+        modules.put(meta.getName(), module);
+        modulesClasspath.purgeCache();
 
         // Шукаємо головний клас модуля.
         String mainClassName = meta.getMain();
         Class<? extends ModuleMain> clazz = (Class<? extends ModuleMain>) module.getClassLoader().getClass(mainClassName, false, false);
         if (clazz == null) {
+            modules.remove(meta.getName());
             throw new ModuleLoadingException("Module main class `" + mainClassName + "` not found in module ClassLoader");
         }
 
@@ -240,6 +273,7 @@ public class ModuleManager extends Manager implements IModuleManager {
         }
 
         catch (NoSuchMethodException e) {
+            modules.remove(meta.getName());
             throw new ModuleLoadingException("No public no-args constructor found in class `" + mainClassName + "`");
         }
 
@@ -249,9 +283,13 @@ public class ModuleManager extends Manager implements IModuleManager {
             main = constructor.newInstance();
         }
 
-        catch (Exception e) {
+        catch (Throwable e) {
+            modules.remove(meta.getName());
             throw new ModuleLoadingException("Failed to create instance of module main class", e);
         }
+
+        module.moduleMain = main;
+        main.init(module, sbds);
 
         // Після створення об'єкта головного класу модуля, виконуємо onLoad()
         try {
@@ -259,18 +297,14 @@ public class ModuleManager extends Manager implements IModuleManager {
         }
 
         catch (ModuleRefusedException e) {
+            modules.remove(meta.getName());
             throw e;
         }
 
-        catch (Exception e) {
+        catch (Throwable e) {
+            modules.remove(meta.getName());
             throw new ModuleLoadingException("An exception occurred in onLoad()", e);
         }
-
-        module.moduleMain = main;
-        main.init(module, sbds);
-
-        // Якщо ми дійшли до цього моменту, модуль успішно завантажено! Додаємо його у реєстр
-        modules.put(meta.getName(), module);
 
         return module;
 
@@ -291,12 +325,13 @@ public class ModuleManager extends Manager implements IModuleManager {
             module.getMain().onUnload();
         }
 
-        catch (Exception e) {
+        catch (Throwable e) {
             throw new ModuleStateCallbackException(e);
         }
 
         finally {
             this.modules.remove(moduleName);
+            modulesClasspath.purgeCache();
         }
 
     }
@@ -326,8 +361,9 @@ public class ModuleManager extends Manager implements IModuleManager {
             throw e;
         }
 
-        catch (Exception e) {
+        catch (Throwable e) {
             module.enabled = false;
+            sbds.getRegistrationRegistry().removeModuleRegistrations(imodule);
             throw new ModuleStateCallbackException(e);
         }
 
@@ -350,7 +386,7 @@ public class ModuleManager extends Manager implements IModuleManager {
             imodule.getMain().onDisable();
         }
 
-        catch (Exception e) {
+        catch (Throwable e) {
             throw new ModuleStateCallbackException(e);
         }
 
@@ -376,7 +412,6 @@ public class ModuleManager extends Manager implements IModuleManager {
     //
 
     public @NotNull SBDS getSbds() {
-        checkValid();
         return sbds;
     }
 
@@ -395,9 +430,9 @@ public class ModuleManager extends Manager implements IModuleManager {
         return new ArrayList<>(modules.values());
     }
 
-    public @NotNull ModulesClassesSharingManager getModulesClassesSharingManager() {
+    public @NotNull ModulesClasspath getModulesClassesSharingManager() {
         checkValid();
-        return classesSharingManager;
+        return modulesClasspath;
     }
 
     //

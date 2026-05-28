@@ -28,4 +28,8 @@ public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManage
         return interaction;
     }
 
+    public boolean hasPermission(@NotNull String permission) {
+        return sbds.getPermissionManager().hasPermission(member(), permission, false);
+    }
+
 }

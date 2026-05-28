@@ -1,14 +1,12 @@
 package net.survivalboom.sbds.api.modules;
 
+import net.survivalboom.sbds.api.libraries.LibrarySatisfyConfiguration;
 import net.survivalboom.sbds.api.modules.dependencies.LoadOrder;
 import net.survivalboom.sbds.api.modules.dependencies.ModuleDependency;
-import net.survivalboom.sbds.api.libraries.LibraryDeclaration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurateException;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.PostProcess;
-import org.spongepowered.configurate.objectmapping.meta.Setting;
+import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
@@ -17,29 +15,28 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
 
-@ConfigSerializable
 public final class ModuleMeta {
 
-    private @Setting("name") String name;
+    private final String name;
 
-    private @Setting("main") String main;
+    private final String main;
 
-    private @Setting("api-version") @Nullable String apiVersion;
-
-
-    private @Setting("description") @Nullable String description;
-
-    private @Setting("version") String version;
+    private final @Nullable String apiVersion;
 
 
-    private @Setting("website") @Nullable String website;
+    private final @Nullable String description;
 
-    private @Setting("author") List<String> authors;
+    private final String version;
 
 
-    private @Setting("dependencies") List<ModuleDependency> dependencies;
+    private final @Nullable String website;
 
-    private @Setting("libraries") List<LibraryDeclaration> libraries;
+    private final List<String> authors;
+
+
+    private final List<ModuleDependency> dependencies;
+
+    private final @Nullable LibrarySatisfyConfiguration libraries;
 
 
     public ModuleMeta(
@@ -51,7 +48,7 @@ public final class ModuleMeta {
             @Nullable String website,
             @Nullable Collection<String> authors,
             @Nullable Collection<ModuleDependency> dependencies,
-            @Nullable Collection<LibraryDeclaration> libraries
+            @Nullable LibrarySatisfyConfiguration libraries
     ) {
 
         Objects.requireNonNull(name, "name == null");
@@ -69,43 +66,9 @@ public final class ModuleMeta {
         this.authors = authors != null ? new ArrayList<>(authors) : new ArrayList<>();
 
         this.dependencies = dependencies != null ? new ArrayList<>(dependencies) : new ArrayList<>();
-        this.libraries = libraries != null ? new ArrayList<>(libraries) : new ArrayList<>();
+        this.libraries = libraries;
 
     }
-
-    private ModuleMeta() {}
-
-    @PostProcess
-    private void validate() throws SerializationException {
-
-        if (name == null) {
-            throw new SerializationException("name == null");
-        }
-
-        if (main == null) {
-            throw new SerializationException("main == null");
-        }
-
-        if (version == null) {
-            throw new SerializationException("version == null");
-        }
-
-
-        if (authors == null) {
-            authors = new ArrayList<>();
-        }
-
-        if (dependencies == null) {
-            dependencies = new ArrayList<>();
-        }
-
-        if (libraries == null) {
-            libraries = new ArrayList<>();
-        }
-
-    }
-
-
 
     public @NotNull String getName() {
         return name;
@@ -142,8 +105,8 @@ public final class ModuleMeta {
         return new ArrayList<>(dependencies);
     }
 
-    public @NotNull List<LibraryDeclaration> getLibraries() {
-        return new ArrayList<>(libraries);
+    public @Nullable LibrarySatisfyConfiguration getLibraries() {
+        return libraries;
     }
 
 
@@ -158,24 +121,69 @@ public final class ModuleMeta {
 
     public static @NotNull ModuleMeta fromStream(@NotNull InputStream stream) throws InvalidModuleMetaException {
 
-        YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
-                .source(() -> new BufferedReader(new InputStreamReader(stream)))
-                .build();
-
-        ModuleMeta meta;
+        ConfigurationNode node;
         try {
-            meta = loader.load().get(ModuleMeta.class);
+            node = YamlConfigurationLoader.builder()
+                    .source(() -> new BufferedReader(new InputStreamReader(stream)))
+                    .build()
+                    .load();
+        } catch (ConfigurateException e) {
+            throw new InvalidModuleMetaException("Failed to load ModuleMeta", e);
         }
 
-        catch (ConfigurateException e) {
-            throw new InvalidModuleMetaException(e);
+        return fromSection(node);
+
+    }
+
+    public static @NotNull ModuleMeta fromSection(@NotNull ConfigurationNode section) throws InvalidModuleMetaException {
+
+        String name = section.node("name").getString();
+        String main = section.node("main").getString();
+        String apiVersion = section.node("api-version").getString();
+
+        if (name == null) {
+            throw new InvalidModuleMetaException("Key `name` does not exist");
         }
 
-        if (meta == null) {
-            throw new InvalidModuleMetaException("Failed to create meta from stream");
+        if (main == null) {
+            throw new InvalidModuleMetaException("Key `main` does not exist");
         }
 
-        return meta;
+        String description = section.node("description").getString();
+        String version = section.node("version").getString();
+
+        if (version == null) {
+            throw new InvalidModuleMetaException("Key `version` does not exist");
+        }
+
+        String website = section.node("website").getString();
+
+        List<String> authors;
+        try {
+            authors = section.node("authors").getList(String.class);
+        } catch (SerializationException e) {
+            throw new InvalidModuleMetaException("Failed to load `authors` section", e);
+        }
+
+        ConfigurationNode dependenciesSection = section.node("dependencies");
+        List<ModuleDependency> dependencyList;
+        try {
+            dependencyList = dependenciesSection.getList(ModuleDependency.class);
+        } catch (SerializationException e) {
+            throw new InvalidModuleMetaException("Failed to load `dependencies`", e);
+        }
+
+        ConfigurationNode librariesSection = section.node("libraries");
+        var librariesResult = LibrarySatisfyConfiguration.fromSection(librariesSection);
+        for (var entry : librariesResult.declarationsFailed().entrySet()) {
+            throw new InvalidModuleMetaException("Invalid library declaration `" + entry.getKey() + "`", entry.getValue());
+        }
+
+        for (var entry : librariesResult.pinnedFailed().entrySet()) {
+            throw new InvalidModuleMetaException("Invalid pinned library declaration `" + entry.getKey() + "`", entry.getValue());
+        }
+
+        return new ModuleMeta(name, main, apiVersion, description, version, website, authors, dependencyList, librariesResult.result());
 
     }
 
@@ -204,7 +212,7 @@ public final class ModuleMeta {
 
         private final List<ModuleDependency> dependencies = new ArrayList<>();
 
-        private final List<LibraryDeclaration> libraries = new ArrayList<>();
+        private LibrarySatisfyConfiguration libraries;
 
 
         private Builder(Builder builder) {
@@ -220,7 +228,7 @@ public final class ModuleMeta {
             this.authors.addAll(builder.authors);
 
             this.dependencies.addAll(builder.dependencies);
-            this.libraries.addAll(builder.libraries);
+            this.libraries = builder.libraries;
 
         }
 
@@ -237,7 +245,7 @@ public final class ModuleMeta {
             this.authors.addAll(meta.authors);
 
             this.dependencies.addAll(meta.dependencies);
-            this.libraries.addAll(meta.libraries);
+            this.libraries = meta.libraries;
 
         }
 
@@ -367,25 +375,19 @@ public final class ModuleMeta {
 
         // LIBRARIES //
 
-        public @NotNull Builder addLibrary(@NotNull LibraryDeclaration library) {
-            this.libraries.add(library);
+        public @NotNull Builder setLibraries(@Nullable LibrarySatisfyConfiguration libraries) {
+            this.libraries = libraries;
             return this;
         }
 
-        public @NotNull Builder setLibraries(@Nullable Collection<LibraryDeclaration> libraries) {
-
-            this.libraries.clear();
-
-            if (libraries != null) {
-                this.libraries.addAll(libraries);
-            }
-
-            return this;
-
+        public @NotNull LibrarySatisfyConfiguration getLibraries() {
+            return libraries;
         }
 
-        public @NotNull List<LibraryDeclaration> getLibraries() {
-            return new ArrayList<>(libraries);
+        // BUILD //
+
+        public @NotNull ModuleMeta build() {
+            return new ModuleMeta(name, main, apiVersion, description, version, website, authors, dependencies, libraries);
         }
 
 

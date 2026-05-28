@@ -14,7 +14,6 @@ import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
-import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import net.survivalboom.sbds.core.BuildConstants;
 import net.survivalboom.sbds.core.SBDS;
@@ -67,6 +66,10 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
         Command command = registration.object().getCommand();
         CommandExecutor executor = command.getExecutor();
 
+        if (executor == null) {
+            return;
+        }
+
         if (!(executor instanceof SlashCommandExecutor)) {
             throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a slash command");
         }
@@ -118,7 +121,9 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
             SlashExecutionInfo info = new SlashExecutionInfo(event, registeredCommand, command, commandName, arguments);
 
             SlashCommandExecutor executor = (SlashCommandExecutor) command.getExecutor();
-            executor.executes(info);
+            if (executor != null) {
+                executor.executes(info);
+            }
 
             if (!event.isAcknowledged()) {
                 event.reply("Something went wrong. Looks like the executor `" + executor + "` refused to respond to the interaction.").queue();
@@ -135,11 +140,11 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
 
                 if (!event.isAcknowledged()) {
                     messages.reply(event, "sbds.error", event.getUser())
-                            .withPlaceholders(Placeholders.of("{exception}", t.toString()))
+                            .withPlaceholders("exception", t.toString())
                             .queue();
                 } else {
                     messages.createActionMessage("sbds.error", event.getUser(), d -> event.getHook().editOriginal(MessageEditData.fromCreateData(d)))
-                            .withPlaceholders(Placeholders.of("{exception}", t.toString()))
+                            .withPlaceholders("exception", t.toString())
                             .queue();
                 }
             }

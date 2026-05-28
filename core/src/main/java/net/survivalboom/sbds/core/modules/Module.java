@@ -1,21 +1,32 @@
 package net.survivalboom.sbds.core.modules;
 
+import net.survivalboom.sbds.api.libraries.ILibrary;
 import net.survivalboom.sbds.api.modules.*;
-import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.valid.Valid;
 import net.survivalboom.sbds.core.libraries.DynamicClassLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
 
 public class Module extends Valid implements IModule {
+
+    private final ModuleManager manager;
 
     private final @Nullable ModuleFile file;
 
     private final File dataDir;
+
+
+    private ConfigurationNode config;
 
 
     private final Logger logger;
@@ -24,6 +35,8 @@ public class Module extends Valid implements IModule {
     private final ModuleMeta meta;
 
     private final DynamicClassLoader classLoader;
+
+    private final List<ILibrary> libraries = new ArrayList<>();
 
     protected ModuleMain moduleMain;
 
@@ -35,7 +48,8 @@ public class Module extends Valid implements IModule {
             @NotNull ModuleMeta meta,
             @Nullable ModuleFile file,
             @NotNull File dataDir,
-            @NotNull ModuleManager moduleManager
+            @Nullable Collection<ILibrary> libraries,
+            @NotNull ModuleManager manager
     ) {
 
         this.meta = meta;
@@ -45,6 +59,12 @@ public class Module extends Valid implements IModule {
         this.logger = LoggerFactory.getLogger(meta.getName());
 
         this.classLoader = new DynamicClassLoader("Module-" + meta.getName(), Module.class.getClassLoader());
+
+        if (libraries != null) {
+            this.libraries.addAll(libraries);
+        }
+
+        this.manager = manager;
 
     }
 
@@ -87,11 +107,66 @@ public class Module extends Valid implements IModule {
         return dataDir;
     }
 
+    // MODULE CONFIG //
+
+    @Override
+    public void saveConfig(@NotNull File file) {
+
+        Objects.requireNonNull(file, "file == null");
+        checkValid();
+
+        try {
+            YamlConfigurationLoader.builder().path(file.toPath()).buildAndSaveString(config);
+        }
+
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
+    public @NotNull ConfigurationNode loadConfig(@NotNull File file) {
+
+        Objects.requireNonNull(file, "file == null");
+        checkValid();
+
+        try {
+            config = YamlConfigurationLoader.builder().path(file.toPath()).build().load();
+        }
+
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return config;
+
+    }
+
+    @Override
+    public @NotNull ConfigurationNode checkAndLoadConfig(@NotNull String fileName) {
+        checkValid();
+        moduleMain.checkFiles2(fileName);
+        return loadConfig();
+    }
+
+    @Override
+    public ConfigurationNode getConfig() {
+        checkValid();
+        return config;
+    }
+
+
     // MODULE CLASS //
 
     @Override
     public @NotNull ModuleMain getMain() {
         return moduleMain;
+    }
+
+    @Override
+    public @NotNull List<ILibrary> getLibraries() {
+        return new ArrayList<>(libraries);
     }
 
     public @NotNull DynamicClassLoader getClassLoader() {

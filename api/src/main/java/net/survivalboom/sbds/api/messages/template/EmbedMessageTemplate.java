@@ -92,8 +92,8 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
         // components //
 
-        // Проходимось по кожній з 6 рядків та шукаємо компоненти, що знаходяться на такому рядку.
-        for (int i = 1; i < 6; i++) {
+        // Проходимось по кожній з 5 рядків та шукаємо компоненти, що знаходяться на такому рядку.
+        for (int i = 0; i < 5; i++) {
 
             final int index = i;
 

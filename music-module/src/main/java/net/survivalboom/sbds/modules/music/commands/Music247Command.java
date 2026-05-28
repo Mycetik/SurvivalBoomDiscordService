@@ -9,16 +9,15 @@ import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
-import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
+import net.survivalboom.sbds.modules.music.music.MusicManager;
+import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import org.jetbrains.annotations.NotNull;
 
 @CommandClass(name = "music-24-7", description = "Disable disconnect on idle for the current music bot", translationKey = "music.command.24-7", permission = "music.command.24_7")
 public class Music247Command extends AbstractPlayerCommand {
 
-    public Music247Command(@NotNull BotManager botManager) {
-        super(botManager);
+    public Music247Command(@NotNull MusicManager musicManager) {
+        super(musicManager);
     }
 
     @Override
@@ -39,22 +38,16 @@ public class Music247Command extends AbstractPlayerCommand {
         String str = state ? "music.command.24-7.disable" : "music.command.24-7.enable";
 
         User botUser = player.getBot().getBot().getSelfUser();
-        Placeholders placeholders = new Placeholders()
-                .add("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator())
-                .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl());
-
-        info.reply(str).withPlaceholders(placeholders).queue();
+        info.reply(str)
+                .withPlaceholders("bot", botUser)
+                .queue();
 
     }
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
-        if (channel == null) {
-            info.logger().error("Missing or invalid 'channel' argument.");
-            return;
-        }
+        AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
 
         GuildPlayer player = getPlayer(info, channel, false);
         if (player == null) {
@@ -69,7 +62,7 @@ public class Music247Command extends AbstractPlayerCommand {
 
     }
 
-    @ArgumentMethod(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

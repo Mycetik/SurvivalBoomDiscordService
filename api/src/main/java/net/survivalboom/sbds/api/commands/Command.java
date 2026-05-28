@@ -1,11 +1,13 @@
 package net.survivalboom.sbds.api.commands;
 
+import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.permissions.Permission;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class Command {
 
@@ -13,7 +15,7 @@ public class Command {
 
     private final String name;
 
-    private final CommandExecutor executor;
+    private final @Nullable CommandExecutor executor;
 
     private final List<CommandArgument> arguments = new ArrayList<>();
 
@@ -32,7 +34,7 @@ public class Command {
 
     public Command(
             @NotNull String name,
-            @NotNull CommandExecutor executor,
+            @Nullable CommandExecutor executor,
             @Nullable Collection<CommandArgument> arguments,
             @Nullable Collection<String> aliases,
 
@@ -43,7 +45,6 @@ public class Command {
     ) {
 
         Objects.requireNonNull(name, "name == null");
-        Objects.requireNonNull(executor, "executor == null");
 
         this.name = name;
         this.executor = executor;
@@ -73,7 +74,7 @@ public class Command {
         return new ArrayList<>(aliases);
     }
 
-    public @NotNull CommandExecutor getExecutor() {
+    public @Nullable CommandExecutor getExecutor() {
         return executor;
     }
 
@@ -115,17 +116,17 @@ public class Command {
     // BUILDER
     //
 
-    public static @NotNull Builder builder() {
-        return new Builder();
+    public static @NotNull Builder create(@NotNull String name) {
+        return new Builder(name);
     }
 
     public static class Builder {
 
         // COMMAND BASE //
 
-        private String name;
+        private final String name;
 
-        private CommandExecutor executor;
+        private @Nullable CommandExecutor executor;
 
         private final List<CommandArgument> arguments = new ArrayList<>();
 
@@ -142,7 +143,10 @@ public class Command {
         private @Nullable Permission permission;
 
 
-        private Builder() {}
+        private Builder(@NotNull String name) {
+            Objects.requireNonNull(name);
+            this.name = name;
+        }
 
         private Builder(Builder builder) {
 
@@ -176,18 +180,13 @@ public class Command {
 
         // NAME //
 
-        public @NotNull Builder setName(@NotNull String name) {
-            this.name = name;
-            return this;
-        }
-
         public String getName() {
             return name;
         }
 
         // EXECUTOR //
 
-        public @NotNull Builder setExecutor(@NotNull CommandExecutor executor) {
+        public @NotNull Builder setExecutor(@Nullable CommandExecutor executor) {
             this.executor = executor;
             return this;
         }
@@ -216,8 +215,45 @@ public class Command {
             return this;
         }
 
+        public @NotNull Builder addArgument(@NotNull String name, @NotNull Consumer<CommandArgument.Builder> consumer) {
+
+            var builder = CommandArgument.create(name);
+            consumer.accept(builder);
+
+            CommandArgument argument = builder.build();
+            this.arguments.add(argument);
+
+            return this;
+
+        }
+
+        public @NotNull Builder addArgument(@NotNull String name, @NotNull Argument<?> argument) {
+            addArgument(name, builder -> builder.setArgument(argument).setIndex(arguments.size()));
+            return this;
+        }
+
         public @NotNull List<CommandArgument> getArguments() {
             return arguments;
+        }
+
+        // SUBCOMMANDS //
+
+        public @NotNull Builder addSubCommand(@NotNull Collection<Command> commands) {
+
+            SubCommandArgument argument = new SubCommandArgument(commands);
+            addArgument("subcommand" + arguments.size(), argument);
+
+            return this;
+
+        }
+
+        public @NotNull Builder addSubCommand(@NotNull Command... commands) {
+
+            SubCommandArgument argument = new SubCommandArgument(commands);
+            addArgument("subcommand" + arguments.size(), argument);
+
+            return this;
+
         }
 
         // ALIASES //

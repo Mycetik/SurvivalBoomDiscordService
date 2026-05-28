@@ -52,6 +52,10 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
         Command command = registration.object().getCommand();
         CommandExecutor executor = command.getExecutor();
 
+        if (executor == null) {
+            return;
+        }
+
         if (!(executor instanceof ContextCommandExecutor<?>)) {
             throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a context command");
         }
@@ -109,7 +113,9 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
                     UserContextCommand executor0 = (UserContextCommand) executor;
                     UserContextInteractionInfo info = new UserContextInteractionInfo(event0, sbds);
 
-                    executor0.execute(info);
+                    if (executor0 != null) {
+                        executor0.execute(info);
+                    }
 
                 }
 
@@ -119,7 +125,9 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
                     MessageContextCommand executor0 = (MessageContextCommand) executor;
                     MessageContextInteractionInfo info = new MessageContextInteractionInfo(event0, sbds);
 
-                    executor0.execute(info);;
+                    if (executor0 != null) {
+                        executor0.execute(info);
+                    }
 
                 }
 
@@ -129,7 +137,7 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
         catch (Throwable t) {
             logger.error("An internal error occurred while attempting to perform context command.", t);
-            sbds.getMessages().reply(event, "common.error", event.getUser()).withPlaceholders(Placeholders.of("{exception}", t)).send().setEphemeral(true).queue();
+            sbds.getMessages().reply(event, "common.error", event.getUser()).withPlaceholders("{exception}", t).send().setEphemeral(true).queue();
         }
 
     }

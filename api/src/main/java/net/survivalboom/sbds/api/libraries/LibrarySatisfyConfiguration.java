@@ -35,6 +35,10 @@ public class LibrarySatisfyConfiguration {
         return new ArrayList<>(pinnedLibraries);
     }
 
+    public boolean isEmpty() {
+        return libraries.isEmpty();
+    }
+
     //
     // STATIC
     //

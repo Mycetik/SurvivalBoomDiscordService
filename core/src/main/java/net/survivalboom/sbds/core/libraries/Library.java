@@ -56,7 +56,7 @@ public class Library implements ILibrary {
 
     @Override
     public @NotNull List<ILibrary> getDependencies() {
-        return dependencies;
+        return new ArrayList<>(dependencies);
     }
 
     @Override

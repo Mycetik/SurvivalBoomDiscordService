@@ -115,7 +115,7 @@ public class RegistrationManager<T> extends Manager implements IRegistrationMana
 
     protected void unreg0(@NotNull Registration<T> reg) {
 
-        registrationMap.remove(reg.regKey());
+        registrationMap.remove(reg.key());
 
         if (callback == null) {
             return;

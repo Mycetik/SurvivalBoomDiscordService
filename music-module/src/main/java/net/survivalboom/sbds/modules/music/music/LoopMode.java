@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.modules.music.bots;
+package net.survivalboom.sbds.modules.music.music;
 
 public enum LoopMode {
 

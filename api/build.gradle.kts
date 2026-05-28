@@ -10,7 +10,7 @@ dependencies {
 
     compileOnlyApi("org.jetbrains:annotations:15.0")
 
-    compileOnlyApi("net.dv8tion:JDA:6.4.0")
+    compileOnlyApi("net.dv8tion:JDA:6.4.1")
     compileOnlyApi("org.hibernate.orm:hibernate-core:6.6.9.Final")
 
     compileOnlyApi("org.spongepowered:configurate-yaml:4.2.0")

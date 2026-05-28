@@ -194,7 +194,7 @@ libraries:
     - "org.slf4j:slf4j-api:2.0.16"
 
   dependencies:
-    - "net.dv8tion:JDA:6.4.0" # JDA - фреймворк для розробки discord ботів на java
+    - "net.dv8tion:JDA:6.4.1" # JDA - фреймворк для розробки discord ботів на java
     - "org.hibernate.orm:hibernate-core:6.6.9.Final" # Hibernate - фреймворк для роботи із базою даних.
     - "com.zaxxer:HikariCP:6.2.1" # HikariCP - дуже ефективний pool з'єднань із базою даних.
     - "org.hibernate.orm:hibernate-hikaricp:6.6.9.Final" # Підтримка HikariCP для Hibernate.

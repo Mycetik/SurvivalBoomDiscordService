@@ -15,6 +15,7 @@ import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.modules.IModuleManager;
 import net.survivalboom.sbds.api.monitoring.ISystemMonitor;
 import net.survivalboom.sbds.api.permissions.IPermissionManager;
+import net.survivalboom.sbds.api.utils.placeholders.IPlaceholderRegistry;
 import net.survivalboom.sbds.api.registrations.IRegistrationRegistry;
 import net.survivalboom.sbds.api.scheduler.IScheduler;
 import net.survivalboom.sbds.api.service.IServiceProvider;
@@ -71,6 +72,8 @@ public interface ISBDS {
     @NotNull ITranslationManager getTranslationManager();
 
     @NotNull IMessages getMessages();
+
+    @NotNull IPlaceholderRegistry getPlaceholderRegistry();
 
 
     @NotNull File getWorkingDir();

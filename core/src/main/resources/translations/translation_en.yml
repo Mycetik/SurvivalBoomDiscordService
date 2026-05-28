@@ -39,7 +39,7 @@ sbds:
         Information about the error sent to bot's console. Try again later or contact bot's developer.
       fields:
         - name: "Exception:"
-          value: "{EXCEPTION}"
+          value: "{exception}"
 
   no-permission:
     $embed:
@@ -48,7 +48,7 @@ sbds:
       description: |
         Looks like you don't have a permission required to use this.  
         Contact server admin, if you think that this is an error.
-        Permission: `{PERMISSION}`.
+        Permission: `{permission}`.
 
   invalid-interaction:
     $embed:
@@ -57,4 +57,4 @@ sbds:
       description: |
         Looks like this interaction was expired or does not exist!
         Try again or contact bot's developer.
-      footer: "Interaction id: {ID}"
+      footer: "Interaction id: {id}"
