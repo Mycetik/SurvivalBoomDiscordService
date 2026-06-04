@@ -194,6 +194,7 @@ libraries:
     - "org.slf4j:slf4j-api:2.0.16"
 
   dependencies:
+    - "org.spongepowered:configurate-jackson:4.2.0" # Підтримка JSON для Configurate за допомогою Jackson.
     - "net.dv8tion:JDA:6.4.1" # JDA - фреймворк для розробки discord ботів на java
     - "org.hibernate.orm:hibernate-core:6.6.9.Final" # Hibernate - фреймворк для роботи із базою даних.
     - "com.zaxxer:HikariCP:6.2.1" # HikariCP - дуже ефективний pool з'єднань із базою даних.
