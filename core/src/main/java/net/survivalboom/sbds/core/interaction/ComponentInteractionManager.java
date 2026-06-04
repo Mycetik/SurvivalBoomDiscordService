@@ -87,7 +87,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
             log.error("An exception was thrown while tried to process interaction `{}`.", id, t);
 
             sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser())
-                    .withPlaceholders("{exception}", t)
+                    .withPlaceholders("exception", t)
                     .setEphemeral(true)
                     .queue();
 
@@ -112,7 +112,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         if (listener == null) {
 
             sbds.getMessages().reply(event, "sbds.invalid-interaction", user)
-                    .withPlaceholders("{id}", id)
+                    .withPlaceholders("id", id)
                     .setEphemeral(true)
                     .queue();
 
@@ -123,7 +123,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         if (member != null && permission != null && !sbds.getPermissionManager().hasPermission(member, permission)) {
 
             sbds.getMessages().reply(event, "sbds.no-permission", member)
-                    .withPlaceholders("{permission}", permission)
+                    .withPlaceholders("permission", permission)
                     .setEphemeral(true)
                     .queue();
 
@@ -152,7 +152,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         if (pending == null || (pending.getUser() != null && !user.equals(pending.getUser()))) {
 
             sbds.getMessages().reply(event, "sbds.invalid-interaction", user)
-                    .withPlaceholders("{id}", id)
+                    .withPlaceholders("id", id)
                     .setEphemeral(true)
                     .queue();
 

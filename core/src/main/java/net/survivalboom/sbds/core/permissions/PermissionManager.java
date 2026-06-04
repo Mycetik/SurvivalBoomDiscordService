@@ -106,6 +106,17 @@ public class PermissionManager extends Manager implements IPermissionManager {
         Objects.requireNonNull(permission, "permission == null");
         checkValid();
 
+        Guild guild = sbds.getBot().getGuildById(guildId);
+        Objects.requireNonNull(guild, "guild == null; invalid guild id?");
+
+        Member member = guild.retrieveMemberById(userId).complete();
+        Objects.requireNonNull(member, "member == null; invalid user id? user is not a member of a guild?");
+
+        // Якщо користувач адміністратор на сервері - він має усі права. А інакше буде soft lock.
+        if (member.hasPermission(net.dv8tion.jda.api.Permission.ADMINISTRATOR)) {
+            return true;
+        }
+
         Map<String, Permission> permissionMap = createUserPermissionMap(guildId, userId);
 
         Permission perm = permissionMap.get(permission);

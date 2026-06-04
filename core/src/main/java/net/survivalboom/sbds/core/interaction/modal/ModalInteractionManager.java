@@ -137,7 +137,7 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
             log.error("An exception was thrown while tried to process modal `{}`.", id, t);
 
             sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser())
-                    .withPlaceholders("{exception}", t)
+                    .withPlaceholders("exception", t)
                     .setEphemeral(true)
                     .queue();
 

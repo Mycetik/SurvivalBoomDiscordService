@@ -214,7 +214,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
             boolean hasPermission = permissionManager.hasPermission(member,  permission);
             if (!hasPermission) {
                 messages.reply(event.getInteraction(),"sbds.no-permission", event.getUser())
-                        .withPlaceholders("{PERMISSION}", permission)
+                        .withPlaceholders("permission", permission)
                         .queue();
                 return false;
             }
