@@ -5,7 +5,7 @@ import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.*;
 import org.jetbrains.annotations.NotNull;
 
-public class ModalInteractionInfo extends InteractionExecutionInfo<ModalInteractionEvent> implements CanReply<ModalInteractionEvent> {
+public class ModalInteractionInfo extends InteractionExecutionInfo<ModalInteractionEvent> {
 
     public ModalInteractionInfo(
             @NotNull ISBDS sbds,

@@ -33,6 +33,8 @@ public class MusicModule extends ModuleMain {
                 "translation_en.yml"
         );
 
+        checkFiles2();
+
         List<Command> commands = prepareCommands();
         commands.forEach(this::registerSlashCommand);
 

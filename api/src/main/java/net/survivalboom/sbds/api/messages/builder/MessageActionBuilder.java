@@ -1,14 +1,14 @@
 package net.survivalboom.sbds.api.messages.builder;
 
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.requests.FluentRestAction;
+import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.messages.IMessages;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
-public class MessageActionBuilder<T extends FluentRestAction<?, ?>> extends AbstractMessageBuilder<MessageActionBuilder<T>> {
+public class MessageActionBuilder<T extends RestAction<?>> extends AbstractMessageBuilder<MessageActionBuilder<T>> {
 
     private final Function<MessageCreateData, T> action;
 

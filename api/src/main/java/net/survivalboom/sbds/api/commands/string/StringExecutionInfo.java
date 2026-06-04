@@ -4,15 +4,17 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
-import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
+import net.survivalboom.sbds.api.interaction.IBasicInteractionExecution;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandManager.IRegisteredStringCommand, IStringCommandManager> {
+public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandManager.IRegisteredStringCommand, IStringCommandManager> implements IBasicInteractionExecution {
 
     private final Message message;
 
@@ -31,20 +33,34 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
         return message;
     }
 
-    public @Nullable Guild guild() {
-        return this.message.getGuild();
+
+    @Override
+    public @NotNull RestAction<?> editRaw(@NotNull MessageEditData data) {
+        return message.editMessage(data);
     }
 
-    public @Nullable Member member() {
-        return this.message.getMember();
+    @Override
+    public @NotNull IReplyCallback replyCallback0() {
+        return message;
     }
 
+    @Override
+    public Guild guild() {
+        return null;
+    }
+
+    @Override
     public @NotNull User user() {
-        return this.message.getAuthor();
+        return null;
     }
 
-    public @NotNull MessageActionBuilder<MessageCreateAction> reply(@NotNull String name) {
-        return messages().createActionMessage(name, user(), d -> message().reply(d));
+    @Override
+    public Member member() {
+        return null;
     }
 
+    @Override
+    public Channel channel() {
+        return null;
+    }
 }

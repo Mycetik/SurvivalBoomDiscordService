@@ -243,7 +243,7 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommandEx
         return new VoiceChannelArgument();
     }
 
-    @ArgumentMethod(description = "URL or search query")
+    @ArgumentMethod(description = "URL or search query", index = 1)
     public Argument<?> query() {
         return new GreedyStringArgument();
     }

@@ -58,6 +58,18 @@ public class Command {
             this.arguments.addAll(arguments);
         }
 
+        this.arguments.sort(Comparator.comparing(arg -> {
+
+            int index = arg.index();
+
+            if (!arg.required()) {
+                index += 100;
+            }
+
+            return index;
+
+        }));
+
         if (aliases != null) {
             this.aliases.addAll(aliases);
         }

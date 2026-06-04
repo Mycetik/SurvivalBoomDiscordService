@@ -8,7 +8,6 @@ import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
 import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import net.survivalboom.sbds.api.utils.typemap.UnmodifiableTypeMap;
-import net.survivalboom.sbds.core.commands.cmds.console.modules.ModuleInfoCommand;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -45,9 +44,13 @@ public class StringCommandParser {
 
         input = input.trim();
 
-        var splitResult = splitToParts(input, scope, arguments);
-        if (splitResult.splitArguments.size() < arguments.size()) {
-            throw new NotEnoughArgumentsException(splitResult.splitArguments, arguments);
+        List<CommandArgument> argumentsSorted = arguments.stream()
+                .filter(argument -> argument.scopes().contains(scope))
+                .collect(Collectors.toList());
+
+        var splitResult = splitToParts(input, argumentsSorted);
+        if (splitResult.splitArguments.size() < argumentsSorted.size()) {
+            throw new NotEnoughArgumentsException(splitResult.splitArguments, argumentsSorted);
         }
 
         var parsingResult = parseArgumentParts(splitResult.splitArguments, contextCreator);
@@ -70,12 +73,12 @@ public class StringCommandParser {
             catch (NotEnoughArgumentsException e) {
 
                 var got = splitResult.splitArguments;
-                var expected = arguments;
+                var expected = argumentsSorted;
 
                 got.putAll(e.got);
                 expected.addAll(e.expected);
 
-                throw new NotEnoughArgumentsException(got, arguments);
+                throw new NotEnoughArgumentsException(got, expected);
 
             }
 
@@ -92,7 +95,6 @@ public class StringCommandParser {
 
     private static @NotNull SplitResult splitToParts(
             @NotNull String input,
-            @NotNull ArgumentScope scope,
             @NotNull List<CommandArgument> arguments
     ) {
 
@@ -100,23 +102,9 @@ public class StringCommandParser {
             return new SplitResult(new HashMap<>(), "");
         }
 
-        List<CommandArgument> argumentsSorted = arguments.stream()
-                .filter(argument -> argument.scopes().contains(scope))
-                .sorted(Comparator.comparing(argument -> {
-
-                    int index = argument.index();
-                    if (!argument.required()) {
-                        index += 100;
-                    }
-
-                    return index;
-
-                }))
-                .toList();
-
         Map<CommandArgument, String> parts = new HashMap<>();
         String text = input;
-        for (CommandArgument commandArgument : argumentsSorted) {
+        for (CommandArgument commandArgument : arguments) {
 
             Argument<?> argument = commandArgument.argument();
 

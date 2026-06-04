@@ -4,18 +4,13 @@ import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteract
 import net.survivalboom.sbds.api.ISBDS;
 import org.jetbrains.annotations.NotNull;
 
-public class ComponentInteractionInfo<event extends GenericComponentInteractionCreateEvent> extends InteractionExecutionInfo<event> implements CanReply<event>, CanEdit<event>, CanModal<event> {
+public class ComponentInteractionInfo<event extends GenericComponentInteractionCreateEvent> extends InteractionExecutionInfo<event> implements IInteractionExecution<event> {
 
     public ComponentInteractionInfo(
             @NotNull event event,
             @NotNull ISBDS sbds
     ) {
         super(event, sbds);
-    }
-
-    @Override
-    public @NotNull event interaction() {
-        return event;
     }
 
 }

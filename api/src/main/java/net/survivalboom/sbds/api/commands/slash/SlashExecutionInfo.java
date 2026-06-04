@@ -1,14 +1,23 @@
 package net.survivalboom.sbds.api.commands.slash;
 
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.interaction.CanModal;
 import net.survivalboom.sbds.api.interaction.CanReply;
+import net.survivalboom.sbds.api.interaction.IInteractionExecution;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import org.jetbrains.annotations.NotNull;
 
-public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManager.IRegisteredSlashCommand, ISlashCommandManager> implements CanReply<SlashCommandInteraction>, CanModal<SlashCommandInteraction> {
+public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManager.IRegisteredSlashCommand, ISlashCommandManager> implements IInteractionExecution<SlashCommandInteraction> {
 
     protected final SlashCommandInteraction interaction;
 
@@ -28,8 +37,39 @@ public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManage
         return interaction;
     }
 
-    public boolean hasPermission(@NotNull String permission) {
-        return sbds.getPermissionManager().hasPermission(member(), permission, false);
+    @Override
+    public @NotNull RestAction<?> editRaw(@NotNull MessageEditData data) {
+        return interaction.getHook().editOriginal(data);
+    }
+
+    @Override
+    public @NotNull IModalCallback modalCallback0() {
+        return interaction;
+    }
+
+    @Override
+    public @NotNull IReplyCallback replyCallback0() {
+        return interaction;
+    }
+
+    @Override
+    public Guild guild() {
+        return interaction.getGuild();
+    }
+
+    @Override
+    public @NotNull User user() {
+        return interaction.getUser();
+    }
+
+    @Override
+    public Member member() {
+        return interaction.getMember();
+    }
+
+    @Override
+    public Channel channel() {
+        return interaction.getChannel();
     }
 
 }

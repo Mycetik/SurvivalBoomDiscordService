@@ -97,8 +97,6 @@ public class GuildPlayer extends Manager {
         botGuildMember.getGuild().getAudioManager().openAudioConnection(channel);
         channel = null;
 
-        this.playingIndex = -1;
-
         // Чекаємо поки Discord підключить нас, перед тим як прововжувати ініціалізацію.
         CommonUtils.waitUntil(() -> {
             updateCurrentChannel();
@@ -155,7 +153,7 @@ public class GuildPlayer extends Manager {
         updateCurrentChannel();
 
         // Не дає цьому плеєру від'єднатись, поки ми не завантажимо у нього треки.
-        if (waitingForTracks) {
+        if (waitingForTracks && playlist.isEmpty()) {
             return;
         }
 
@@ -172,21 +170,29 @@ public class GuildPlayer extends Manager {
 
         if (!isPlaying()) {
 
-            if (isLastTrack()) {
+            if (!waitingForTracks) {
 
-                if (loop == LoopMode.PLAYLIST || !idleDisconnect) {
-                    this.playingIndex = -1;
+                if (isLastTrack()) {
+
+                    if (loop == LoopMode.PLAYLIST || !idleDisconnect) {
+                        this.playingIndex = -1;
+                    }
+
+                    else if (loop == LoopMode.DISABLED) {
+                        musicModule.getSbds().getScheduler().schedule(musicModule, this::shutdown, 0, 0);
+                        return;
+                    }
+
                 }
 
-                else if (loop == LoopMode.DISABLED) {
-                    musicModule.getSbds().getScheduler().schedule(musicModule, this::shutdown, 0, 0);
-                    return;
+                if (loop != LoopMode.TRACK) {
+                    playingIndex++;
                 }
 
             }
 
-            if (loop != LoopMode.TRACK) {
-                playingIndex++;
+            else {
+                waitingForTracks = false;
             }
 
             updateTrack();
@@ -276,7 +282,6 @@ public class GuildPlayer extends Manager {
         checkValid();
 
         this.playlist.addAll(tracks);
-        this.waitingForTracks = false;
 
     }
 

@@ -36,6 +36,9 @@ public class UnmodifiableTypeMap extends AbstractTypeMap {
     public Object get(Object o) {
 
         Object obj = super.get(o);
+        if (obj == null) {
+            return null;
+        }
 
         try {
             Map<String, Object> map = (Map<String, Object>) obj;

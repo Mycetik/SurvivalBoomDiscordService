@@ -4,34 +4,28 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
-import net.dv8tion.jda.api.interactions.Interaction;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.messages.IMessages;
 import org.jetbrains.annotations.NotNull;
 
-public interface InteractionHolder<interaction extends Interaction> {
+public interface InteractionHolder {
 
     @NotNull ISBDS sbds();
 
     @NotNull IMessages messages();
 
 
-    @NotNull interaction interaction();
+    Guild guild();
 
-    default Guild guild() {
-        return interaction().getGuild();
-    }
+    @NotNull User user();
 
-    default @NotNull User user() {
-        return interaction().getUser();
-    }
+    Member member();
 
-    default Member member() {
-        return interaction().getMember();
-    }
+    Channel channel();
 
-    default Channel channel() {
-        return interaction().getChannel();
+
+    default boolean hasPermission(@NotNull String permission) {
+        return sbds().getPermissionManager().hasPermission(member(), permission, false);
     }
 
 }
