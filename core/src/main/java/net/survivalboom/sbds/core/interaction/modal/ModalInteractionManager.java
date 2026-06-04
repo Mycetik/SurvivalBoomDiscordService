@@ -136,9 +136,8 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
             log.error("An exception was thrown while tried to process modal `{}`.", id, t);
 
-            sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getMember())
+            sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser())
                     .withPlaceholders("{exception}", t)
-                    .send()
                     .setEphemeral(true)
                     .queue();
 
@@ -159,7 +158,6 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
             sbds.getMessages().reply(event, "sbds.invalid-interaction", user)
                     .withPlaceholders("{id}", id)
-                    .send()
                     .setEphemeral(true)
                     .queue();
 
@@ -183,7 +181,6 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
             sbds.getMessages().reply(event, "sbds.invalid-interaction", user)
                     .withPlaceholders("{id}", id)
-                    .send()
                     .setEphemeral(true)
                     .queue();
 

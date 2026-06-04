@@ -5,16 +5,16 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
-import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
-import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
+import net.dv8tion.jda.api.interactions.callbacks.IDeferrableCallback;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.ISBDS;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class InteractionExecutionInfo<event extends GenericInteractionCreateEvent> extends ExecutionInfo implements IInteractionExecution<event> {
+public abstract class InteractionExecutionInfo<event extends GenericInteractionCreateEvent> extends ExecutionInfo implements InteractionHolder {
 
     protected final event event;
 
@@ -26,20 +26,29 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
         this.event = event;
     }
 
+    public @NotNull event event() {
+        return event;
+    }
+
+    @Override
+    public @NotNull Object source() {
+        return event;
+    }
+
+
+    @Override
     public @Nullable Member member() {
         return event.getMember();
     }
 
+    @Override
     public @NotNull User user() {
         return event.getUser();
     }
 
+    @Override
     public @Nullable Guild guild() {
         return event.getGuild();
-    }
-
-    public @NotNull event event() {
-        return event;
     }
 
     @Override
@@ -47,24 +56,52 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
         return event.getChannel();
     }
 
+    // EDIT //
+
     @Override
-    public @NotNull event interaction() {
-        return event;
+    public @NotNull RestAction<?> edit(@NotNull MessageEditData data) {
+
+        if (!(event instanceof IDeferrableCallback callback)) {
+            throw new IllegalStateException("No edit method applicable to `" + this + "`");
+        }
+
+        return callback.getHook().editOriginal(data);
+
     }
 
     @Override
-    public @NotNull RestAction<?> editRaw(@NotNull MessageEditData data) {
-        return ((IMessageEditCallback) interaction()).editMessage(data);
+    public @NotNull RestAction<?> editRaw(@NotNull String txt) {
+
+        if (!(event instanceof IDeferrableCallback callback)) {
+            throw new IllegalStateException("No edit method applicable to `" + this + "`");
+        }
+
+        return callback.getHook().editOriginal(txt);
+
+    }
+
+    // REPLY //
+
+    @Override
+    public @NotNull RestAction<?> replyRaw(@NotNull String txt, boolean ephemeral) {
+
+        if (!(event instanceof IReplyCallback callback)) {
+            throw new IllegalStateException("No reply method applicable to `" + this + "`");
+        }
+
+        return callback.reply(txt).setEphemeral(ephemeral);
+
     }
 
     @Override
-    public @NotNull IModalCallback modalCallback0() {
-        return (IModalCallback) event;
-    }
+    public @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
 
-    @Override
-    public @NotNull IReplyCallback replyCallback0() {
-        return (IReplyCallback) event;
+        if (!(event instanceof IReplyCallback callback)) {
+            throw new IllegalStateException("No reply method applicable to `" + this + "`");
+        }
+
+        return callback.reply(data).setEphemeral(ephemeral);
+
     }
 
 }

@@ -58,9 +58,8 @@ public class PauseCommand extends AbstractPlayerCommand {
         player.paused(newState);
 
         User botUser = player.getBot().getBot().getSelfUser();
-        String stateStr = newState ? "paused" : "resumed";
-
-        info.logger().info("Track has been {} by {}#{}", stateStr, botUser.getName(), botUser.getDiscriminator());
+        String stateStr = newState ? "Paused" : "Resumed";
+        info.logger().info("{} playback for bot {} in channel: {}", stateStr, botUser.getAsTag(), channel.getName());
 
     }
 

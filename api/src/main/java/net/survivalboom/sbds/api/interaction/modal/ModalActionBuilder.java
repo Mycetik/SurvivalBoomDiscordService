@@ -20,8 +20,6 @@ public class ModalActionBuilder {
 
     private final IModalInteractionManager modalInteractionManager;
 
-    private final User user;
-
     private final NamespacedKey key;
 
     private final IModalCallback callback;
@@ -45,7 +43,8 @@ public class ModalActionBuilder {
 
         this.modalInteractionManager = modalInteractionManager;
 
-        this.user = callback.getUser();
+        User user = callback.getUser();
+
         this.callback = callback;
         this.key = key;
 

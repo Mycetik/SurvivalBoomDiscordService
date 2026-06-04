@@ -49,7 +49,7 @@ public class BackCommand extends AbstractPlayerCommand {
         catch (IllegalArgumentException e) {
             info.reply("music.command.skip.invalid-index")
                     .withPlaceholders("playlist.size", allowedSteps)
-                    .send().setEphemeral(true)
+                    .setEphemeral(true)
                     .queue();
             return;
         }

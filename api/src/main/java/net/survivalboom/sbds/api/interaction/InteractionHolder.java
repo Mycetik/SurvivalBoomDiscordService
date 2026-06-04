@@ -4,15 +4,29 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
 import net.survivalboom.sbds.api.messages.IMessages;
+import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
+import net.survivalboom.sbds.api.utils.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * <bold>Увага! Від цього класу смердить помиями! Триматись подалі задля вашого ж здорового глузду!</bold>
+ * Минулий розробник, що намагався реалізувати нормальну систему раптово зник. Довелось використати "брутфорс" аби не повторити його долю.
+ */
 public interface InteractionHolder {
 
     @NotNull ISBDS sbds();
 
     @NotNull IMessages messages();
+
+
+    @NotNull Object source();
 
 
     Guild guild();
@@ -23,9 +37,53 @@ public interface InteractionHolder {
 
     Channel channel();
 
+    //
+    // FUNCTIONS
+    //
 
     default boolean hasPermission(@NotNull String permission) {
         return sbds().getPermissionManager().hasPermission(member(), permission, false);
     }
+
+    // EDIT //
+
+    default @NotNull RestAction<?> editRaw(@NotNull String txt) {
+        throw new IllegalStateException("No edit method applicable to `" + this + "`");
+    }
+
+    default @NotNull RestAction<?> edit(@NotNull MessageEditData data) {
+        throw new IllegalStateException("No edit method applicable to `" + this + "`");
+    }
+
+    default @NotNull MessageActionBuilder edit(@NotNull String key) {
+        return new MessageActionBuilder(messages(), user(), key, d -> edit(MessageEditData.fromCreateData(d)));
+    }
+
+    // REPLY //
+
+    default @NotNull RestAction<?> replyRaw(@NotNull String txt, boolean ephemeral) {
+        throw new IllegalStateException("No reply method applicable to `" + this + "`");
+    }
+
+    default @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
+        throw new IllegalStateException("No reply method applicable to `" + this + "`");
+    }
+
+    default @NotNull MessageActionBuilder reply(@NotNull String key) {
+        return new MessageActionBuilder(messages(), user(), key, d -> reply(d, false));
+    }
+
+    // MODAL //
+
+    default @NotNull ModalActionBuilder replyModal(@NotNull String key) {
+
+        if (!(source() instanceof IModalCallback callback)) {
+            throw new IllegalStateException("Execution `" + this + "` cannot send a modal");
+        }
+
+        return new ModalActionBuilder(sbds().getModalInteractionManager(), callback, NamespacedKey.fromString(key));
+
+    }
+
 
 }

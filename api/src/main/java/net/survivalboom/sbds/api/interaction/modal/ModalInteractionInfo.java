@@ -14,9 +14,4 @@ public class ModalInteractionInfo extends InteractionExecutionInfo<ModalInteract
         super(event, sbds);
     }
 
-    @Override
-    public @NotNull ModalInteractionEvent interaction() {
-        return event;
-    }
-
 }

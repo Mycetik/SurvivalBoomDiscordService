@@ -5,18 +5,21 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
-import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
-import net.survivalboom.sbds.api.interaction.IBasicInteractionExecution;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import org.jetbrains.annotations.NotNull;
 
-public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandManager.IRegisteredStringCommand, IStringCommandManager> implements IBasicInteractionExecution {
+public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandManager.IRegisteredStringCommand, IStringCommandManager> implements InteractionHolder {
 
     private final Message message;
+
+    private Message response = null;
+
 
     public StringExecutionInfo(
             @NotNull Message message,
@@ -29,38 +32,75 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
         this.message = message;
     }
 
+    @Override
+    public @NotNull Object source() {
+        return message;
+    }
+
     public @NotNull Message message() {
         return message;
     }
 
-
-    @Override
-    public @NotNull RestAction<?> editRaw(@NotNull MessageEditData data) {
-        return message.editMessage(data);
+    public Message response() {
+        return response;
     }
 
-    @Override
-    public @NotNull IReplyCallback replyCallback0() {
-        return message;
-    }
 
     @Override
     public Guild guild() {
-        return null;
+        return message.getGuild();
     }
 
     @Override
     public @NotNull User user() {
-        return null;
+        return message.getAuthor();
     }
 
     @Override
     public Member member() {
-        return null;
+        return message.getMember();
     }
 
     @Override
     public Channel channel() {
-        return null;
+        return message.getChannel();
     }
+
+
+    // EDIT //
+
+    @Override
+    public @NotNull RestAction<?> editRaw(@NotNull String txt) {
+
+        if (response == null) {
+            throw new IllegalStateException("Command has no response yet");
+        }
+
+        return message.editMessage(txt);
+
+    }
+
+    @Override
+    public @NotNull RestAction<?> edit(@NotNull MessageEditData data) {
+
+        if (response == null) {
+            throw new IllegalStateException("Command has no response yet");
+        }
+
+        return message.editMessage(data);
+
+    }
+
+    // REPLY //
+
+    @Override
+    public @NotNull RestAction<?> replyRaw(@NotNull String txt, boolean ephemeral) {
+        return message.reply(txt).onSuccess(m -> this.response = m);
+    }
+
+    @Override
+    public @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
+        return message.reply(data).onSuccess(m -> this.response = m);
+    }
+
 }

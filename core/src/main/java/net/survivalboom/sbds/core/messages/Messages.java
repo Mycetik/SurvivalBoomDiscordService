@@ -5,10 +5,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
-import net.dv8tion.jda.api.requests.FluentRestAction;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
-import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
-import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
+import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.database.guilds.IGuildData;
@@ -166,8 +163,8 @@ public class Messages extends Manager implements IMessages {
     //
 
     @Override
-    public @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> createActionMessage(@NotNull String name, @NotNull User user, @NotNull Function<MessageCreateData, T> function) {
-        return new MessageActionBuilder<>(this, user, name, function);
+    public @NotNull MessageActionBuilder createActionMessage(@NotNull String name, @NotNull User user, @NotNull Function<MessageCreateData, RestAction<?>> function) {
+        return new MessageActionBuilder(this, user, name, function);
     }
 
     @Override
@@ -180,18 +177,18 @@ public class Messages extends Manager implements IMessages {
     //
 
     @Override
-    public @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull User user) {
-        return new MessageActionBuilder<>(this, user, name, callback::reply);
+    public @NotNull MessageActionBuilder reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull User user) {
+        return new MessageActionBuilder(this, user, name, callback::reply);
     }
 
     @Override
-    public @NotNull MessageActionBuilder<MessageEditAction> editMessage(@NotNull Message message, @NotNull String name, @NotNull User user) {
-        return new MessageActionBuilder<>(this, user, name, d -> message.editMessage(MessageEditData.fromCreateData(d)));
+    public @NotNull MessageActionBuilder editMessage(@NotNull Message message, @NotNull String name, @NotNull User user) {
+        return new MessageActionBuilder(this, user, name, d -> message.editMessage(MessageEditData.fromCreateData(d)));
     }
 
     @Override
-    public @NotNull MessageActionBuilder<MessageCreateAction> sendMessage(@NotNull MessageChannel channel, @NotNull String name, @NotNull User user) {
-        return new MessageActionBuilder<>(this, user, name, channel::sendMessage);
+    public @NotNull MessageActionBuilder sendMessage(@NotNull MessageChannel channel, @NotNull String name, @NotNull User user) {
+        return new MessageActionBuilder(this, user, name, channel::sendMessage);
     }
 
     //

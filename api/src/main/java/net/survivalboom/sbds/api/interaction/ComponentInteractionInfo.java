@@ -4,7 +4,7 @@ import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteract
 import net.survivalboom.sbds.api.ISBDS;
 import org.jetbrains.annotations.NotNull;
 
-public class ComponentInteractionInfo<event extends GenericComponentInteractionCreateEvent> extends InteractionExecutionInfo<event> implements IInteractionExecution<event> {
+public class ComponentInteractionInfo<event extends GenericComponentInteractionCreateEvent> extends InteractionExecutionInfo<event> implements InteractionHolder {
 
     public ComponentInteractionInfo(
             @NotNull event event,

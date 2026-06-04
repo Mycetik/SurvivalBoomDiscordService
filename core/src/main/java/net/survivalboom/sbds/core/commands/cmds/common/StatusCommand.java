@@ -61,7 +61,7 @@ public class StatusCommand extends CommandBase implements SlashCommandExecutor, 
 
         builder.setFooter("SurvivalBoom Discord Service | By TIMURishche", "https://cdn.discordapp.com/avatars/1102984687179276288/852ae72b5e79b3df573c8b67b7baada4.webp?size=1024&format=webp");
 
-        info.interaction().reply(MessageCreateData.fromEmbeds(builder.build())).queue();
+        info.reply(MessageCreateData.fromEmbeds(builder.build()), false).queue();
 
     }
 

@@ -6,11 +6,9 @@ import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEven
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.context.*;
-import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.registrations.Registration;
-import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
@@ -137,7 +135,10 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
         catch (Throwable t) {
             logger.error("An internal error occurred while attempting to perform context command.", t);
-            sbds.getMessages().reply(event, "common.error", event.getUser()).withPlaceholders("{exception}", t).send().setEphemeral(true).queue();
+            sbds.getMessages().reply(event, "common.error", event.getUser())
+                    .withPlaceholders("{exception}", t)
+                    .setEphemeral(true)
+                    .queue();
         }
 
     }

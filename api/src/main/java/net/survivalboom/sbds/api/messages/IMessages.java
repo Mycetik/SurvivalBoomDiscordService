@@ -6,10 +6,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
-import net.dv8tion.jda.api.requests.FluentRestAction;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
-import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
-import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
+import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.database.users.IUserData;
@@ -18,12 +15,13 @@ import net.survivalboom.sbds.api.messages.builder.MessageBuilder;
 import net.survivalboom.sbds.api.messages.parsers.AbstractTextParser;
 import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
 import net.survivalboom.sbds.api.translations.ITranslation;
+import net.survivalboom.sbds.api.utils.valid.IManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
-public interface IMessages {
+public interface IMessages extends IManager {
 
     @NotNull ISBDS getSbds();
 
@@ -43,7 +41,7 @@ public interface IMessages {
     // MESSAGE CREATORS
     //
 
-    @NotNull <T extends FluentRestAction<?, ?>> MessageActionBuilder<T> createActionMessage(@NotNull String name, @NotNull User user, @NotNull Function<MessageCreateData, T> function);
+    @NotNull MessageActionBuilder createActionMessage(@NotNull String name, @NotNull User user, @NotNull Function<MessageCreateData, RestAction<?>> function);
 
     @NotNull MessageBuilder createMessageBuilder(@NotNull String name, @NotNull User user);
 
@@ -51,15 +49,15 @@ public interface IMessages {
     // MESSAGE OPERATIONS
     //
 
-    @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull User user);
+    @NotNull MessageActionBuilder reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull User user);
 
-    default @NotNull MessageActionBuilder<ReplyCallbackAction> reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull Member member) {
+    default @NotNull MessageActionBuilder reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull Member member) {
         return reply(callback, name, member.getUser());
     }
 
-    @NotNull MessageActionBuilder<MessageEditAction> editMessage(@NotNull Message message, @NotNull String name, @NotNull User user);
+    @NotNull MessageActionBuilder editMessage(@NotNull Message message, @NotNull String name, @NotNull User user);
 
-    @NotNull MessageActionBuilder<MessageCreateAction> sendMessage(@NotNull MessageChannel channel, @NotNull String name, @NotNull User user);
+    @NotNull MessageActionBuilder sendMessage(@NotNull MessageChannel channel, @NotNull String name, @NotNull User user);
 
     //
     // PARSING

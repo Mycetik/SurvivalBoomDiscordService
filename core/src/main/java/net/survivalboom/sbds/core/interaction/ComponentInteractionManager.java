@@ -88,7 +88,6 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
             sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser())
                     .withPlaceholders("{exception}", t)
-                    .send()
                     .setEphemeral(true)
                     .queue();
 
@@ -114,7 +113,6 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
             sbds.getMessages().reply(event, "sbds.invalid-interaction", user)
                     .withPlaceholders("{id}", id)
-                    .send()
                     .setEphemeral(true)
                     .queue();
 
@@ -126,7 +124,6 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
             sbds.getMessages().reply(event, "sbds.no-permission", member)
                     .withPlaceholders("{permission}", permission)
-                    .send()
                     .setEphemeral(true)
                     .queue();
 
@@ -156,7 +153,6 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
             sbds.getMessages().reply(event, "sbds.invalid-interaction", user)
                     .withPlaceholders("{id}", id)
-                    .send()
                     .setEphemeral(true)
                     .queue();
 

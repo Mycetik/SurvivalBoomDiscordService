@@ -38,13 +38,13 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
 
         AudioChannelUnion channel = Objects.requireNonNull(member.getVoiceState()).getChannel();
         if (channel == null) {
-            info.reply("music.not-in-voice").send().setEphemeral(ephemeral).queue();
+            info.reply("music.not-in-voice").setEphemeral(ephemeral).queue();
             return null;
         }
 
         GuildPlayer player = musicManager.findCurrentPlayer(channel);
         if (player == null && !create) {
-            info.reply("music.no-bot-in-voice").send().setEphemeral(ephemeral).queue();
+            info.reply("music.no-bot-in-voice").setEphemeral(ephemeral).queue();
             return null;
         }
 
@@ -52,7 +52,7 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
 
             List<MusicBot> freeBots = musicManager.findFreeBots(channel);
             if (freeBots.isEmpty()) {
-                info.reply("music.command.play.no-free-bot").send().setEphemeral(ephemeral).queue();
+                info.reply("music.command.play.no-free-bot").setEphemeral(ephemeral).queue();
                 return null;
             }
 
@@ -126,15 +126,14 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
         Objects.requireNonNull(user);
 
         if (musicManager.isMusicBanned(guild, user)) {
-            info.reply("music.command.music-ban.denied").send().setEphemeral(ephemeral).queue();
+            info.reply("music.command.music-ban.denied").setEphemeral(ephemeral).queue();
             return true;
         }
 
         if (player.adminLock() && !info.hasPermission("music.command.lock.bypass")) {
             User botUser = player.getBot().getBot().getSelfUser();
             info.reply("music.command.lock.denied")
-                    .withPlaceholders("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator(), "{BOT-AVATAR}", botUser.getEffectiveAvatarUrl())
-                    .send()
+                    .withPlaceholders("{bot}", botUser)
                     .setEphemeral(ephemeral)
                     .queue();
             return true;
