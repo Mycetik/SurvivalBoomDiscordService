@@ -6,9 +6,12 @@ import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.GuildArgument;
 import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import org.jetbrains.annotations.NotNull;
@@ -16,10 +19,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 @CommandClass(name = "music-ban", description = "Bans member from using music bot", translationKey = "music.command.music-ban", permission = "music.command.musicban")
-public class MusicBanCommand extends AbstractPlayerCommand {
+public class MusicBanCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
 
-    public MusicBanCommand(@NotNull MusicManager musicManager) {
-        super(musicManager);
+    private final MusicManager manager;
+
+    public MusicBanCommand(@NotNull MusicManager manager) {
+        this.manager = manager;
     }
 
     @Override
@@ -31,8 +36,8 @@ public class MusicBanCommand extends AbstractPlayerCommand {
         User target = info.arguments().getCast("target", User.class).orElseThrow();
         Objects.requireNonNull(target);
 
-        boolean state = !musicManager.isMusicBanned(guild, target);
-        musicManager.setMusicBanned(guild, target, state);
+        boolean state = !manager.isMusicBanned(guild, target);
+        manager.setMusicBanned(guild, target, state);
 
         String str = state ? "music.command.music-ban.banned" : "music.command.music-ban.unbanned";
         info.reply(str).withPlaceholders("user", target).queue();
@@ -45,8 +50,8 @@ public class MusicBanCommand extends AbstractPlayerCommand {
         Guild guild = info.arguments().getCast("guild", Guild.class).orElseThrow();
         User user = info.arguments().getCast("target", User.class).orElseThrow();
 
-        boolean banned = !musicManager.isMusicBanned(guild, user);
-        musicManager.setMusicBanned(guild, user, banned);
+        boolean banned = !manager.isMusicBanned(guild, user);
+        manager.setMusicBanned(guild, user, banned);
 
         String result = banned ? "User has been music-banned" : "User has been unbanned from music";
         info.logger().info("{}: {} ({})", result, user.getAsTag(), user.getId());

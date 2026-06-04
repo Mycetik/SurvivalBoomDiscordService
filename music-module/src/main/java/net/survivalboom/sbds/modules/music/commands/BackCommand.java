@@ -6,39 +6,47 @@ import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.IntegerArgument;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import net.survivalboom.sbds.modules.music.music.MusicTrack;
+import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 @CommandClass(name = "back", description = "Returns the previous song", translationKey = "music.command.back")
-public class BackCommand extends AbstractPlayerCommand {
+public class BackCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
 
-    public BackCommand(@NotNull MusicManager musicManager) {
-        super(musicManager);
+    private final MusicManager manager;
+
+    public BackCommand(@NotNull MusicManager manager) {
+        this.manager = manager;
     }
 
-
     @Override
-    public void executes(@NotNull SlashExecutionInfo info) {
+    public void executes(@NotNull SlashExecutionInfo info) throws Throwable {
+        int steps = info.arguments().getCast("steps", Integer.class).orElse(1);
+        executes0(info, steps, false);
+    }
 
-        GuildPlayer player = getPlayer(info, false, false);
+    private void executes0(@NotNull InteractionHolder info, int steps, boolean ephemeral) {
+
+        GuildPlayer player = Utils.getInteractionPlayer(manager, info, false, ephemeral);
         if (player == null) {
             return;
         }
 
-        if (checkBannedOrLocked(info, player, false)) {
+        if (Utils.checkInteractionDenied(manager, info, player, ephemeral)) {
             return;
         }
-
-        int steps = info.arguments().getCast("steps", Integer.class).orElse(1);
-        int allowedSteps = player.getPlayingIndex();
 
         MusicTrack skippedTrack = player.getCurrentPlaying();
 
@@ -48,7 +56,7 @@ public class BackCommand extends AbstractPlayerCommand {
 
         catch (IllegalArgumentException e) {
             info.reply("music.command.skip.invalid-index")
-                    .withPlaceholders("playlist.size", allowedSteps)
+                    .withPlaceholders("steps", player.getPlayingIndex())
                     .setEphemeral(true)
                     .queue();
             return;
@@ -66,7 +74,7 @@ public class BackCommand extends AbstractPlayerCommand {
                         "playing", playingTrack,
                         "count", steps,
                         "playlist.size", playlist.size(),
-                        "playlist", createTracksString(playlist, 10)
+                        "playlist", Utils.createTracksString(playlist, 10)
                 )
                 .queue();
 
@@ -78,9 +86,8 @@ public class BackCommand extends AbstractPlayerCommand {
         AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
         int steps = info.arguments().getCast("steps", Integer.class).orElse(1);
 
-        GuildPlayer player = getPlayer(info, channel, false);
+        GuildPlayer player = Utils.getConsolePlayer(manager, info, channel, false);
         if (player == null) {
-            info.logger().warn("No player found for the given channel.");
             return;
         }
 

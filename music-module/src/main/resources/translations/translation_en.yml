@@ -38,23 +38,23 @@ music:
         $embed:
           title: "Failed to connect :("
           description: |
-            Bot {bot.name} could not connect to {CHANNEL}.
+            Bot {bot.name} could not connect to {channel.name}.
             Maybe bot does not have enough permissions?
           color: ff0000
 
       no-tracks-found:
         $embed:
-          description: <:google_dinosaur:1077358570091319337> No results found for `{QUERY}`!
+          description: <:google_dinosaur:1077358570091319337> No results found for `{query}`!
           color: ff0000
 
       searching-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Searching for tracks by `{QUERY}`...
+          description: <a:loading:1086970461549756536> Searching for tracks by `{query}`...
           color: ffce47
 
       loading-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Loading tracks from `{URL}`...
+          description: <a:loading:1086970461549756536> Loading tracks from `{url}`...
           color: ffce47
 
       load-failed:
@@ -63,7 +63,7 @@ music:
           description: |
             <:9752barrierblockmc:1013463226752696392> Failed to load track. Bad link or something just broke.
             ```
-            {ERROR}
+            {error}
             ```
           color: ff0000
 
@@ -75,9 +75,9 @@ music:
           color: 8f00ff
           description: |
             Added to playlist:
-            - `{ADDED-NAME}`
+            - `{added.title}`
             Now playing:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
           fields:
             - name: "Duration"
               value: "`{added.duration}`"
@@ -127,7 +127,7 @@ music:
             {TRACKS}
             
             Now playing:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
           fields:
             - name: "Duration"
               value: "`{playing.duration}`"
@@ -174,7 +174,7 @@ music:
           color: 8f00ff
           description: |
             Now playing:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
           fields:
             - name: "Duration"
               value: "`{playing.duration}`"
@@ -229,7 +229,7 @@ music:
         $embed:
           title: "Invalid Index"
           color: ff0000
-          description: "Specify a valid index from `0` to `{playlist.size}`."
+          description: "Specify a valid index from `0` to `{steps}`."
 
       multiple:
         $embed:
@@ -239,7 +239,7 @@ music:
           color: 8f00ff
           description: |
             Now playing:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
           fields:
             - name: "Duration"
               value: "`{playing.duration}`"
@@ -286,9 +286,9 @@ music:
           color: 8f00ff
           description: |
             Skipped:
-            - `{SKIPPED-NAME}`
+            - `{skipped.title}`
             Now playing:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
           fields:
             - name: "Duration"
               value: "`{playing.duration}`"
@@ -337,11 +337,11 @@ music:
         $embed:
           author: "{bot.name}"
           author-icon: "{bot.avatar}"
-          title: "`{count}` Songs Skipped!"
+          title: "`{count}` Songs Went Back!"
           color: 8f00ff
           description: |
             Now playing:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
           fields:
             - name: "Duration"
               value: "`{playing.duration}`"
@@ -384,13 +384,13 @@ music:
         $embed:
           author: "{bot.name}"
           author-icon: "{bot.avatar}"
-          title: "Song Skipped!"
+          title: "Went Back to Song!"
           color: 8f00ff
           description: |
-            Skipped:
-            - `{SKIPPED-NAME}`
+            Went back to:
+            - `{played.title}`
             Now playing:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
           fields:
             - name: "Duration"
               value: "`{playing.duration}`"
@@ -492,14 +492,14 @@ music:
           color: ff0000
           description: |
             Admin has banned you from using the music bot!
-            Maybe think about your behavior…
+            Maybe you should think about your behavior…
 
       banned:
         $embed:
           title: "User Banned!"
           color: 8f00ff
           description: |
-            You have banned {USER} from using the music bot.
+            You have banned {user.name} from using the music bot.
             They won't be able to use it anymore.
 
       unbanned:
@@ -507,7 +507,7 @@ music:
           title: "User Unbanned!"
           color: 8f00ff
           description: |
-            You have allowed {USER} to use the music bot again.
+            You have allowed {user.name} to use the music bot again.
 
     pause:
       description: "Pauses or resumes the current track in the music bot."

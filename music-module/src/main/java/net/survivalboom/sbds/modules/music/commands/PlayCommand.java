@@ -8,8 +8,10 @@ import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.GreedyStringArgument;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
@@ -18,6 +20,7 @@ import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import net.survivalboom.sbds.modules.music.music.MusicTrack;
 import net.survivalboom.sbds.modules.music.music.TrackLoadException;
+import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,10 +30,12 @@ import java.util.List;
 import java.util.Objects;
 
 @CommandClass(name = "play", description = "Finds a track from your query and connects a new bot to your channel", translationKey = "music.command.play")
-public class PlayCommand extends AbstractPlayerCommand implements SlashCommandExecutor {
+public class PlayCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
 
-    public PlayCommand(@NotNull MusicManager musicManager) {
-        super(musicManager);
+    private final MusicManager manager;
+
+    public PlayCommand(@NotNull MusicManager manager) {
+        this.manager = manager;
     }
 
     @Override
@@ -46,12 +51,14 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommandEx
 
         // Шукаємо плеєр, який відповідає за цей сервер. Якщо немає, створюємо новий //
 
-        GuildPlayer player = getPlayer(info, true, false);
+        GuildPlayer player = Utils.getInteractionPlayer(manager, info, true, false);
         if (player == null) {
             return;
         }
 
-        if (checkBannedOrLocked(info, player, false)) return;
+        if (Utils.checkInteractionDenied(manager, info, player, false)) {
+            return;
+        }
 
         GuildVoiceState voiceState = member.getVoiceState();
         AudioChannelUnion channel = Objects.requireNonNull(voiceState).getChannel();
@@ -76,25 +83,26 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommandEx
 
         Placeholders placeholders = Placeholders.of(
                 "bot", botUser,
-                "playlist", createTracksString(player.getPlaylist(), 10),
+                "count", tracks.size(),
+                "playlist", Utils.createTracksString(player.getPlaylist(), 10),
                 "playlist.size", player.getPlaylistSize(),
                 "added", addedTrack,
                 "playing", playingTrack
         );
 
         if (newBot) {
-            info.reply("music.command.play.connected").withPlaceholders(placeholders).queue();
+            info.edit("music.command.play.connected").withPlaceholders(placeholders).queue();
         }
 
         else {
 
             if (tracks.size() > 1) {
                 placeholders.add("count", tracks.size());
-                info.reply("music.command.play.playlist-added").withPlaceholders(placeholders).queue();
+                info.edit("music.command.play.playlist-added").withPlaceholders(placeholders).queue();
             }
 
             else {
-                info.reply("music.command.play.playlist-added-single").withPlaceholders(placeholders).queue();
+                info.edit("music.command.play.playlist-added-single").withPlaceholders(placeholders).queue();
             }
 
         }
@@ -138,12 +146,12 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommandEx
         }
 
         catch (TrackLoadException e) {
-            info.reply("music.command.play.load-failed").withPlaceholders("error", e.toString()).queue();
+            info.edit("music.command.play.load-failed").withPlaceholders("error", e.toString()).queue();
             return null;
         }
 
         if (tracks.isEmpty()) {
-            info.reply("music.command.play.no-tracks-found").withPlaceholders("query", query).queue();
+            info.edit("music.command.play.no-tracks-found").withPlaceholders("query", query).queue();
             return null;
         }
 
@@ -165,7 +173,7 @@ public class PlayCommand extends AbstractPlayerCommand implements SlashCommandEx
         AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
         Objects.requireNonNull(channel);
 
-        GuildPlayer player = getPlayer(info, channel, true);
+        GuildPlayer player = Utils.getConsolePlayer(manager, info, channel, true);
         if (player == null) {
             return;
         }

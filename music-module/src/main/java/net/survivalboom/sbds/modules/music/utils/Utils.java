@@ -1,18 +1,15 @@
-package net.survivalboom.sbds.modules.music.commands;
+package net.survivalboom.sbds.modules.music.utils;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
-import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
-import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
-import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
-import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import net.survivalboom.sbds.modules.music.music.MusicBot;
+import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.MusicTrack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,15 +18,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-public abstract class AbstractPlayerCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+public class Utils {
 
-    protected final MusicManager musicManager;
+    // COMMAND //
 
-    public AbstractPlayerCommand(@NotNull MusicManager musicManager) {
-        this.musicManager = musicManager;
-    }
-
-    protected @Nullable GuildPlayer getPlayer(@NotNull SlashExecutionInfo info, boolean create, boolean ephemeral) {
+    public static @Nullable GuildPlayer getInteractionPlayer(
+            @NotNull MusicManager manager,
+            @NotNull InteractionHolder info,
+            boolean create,
+            boolean ephemeral
+    ) {
 
         Member member = info.member();
         if (member == null) {
@@ -42,7 +40,7 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
             return null;
         }
 
-        GuildPlayer player = musicManager.findCurrentPlayer(channel);
+        GuildPlayer player = manager.findCurrentPlayer(channel);
         if (player == null && !create) {
             info.reply("music.no-bot-in-voice").setEphemeral(ephemeral).queue();
             return null;
@@ -50,7 +48,7 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
 
         if (player == null) {
 
-            List<MusicBot> freeBots = musicManager.findFreeBots(channel);
+            List<MusicBot> freeBots = manager.findFreeBots(channel);
             if (freeBots.isEmpty()) {
                 info.reply("music.command.play.no-free-bot").setEphemeral(ephemeral).queue();
                 return null;
@@ -65,9 +63,14 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
 
     }
 
-    protected @Nullable GuildPlayer getPlayer(@NotNull ConsoleExecutionInfo info, @NotNull AudioChannelUnion channel, boolean create) {
+    public static @Nullable GuildPlayer getConsolePlayer(
+            @NotNull MusicManager manager,
+            @NotNull ConsoleExecutionInfo info,
+            @NotNull AudioChannelUnion channel,
+            boolean create
+    ) {
 
-        GuildPlayer player = musicManager.findCurrentPlayer(channel);
+        GuildPlayer player = manager.findCurrentPlayer(channel);
         if (player == null && !create) {
             info.logger().info("There is no music bot in the channel.");
             return null;
@@ -75,7 +78,7 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
 
         if (player == null) {
 
-            List<MusicBot> freeBots = musicManager.findFreeBots(channel);
+            List<MusicBot> freeBots = manager.findFreeBots(channel);
             if (freeBots.isEmpty()) {
                 info.logger().info("No free bot found!");
                 return null;
@@ -90,16 +93,17 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
 
     }
 
-
-    protected @NotNull String createTracksString(@NotNull List<MusicTrack> tracks, int max) {
+    public static @NotNull String createTracksString(@NotNull List<MusicTrack> tracks, int max) {
 
         List<String> formatted = IntStream.of(0, Math.min(tracks.size(), max) - 1)
                 .mapToObj(index -> {
 
                     MusicTrack track = tracks.get(index);
 
-                    Placeholders placeholders = track.placeholders();
-                    placeholders.add("track.index", index);
+                    Placeholders placeholders = Placeholders.of(
+                            "track.index", index,
+                            "track", track
+                    );
 
                     String string = "`{track.index}.` **[{track.title}]({track.link})** `{track.duration}`";
 
@@ -117,7 +121,12 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
 
     }
 
-    protected boolean checkBannedOrLocked(@NotNull SlashExecutionInfo info, @NotNull GuildPlayer player, boolean ephemeral) {
+    public static boolean checkInteractionDenied(
+            @NotNull MusicManager manager,
+            @NotNull InteractionHolder info,
+            @NotNull GuildPlayer player,
+            boolean ephemeral
+    ) {
 
         Guild guild = info.guild();
         Objects.requireNonNull(guild);
@@ -125,7 +134,7 @@ public abstract class AbstractPlayerCommand extends CommandBase implements Slash
         User user = info.user();
         Objects.requireNonNull(user);
 
-        if (musicManager.isMusicBanned(guild, user)) {
+        if (manager.isMusicBanned(guild, user)) {
             info.reply("music.command.music-ban.denied").setEphemeral(ephemeral).queue();
             return true;
         }

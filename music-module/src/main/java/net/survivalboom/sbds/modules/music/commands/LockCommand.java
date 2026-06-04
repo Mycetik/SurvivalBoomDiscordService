@@ -5,27 +5,38 @@ import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
+import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
 
 @CommandClass(name = "music-lock", description = "Locks current music bot for staff usage only", translationKey = "music.command.lock", permission = "music.command.lock")
-public class LockCommand extends AbstractPlayerCommand {
+public class LockCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+
+    private final MusicManager manager;
 
     public LockCommand(@NotNull MusicManager musicManager) {
-        super(musicManager);
+        this.manager = musicManager;
     }
 
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
+        executes0(info, false);
+    }
 
-        GuildPlayer player = getPlayer(info, false, false);
+    private void executes0(@NotNull InteractionHolder info, boolean ephemeral) {
+
+        GuildPlayer player = Utils.getInteractionPlayer(manager, info, false, ephemeral);
         if (player == null) {
             return;
         }
@@ -47,9 +58,8 @@ public class LockCommand extends AbstractPlayerCommand {
 
         AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
 
-        GuildPlayer player = getPlayer(info, channel, false);
+        GuildPlayer player = Utils.getConsolePlayer(manager, info, channel, false);
         if (player == null) {
-            info.logger().error("No player found for the provided channel.");
             return;
         }
 

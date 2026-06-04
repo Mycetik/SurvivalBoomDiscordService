@@ -280,7 +280,7 @@ music:
         $embed:
           title: "Неправильный индекс"
           color: ff0000
-          description: "Укажите правильный индекс от `0` до `{playlist.size}`."
+          description: "Укажите правильный индекс от `0` до `{steps}`."
 
       multiple:
         $embed:
