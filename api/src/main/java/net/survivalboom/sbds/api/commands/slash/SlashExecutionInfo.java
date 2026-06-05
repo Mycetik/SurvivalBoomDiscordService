@@ -70,16 +70,64 @@ public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManage
         return interaction.getHook().editOriginal(data);
     }
 
-    // REPLY //
+    // SEND ONLY //
 
     @Override
-    public @NotNull RestAction<?> replyRaw(@NotNull String txt, boolean ephemeral) {
+    public @NotNull RestAction<?> send(@NotNull String txt, boolean ephemeral) {
+
+        if (interaction.isAcknowledged()) {
+            return interaction.getHook().sendMessage(txt).setEphemeral(ephemeral);
+        }
+
         return interaction.reply(txt).setEphemeral(ephemeral);
+
+    }
+
+    @Override
+    public @NotNull RestAction<?> send(@NotNull MessageCreateData data, boolean ephemeral) {
+
+        if (interaction.isAcknowledged()) {
+            return interaction.getHook().sendMessage(data).setEphemeral(ephemeral);
+        }
+
+        return interaction.reply(data).setEphemeral(ephemeral);
+
+    }
+
+    // REPLY (INTELLIGENT) //
+
+    @Override
+    public @NotNull RestAction<?> reply(@NotNull String txt, boolean ephemeral) {
+
+        if (ephemeral) {
+            return send(txt, true);
+        }
+
+        if (interaction.isAcknowledged()) {
+            return editRaw(txt);
+        }
+
+        else {
+            return send(txt, false);
+        }
+
     }
 
     @Override
     public @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
-        return interaction.reply(data).setEphemeral(ephemeral);
+
+        if (ephemeral) {
+            return send(data, true);
+        }
+
+        if (interaction.isAcknowledged()) {
+            return edit(MessageEditData.fromCreateData(data));
+        }
+
+        else {
+            return send(data, false);
+        }
+
     }
 
 }

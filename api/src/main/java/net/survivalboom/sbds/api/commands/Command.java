@@ -27,6 +27,12 @@ public class Command {
 
     private final @Nullable String translationKey;
 
+    // INTERACTION //
+
+    private final boolean deferReply;
+
+    private final boolean ephemeral;
+
     // PERMISSION //
 
     private final @Nullable Permission permission;
@@ -41,6 +47,9 @@ public class Command {
             @Nullable String description,
             @Nullable String translationKey,
 
+            boolean deferReply,
+            boolean ephemeral,
+
             @Nullable Permission permission
     ) {
 
@@ -51,6 +60,9 @@ public class Command {
 
         this.description = description;
         this.translationKey = translationKey;
+
+        this.deferReply = deferReply;
+        this.ephemeral = ephemeral;
 
         this.permission = permission;
 
@@ -100,6 +112,15 @@ public class Command {
         return arguments.stream().filter(arg -> arg.argument() instanceof SubCommandArgument).toList();
     }
 
+    // INTERACTION //
+
+    public boolean isDeferReply() {
+        return deferReply;
+    }
+
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
 
     // COMMAND INFO //
 
@@ -150,6 +171,12 @@ public class Command {
 
         private @Nullable String translationKey;
 
+        // INTERACTION //
+
+        private boolean deferReply = true;
+
+        private boolean ephemeral = false;
+
         // PERMISSION //
 
         private @Nullable Permission permission;
@@ -171,6 +198,9 @@ public class Command {
             this.description = builder.description;
             this.translationKey = builder.translationKey;
 
+            this.deferReply = builder.deferReply;
+            this.ephemeral = builder.ephemeral;
+
             this.permission = builder.permission;
 
         }
@@ -185,6 +215,9 @@ public class Command {
 
             this.description = command.description;
             this.translationKey = command.translationKey;
+
+            this.deferReply = command.deferReply;
+            this.ephemeral = command.ephemeral;
 
             this.permission = command.permission;
 
@@ -317,6 +350,28 @@ public class Command {
             return translationKey;
         }
 
+        // DEFER REPLY //
+
+        public @NotNull Builder setDeferReply(boolean value) {
+            this.deferReply = value;
+            return this;
+        }
+
+        public boolean isDeferReply() {
+            return deferReply;
+        }
+
+        // EPHEMERAL //
+
+        public @NotNull Builder setEphemeral(boolean value) {
+            this.ephemeral = value;
+            return this;
+        }
+
+        public boolean isEphemeral() {
+            return ephemeral;
+        }
+
         // PERMISSION //
 
         public @NotNull Builder setPermission(@Nullable Permission permission) {
@@ -331,7 +386,7 @@ public class Command {
         // BUILD //
 
         public @NotNull Command build() {
-            return new Command(name, executor, arguments, aliases, description, translationKey, permission);
+            return new Command(name, executor, arguments, aliases, description, translationKey, deferReply, ephemeral, permission);
         }
 
         public @NotNull Builder copy() {

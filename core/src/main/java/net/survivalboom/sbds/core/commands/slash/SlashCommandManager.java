@@ -3,7 +3,7 @@ package net.survivalboom.sbds.core.commands.slash;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.utils.messages.MessageEditData;
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
@@ -100,10 +100,11 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
         }
 
         String commandName = event.getName();
+        String fullCommandStr = event.getFullCommandName();
 
         IRegisteredSlashCommand registeredCommand = getByAlias(commandName);
         if (registeredCommand == null) {
-            logger.warn("Something went wrong! Slash command with name `{}` does not exist in SlashCommandManager!", commandName);
+            logger.warn("Something went wrong! Slash command /{} does not exist in SlashCommandManager!", fullCommandStr);
             return;
         }
 
@@ -112,53 +113,56 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
         try {
 
             Command command = getCommand(baseCommand, event);
+            SlashCommandExecutor executor = (SlashCommandExecutor) command.getExecutor();
+
+            if (executor == null) {
+                logger.error("Command executor of /{} is null. You did something wrong?", event.getFullCommandName());
+                messages.reply(event, "sbds.error", event.getUser())
+                        .withPlaceholders("exception", "Command executor is null")
+                        .queue();
+                return;
+            }
+
             TypeMap arguments = SlashCommandParser.parse(registeredCommand, command, event);
 
-            if (!permissionCheck(command, event)) {
-                return;
+            if (command.isDeferReply()) {
+                event.deferReply(command.isEphemeral()).queue();
             }
 
             SlashExecutionInfo info = new SlashExecutionInfo(event, registeredCommand, command, commandName, arguments);
 
-            SlashCommandExecutor executor = (SlashCommandExecutor) command.getExecutor();
-            if (executor != null) {
-                executor.executes(info);
+            if (!permissionCheck(info)) {
+                return;
             }
 
-            if (!event.isAcknowledged()) {
-                event.reply("Something went wrong. Looks like the executor `" + executor + "` refused to respond to the interaction.").queue();
-                logger.error("Command executor of command /`{}` did not respond to the interaction. Are you sure you did it right?", commandName);
-            }
+            executor.executes(info);
 
         }
 
         catch (Throwable t) {
 
-            logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName(), commandName, t);
+            String place = event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName();
+
+            logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", place, event.getFullCommandName(), t);
 
             try {
 
-                if (!event.isAcknowledged()) {
-                    messages.reply(event, "sbds.error", event.getUser())
-                            .withPlaceholders("exception", t.toString())
-                            .queue();
-                } else {
-                    messages.createActionMessage("sbds.error", event.getUser(), d -> event.getHook().editOriginal(MessageEditData.fromCreateData(d)))
-                            .withPlaceholders("exception", t.toString())
-                            .queue();
-                }
+                messages.reply(event, "sbds.error", event.getUser())
+                        .withPlaceholders("exception", t.toString())
+                        .queue();
+
             }
 
-            catch (Exception e) {
+            catch (Throwable tt) {
                 event.reply(
                     """ 
                     **SurvivalBoom Discord Service** *v{v}*
                     A low-level fatal error occurred in SurvivalBoom Discord Service while attempting to process your request!
-                    This is an internal error. Looks like something went wrong completely wrong!
+                    This is an internal error. Looks like something went completely wrong!
                     `{e}`
-                    """.replace("{v}", BuildConstants.VERSION).replace("{e}", e.toString())
+                    """.replace("{v}", BuildConstants.VERSION).replace("{e}", tt.toString())
                 ).queue();
-                throw e;
+                throw tt;
             }
 
         }
@@ -202,18 +206,17 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
 
     }
 
-    private boolean permissionCheck(@NotNull Command command, @NotNull SlashCommandInteractionEvent event) {
+    private boolean permissionCheck(@NotNull SlashExecutionInfo info) {
 
-        Permission permission = command.getPermission();
-        if (event.isFromGuild() && permission != null) {
+        Permission permission = info.currentCommand().getPermission();
+        SlashCommandInteraction event = info.interaction();
 
-            Member member = event.getMember();
-
-            assert member != null;
+        Member member = event.getMember();
+        if (member != null && permission != null) {
 
             boolean hasPermission = permissionManager.hasPermission(member,  permission);
             if (!hasPermission) {
-                messages.reply(event.getInteraction(),"sbds.no-permission", event.getUser())
+                messages.reply(event,"sbds.no-permission", event.getUser())
                         .withPlaceholders("permission", permission)
                         .queue();
                 return false;

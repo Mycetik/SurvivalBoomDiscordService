@@ -42,7 +42,6 @@ public class PlayCommand extends CommandBase implements SlashCommandExecutor, Co
     public void executes(@NotNull SlashExecutionInfo info) {
 
         Member member = info.member();
-        Objects.requireNonNull(member);
 
         // Знаходимо канал в якому сидить користувач //
 
@@ -95,18 +94,18 @@ public class PlayCommand extends CommandBase implements SlashCommandExecutor, Co
         );
 
         if (newBot) {
-            info.edit("music.command.play.connected").withPlaceholders(placeholders).queue();
+            info.reply("music.command.play.connected").withPlaceholders(placeholders).queue();
         }
 
         else {
 
             if (tracks.size() > 1) {
                 placeholders.add("count", tracks.size());
-                info.edit("music.command.play.playlist-added").withPlaceholders(placeholders).queue();
+                info.reply("music.command.play.playlist-added").withPlaceholders(placeholders).queue();
             }
 
             else {
-                info.edit("music.command.play.playlist-added-single").withPlaceholders(placeholders).queue();
+                info.reply("music.command.play.playlist-added-single").withPlaceholders(placeholders).queue();
             }
 
         }
@@ -150,12 +149,12 @@ public class PlayCommand extends CommandBase implements SlashCommandExecutor, Co
         }
 
         catch (TrackLoadException e) {
-            info.edit("music.command.play.load-failed").withPlaceholders("error", e.toString()).queue();
+            info.reply("music.command.play.load-failed").withPlaceholders("error", e.toString()).queue();
             return null;
         }
 
         if (tracks.isEmpty()) {
-            info.edit("music.command.play.no-tracks-found").withPlaceholders("query", query).queue();
+            info.reply("music.command.play.no-tracks-found").withPlaceholders("query", query).queue();
             return null;
         }
 

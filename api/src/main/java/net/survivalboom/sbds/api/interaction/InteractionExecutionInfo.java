@@ -80,10 +80,10 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
 
     }
 
-    // REPLY //
+    // SEND ONLY //
 
     @Override
-    public @NotNull RestAction<?> replyRaw(@NotNull String txt, boolean ephemeral) {
+    public @NotNull RestAction<?> send(@NotNull String txt, boolean ephemeral) {
 
         if (!(event instanceof IReplyCallback callback)) {
             throw new IllegalStateException("No reply method applicable to `" + this + "`");
@@ -94,7 +94,7 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
     }
 
     @Override
-    public @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
+    public @NotNull RestAction<?> send(@NotNull MessageCreateData data, boolean ephemeral) {
 
         if (!(event instanceof IReplyCallback callback)) {
             throw new IllegalStateException("No reply method applicable to `" + this + "`");
@@ -102,6 +102,42 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
 
         return callback.reply(data).setEphemeral(ephemeral);
 
+    }
+
+    // REPLY (INTELLIGENT) //
+
+    @Override
+    public @NotNull RestAction<?> reply(@NotNull String txt, boolean ephemeral) {
+        if (ephemeral) {
+            return send(txt, true);
+        }
+
+        if (!(event instanceof IReplyCallback callback)) {
+            throw new IllegalStateException("No reply method applicable to `" + this + "`");
+        }
+
+        if (event.isAcknowledged()) {
+            return editRaw(txt);
+        } else {
+            return send(txt, false);
+        }
+    }
+
+    @Override
+    public @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
+        if (ephemeral) {
+            return send(data, true);
+        }
+
+        if (!(event instanceof IReplyCallback callback)) {
+            throw new IllegalStateException("No reply method applicable to `" + this + "`");
+        }
+
+        if (event.isAcknowledged()) {
+            return edit(MessageEditData.fromCreateData(data));
+        } else {
+            return send(data, false);
+        }
     }
 
 }

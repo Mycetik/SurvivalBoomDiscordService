@@ -35,13 +35,13 @@ public class MusicBanCommand extends CommandBase implements SlashCommandExecutor
 
         User target = info.arguments().getCast("target", User.class).orElseThrow();
 
-        info.interaction().deferReply().queue(); // База даних відповідає повільно, тож аби не зловити таймаут виконуємо deferReply.
-
         boolean state = !manager.isMusicBanned(guild, target);
         manager.setMusicBanned(guild, target, state);
 
         String str = state ? "music.command.music-ban.banned" : "music.command.music-ban.unbanned";
-        info.edit(str).withPlaceholders("user", target).queue();
+        info.reply(str)
+                .withPlaceholders("user", target)
+                .queue();
 
     }
 

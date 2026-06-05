@@ -59,9 +59,23 @@ public interface InteractionHolder {
         return new MessageActionBuilder(messages(), user(), key, d -> edit(MessageEditData.fromCreateData(d)));
     }
 
-    // REPLY //
+    // SEND ONLY //
 
-    default @NotNull RestAction<?> replyRaw(@NotNull String txt, boolean ephemeral) {
+    default @NotNull RestAction<?> send(@NotNull String txt, boolean ephemeral) {
+        throw new IllegalStateException("No sendOnly method applicable to `" + this + "`");
+    }
+
+    default @NotNull RestAction<?> send(@NotNull MessageCreateData data, boolean ephemeral) {
+        throw new IllegalStateException("No sendOnly method applicable to `" + this + "`");
+    }
+
+    default @NotNull MessageActionBuilder send(@NotNull String key) {
+        return new MessageActionBuilder(messages(), user(), key, d -> send(d, false));
+    }
+
+    // REPLY (INTELLIGENT) //
+
+    default @NotNull RestAction<?> reply(@NotNull String txt, boolean ephemeral) {
         throw new IllegalStateException("No reply method applicable to `" + this + "`");
     }
 

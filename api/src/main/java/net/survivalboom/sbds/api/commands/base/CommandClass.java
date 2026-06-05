@@ -21,4 +21,7 @@ public @interface CommandClass {
     boolean global() default false;
     boolean guild() default true;
 
+    boolean deferReply() default true;
+    boolean ephemeral() default false;
+
 }

@@ -3,6 +3,8 @@ package net.survivalboom.sbds.core.messages;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.RestAction;
@@ -176,19 +178,32 @@ public class Messages extends Manager implements IMessages {
     // MESSAGE OPERATIONS
     //
 
-    @Override
-    public @NotNull MessageActionBuilder reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull User user) {
-        return new MessageActionBuilder(this, user, name, callback::reply);
-    }
+    @Override // Від цього методу смердить помиями, обережно!
+    public @NotNull MessageActionBuilder reply(@NotNull Object thing, @NotNull String name, @NotNull User user) {
 
-    @Override
-    public @NotNull MessageActionBuilder editMessage(@NotNull Message message, @NotNull String name, @NotNull User user) {
-        return new MessageActionBuilder(this, user, name, d -> message.editMessage(MessageEditData.fromCreateData(d)));
-    }
+        Function<MessageCreateData, RestAction<?>> action;
+        switch (thing) {
 
-    @Override
-    public @NotNull MessageActionBuilder sendMessage(@NotNull MessageChannel channel, @NotNull String name, @NotNull User user) {
-        return new MessageActionBuilder(this, user, name, channel::sendMessage);
+            case Message message -> action = message::reply;
+
+            case TextChannel channel -> action = channel::sendMessage;
+
+            case IReplyCallback replyCallback -> {
+
+                if (replyCallback.isAcknowledged()) {
+                    action = d -> replyCallback.getHook().editOriginal(MessageEditData.fromCreateData(d));
+                } else {
+                    action = replyCallback::reply;
+                }
+
+            }
+
+            default -> throw new IllegalArgumentException("No reply method applicable to `" + thing + "`");
+
+        }
+
+        return new MessageActionBuilder(this, user, name, action);
+
     }
 
     //

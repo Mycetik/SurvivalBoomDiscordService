@@ -49,15 +49,11 @@ public interface IMessages extends IManager {
     // MESSAGE OPERATIONS
     //
 
-    @NotNull MessageActionBuilder reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull User user);
+    @NotNull MessageActionBuilder reply(@NotNull Object thing, @NotNull String name, @NotNull User user);
 
-    default @NotNull MessageActionBuilder reply(@NotNull IReplyCallback callback, @NotNull String name, @NotNull Member member) {
-        return reply(callback, name, member.getUser());
+    default @NotNull MessageActionBuilder reply(@NotNull Object thing, @NotNull String name, @NotNull Member member) {
+        return reply(thing, name, member.getUser());
     }
-
-    @NotNull MessageActionBuilder editMessage(@NotNull Message message, @NotNull String name, @NotNull User user);
-
-    @NotNull MessageActionBuilder sendMessage(@NotNull MessageChannel channel, @NotNull String name, @NotNull User user);
 
     //
     // PARSING

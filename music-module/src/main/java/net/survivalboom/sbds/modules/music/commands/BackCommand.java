@@ -57,7 +57,7 @@ public class BackCommand extends CommandBase implements SlashCommandExecutor, Co
         catch (IllegalArgumentException e) {
             info.reply("music.command.skip.invalid-index")
                     .withPlaceholders("steps", player.getPlayingIndex())
-                    .setEphemeral(true)
+                    .setEphemeral(ephemeral)
                     .queue();
             return;
         }
@@ -76,6 +76,7 @@ public class BackCommand extends CommandBase implements SlashCommandExecutor, Co
                         "playlist.size", playlist.size(),
                         "playlist", Utils.createTracksString(playlist, 10)
                 )
+                .setEphemeral(ephemeral)
                 .queue();
 
     }

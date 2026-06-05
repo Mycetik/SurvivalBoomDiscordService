@@ -49,6 +49,7 @@ public class LockCommand extends CommandBase implements SlashCommandExecutor, Co
         String str = state ? "music.command.lock.locked" : "music.command.lock.unlocked";
         info.reply(str)
                 .withPlaceholders("bot", botUser)
+                .setEphemeral(ephemeral)
                 .queue();
 
     }

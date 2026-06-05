@@ -29,6 +29,9 @@ public abstract class CommandBase implements CommandExecutor {
         String permissionStr = info.permission();
         Permission permission = !permissionStr.isBlank() ? new Permission(permissionStr, info.defaultPermission()) : null;
 
+        boolean deferReply = info.deferReply();
+        boolean ephemeral = info.ephemeral();
+
         List<CommandArgument> arguments = scanForArguments(translationKey);
 
         return new Command(
@@ -38,6 +41,8 @@ public abstract class CommandBase implements CommandExecutor {
                 aliases,
                 description,
                 translationKey,
+                deferReply,
+                ephemeral,
                 permission
         );
 
