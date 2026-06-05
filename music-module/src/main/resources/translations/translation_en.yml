@@ -499,7 +499,7 @@ music:
           title: "User Banned!"
           color: 8f00ff
           description: |
-            You have banned {user.name} from using the music bot.
+            You have banned {user.mention} from using the music bot.
             They won't be able to use it anymore.
 
       unbanned:
@@ -507,7 +507,7 @@ music:
           title: "User Unbanned!"
           color: 8f00ff
           description: |
-            You have allowed {user.name} to use the music bot again.
+            You have allowed {user.mention} to use the music bot again.
 
     pause:
       description: "Pauses or resumes the current track in the music bot."

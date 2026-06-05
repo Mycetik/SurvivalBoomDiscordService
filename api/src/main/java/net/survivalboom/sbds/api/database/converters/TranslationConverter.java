@@ -21,7 +21,13 @@ public class TranslationConverter implements AttributeConverter<ITranslation, St
 
     @Override
     public ITranslation convertToEntityAttribute(String dbData) {
+
+        if (dbData == null) {
+            return null;
+        }
+
         return SbdsProvider.getInstance().getTranslationManager().getTranslation(dbData);
+
     }
 
 }

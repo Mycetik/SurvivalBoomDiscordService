@@ -34,13 +34,14 @@ public class MusicBanCommand extends CommandBase implements SlashCommandExecutor
         Objects.requireNonNull(guild);
 
         User target = info.arguments().getCast("target", User.class).orElseThrow();
-        Objects.requireNonNull(target);
+
+        info.interaction().deferReply().queue(); // База даних відповідає повільно, тож аби не зловити таймаут виконуємо deferReply.
 
         boolean state = !manager.isMusicBanned(guild, target);
         manager.setMusicBanned(guild, target, state);
 
         String str = state ? "music.command.music-ban.banned" : "music.command.music-ban.unbanned";
-        info.reply(str).withPlaceholders("user", target).queue();
+        info.edit(str).withPlaceholders("user", target).queue();
 
     }
 
@@ -49,6 +50,8 @@ public class MusicBanCommand extends CommandBase implements SlashCommandExecutor
 
         Guild guild = info.arguments().getCast("guild", Guild.class).orElseThrow();
         User user = info.arguments().getCast("target", User.class).orElseThrow();
+
+        info.logger().info("Retrieving data from the database...");
 
         boolean banned = !manager.isMusicBanned(guild, user);
         manager.setMusicBanned(guild, user, banned);

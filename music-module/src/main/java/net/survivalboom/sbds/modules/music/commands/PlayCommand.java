@@ -47,7 +47,11 @@ public class PlayCommand extends CommandBase implements SlashCommandExecutor, Co
         // Знаходимо канал в якому сидить користувач //
 
         String query = info.arguments().getCast("query", String.class).orElseThrow();
-        Objects.requireNonNull(query);
+
+        if (manager.isMusicBanned(info.guild(), info.user())) {
+            info.reply("music.command.music-ban.denied").queue();
+            return;
+        }
 
         // Шукаємо плеєр, який відповідає за цей сервер. Якщо немає, створюємо новий //
 
