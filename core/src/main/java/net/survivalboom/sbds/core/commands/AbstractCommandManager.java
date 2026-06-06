@@ -3,6 +3,7 @@ package net.survivalboom.sbds.core.commands;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.ICommandManager;
+import net.survivalboom.sbds.api.interaction.command.ICommandInteractionManager;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.registrations.RegistrationManager;
@@ -153,7 +154,7 @@ public abstract class AbstractCommandManager<
     // REG
     //
 
-    public static class RegisteredCommand<
+    public static abstract class RegisteredCommand<
             it extends IRegisteredCommand<it, manager>,
             manager extends ICommandManager<it, manager>
     > implements IRegisteredCommand<it, manager> {
@@ -184,6 +185,24 @@ public abstract class AbstractCommandManager<
         @Override
         public @NotNull manager getManager() {
             return manager;
+        }
+
+    }
+
+    public static abstract class RegisteredInteractionCommand<
+            it extends IRegisteredInteractionCommand<it, manager>,
+            manager extends ICommandManager<it, manager>
+    > extends RegisteredCommand<it, manager> implements IRegisteredInteractionCommand<it, manager> {
+
+        public List<ICommandInteractionManager.IRegisteredCommandData> commandData;
+
+        public RegisteredInteractionCommand(@NotNull manager manager, @NotNull Command command) {
+            super(manager, command);
+        }
+
+        @Override
+        public @NotNull List<ICommandInteractionManager.IRegisteredCommandData> getCommandData() {
+            return new ArrayList<>(commandData);
         }
 
     }

@@ -1,7 +1,9 @@
 package net.survivalboom.sbds.api.commands;
 
+import net.dv8tion.jda.api.entities.Guild;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.interaction.command.ICommandInteractionManager;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.registrations.Registration;
@@ -10,6 +12,7 @@ import net.survivalboom.sbds.api.utils.valid.IManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -103,6 +106,51 @@ public interface ICommandManager<
         @NotNull Command getCommand();
 
         @NotNull manager getManager();
+
+    }
+
+    interface IRegisteredInteractionCommand<it extends IRegisteredCommand<it, manager>, manager extends ICommandManager<it, manager>> extends IRegisteredCommand<it, manager> {
+
+        @NotNull List<ICommandInteractionManager.IRegisteredCommandData> getCommandData();
+
+        // DISCORD REGISTRATION //
+
+        // GLOBAL //
+
+        default boolean isGlobal() {
+            return getCommandData().stream().allMatch(ICommandInteractionManager.IRegisteredCommandData::isGlobal);
+        }
+
+        default void setGlobal(boolean value) {
+            getCommandData().forEach(data -> data.setGlobal(value));
+        }
+
+        // GUILD //
+
+        default boolean isGuildGlobal() {
+            return getCommandData().stream().allMatch(ICommandInteractionManager.IRegisteredCommandData::isGuildGlobal);
+        }
+
+        default void setGuildGlobal(boolean value) {
+            getCommandData().forEach(data -> data.setGuildGlobal(value));
+        }
+
+
+        default @NotNull List<Guild> getGuildRegistrations() {
+            return getCommandData().stream().flatMap(data -> data.getGuildRegistrations().stream()).toList();
+        }
+
+        default void setGuildRegistrations(@Nullable Collection<Guild> collection) {
+            getCommandData().forEach(data -> data.setGuildRegistrations(collection));
+        }
+
+        default void addGuildRegistration(@NotNull Guild guild) {
+            getCommandData().forEach(data -> data.addGuildRegistration(guild));
+        }
+
+        default void removeGuildRegistration(@NotNull Guild guild) {
+            getCommandData().forEach(data -> data.removeGuildRegistration(guild));
+        }
 
     }
 

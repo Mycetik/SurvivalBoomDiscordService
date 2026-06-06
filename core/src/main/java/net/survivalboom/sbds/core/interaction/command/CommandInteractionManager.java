@@ -27,7 +27,7 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
 
     private final CommandLocalizator localizator;
 
-    private final Map<ICommandManager.IRegisteredCommand<?, ?>, RegisteredCommandData> registeredCommands = new HashMap<>();
+    private final Map<ICommandManager.IRegisteredCommand<?, ?>, List<IRegisteredCommandData>> registeredCommands = new HashMap<>();
 
 
     private final InternalUpdateQueue queue;
@@ -58,13 +58,12 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
     // REG/UNREG
     //
 
-    public synchronized @NotNull RegisteredCommandData registerCommand(
+    public synchronized @NotNull List<IRegisteredCommandData> registerCommand(
             @NotNull ICommandManager.IRegisteredCommand<?, ?> reg,
-            @NotNull Type type
+            @NotNull List<Type> types
     ) {
 
         Objects.requireNonNull(reg, "reg == null");
-        Objects.requireNonNull(type, "type == null");
         checkValid();
 
         if (registeredCommands.containsKey(reg)) {
@@ -74,15 +73,22 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
         Command command = reg.getCommand();
         checkSubCommands(command, 0); // Потрібно перевірити чи не має команда неправильну конструкцію суб-команд для Discord
 
-        CommandData commandData = switch (type) {
-            case SLASH -> createSlashCommandData(command);
-            case USER, MESSAGE -> createContextCommandData(command, type);
-            default -> throw new IllegalArgumentException("Invalid command type `" + type + "`");
-        };
+        List<IRegisteredCommandData> registeredCommandData = new ArrayList<>();
+        for (Type type : types) {
 
-        RegisteredCommandData registeredCommandData = new RegisteredCommandData(reg, commandData, type, this);
-        registeredCommands.put(reg, registeredCommandData);
+            CommandData commandData = switch (type) {
+                case SLASH -> createSlashCommandData(command);
+                case USER, MESSAGE -> createContextCommandData(command, type);
+                default -> throw new IllegalArgumentException("Invalid command type `" + type + "`");
+            };
 
+            RegisteredCommandData rcd = new RegisteredCommandData(reg, commandData, type, this);
+            registeredCommandData.add(rcd);
+
+        }
+
+
+        registeredCommands.computeIfAbsent(reg, k -> new ArrayList<>()).addAll(registeredCommandData);
         queue.requestUpdate();
 
         return registeredCommandData;
@@ -136,7 +142,6 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
     }
 
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     private void updateGlobal() {
 
         CommonUtils.waitUntil(sbds::isReady);
@@ -144,8 +149,9 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
         JDA bot = sbds.getBot();
 
         List<CommandData> global = registeredCommands.values().stream()
-                .filter(command -> command.isGlobal)
-                .map(command -> command.commandData)
+                .flatMap(Collection::stream)
+                .filter(IRegisteredCommandData::isGlobal)
+                .map(IRegisteredCommandData::getCommandData)
                 .toList();
 
         log.info("Updating {} commands...", registeredCommands.size());
@@ -166,8 +172,9 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
         checkValid();
 
         List<CommandData> list = registeredCommands.values().stream()
-                .filter(command -> command.isGuildGlobal || command.guildRegistrations.contains(guild))
-                .map(command -> command.commandData)
+                .flatMap(Collection::stream)
+                .filter(command -> command.isGuildGlobal() || command.getGuildRegistrations().contains(guild))
+                .map(IRegisteredCommandData::getCommandData)
                 .toList();
 
         if (!silent) {
@@ -222,7 +229,7 @@ public class CommandInteractionManager extends Manager implements ICommandIntera
             List<CommandArgument> subcommandArguments = subcommand.getSubCommands();
             List<Command> subsubcommands = !subcommandArguments.isEmpty() ? ((SubCommandArgument) subcommandArguments.getFirst().argument()).getSubcommands() : null;
 
-            if (subsubcommands.isEmpty()) {
+            if (subsubcommands == null || subsubcommands.isEmpty()) {
                 slash.addSubcommands(new SubcommandData(name, description).addOptions(createSlashCommandOptions(subcommand)));
                 continue;
             }

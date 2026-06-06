@@ -14,6 +14,9 @@ import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ContextCommandManager extends AbstractCommandManager<IContextCommandManager.IRegisteredContextCommand, IContextCommandManager> implements IContextCommandManager, EventListener {
 
     private final CommandInteractionManager commandInteractionManager;
@@ -47,7 +50,8 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
     @Override
     public void onRegister(@NotNull Registration<IRegisteredContextCommand> registration) {
 
-        Command command = registration.object().getCommand();
+        RegisteredContextCommand reg = (RegisteredContextCommand) registration.object();
+        Command command = reg.getCommand();
         CommandExecutor executor = command.getExecutor();
 
         if (executor == null) {
@@ -58,7 +62,16 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
             throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a context command");
         }
 
-        commandInteractionManager.requestGlobalUpdate();
+        List<net.dv8tion.jda.api.interactions.commands.Command.Type> types = new ArrayList<>();
+        if (executor instanceof UserContextCommandExecutor) {
+            types.add(net.dv8tion.jda.api.interactions.commands.Command.Type.USER);
+        }
+
+        if (executor instanceof MessageContextCommandExecutor) {
+            types.add(net.dv8tion.jda.api.interactions.commands.Command.Type.MESSAGE);
+        }
+
+        commandInteractionManager.registerCommand(reg, types);
 
     }
 
@@ -72,16 +85,6 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
     //
 
     @EventHandler
-    public void onMessageContextInteraction(@NotNull MessageContextInteractionEvent event) {
-        onEvent(event);
-    }
-
-    @EventHandler
-    public void onUserContextInteraction(@NotNull UserContextInteractionEvent event) {
-        onEvent(event);
-    }
-
-
     public void onEvent(@NotNull GenericContextInteractionEvent<?> event) {
 
         if (!sbds.isReady()) {
@@ -143,7 +146,7 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
     }
 
-    public static class RegisteredContextCommand extends RegisteredCommand<IRegisteredContextCommand, IContextCommandManager> implements IRegisteredContextCommand {
+    public static class RegisteredContextCommand extends RegisteredInteractionCommand<IRegisteredContextCommand, IContextCommandManager> implements IRegisteredContextCommand {
 
         public RegisteredContextCommand(@NotNull IContextCommandManager manager, @NotNull Command command) {
             super(manager, command);

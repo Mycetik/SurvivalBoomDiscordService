@@ -63,6 +63,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
     @Override
     public void onRegister(@NotNull Registration<IRegisteredSlashCommand> registration) {
 
+        RegisteredSlashCommand reg = (RegisteredSlashCommand) registration.object();
         Command command = registration.object().getCommand();
         CommandExecutor executor = command.getExecutor();
 
@@ -74,7 +75,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
             throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a slash command");
         }
 
-        commandInteractionManager.registerCommand(registration.object(), net.dv8tion.jda.api.interactions.commands.Command.Type.SLASH);
+         reg.commandData = commandInteractionManager.registerCommand(registration.object(), List.of(net.dv8tion.jda.api.interactions.commands.Command.Type.SLASH));
 
     }
 
@@ -229,7 +230,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
     }
 
 
-    public static class RegisteredSlashCommand extends AbstractCommandManager.RegisteredCommand<IRegisteredSlashCommand, ISlashCommandManager> implements IRegisteredSlashCommand {
+    public static class RegisteredSlashCommand extends AbstractCommandManager.RegisteredInteractionCommand<IRegisteredSlashCommand, ISlashCommandManager> implements IRegisteredSlashCommand {
 
         public RegisteredSlashCommand(
                 @NotNull ISlashCommandManager manager,
