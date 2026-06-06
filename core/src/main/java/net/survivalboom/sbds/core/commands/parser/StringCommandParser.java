@@ -27,7 +27,7 @@ public class StringCommandParser {
         var result = parseInput0(input, scope, command.getArguments(), contextCreator);
 
         Map<String, Object> args = result.arguments.entrySet().stream()
-                .collect(Collectors.toMap(entry -> entry.getKey().name(), Map.Entry::getValue));
+                .collect(Collectors.toMap(entry -> entry.getKey().name(), Map.Entry::getValue, (old, nnew) -> nnew));
         TypeMap map = UnmodifiableTypeMap.ofMap(args);
 
         return new Result(map, result.arguments, result.foundSubcommands);
@@ -48,8 +48,12 @@ public class StringCommandParser {
                 .filter(argument -> argument.scopes().contains(scope))
                 .collect(Collectors.toList());
 
+        List<CommandArgument> argumentsRequired = argumentsSorted.stream()
+                .filter(CommandArgument::required)
+                .toList();
+
         var splitResult = splitToParts(input, argumentsSorted);
-        if (splitResult.splitArguments.size() < argumentsSorted.size()) {
+        if (splitResult.splitArguments.size() < argumentsRequired.size()) {
             throw new NotEnoughArgumentsException(splitResult.splitArguments, argumentsSorted);
         }
 
