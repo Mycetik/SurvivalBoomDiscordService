@@ -105,6 +105,12 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
                 return;
             }
 
+            Command command = registeredContextCommand.getCommand();
+
+            if (command.isDeferReply()) {
+                event.deferReply(command.isEphemeral()).queue();
+            }
+
             var executor = registeredContextCommand.getCommand().getExecutor();
             switch (event.getCommandType()) {
 
@@ -112,7 +118,7 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
                     UserContextInteractionEvent event0 = (UserContextInteractionEvent) event;
                     UserContextCommandExecutor executor0 = (UserContextCommandExecutor) executor;
-                    UserContextInteractionInfo info = new UserContextInteractionInfo(event0, registeredContextCommand, registeredContextCommand.getCommand(), name, sbds);
+                    UserContextInteractionInfo info = new UserContextInteractionInfo(event0, registeredContextCommand, command, name, sbds);
 
                     if (executor0 != null) {
                         executor0.execute(info);
@@ -124,7 +130,7 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
                     MessageContextInteractionEvent event0 = (MessageContextInteractionEvent) event;
                     MessageContextCommandExecutor executor0 = (MessageContextCommandExecutor) executor;
-                    MessageContextInteractionInfo info = new MessageContextInteractionInfo(event0, registeredContextCommand, registeredContextCommand.getCommand(), name, sbds);
+                    MessageContextInteractionInfo info = new MessageContextInteractionInfo(event0, registeredContextCommand, command, name, sbds);
 
                     if (executor0 != null) {
                         executor0.execute(info);
@@ -138,9 +144,8 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
         catch (Throwable t) {
             logger.error("An internal error occurred while attempting to perform context command.", t);
-            sbds.getMessages().reply(event, "common.error", event.getUser())
-                    .withPlaceholders("{exception}", t)
-                    .setEphemeral(true)
+            sbds.getMessages().reply(event, "sbds.error", event.getUser())
+                    .withPlaceholders("exception", t)
                     .queue();
         }
 

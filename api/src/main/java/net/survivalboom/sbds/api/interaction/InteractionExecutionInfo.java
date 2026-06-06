@@ -77,7 +77,7 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
             throw new IllegalStateException("No edit method applicable to `" + this + "`");
         }
 
-        if (callback.isAcknowledged()) {
+        if (!callback.isAcknowledged()) {
             throw new IllegalStateException("No message sent yet");
         }
 
@@ -96,7 +96,7 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
             throw new IllegalStateException("No edit method applicable to `" + this + "`");
         }
 
-        if (callback.isAcknowledged()) {
+        if (!callback.isAcknowledged()) {
             throw new IllegalStateException("No message sent yet");
         }
 

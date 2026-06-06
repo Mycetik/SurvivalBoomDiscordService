@@ -4,8 +4,8 @@ import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.modules.test.commands.BanPrototypeCommand;
 import net.survivalboom.sbds.modules.test.commands.EphemeralCommand;
 import net.survivalboom.sbds.modules.test.commands.LongRespondingCommand;
-import net.survivalboom.sbds.modules.test.commands.context.TestMessageContext;
-import net.survivalboom.sbds.modules.test.commands.context.TestUserContext;
+import net.survivalboom.sbds.modules.test.commands.TestMessageContext;
+import net.survivalboom.sbds.modules.test.commands.TestUserContext;
 import net.survivalboom.sbds.modules.test.events.EventListenerTest;
 
 public class TestModule extends ModuleMain {

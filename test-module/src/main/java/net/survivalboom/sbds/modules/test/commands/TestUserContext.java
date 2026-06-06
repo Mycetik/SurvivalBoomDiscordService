@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.modules.test.commands.context;
+package net.survivalboom.sbds.modules.test.commands;
 
 import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
@@ -7,7 +7,7 @@ import net.survivalboom.sbds.api.commands.context.UserContextCommandExecutor;
 import net.survivalboom.sbds.api.commands.context.UserContextInteractionInfo;
 import org.jetbrains.annotations.NotNull;
 
-@CommandClass(name = "test-user", description = "A command to test SBDS context commands")
+@CommandClass(name = "test-user", description = "A command to test SBDS context commands", ephemeral = true)
 public class TestUserContext extends CommandBase implements UserContextCommandExecutor {
 
     @Override
