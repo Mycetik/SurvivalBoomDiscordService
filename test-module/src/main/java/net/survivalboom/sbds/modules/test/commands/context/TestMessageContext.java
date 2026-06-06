@@ -1,26 +1,31 @@
 package net.survivalboom.sbds.modules.test.commands.context;
 
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
-import net.survivalboom.sbds.api.commands.base.ContextCommandBase;
-import net.survivalboom.sbds.api.commands.context.MessageContextCommand;
+import net.survivalboom.sbds.api.commands.context.MessageContextCommandExecutor;
 import net.survivalboom.sbds.api.commands.context.MessageContextInteractionInfo;
-import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 
-@CommandClass(name = "test-message")
-public class TestMessageContext extends ContextCommandBase implements MessageContextCommand {
+@CommandClass(name = "test-context-message", description = "A command to test SBDS context commands")
+public class TestMessageContext extends CommandBase implements MessageContextCommandExecutor {
 
     @Override
     public void execute(@NotNull MessageContextInteractionInfo info) {
 
         Message message = info.event().getTarget();
+
         String id = message.getId();
-        String author = message.getAuthor().getEffectiveName();
+        User author = message.getAuthor();
         String text = message.getContentRaw();
 
-        info.reply("test.context.message")
-                .withPlaceholders(Placeholders.of("{AUTHOR}", author, "{ID}", id, "{TEXT}", text))
+        info.reply("testmodule.context.message")
+                .withPlaceholders(
+                        "id", id,
+                        "author", author,
+                        "text", text
+                )
                 .queue();
 
     }

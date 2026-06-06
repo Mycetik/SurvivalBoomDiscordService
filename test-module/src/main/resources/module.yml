@@ -6,11 +6,3 @@ version: "1.0"
 
 author: TIMURishche
 website: "https://survivalboom.net"
-
-
-dependencies:
-
-  MusicModule:
-    join-classpath: true
-    required: true
-    load: BEFORE

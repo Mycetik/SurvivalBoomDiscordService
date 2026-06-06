@@ -4,13 +4,24 @@ import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteract
 import net.survivalboom.sbds.api.ISBDS;
 import org.jetbrains.annotations.NotNull;
 
-public class ComponentInteractionInfo<event extends GenericComponentInteractionCreateEvent> extends InteractionExecutionInfo<event> implements InteractionHolder {
+public class ComponentInteractionInfo<
+        event extends GenericComponentInteractionCreateEvent,
+        reg extends IComponentInteractionManager.IRegisteredComponent<event, reg>
+> extends InteractionExecutionInfo<event> implements InteractionHolder {
+
+    private final reg reg;
 
     public ComponentInteractionInfo(
             @NotNull event event,
+            @NotNull reg reg,
             @NotNull ISBDS sbds
     ) {
-        super(event, sbds);
+        super(event, reg.isEphemeral(), sbds);
+        this.reg = reg;
+    }
+
+    public @NotNull reg component() {
+        return reg;
     }
 
 }

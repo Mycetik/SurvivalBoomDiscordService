@@ -18,16 +18,24 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
 
     protected final event event;
 
+    protected final boolean ephemeral;
+
     public InteractionExecutionInfo(
             @NotNull event event,
+            boolean ephemeral,
             @NotNull ISBDS sbds
     ) {
         super(sbds);
         this.event = event;
+        this.ephemeral = ephemeral;
     }
 
     public @NotNull event event() {
         return event;
+    }
+
+    public boolean isEphemeral() {
+        return ephemeral;
     }
 
     @Override
@@ -59,21 +67,37 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
     // EDIT //
 
     @Override
-    public @NotNull RestAction<?> edit(@NotNull MessageEditData data) {
+    public @NotNull RestAction<?> editRaw(@NotNull MessageCreateData data) {
+
+        if (ephemeral) {
+            throw new IllegalStateException("Cannot edit ephemeral message");
+        }
 
         if (!(event instanceof IDeferrableCallback callback)) {
             throw new IllegalStateException("No edit method applicable to `" + this + "`");
         }
 
-        return callback.getHook().editOriginal(data);
+        if (callback.isAcknowledged()) {
+            throw new IllegalStateException("No message sent yet");
+        }
+
+        return callback.getHook().editOriginal(MessageEditData.fromCreateData(data));
 
     }
 
     @Override
     public @NotNull RestAction<?> editRaw(@NotNull String txt) {
 
+        if (ephemeral) {
+            throw new IllegalStateException("Cannot edit ephemeral message");
+        }
+
         if (!(event instanceof IDeferrableCallback callback)) {
             throw new IllegalStateException("No edit method applicable to `" + this + "`");
+        }
+
+        if (callback.isAcknowledged()) {
+            throw new IllegalStateException("No message sent yet");
         }
 
         return callback.getHook().editOriginal(txt);
@@ -83,7 +107,7 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
     // SEND ONLY //
 
     @Override
-    public @NotNull RestAction<?> send(@NotNull String txt, boolean ephemeral) {
+    public @NotNull RestAction<?> sendRaw(@NotNull String txt) {
 
         if (!(event instanceof IReplyCallback callback)) {
             throw new IllegalStateException("No reply method applicable to `" + this + "`");
@@ -94,7 +118,7 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
     }
 
     @Override
-    public @NotNull RestAction<?> send(@NotNull MessageCreateData data, boolean ephemeral) {
+    public @NotNull RestAction<?> sendRaw(@NotNull MessageCreateData data) {
 
         if (!(event instanceof IReplyCallback callback)) {
             throw new IllegalStateException("No reply method applicable to `" + this + "`");
@@ -107,37 +131,45 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
     // REPLY (INTELLIGENT) //
 
     @Override
-    public @NotNull RestAction<?> reply(@NotNull String txt, boolean ephemeral) {
+    public @NotNull RestAction<?> replyRaw(@NotNull String txt) {
+
         if (ephemeral) {
-            return send(txt, true);
+            return sendRaw(txt);
         }
 
-        if (!(event instanceof IReplyCallback callback)) {
+        if (!(event instanceof IReplyCallback)) {
             throw new IllegalStateException("No reply method applicable to `" + this + "`");
         }
 
         if (event.isAcknowledged()) {
             return editRaw(txt);
-        } else {
-            return send(txt, false);
         }
+
+        else {
+            return sendRaw(txt);
+        }
+
     }
 
     @Override
-    public @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
+    public @NotNull RestAction<?> replyRaw(@NotNull MessageCreateData data) {
+
         if (ephemeral) {
-            return send(data, true);
+            return sendRaw(data);
         }
 
-        if (!(event instanceof IReplyCallback callback)) {
+        if (!(event instanceof IReplyCallback)) {
             throw new IllegalStateException("No reply method applicable to `" + this + "`");
         }
 
         if (event.isAcknowledged()) {
-            return edit(MessageEditData.fromCreateData(data));
-        } else {
-            return send(data, false);
+            return editRaw(data);
         }
+
+        else {
+            return sendRaw(data);
+        }
+
     }
 
 }

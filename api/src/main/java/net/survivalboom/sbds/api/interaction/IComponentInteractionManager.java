@@ -26,7 +26,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull String id,
             @Nullable User user,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event>> successCallback,
+            @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> successCallback,
             @Nullable Runnable failureCallback,
             int timeout
     );
@@ -51,7 +51,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull IModule module,
             @NotNull String name,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event>> executor,
+            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor,
             @Nullable Permission permission
     );
 
@@ -59,7 +59,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull IModule module,
             @NotNull String name,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event>> executor
+            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
     ) {
         return registerListener(module, name, clazz, executor, null);
     }
@@ -68,7 +68,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull ModuleMain module,
             @NotNull String name,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event>> executor,
+            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor,
             @Nullable Permission permission
     ) {
         return registerListener(module.getModule(), name, clazz, executor, permission);
@@ -78,7 +78,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull ModuleMain module,
             @NotNull String name,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event>> executor
+            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
     ) {
         return registerListener(module.getModule(), name, clazz, executor, null);
     }
@@ -105,28 +105,34 @@ public interface IComponentInteractionManager extends IManager {
     // Злий динозаврик позаду тебе! Він проковтне тебе і ти більше не будеш писати код! Бу-га-га-га!
     //
 
-    interface IRegisteredListener<event extends GenericComponentInteractionCreateEvent> {
+    interface IRegisteredComponent<event extends GenericComponentInteractionCreateEvent, reg extends IRegisteredComponent<event, reg>> {
+
+        @NotNull IComponentInteractionManager getManager();
+
+        boolean isEphemeral();
+
+        @NotNull Consumer<ComponentInteractionInfo<event, reg>> getCallback();
+
+    }
+
+    interface IRegisteredListener<event extends GenericComponentInteractionCreateEvent> extends IRegisteredComponent<event, IRegisteredListener<event>> {
 
         @NotNull Registration<IRegisteredListener<event>> getRegistration();
 
         @NotNull Class<event> getEventClass();
 
-        @NotNull Consumer<ComponentInteractionInfo<event>> getExecutor();
-
         @Nullable Permission getPermission();
 
 
-        @NotNull IComponentInteractionManager getManager();
+        @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> getCallback();
 
     }
 
-    interface IPendingInteraction<event extends GenericComponentInteractionCreateEvent> {
+    interface IPendingInteraction<event extends GenericComponentInteractionCreateEvent> extends IRegisteredComponent<event, IPendingInteraction<event>> {
 
         @NotNull String getId();
 
         @Nullable User getUser();
-
-        @NotNull Consumer<ComponentInteractionInfo<event>> getSuccessCallback();
 
         @Nullable Runnable getFailureCallback();
 
@@ -136,7 +142,7 @@ public interface IComponentInteractionManager extends IManager {
         int getTimeout();
 
 
-        @NotNull IComponentInteractionManager getManager();
+        @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> getCallback();
 
     }
 

@@ -138,8 +138,8 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
     @SuppressWarnings("unchecked")
     private <T extends GenericComponentInteractionCreateEvent> void callExecutor(IRegisteredListener<?> listener, GenericComponentInteractionCreateEvent event) {
         IRegisteredListener<T> castedListener = (IRegisteredListener<T>) listener;
-        ComponentInteractionInfo<T> info = new ComponentInteractionInfo<>((T) event, sbds);
-        castedListener.getExecutor().accept(info);
+        ComponentInteractionInfo<T, IRegisteredListener<T>> info = new ComponentInteractionInfo<>((T) event, castedListener, sbds);
+        castedListener.getCallback().accept(info);
     }
 
     private void processPending(@NotNull GenericComponentInteractionCreateEvent event) {
@@ -168,8 +168,8 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
     @SuppressWarnings("unchecked")
     private <T extends GenericComponentInteractionCreateEvent> void callExecutor(IPendingInteraction<?> pending, GenericComponentInteractionCreateEvent event) {
         IPendingInteraction<T> castedPending = (IPendingInteraction<T>) pending;
-        ComponentInteractionInfo<T> info = new ComponentInteractionInfo<>((T) event, sbds);
-        castedPending.getSuccessCallback().accept(info);
+        ComponentInteractionInfo<T, IPendingInteraction<T>> info = new ComponentInteractionInfo<>((T) event, castedPending, sbds);
+        castedPending.getCallback().accept(info);
     }
 
     private void timeoutChecker() {
@@ -217,7 +217,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
             @NotNull String id,
             @Nullable User user,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event>> successCallback,
+            @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> successCallback,
             @Nullable Runnable failureCallback,
             int timeout
     ) {
@@ -226,7 +226,6 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         Objects.requireNonNull(id, "id == null");
         Objects.requireNonNull(clazz, "clazz == null");
         Objects.requireNonNull(successCallback, "successCallback == null");
-        Objects.requireNonNull(failureCallback, "failureCallback == null");
         checkValid();
 
         if (pendingInteractions.containsKey(id)) {
@@ -274,7 +273,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
             @NotNull IModule module,
             @NotNull String name,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event>> executor,
+            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor,
             @Nullable Permission permission
     ) {
 
@@ -323,7 +322,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
         private final Class<event> clazz;
 
-        private final Consumer<ComponentInteractionInfo<event>> executor;
+        private final Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor;
 
         private final @Nullable Permission permission;
 
@@ -331,7 +330,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         public RegisteredListener(
                 @NotNull ComponentInteractionManager manager,
                 @NotNull Class<event> clazz,
-                @NotNull Consumer<ComponentInteractionInfo<event>> executor,
+                @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor,
                 @Nullable Permission permission
         ) {
             this.manager = manager;
@@ -352,7 +351,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         }
 
         @Override
-        public @NotNull Consumer<ComponentInteractionInfo<event>> getExecutor() {
+        public @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> getCallback() {
             return executor;
         }
 
@@ -367,6 +366,11 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
             return manager;
         }
 
+        @Override
+        public boolean isEphemeral() {
+            return true;
+        }
+
     }
 
     public static class PendingInteraction<event extends GenericComponentInteractionCreateEvent> implements IComponentInteractionManager.IPendingInteraction<event> {
@@ -377,7 +381,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
         private final @Nullable User user;
 
-        private final Consumer<ComponentInteractionInfo<event>> successCallback;
+        private final Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> successCallback;
 
         private final @Nullable Runnable failureCallback;
 
@@ -390,7 +394,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
                 @NotNull ComponentInteractionManager manager,
                 @NotNull String id,
                 @Nullable User user,
-                @NotNull Consumer<ComponentInteractionInfo<event>> successCallback,
+                @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> successCallback,
                 @Nullable Runnable failureCallback,
                 int timeout
         ) {
@@ -420,7 +424,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         }
 
         @Override
-        public @NotNull Consumer<ComponentInteractionInfo<event>> getSuccessCallback() {
+        public @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> getCallback() {
             return successCallback;
         }
 
@@ -444,6 +448,11 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         @Override
         public @NotNull IComponentInteractionManager getManager() {
             return manager;
+        }
+
+        @Override
+        public boolean isEphemeral() {
+            return true;
         }
 
     }

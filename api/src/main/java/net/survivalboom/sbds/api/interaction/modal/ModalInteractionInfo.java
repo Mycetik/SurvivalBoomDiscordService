@@ -11,7 +11,7 @@ public class ModalInteractionInfo extends InteractionExecutionInfo<ModalInteract
             @NotNull ISBDS sbds,
             @NotNull ModalInteractionEvent event
     ) {
-        super(event, sbds);
+        super(event, true, sbds);
     }
 
 }

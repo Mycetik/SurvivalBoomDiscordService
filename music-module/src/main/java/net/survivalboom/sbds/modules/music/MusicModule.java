@@ -27,7 +27,7 @@ public class MusicModule extends ModuleMain {
 
         checkAndLoadConfig();
 
-        addModuleTranslations(
+        addModuleTranslations2(
                 "translation_uk.yml",
                 "translation_ru.yml",
                 "translation_en.yml"

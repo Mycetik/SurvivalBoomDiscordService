@@ -1,26 +1,30 @@
 package net.survivalboom.sbds.modules.test;
 
 import net.survivalboom.sbds.api.modules.ModuleMain;
-import net.survivalboom.sbds.modules.test.commands.TestCommand;
+import net.survivalboom.sbds.modules.test.commands.BanPrototypeCommand;
+import net.survivalboom.sbds.modules.test.commands.EphemeralCommand;
+import net.survivalboom.sbds.modules.test.commands.LongRespondingCommand;
 import net.survivalboom.sbds.modules.test.commands.context.TestMessageContext;
 import net.survivalboom.sbds.modules.test.commands.context.TestUserContext;
-
-import java.util.Map;
+import net.survivalboom.sbds.modules.test.events.EventListenerTest;
 
 public class TestModule extends ModuleMain {
 
     @Override
     public void onEnable() {
 
-        checkFiles(Map.of("translations/translation_uk.yml", "translations/translation_uk.yml"));
-        addModuleTranslations();
+        addModuleTranslations2("translation_uk.yml");
 
-        registerSlashCommand(new TestCommand());
+        registerCommand(new BanPrototypeCommand());
+        registerCommand(new EphemeralCommand());
+        registerCommand(new LongRespondingCommand());
 
-        registeredContextCommand(new TestMessageContext());
-        registeredContextCommand(new TestUserContext());
+        registerCommand(new TestMessageContext());
+        registerCommand(new TestUserContext());
 
-        getLogger().info("Модуль успішно запущено!");
+        registerEvents(new EventListenerTest(this));
+
+        getLogger().info("Бугага! Мєня включілі! Вам всім кабздєц!");
 
     }
 

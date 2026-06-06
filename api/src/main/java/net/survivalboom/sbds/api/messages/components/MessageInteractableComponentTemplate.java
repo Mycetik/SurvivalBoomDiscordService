@@ -22,7 +22,7 @@ public interface MessageInteractableComponentTemplate<T extends Component> exten
 
         String type = node.node("type").getString();
         if (type == null) {
-            throw new IllegalArgumentException("No key `key` found");
+            throw new IllegalArgumentException("No key `type` found");
         }
 
         return switch (type) {

@@ -66,41 +66,41 @@ public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManage
     }
 
     @Override
-    public @NotNull RestAction<?> edit(@NotNull MessageEditData data) {
-        return interaction.getHook().editOriginal(data);
+    public @NotNull RestAction<?> editRaw(@NotNull MessageCreateData data) {
+        return interaction.getHook().editOriginal(MessageEditData.fromCreateData(data));
     }
 
     // SEND ONLY //
 
     @Override
-    public @NotNull RestAction<?> send(@NotNull String txt, boolean ephemeral) {
+    public @NotNull RestAction<?> sendRaw(@NotNull String txt) {
 
         if (interaction.isAcknowledged()) {
-            return interaction.getHook().sendMessage(txt).setEphemeral(ephemeral);
+            return interaction.getHook().sendMessage(txt).setEphemeral(currentCommand.isEphemeral());
         }
 
-        return interaction.reply(txt).setEphemeral(ephemeral);
+        return interaction.reply(txt).setEphemeral(currentCommand.isEphemeral());
 
     }
 
     @Override
-    public @NotNull RestAction<?> send(@NotNull MessageCreateData data, boolean ephemeral) {
+    public @NotNull RestAction<?> sendRaw(@NotNull MessageCreateData data) {
 
         if (interaction.isAcknowledged()) {
-            return interaction.getHook().sendMessage(data).setEphemeral(ephemeral);
+            return interaction.getHook().sendMessage(data).setEphemeral(currentCommand.isEphemeral());
         }
 
-        return interaction.reply(data).setEphemeral(ephemeral);
+        return interaction.reply(data).setEphemeral(currentCommand.isEphemeral());
 
     }
 
     // REPLY (INTELLIGENT) //
 
     @Override
-    public @NotNull RestAction<?> reply(@NotNull String txt, boolean ephemeral) {
+    public @NotNull RestAction<?> replyRaw(@NotNull String txt) {
 
-        if (ephemeral) {
-            return send(txt, true);
+        if (currentCommand.isEphemeral()) {
+            return sendRaw(txt);
         }
 
         if (interaction.isAcknowledged()) {
@@ -108,24 +108,24 @@ public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManage
         }
 
         else {
-            return send(txt, false);
+            return sendRaw(txt);
         }
 
     }
 
     @Override
-    public @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
+    public @NotNull RestAction<?> replyRaw(@NotNull MessageCreateData data) {
 
-        if (ephemeral) {
-            return send(data, true);
+        if (currentCommand.isEphemeral()) {
+            return sendRaw(data);
         }
 
         if (interaction.isAcknowledged()) {
-            return edit(MessageEditData.fromCreateData(data));
+            return editRaw(data);
         }
 
         else {
-            return send(data, false);
+            return sendRaw(data);
         }
 
     }

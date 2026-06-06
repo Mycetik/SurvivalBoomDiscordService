@@ -108,8 +108,8 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
                 case USER -> {
 
                     UserContextInteractionEvent event0 = (UserContextInteractionEvent) event;
-                    UserContextCommand executor0 = (UserContextCommand) executor;
-                    UserContextInteractionInfo info = new UserContextInteractionInfo(event0, sbds);
+                    UserContextCommandExecutor executor0 = (UserContextCommandExecutor) executor;
+                    UserContextInteractionInfo info = new UserContextInteractionInfo(event0, registeredContextCommand, registeredContextCommand.getCommand(), name, sbds);
 
                     if (executor0 != null) {
                         executor0.execute(info);
@@ -120,8 +120,8 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
                 case MESSAGE -> {
 
                     MessageContextInteractionEvent event0 = (MessageContextInteractionEvent) event;
-                    MessageContextCommand executor0 = (MessageContextCommand) executor;
-                    MessageContextInteractionInfo info = new MessageContextInteractionInfo(event0, sbds);
+                    MessageContextCommandExecutor executor0 = (MessageContextCommandExecutor) executor;
+                    MessageContextInteractionInfo info = new MessageContextInteractionInfo(event0, registeredContextCommand, registeredContextCommand.getCommand(), name, sbds);
 
                     if (executor0 != null) {
                         executor0.execute(info);

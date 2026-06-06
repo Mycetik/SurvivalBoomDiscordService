@@ -1,19 +1,19 @@
 package net.survivalboom.sbds.modules.test.commands.context;
 
+import net.dv8tion.jda.api.entities.User;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
-import net.survivalboom.sbds.api.commands.base.ContextCommandBase;
-import net.survivalboom.sbds.api.commands.context.UserContextCommand;
+import net.survivalboom.sbds.api.commands.context.UserContextCommandExecutor;
 import net.survivalboom.sbds.api.commands.context.UserContextInteractionInfo;
-import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 
-@CommandClass(name = "test-user")
-public class TestUserContext extends ContextCommandBase implements UserContextCommand {
+@CommandClass(name = "test-user", description = "A command to test SBDS context commands")
+public class TestUserContext extends CommandBase implements UserContextCommandExecutor {
 
     @Override
     public void execute(@NotNull UserContextInteractionInfo info) {
-        String user = info.event().getTargetMember().getEffectiveName();
-        info.reply("test.context.user").withPlaceholders(Placeholders.of("{USER}", user)).queue();
+        User user = info.user();
+        info.reply("testmodule.context.user").withPlaceholders("user", user).queue();
     }
 
 }

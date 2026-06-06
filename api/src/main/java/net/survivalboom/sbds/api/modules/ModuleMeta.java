@@ -159,10 +159,21 @@ public final class ModuleMeta {
         String website = section.node("website").getString();
 
         List<String> authors;
-        try {
-            authors = section.node("authors").getList(String.class);
-        } catch (SerializationException e) {
-            throw new InvalidModuleMetaException("Failed to load `authors` section", e);
+        ConfigurationNode authorsNode = section.node("authors");
+        String author = authorsNode.getString();
+
+        if (author != null) {
+            authors = List.of(author);
+        }
+
+        else {
+
+            try {
+                authors = authorsNode.getList(String.class);
+            } catch (SerializationException e) {
+                throw new InvalidModuleMetaException("Failed to load `authors` section", e);
+            }
+
         }
 
         ConfigurationNode dependenciesSection = section.node("dependencies");

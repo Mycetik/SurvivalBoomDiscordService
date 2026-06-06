@@ -81,52 +81,52 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
     }
 
     @Override
-    public @NotNull RestAction<?> edit(@NotNull MessageEditData data) {
+    public @NotNull RestAction<?> editRaw(@NotNull MessageCreateData data) {
 
         if (response == null) {
             throw new IllegalStateException("Command has no response yet");
         }
 
-        return response.editMessage(data);
+        return response.editMessage(MessageEditData.fromCreateData(data));
 
     }
 
     // SEND ONLY //
 
     @Override
-    public @NotNull RestAction<?> send(@NotNull String txt, boolean ephemeral) {
+    public @NotNull RestAction<?> sendRaw(@NotNull String txt) {
         return message.reply(txt).onSuccess(m -> this.response = m);
     }
 
     @Override
-    public @NotNull RestAction<?> send(@NotNull MessageCreateData data, boolean ephemeral) {
+    public @NotNull RestAction<?> sendRaw(@NotNull MessageCreateData data) {
         return message.reply(data).onSuccess(m -> this.response = m);
     }
 
     // REPLY (INTELLIGENT) //
 
     @Override
-    public @NotNull RestAction<?> reply(@NotNull String txt, boolean ephemeral) {
+    public @NotNull RestAction<?> replyRaw(@NotNull String txt) {
 
         if (response != null) {
             return editRaw(txt);
         }
 
         else {
-            return send(txt, false);
+            return sendRaw(txt);
         }
 
     }
 
     @Override
-    public @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
+    public @NotNull RestAction<?> replyRaw(@NotNull MessageCreateData data) {
 
         if (response != null) {
-            return edit(MessageEditData.fromCreateData(data));
+            return editRaw(data);
         }
 
         else {
-            return send(data, false);
+            return sendRaw(data);
         }
 
     }

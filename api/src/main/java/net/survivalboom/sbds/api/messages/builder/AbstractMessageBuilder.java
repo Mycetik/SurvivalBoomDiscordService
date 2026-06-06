@@ -7,20 +7,19 @@ import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteract
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.interaction.ComponentInteractionInfo;
+import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.MessageInteractableComponentTemplate;
 import net.survivalboom.sbds.api.messages.parsers.LinkedTextParser;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
 import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
-import net.survivalboom.sbds.api.messages.template.TextMessageTemplate;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<it>> implements ComponentLinker {
 
@@ -85,7 +84,7 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
     public @NotNull it buttonCallback(
             @NotNull String name,
             boolean userSpecific,
-            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent>> onSuccess,
+            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent, IComponentInteractionManager.IPendingInteraction<ButtonInteractionEvent>>> onSuccess,
             @Nullable Runnable onFail,
             int timeout
     ) {
@@ -99,7 +98,7 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
     public @NotNull it entityDropdownCallback(
             @NotNull String name,
             boolean userSpecific,
-            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent>> onSuccess,
+            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent, IComponentInteractionManager.IPendingInteraction<EntitySelectInteractionEvent>>> onSuccess,
             @Nullable Runnable onFail,
             int timeout
     ) {
@@ -113,7 +112,7 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
     public @NotNull it stringDropdownCallback(
             @NotNull String name,
             boolean userSpecific,
-            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent>> onSuccess,
+            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent, IComponentInteractionManager.IPendingInteraction<StringSelectInteractionEvent>>> onSuccess,
             @Nullable Runnable onFail,
             int timeout
     ) {
@@ -161,7 +160,7 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
         boolean userSpecific = callback.userSpecific;
         Class<T> clazz = callback.clazz;
 
-        Consumer<ComponentInteractionInfo<T>> onSuccess = callback.onSuccess;
+        Consumer<ComponentInteractionInfo<T, IComponentInteractionManager.IPendingInteraction<T>>> onSuccess = callback.onSuccess;
         Runnable onFail = callback.onFail;
 
         int timeout = callback.timeout;
@@ -191,7 +190,7 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
             boolean userSpecific,
             Class<event> clazz,
 
-            @NotNull Consumer<ComponentInteractionInfo<event>> onSuccess,
+            @NotNull Consumer<ComponentInteractionInfo<event, IComponentInteractionManager.IPendingInteraction<event>>> onSuccess,
             @Nullable Runnable onFail,
 
             int timeout

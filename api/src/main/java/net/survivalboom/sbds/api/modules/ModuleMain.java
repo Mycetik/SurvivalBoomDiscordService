@@ -2,12 +2,22 @@ package net.survivalboom.sbds.api.modules;
 
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
+import net.survivalboom.sbds.api.commands.CommandExecutor;
+import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.IConsoleListener;
+import net.survivalboom.sbds.api.commands.context.ContextCommandExecutor;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
 import net.survivalboom.sbds.api.database.IDatabase;
+import net.survivalboom.sbds.api.events.EventListener;
+import net.survivalboom.sbds.api.events.EventPriority;
+import net.survivalboom.sbds.api.events.IEventManager;
 import net.survivalboom.sbds.api.utils.CommonUtils;
+import net.survivalboom.sbds.api.utils.ThrowingConsumer;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -17,6 +27,7 @@ import org.spongepowered.configurate.ConfigurationNode;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public abstract class ModuleMain {
 
@@ -82,14 +93,6 @@ public abstract class ModuleMain {
         return getModule().getDataFolder();
     }
 
-    public @NotNull IModuleManager getModuleManager() {
-        return getSbds().getModuleManager();
-    }
-
-    public @NotNull IDatabase getDatabase() {
-        return getSbds().getDatabase();
-    }
-
     public @NotNull Logger getLogger() {
         return getModule().getLogger();
     }
@@ -98,11 +101,75 @@ public abstract class ModuleMain {
         return getModule().getMeta();
     }
 
+    // SERVICES //
+
+    public @NotNull IModuleManager getModuleManager() {
+        return getSbds().getModuleManager();
+    }
+
+    public @NotNull IDatabase getDatabase() {
+        return getSbds().getDatabase();
+    }
+
+    public @NotNull IEventManager getEventManager() {
+        return getSbds().getEventManager();
+    }
+
     //
     // REGISTRATIONS
     //
 
-    // CONSOLE COMMANDS //
+    // EVENTS //
+
+    public <T> IEventManager.@NotNull IRegisteredEventHandler registerEvent(@NotNull Class<T> clazz, @NotNull ThrowingConsumer<T> consumer, @NotNull EventPriority priority, boolean ignoreCancelled) {
+        return getEventManager().registerEvent(this, clazz, consumer, priority, ignoreCancelled);
+    }
+
+    public void registerEvents(@NotNull EventListener listener) {
+        getEventManager().registerEvents(this, listener);
+    }
+
+    // COMMANDS //
+
+    public void registerCommand(@NotNull Command command) {
+
+        CommandExecutor executor = command.getExecutor();
+
+        if (executor instanceof ConsoleCommandExecutor) {
+            registerConsoleCommand(command);
+        }
+
+        if (executor instanceof SlashCommandExecutor) {
+            registerSlashCommand(command);
+        }
+
+        if (executor instanceof ContextCommandExecutor) {
+            registerContextCommand(command);
+        }
+
+//        if (executor instanceof StringCommandExecutor) {
+//            registerStringCommand(command);
+//        }
+
+    }
+
+    public void registerCommand(@NotNull CommandBase command) {
+
+        if (command instanceof ConsoleCommandExecutor) {
+            registerConsoleCommand(command);
+        }
+
+        if (command instanceof SlashCommandExecutor) {
+            registerSlashCommand(command);
+        }
+
+        if (command instanceof ContextCommandExecutor) {
+            registerContextCommand(command);
+        }
+
+    }
+
+   // CONSOLE COMMANDS //
 
     public @NotNull IConsoleListener.IRegisteredConsoleCommand registerConsoleCommand(@NotNull Command command) {
         return sbds.getConsoleListener().registerCommand(this, command);
@@ -138,7 +205,7 @@ public abstract class ModuleMain {
         addModuleTranslations("translations");
     }
 
-    public void addModuleTranslations(@NotNull String... files) {
+    public void addModuleTranslations2(@NotNull String... files) {
 
         Map<String, String> map = new HashMap<>();
         for (String file : files) {

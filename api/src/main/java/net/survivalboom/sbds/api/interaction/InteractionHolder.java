@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
-import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
 import net.survivalboom.sbds.api.messages.IMessages;
@@ -51,40 +50,40 @@ public interface InteractionHolder {
         throw new IllegalStateException("No edit method applicable to `" + this + "`");
     }
 
-    default @NotNull RestAction<?> edit(@NotNull MessageEditData data) {
+    default @NotNull RestAction<?> editRaw(@NotNull MessageCreateData data) {
         throw new IllegalStateException("No edit method applicable to `" + this + "`");
     }
 
     default @NotNull MessageActionBuilder edit(@NotNull String key) {
-        return new MessageActionBuilder(messages(), user(), key, d -> edit(MessageEditData.fromCreateData(d)));
+        return new MessageActionBuilder(messages(), user(), key, this::editRaw);
     }
 
     // SEND ONLY //
 
-    default @NotNull RestAction<?> send(@NotNull String txt, boolean ephemeral) {
-        throw new IllegalStateException("No sendOnly method applicable to `" + this + "`");
+    default @NotNull RestAction<?> sendRaw(@NotNull String txt) {
+        throw new IllegalStateException("No send method applicable to `" + this + "`");
     }
 
-    default @NotNull RestAction<?> send(@NotNull MessageCreateData data, boolean ephemeral) {
-        throw new IllegalStateException("No sendOnly method applicable to `" + this + "`");
+    default @NotNull RestAction<?> sendRaw(@NotNull MessageCreateData data) {
+        throw new IllegalStateException("No send method applicable to `" + this + "`");
     }
 
     default @NotNull MessageActionBuilder send(@NotNull String key) {
-        return new MessageActionBuilder(messages(), user(), key, d -> send(d, false));
+        return new MessageActionBuilder(messages(), user(), key, this::sendRaw);
     }
 
     // REPLY (INTELLIGENT) //
 
-    default @NotNull RestAction<?> reply(@NotNull String txt, boolean ephemeral) {
+    default @NotNull RestAction<?> replyRaw(@NotNull String txt) {
         throw new IllegalStateException("No reply method applicable to `" + this + "`");
     }
 
-    default @NotNull RestAction<?> reply(@NotNull MessageCreateData data, boolean ephemeral) {
+    default @NotNull RestAction<?> replyRaw(@NotNull MessageCreateData data) {
         throw new IllegalStateException("No reply method applicable to `" + this + "`");
     }
 
     default @NotNull MessageActionBuilder reply(@NotNull String key) {
-        return new MessageActionBuilder(messages(), user(), key, d -> reply(d, false));
+        return new MessageActionBuilder(messages(), user(), key, this::replyRaw);
     }
 
     // MODAL //
