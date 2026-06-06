@@ -3,6 +3,7 @@ package net.survivalboom.sbds.core.commands;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.ICommandManager;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.interaction.command.ICommandInteractionManager;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.registrations.Registration;
@@ -120,6 +121,10 @@ public abstract class AbstractCommandManager<
 
         return cmdReg;
 
+    }
+
+    public @NotNull reg registerCommand0(@Nullable IModule module, @NotNull CommandBase command) {
+        return registerCommand0(module, command.build());
     }
 
     // UNREG //

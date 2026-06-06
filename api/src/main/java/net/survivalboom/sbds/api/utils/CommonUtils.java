@@ -524,7 +524,7 @@ public class CommonUtils {
 
             if (!child.isMap()) {
 
-                String path = child.path().toString();
+                String path = String.join(".", Arrays.stream(child.path().array()).map(Object::toString).toList());
 
                 String string = child.getString();
                 if (string == null) {
@@ -682,6 +682,20 @@ public class CommonUtils {
 
     }
 
+    //
+    // STRING
+    //
+
+    public static @NotNull String[] splitString(@NotNull String string, @NotNull String regex) {
+
+        String[] parts = string.split(regex);
+        if (parts.length == 0) {
+            return new String[]{string};
+        }
+
+        return parts;
+
+    }
 
 
 }

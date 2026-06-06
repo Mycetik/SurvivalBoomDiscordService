@@ -15,6 +15,7 @@ import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
 import net.survivalboom.sbds.core.commands.cmds.console.ServersCommand;
+import net.survivalboom.sbds.core.commands.cmds.console.database.DatabaseCommand;
 import net.survivalboom.sbds.core.commands.parser.StringCommandParser;
 import net.survivalboom.sbds.core.commands.cmds.console.HelpCommand;
 import net.survivalboom.sbds.core.commands.cmds.console.ShutdownCommand;
@@ -41,12 +42,14 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
 
         super.init0();
 
-        registerCommand0(null, new ShutdownCommand().build());
-        registerCommand0(null, new HelpCommand().build());
-        registerCommand0(null, new ModulesCommand().build());
+        registerCommand0(null, new ShutdownCommand());
+        registerCommand0(null, new HelpCommand());
+        registerCommand0(null, new ModulesCommand());
 
-        registerCommand0(null, new StatusCommand().build());
-        registerCommand0(null, new ServersCommand().build());
+        registerCommand0(null, new DatabaseCommand());
+
+        registerCommand0(null, new StatusCommand());
+        registerCommand0(null, new ServersCommand());
 
         task = sbds.getScheduler().schedule0(null, "ConsoleListener", task -> this.consoleListener(), 0, 50);
 
