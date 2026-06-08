@@ -15,6 +15,7 @@ import net.survivalboom.sbds.core.commands.slash.SlashCommandManager;
 import net.survivalboom.sbds.core.commands.console.ConsoleListener;
 import net.survivalboom.sbds.core.database.Database;
 import net.survivalboom.sbds.core.database.guilds.GuildDataManager;
+import net.survivalboom.sbds.core.database.member.MemberDataManager;
 import net.survivalboom.sbds.core.database.users.UserDataManager;
 import net.survivalboom.sbds.core.events.EventManager;
 import net.survivalboom.sbds.core.interaction.ComponentInteractionManager;
@@ -64,6 +65,8 @@ public class SBDS implements ISBDS {
     private final Database database;
 
     private final UserDataManager userDataManager;
+
+    private final MemberDataManager memberDataManager;
 
     private final GuildDataManager guildDataManager;
 
@@ -155,6 +158,7 @@ public class SBDS implements ISBDS {
 
         this.database = new Database(this);
         this.userDataManager = new UserDataManager(this);
+        this.memberDataManager = new MemberDataManager(this);
         this.guildDataManager = new GuildDataManager(this);
 
         this.eventManager = new EventManager(this);
@@ -219,6 +223,7 @@ public class SBDS implements ISBDS {
         bot.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.customStatus("Starting SBDS v" + BuildConstants.VERSION + "..."));
 
         userDataManager.init();
+        memberDataManager.init();
         guildDataManager.init();
 
         translationManager.init();
@@ -295,6 +300,7 @@ public class SBDS implements ISBDS {
 
         database.shutdown();
         userDataManager.shutdown();
+        memberDataManager.shutdown();
         guildDataManager.shutdown();
 
         systemMonitor.shutdown();
