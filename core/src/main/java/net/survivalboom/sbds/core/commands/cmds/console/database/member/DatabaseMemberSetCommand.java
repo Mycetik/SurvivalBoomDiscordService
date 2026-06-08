@@ -1,5 +1,6 @@
-package net.survivalboom.sbds.core.commands.cmds.console.database.user;
+package net.survivalboom.sbds.core.commands.cmds.console.database.member;
 
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringToObjectArgument;
@@ -9,37 +10,39 @@ import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
-import net.survivalboom.sbds.api.database.users.IUserData;
-import net.survivalboom.sbds.api.database.users.IUserDataManager;
+import net.survivalboom.sbds.api.database.guilds.IGuildData;
+import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
+import net.survivalboom.sbds.api.database.members.IMemberData;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
 import org.jetbrains.annotations.NotNull;
 
-@CommandClass(name = "set", description = "Set a value inside user data in the database")
-public class DatabaseUserSetCommand extends CommandBase implements ConsoleCommandExecutor {
+@CommandClass(name = "set", description = "Set a value inside guild member data in the database")
+public class DatabaseMemberSetCommand extends CommandBase implements ConsoleCommandExecutor {
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) throws Throwable {
 
+        Guild guild = info.arguments().getCast("guild", Guild.class).orElseThrow();
         User user = info.arguments().getCast("user", User.class).orElseThrow();
         NamespacedKey key = info.arguments().getCast("key", NamespacedKey.class).orElseThrow();
         String path = info.arguments().getCast("path", String.class).orElseThrow();
         Object data = info.arguments().getCast("data", Object.class).orElseThrow();
 
-        IUserDataManager manager = info.sbds().getUserDataManager();
+        IGuildDataManager manager = info.sbds().getGuildDataManager();
 
-        info.logger().info("Retrieving user data of `{}`...", user.getEffectiveName());
+        info.logger().info("Retrieving member data of `{}` on the guild `{}`...", user.getEffectiveName(), guild.getName());
 
-        IUserData userData = manager.obtain(user).join();
-        INamespacedDataContainer container = userData.container();
+        IMemberData memberData = info.sbds().getMemberDataManager().obtain(guild, user).join();
+        INamespacedDataContainer container = memberData.container();
 
         info.logger().info("Applying changes...");
 
         String[] path0 = CommonUtils.splitString(path, "\\.");
         container.obtainNode(key).node((Object[]) path0).set(data);
 
-        userData.save();
+        memberData.save();
 
         info.logger().info("Set `{}:{}` to `{}`", key, path, data);
 

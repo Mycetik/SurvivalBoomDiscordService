@@ -1,5 +1,6 @@
-package net.survivalboom.sbds.core.commands.cmds.console.database.user;
+package net.survivalboom.sbds.core.commands.cmds.console.database.member;
 
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
 import net.survivalboom.sbds.api.commands.argument.sbds.NamespacedKeyArgument;
@@ -8,7 +9,8 @@ import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
-import net.survivalboom.sbds.api.database.users.IUserData;
+import net.survivalboom.sbds.api.database.guilds.IGuildData;
+import net.survivalboom.sbds.api.database.members.IMemberData;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
@@ -17,34 +19,35 @@ import org.spongepowered.configurate.ConfigurationNode;
 
 import java.util.Map;
 
-@CommandClass(name = "read", description = "Read user data from the database")
-public class DatabaseUserReadCommand extends CommandBase implements ConsoleCommandExecutor {
+@CommandClass(name = "read", description = "Read user's data on a guild from the database")
+public class DatabaseMemberReadCommand extends CommandBase implements ConsoleCommandExecutor {
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) throws Throwable {
 
+        Guild guild = info.arguments().getCast("guild", Guild.class).orElseThrow();
         User user = info.arguments().getCast("user", User.class).orElseThrow();
         NamespacedKey key = info.arguments().getCast("key", NamespacedKey.class).orElse(null);
         String path = info.arguments().getCast("path", String.class).orElse(null);
 
-        info.logger().info("Retrieving user data of `{}`...", user.getEffectiveName());
+        info.logger().info("Retrieving member data of `{}` on the guild `{}`...", user.getEffectiveName(), guild.getName());
 
-        IUserData userData = info.sbds().getUserDataManager().get(user).join();
-        if (userData == null) {
-            info.logger().info("There is no data for user `{}`.", user.getEffectiveName());
+        IMemberData memberData = info.sbds().getMemberDataManager().get(guild, user).join();
+        if (memberData == null) {
+            info.logger().info("There is no data for the user `{}` on the guild `{}`.", user.getEffectiveName(), guild.getName());
             return;
         }
 
-        INamespacedDataContainer container = userData.container();
+        INamespacedDataContainer container = memberData.container();
 
         if (key == null) {
 
             var map = container.getAsMap();
             if (map.isEmpty()) {
-                info.logger().info("There is no data for user `{}`.", user.getEffectiveName());
+                info.logger().info("There is no data for the user `{}` on the guild `{}`.", user.getEffectiveName(), guild.getName());
             }
 
-            print(info, user, () -> {
+            print(info, guild, user, () -> {
 
                 for (var entry : map.entrySet()) {
                     var map2 = CommonUtils.getStringMapFromYaml(entry.getValue());
@@ -61,12 +64,12 @@ public class DatabaseUserReadCommand extends CommandBase implements ConsoleComma
 
             ConfigurationNode node = container.getNode(key);
             if (node == null) {
-                info.logger().info("There is no data by key `{}` in user `{}`.", key, user.getEffectiveName());
+                info.logger().info("There is no data by key `{}` for the user `{}` on the guild `{}`.", key, user.getEffectiveName(), guild.getName());
                 return;
             }
 
             var map = CommonUtils.getStringMapFromYaml(node);
-            print(info, user, () -> print0(info, key, map));
+            print(info, guild, user, () -> print0(info, key, map));
 
             return;
 
@@ -74,7 +77,7 @@ public class DatabaseUserReadCommand extends CommandBase implements ConsoleComma
 
         ConfigurationNode node = container.getNode(key);
         if (node == null) {
-            info.logger().info("There is no data by key `{}` in user `{}`.", key, user.getEffectiveName());
+            info.logger().info("There is no data by key `{}` for the user `{}` on the guild `{}`.", key, user.getEffectiveName(), guild.getName());
             return;
         }
 
@@ -82,7 +85,7 @@ public class DatabaseUserReadCommand extends CommandBase implements ConsoleComma
 
         ConfigurationNode target = node.node((Object[]) path0);
         if (target.virtual()) {
-            info.logger().info("There is no data by path `{}:{}` in user `{}`.", key, path, user.getEffectiveName());
+            info.logger().info("There is no data by path `{}:{}` for the user `{}` on the guild `{}`.", key, path, user.getEffectiveName(), guild.getName());
             return;
         }
 
@@ -92,9 +95,10 @@ public class DatabaseUserReadCommand extends CommandBase implements ConsoleComma
 
     }
 
-    private void print(@NotNull ConsoleExecutionInfo info, @NotNull User user, @NotNull Runnable runnable) {
+    private void print(@NotNull ConsoleExecutionInfo info, @NotNull Guild guild, @NotNull User user, @NotNull Runnable runnable) {
 
-        info.logger().info("--- --- < User Data > --- ---");
+        info.logger().info("--- --- < Member Data > --- ---");
+        info.logger().info("> Guild: {}", guild.getName());
         info.logger().info("> User: {}", user.getEffectiveName());
         info.logger().info(" ");
 

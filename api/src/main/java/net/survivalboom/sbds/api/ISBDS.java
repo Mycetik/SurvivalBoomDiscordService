@@ -5,6 +5,7 @@ import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.console.IConsoleListener;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
+import net.survivalboom.sbds.api.database.members.IMemberDataManager;
 import net.survivalboom.sbds.api.database.users.IUserDataManager;
 import net.survivalboom.sbds.api.events.IEventManager;
 import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
@@ -64,9 +65,11 @@ public interface ISBDS {
 
     @NotNull IDatabase getDatabase();
 
-    @NotNull IUserDataManager getUserManager();
+    @NotNull IUserDataManager getUserDataManager();
 
-    @NotNull IGuildDataManager getGuildManager();
+    @NotNull IMemberDataManager getMemberDataManager();
+
+    @NotNull IGuildDataManager getGuildDataManager();
 
 
     @NotNull ITranslationManager getTranslationManager();

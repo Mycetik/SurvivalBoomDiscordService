@@ -53,7 +53,7 @@ public class MusicManager extends Manager {
         this.logger = module.getLogger();
         this.botsFolder = new File(module.getModule().getDataFolder(), "bots");
 
-        this.guildData = module.getSbds().getGuildManager();
+        this.guildData = module.getSbds().getGuildDataManager();
         this.key = NamespacedKey.fromModule(module, "music_module");
 
     }

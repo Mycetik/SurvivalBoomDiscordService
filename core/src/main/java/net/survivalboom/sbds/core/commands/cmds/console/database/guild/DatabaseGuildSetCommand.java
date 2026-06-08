@@ -27,7 +27,7 @@ public class DatabaseGuildSetCommand extends CommandBase implements ConsoleComma
         String path = info.arguments().getCast("path", String.class).orElseThrow();
         Object data = info.arguments().getCast("data", Object.class).orElseThrow();
 
-        IGuildDataManager manager = info.sbds().getGuildManager();
+        IGuildDataManager manager = info.sbds().getGuildDataManager();
 
         info.logger().info("Retrieving guild data of `{}`...", guild.getName());
 

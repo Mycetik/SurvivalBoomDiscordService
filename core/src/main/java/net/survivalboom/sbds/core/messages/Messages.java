@@ -3,9 +3,7 @@ package net.survivalboom.sbds.core.messages;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
@@ -52,8 +50,8 @@ public class Messages extends Manager implements IMessages {
         this.sbds = sbds;
         this.translationManager = sbds.getTranslationManager();
 
-        this.users = sbds.getUserManager();
-        this.guilds = sbds.getGuildManager();
+        this.users = sbds.getUserDataManager();
+        this.guilds = sbds.getGuildDataManager();
 
     }
 

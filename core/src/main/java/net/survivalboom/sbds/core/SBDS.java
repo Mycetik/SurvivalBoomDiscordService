@@ -7,6 +7,8 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.database.members.IMemberDataManager;
+import net.survivalboom.sbds.api.database.users.IUserDataManager;
 import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
 import net.survivalboom.sbds.api.utils.placeholders.IPlaceholderRegistry;
 import net.survivalboom.sbds.api.utils.CommonUtils;
@@ -412,12 +414,17 @@ public class SBDS implements ISBDS {
     }
 
     @Override
-    public @NotNull UserDataManager getUserManager() {
+    public @NotNull UserDataManager getUserDataManager() {
         return userDataManager;
     }
 
     @Override
-    public @NotNull GuildDataManager getGuildManager() {
+    public @NotNull IMemberDataManager getMemberDataManager() {
+        return memberDataManager;
+    }
+
+    @Override
+    public @NotNull GuildDataManager getGuildDataManager() {
         return guildDataManager;
     }
 

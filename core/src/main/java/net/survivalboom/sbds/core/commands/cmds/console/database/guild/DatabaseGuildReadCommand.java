@@ -29,7 +29,7 @@ public class DatabaseGuildReadCommand extends CommandBase implements ConsoleComm
 
         info.logger().info("Retrieving guild data of `{}`...", guild.getName());
 
-        IGuildData guildData = info.sbds().getGuildManager().get(guild).join();
+        IGuildData guildData = info.sbds().getGuildDataManager().get(guild).join();
         if (guildData == null) {
             info.logger().info("There is no data for guild `{}`.", guild.getName());
             return;
