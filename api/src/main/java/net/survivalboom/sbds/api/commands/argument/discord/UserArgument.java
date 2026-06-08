@@ -17,7 +17,7 @@ public class UserArgument extends Argument<User> {
         JDA bot = context.sbds().getBot();
 
         if (input instanceof String string) {
-            User user = bot.getUserById(string);
+            User user = bot.retrieveUserById(string).complete();
             if (user == null) throw new ArgumentParseException("User with id `" + string + "` not found");
             return user;
         }

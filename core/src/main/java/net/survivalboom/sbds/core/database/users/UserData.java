@@ -26,7 +26,7 @@ public class UserData extends Valid implements IUserData {
         this.record = record;
         this.manager = manager;
 
-        this.user = manager.getSbds().getBot().getUserById(record.getUserId());
+        this.user = manager.getSbds().getBot().retrieveUserById(record.getUserId()).complete();
 
     }
 

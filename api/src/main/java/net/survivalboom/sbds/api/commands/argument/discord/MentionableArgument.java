@@ -56,7 +56,7 @@ public class MentionableArgument extends Argument<IMentionable> {
             return mentionable;
         }
 
-        mentionable = bot.getUserById(string);
+        mentionable = bot.retrieveUserById(string).complete();
 
         return mentionable;
 

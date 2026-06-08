@@ -368,7 +368,7 @@ public class PermissionManager extends Manager implements IPermissionManager {
                 return null;
             }
 
-            Member member = guild.getMemberById(userId);
+            Member member = guild.retrieveMemberById(userId).complete();
             if (member == null) {
                 return null;
             }
