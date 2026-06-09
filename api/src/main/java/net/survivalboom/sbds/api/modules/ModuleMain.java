@@ -3,7 +3,6 @@ package net.survivalboom.sbds.api.modules;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
-import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.IConsoleListener;
@@ -11,8 +10,9 @@ import net.survivalboom.sbds.api.commands.context.ContextCommandExecutor;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
-import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
 import net.survivalboom.sbds.api.database.IDatabase;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
 import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.events.EventPriority;
 import net.survivalboom.sbds.api.events.IEventManager;
@@ -223,7 +223,7 @@ public abstract class ModuleMain {
 
 
     //
-    // CONFIG
+    // MODULE FILES
     //
 
     public void checkFiles(@NotNull Map<String, String> map) {
@@ -245,6 +245,9 @@ public abstract class ModuleMain {
 
     }
 
+    //
+    // CONFIG
+    //
 
     public @NotNull ConfigurationNode loadConfig(@NotNull File file) {
         return getModule().loadConfig(file);
@@ -275,6 +278,18 @@ public abstract class ModuleMain {
 
     public @NotNull ConfigurationNode getConfig() {
         return getModule().getConfig();
+    }
+
+    //
+    // GUILD CONFIG
+    //
+
+    public @NotNull IGuildConfigTemplate createGuildConfig(@NotNull Consumer<IGuildConfigManager.IGuildConfigBuilder> consumer) {
+        return module.createGuildConfig(consumer);
+    }
+
+    public IGuildConfigTemplate getGuildConfig() {
+        return module.getGuildConfig();
     }
 
 }

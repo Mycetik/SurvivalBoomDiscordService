@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.JDA;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.console.IConsoleListener;
 import net.survivalboom.sbds.api.database.IDatabase;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
 import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
 import net.survivalboom.sbds.api.database.members.IMemberDataManager;
 import net.survivalboom.sbds.api.database.users.IUserDataManager;
@@ -38,6 +39,8 @@ public interface ISBDS {
 
 
     @NotNull IModuleManager getModuleManager();
+
+    @NotNull IGuildConfigManager getGuildConfigManager();
 
     @NotNull IRegistrationRegistry getRegistrationRegistry();
 

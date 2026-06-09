@@ -1,5 +1,7 @@
 package net.survivalboom.sbds.core.modules;
 
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
 import net.survivalboom.sbds.api.libraries.ILibrary;
 import net.survivalboom.sbds.api.modules.*;
 import net.survivalboom.sbds.api.utils.valid.Valid;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class Module extends Valid implements IModule {
 
@@ -27,6 +30,8 @@ public class Module extends Valid implements IModule {
 
 
     private ConfigurationNode config;
+
+    private IGuildConfigTemplate guildConfig;
 
 
     private final Logger logger;
@@ -107,6 +112,26 @@ public class Module extends Valid implements IModule {
         return dataDir;
     }
 
+    // GUILD CONFIG //
+
+    @Override
+    public IGuildConfigTemplate getGuildConfig() {
+        return guildConfig;
+    }
+
+    @Override
+    public @NotNull IGuildConfigTemplate createGuildConfig(@NotNull Consumer<IGuildConfigManager.IGuildConfigBuilder> builder) {
+
+        if (guildConfig != null) {
+            throw new IllegalStateException("Guild config already exists");
+        }
+
+        guildConfig = manager.getSbds().getGuildConfigManager().registerTemplate(this, builder);
+
+        return guildConfig;
+
+    }
+
     // MODULE CONFIG //
 
     @Override
@@ -176,6 +201,11 @@ public class Module extends Valid implements IModule {
     //
     // MISC
     //
+
+    @Override
+    public @NotNull IModuleManager getManager() {
+        return manager;
+    }
 
     @Override
     public String toString() {

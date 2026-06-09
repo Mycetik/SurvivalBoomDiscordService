@@ -7,15 +7,17 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.SbdsProvider;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
 import net.survivalboom.sbds.api.database.members.IMemberDataManager;
-import net.survivalboom.sbds.api.database.users.IUserDataManager;
 import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
-import net.survivalboom.sbds.api.utils.placeholders.IPlaceholderRegistry;
 import net.survivalboom.sbds.api.utils.CommonUtils;
+import net.survivalboom.sbds.api.utils.placeholders.IPlaceholderRegistry;
+import net.survivalboom.sbds.core.commands.console.ConsoleListener;
 import net.survivalboom.sbds.core.commands.context.ContextCommandManager;
 import net.survivalboom.sbds.core.commands.slash.SlashCommandManager;
-import net.survivalboom.sbds.core.commands.console.ConsoleListener;
 import net.survivalboom.sbds.core.database.Database;
+import net.survivalboom.sbds.core.database.guildconfig.GuildConfigManager;
 import net.survivalboom.sbds.core.database.guilds.GuildDataManager;
 import net.survivalboom.sbds.core.database.member.MemberDataManager;
 import net.survivalboom.sbds.core.database.users.UserDataManager;
@@ -29,12 +31,11 @@ import net.survivalboom.sbds.core.messages.Messages;
 import net.survivalboom.sbds.core.modules.ModuleManager;
 import net.survivalboom.sbds.core.monitor.SystemMonitor;
 import net.survivalboom.sbds.core.permissions.PermissionManager;
-import net.survivalboom.sbds.core.utils.placeholders.PlaceholderRegistry;
 import net.survivalboom.sbds.core.registration.RegistrationRegistry;
 import net.survivalboom.sbds.core.scheduler.Scheduler;
-import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.core.service.ServiceProvider;
 import net.survivalboom.sbds.core.translations.TranslationManager;
+import net.survivalboom.sbds.core.utils.placeholders.PlaceholderRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.ConfigurationNode;
@@ -71,6 +72,8 @@ public class SBDS implements ISBDS {
     private final MemberDataManager memberDataManager;
 
     private final GuildDataManager guildDataManager;
+
+    private final GuildConfigManager guildConfigManager;
 
 
     private final ModuleManager moduleManager;
@@ -162,6 +165,7 @@ public class SBDS implements ISBDS {
         this.userDataManager = new UserDataManager(this);
         this.memberDataManager = new MemberDataManager(this);
         this.guildDataManager = new GuildDataManager(this);
+        this.guildConfigManager = new GuildConfigManager(this);
 
         this.eventManager = new EventManager(this);
         this.moduleManager = new ModuleManager(this);
@@ -227,6 +231,7 @@ public class SBDS implements ISBDS {
         userDataManager.init();
         memberDataManager.init();
         guildDataManager.init();
+        guildConfigManager.init();
 
         translationManager.init();
         messages.init();
@@ -300,10 +305,11 @@ public class SBDS implements ISBDS {
 
         eventManager.shutdown();
 
-        database.shutdown();
+        guildConfigManager.shutdown();
         userDataManager.shutdown();
         memberDataManager.shutdown();
         guildDataManager.shutdown();
+        database.shutdown();
 
         systemMonitor.shutdown();
 
@@ -421,6 +427,11 @@ public class SBDS implements ISBDS {
     @Override
     public @NotNull IMemberDataManager getMemberDataManager() {
         return memberDataManager;
+    }
+
+    @Override
+    public @NotNull IGuildConfigManager getGuildConfigManager() {
+        return guildConfigManager;
     }
 
     @Override

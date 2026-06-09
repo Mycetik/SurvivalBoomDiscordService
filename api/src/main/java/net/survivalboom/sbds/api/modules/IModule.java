@@ -1,5 +1,7 @@
 package net.survivalboom.sbds.api.modules;
 
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
 import net.survivalboom.sbds.api.libraries.ILibrary;
 import net.survivalboom.sbds.api.utils.valid.IValid;
 import org.jetbrains.annotations.NotNull;
@@ -9,8 +11,11 @@ import org.spongepowered.configurate.ConfigurationNode;
 
 import java.io.File;
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface IModule extends IValid {
+
+    @NotNull IModuleManager getManager();
 
     // MODULE INFO //
 
@@ -27,6 +32,12 @@ public interface IModule extends IValid {
     @Nullable ModuleFile getFile();
 
     @NotNull File getDataFolder();
+
+    // GUILD CONFIG //
+
+    IGuildConfigTemplate getGuildConfig();
+
+    @NotNull IGuildConfigTemplate createGuildConfig(@NotNull Consumer<IGuildConfigManager.IGuildConfigBuilder> builder);
 
     // CONFIG //
 
