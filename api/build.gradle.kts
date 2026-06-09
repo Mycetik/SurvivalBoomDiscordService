@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    `maven-publish`
 }
 
 repositories {
@@ -19,5 +20,17 @@ dependencies {
 
     compileOnlyApi("com.fasterxml.jackson.core:jackson-core:2.18.3")
     compileOnlyApi("com.fasterxml.jackson.core:jackson-databind:2.18.3")
+
+}
+
+publishing {
+
+    publications {
+
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+        }
+
+    }
 
 }
