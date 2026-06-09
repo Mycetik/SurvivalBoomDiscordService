@@ -5,8 +5,8 @@ plugins {
     id("com.gradleup.shadow") version "9.4.1"
 }
 
-group = "net.survivalboom.sbds.core"
-version = rootProject.version
+group = rootProject.group;
+version = rootProject.version;
 
 repositories {
     mavenCentral()
