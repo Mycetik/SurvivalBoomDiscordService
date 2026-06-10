@@ -12,10 +12,7 @@ import net.survivalboom.sbds.api.utils.placeholders.IPlaceholders;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
-import net.survivalboom.sbds.core.utils.placeholders.wrappers.ChannelPlaceholder;
-import net.survivalboom.sbds.core.utils.placeholders.wrappers.GuildPlaceholder;
-import net.survivalboom.sbds.core.utils.placeholders.wrappers.MemberPlaceholder;
-import net.survivalboom.sbds.core.utils.placeholders.wrappers.UserPlaceholder;
+import net.survivalboom.sbds.core.utils.placeholders.wrappers.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,6 +35,7 @@ public class PlaceholderRegistry extends Manager implements IPlaceholderRegistry
 
         registry.init();
 
+        registerProvider0(null, IModule.class, ModulePlaceholder::new);
         registerProvider0(null, User.class, UserPlaceholder::new);
         registerProvider0(null, Member.class, MemberPlaceholder::new);
         registerProvider0(null, Guild.class, GuildPlaceholder::new);
