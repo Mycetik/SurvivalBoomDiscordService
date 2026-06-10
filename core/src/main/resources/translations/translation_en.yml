@@ -20,6 +20,9 @@ values:
 
 sbds:
 
+  config:
+    prefix: "Command prefix"
+
   command:
 
     status:
