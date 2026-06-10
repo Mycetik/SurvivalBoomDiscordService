@@ -2,21 +2,18 @@ package net.survivalboom.sbds.api.commands.argument.misc;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.survivalboom.sbds.api.commands.Command;
-import net.survivalboom.sbds.api.commands.CommandArgument;
-import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.commands.argument.Argument;
-import net.survivalboom.sbds.api.commands.argument.ArgumentExecutionContext;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 
 public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> {
 
-    private final List<Command> subcommands = new ArrayList<>();
+    private final Map<String, Command> subcommands = new HashMap<>();
 
     public SubCommandArgument(@NotNull Collection<Command> subcommands) {
 
@@ -26,7 +23,26 @@ public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> 
             throw new IllegalArgumentException("subcommands are empty!");
         }
 
-        this.subcommands.addAll(subcommands);
+        for (Command command : subcommands) {
+
+            String name = command.getName();
+            if (this.subcommands.containsKey(name)) {
+                throw new IllegalArgumentException("Duplicate subcommand `" + name + "in " + subcommands);
+            }
+
+            this.subcommands.put(name, command);
+
+            for (String alias : command.getAliases()) {
+
+                if (this.subcommands.containsKey(alias)) {
+                    throw new IllegalArgumentException("Duplicate subcommand `" + alias + "in " + subcommands);
+                }
+
+                this.subcommands.put(alias, command);
+
+            }
+
+        }
 
     }
 
@@ -43,11 +59,7 @@ public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> 
 
         if (input instanceof String string) {
 
-            Command command = subcommands.stream()
-                    .filter(c -> c.getName().equals(string) || c.getAliases().contains(string))
-                    .findAny()
-                    .orElse(null);
-
+            Command command = subcommands.get(string);
             if (command == null) {
                 throw new ArgumentParseException("Invalid subcommand `" + string + "`");
             }
@@ -65,8 +77,12 @@ public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> 
         return OptionType.STRING;
     }
 
+    public @Nullable Command getSubCommand(@NotNull String alias) {
+        return subcommands.get(alias);
+    }
+
     public @NotNull List<Command> getSubcommands() {
-        return new ArrayList<>(subcommands);
+        return new ArrayList<>(subcommands.values());
     }
 
     public record SubCommand(@NotNull Command command, @NotNull String alias) {}
