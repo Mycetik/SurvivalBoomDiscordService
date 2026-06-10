@@ -69,7 +69,16 @@ public class InternalRegistrationManager<T> extends RegistrationManager<T> {
         var reg = registry.register0(module, object, this::unreg0, sourceName, name);
 
         if (callback != null) {
-            callback.onRegister(reg);
+
+            try {
+                callback.onRegister(reg);
+            }
+
+            catch (RuntimeException | Error t) {
+                registry.unregister(reg);
+                throw t;
+            }
+
         }
 
         registrationMap.put(reg.key(), reg);
