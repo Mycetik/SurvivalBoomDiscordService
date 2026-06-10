@@ -81,8 +81,6 @@ public class ModuleManager extends Manager implements IModuleManager {
 
         for (Module module : modules.values()) {
 
-            log.info("Enabling `{}`...", module);
-
             try {
                 enableModule(module);
             }
@@ -111,8 +109,6 @@ public class ModuleManager extends Manager implements IModuleManager {
 
             if (module.isEnabled()) {
 
-                log.info("Disabling `{}`...", module);
-
                 try {
                     disableModule(module);
                 }
@@ -122,8 +118,6 @@ public class ModuleManager extends Manager implements IModuleManager {
                 }
 
             }
-
-            log.info("Unloading `{}`...", module);
 
             try {
                 unloadModule(module);
