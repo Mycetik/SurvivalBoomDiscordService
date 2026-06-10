@@ -77,7 +77,7 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
     @Override
     public void unRegister(@NotNull Registration<IRegisteredContextCommand> registration) {
-        commandInteractionManager.requestGlobalUpdate();
+        commandInteractionManager.unregisterCommand(registration.object());
     }
 
     //

@@ -16,6 +16,7 @@ public class ModulesCommand extends CommandBase implements ConsoleCommandExecuto
                 new ModulesListCommand(),
                 new EnableModuleCommand(),
                 new DisableModuleCommand(),
+                new RestartModuleCommand(),
                 new LoadModuleCommand(),
                 new UnloadModuleCommand()
         );
