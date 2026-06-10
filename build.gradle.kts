@@ -8,6 +8,33 @@ val runDir = File(rootProject.projectDir, "run")
 val runFile = File(runDir, outFile.name)
 val runModules = File(runDir, "modules")
 
+subprojects {
+
+    afterEvaluate {
+
+        val resourcesDir = file("src/main/resources")
+        val hasModuleYml = !fileTree(resourcesDir).matching {
+            include("**/module.yml")
+        }.isEmpty
+
+        if (hasModuleYml) {
+
+            val copyToRun by tasks.registering(Copy::class) {
+
+                val jarTask = tasks.named<Jar>("jar")
+                dependsOn(jarTask)
+
+                from(jarTask.flatMap { it.archiveFile })
+
+                into(runModules)
+
+            }
+
+        }
+    }
+
+}
+
 tasks {
 
     val copyToRun = create("copyToRun") {
@@ -56,19 +83,19 @@ tasks {
 
     create<Exec>("runApp") {
 
-        dependsOn(copyModulesToRun)
+        dependsOn(copyToRun)
+
         workingDir = runDir
         commandLine("java", "-jar", runFile.name)
 
     }
 
-   create("clean") {
+   create("cleanRun") {
 
         doLast {
             Files.deleteIfExists(runFile.toPath())
         }
 
     }
-
 
 }
