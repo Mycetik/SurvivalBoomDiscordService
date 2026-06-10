@@ -48,7 +48,7 @@ public class MessageActionBuilder extends AbstractMessageBuilder<MessageActionBu
 
     public void queue() {
 
-        MessageCreateData messageCreateData = build();
+        MessageCreateData messageCreateData = build().build();
         var rest = action.apply(messageCreateData);
 
         if (rest instanceof ReplyCallbackAction replyCallbackAction) {

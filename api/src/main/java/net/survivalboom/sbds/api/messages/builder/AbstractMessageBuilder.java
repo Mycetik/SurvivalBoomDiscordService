@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
-import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.survivalboom.sbds.api.interaction.ComponentInteractionInfo;
 import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
 import net.survivalboom.sbds.api.messages.IMessages;
@@ -125,13 +125,13 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
     // BUILD
     //
 
-    public @NotNull MessageCreateData build() {
+    public @NotNull MessageCreateBuilder build() {
 
         StringParser parser = builder.build();
 
         IMessageTemplate template = builder.getMessages().getMessage(messageKey, builder.getTarget(), true);
         if (template == null) {
-            return MessageCreateData.fromContent(messageKey);
+            return new MessageCreateBuilder().setContent(messageKey);
         }
 
         return template.createMessageData(parser, this);

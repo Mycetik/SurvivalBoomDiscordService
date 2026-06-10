@@ -89,7 +89,7 @@ public class EmbedTemplate {
 
     // BUILD //
 
-    public @NotNull MessageEmbed build(@Nullable StringParser parser) {
+    public @NotNull EmbedBuilder build(@Nullable StringParser parser) {
 
         EmbedBuilder builder = new EmbedBuilder();
 
@@ -129,7 +129,7 @@ public class EmbedTemplate {
 
         }
 
-        return builder.build();
+        return builder;
 
     }
 

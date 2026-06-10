@@ -56,7 +56,7 @@ public class ComponentMessageTemplate implements IMessageTemplate {
 
 
     @Override
-    public @NotNull MessageCreateData createMessageData(
+    public @NotNull MessageCreateBuilder createMessageData(
             @Nullable StringParser parser,
             @Nullable ComponentLinker linker
     ) {
@@ -68,7 +68,7 @@ public class ComponentMessageTemplate implements IMessageTemplate {
             builder.addComponents(component);
         }
 
-        return builder.build();
+        return builder;
 
     }
 

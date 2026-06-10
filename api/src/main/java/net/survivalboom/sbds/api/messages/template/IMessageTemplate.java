@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.messages.template;
 
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
@@ -12,7 +13,7 @@ import java.util.Objects;
 
 public interface IMessageTemplate {
 
-    @NotNull MessageCreateData createMessageData(@Nullable StringParser parser, @Nullable ComponentLinker linker);
+    @NotNull MessageCreateBuilder createMessageData(@Nullable StringParser parser, @Nullable ComponentLinker linker);
 
 
     static @NotNull IMessageTemplate fromSection(@NotNull ConfigurationNode section) throws SerializationException {

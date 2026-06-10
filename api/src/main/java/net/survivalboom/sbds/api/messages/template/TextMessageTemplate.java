@@ -1,18 +1,13 @@
 package net.survivalboom.sbds.api.messages.template;
 
-import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.Setting;
-import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.Objects;
 
-@ConfigSerializable
 public class TextMessageTemplate implements IMessageTemplate {
 
     private final String content;
@@ -33,8 +28,8 @@ public class TextMessageTemplate implements IMessageTemplate {
     }
 
     @Override
-    public @NotNull MessageCreateData createMessageData(@Nullable StringParser parser, @Nullable ComponentLinker linker) {
-        return MessageCreateData.fromContent(Objects.requireNonNull(StringParser.stParseNullable(parser, content)));
+    public @NotNull MessageCreateBuilder createMessageData(@Nullable StringParser parser, @Nullable ComponentLinker linker) {
+        return new MessageCreateBuilder().setContent(StringParser.stParse(parser, content));
     }
 
 }

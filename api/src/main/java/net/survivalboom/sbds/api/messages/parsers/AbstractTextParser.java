@@ -95,7 +95,7 @@ public abstract class AbstractTextParser<self extends AbstractTextParser<self, b
             return This();
         }
 
-        public @NotNull self addPlaceholders(@NotNull Object... args) {
+        public @NotNull self addPlaceholders(Object... args) {
             this.placeholders.addAll(Placeholders.of(args));
             return This();
         }

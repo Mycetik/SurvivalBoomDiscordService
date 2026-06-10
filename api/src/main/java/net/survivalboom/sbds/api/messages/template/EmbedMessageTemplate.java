@@ -4,7 +4,6 @@ import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
-import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.messages.components.MessageInteractableComponentTemplate;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.ComponentTemplate;
@@ -16,7 +15,7 @@ import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 @ConfigSerializable
 public class EmbedMessageTemplate implements IMessageTemplate {
@@ -26,7 +25,7 @@ public class EmbedMessageTemplate implements IMessageTemplate {
     private final List<MessageInteractableComponentTemplate<? extends ActionRowChildComponent>> components = new ArrayList<>();
 
     @Nullable
-    private String content;
+    private final String content;
 
 
     public EmbedMessageTemplate(
@@ -73,8 +72,16 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
     }
 
+    public @NotNull List<EmbedTemplate> getEmbeds() {
+        return new ArrayList<>(this.embeds);
+    }
+
+    public @NotNull List<MessageInteractableComponentTemplate<? extends ActionRowChildComponent>> getComponents() {
+        return new ArrayList<>(this.components);
+    }
+
     @Override
-    public @NotNull MessageCreateData createMessageData(@Nullable StringParser parser, @Nullable ComponentLinker linker) {
+    public @NotNull MessageCreateBuilder createMessageData(@Nullable StringParser parser, @Nullable ComponentLinker linker) {
 
         if ((content == null || content.isBlank()) && this.embeds.isEmpty() && this.components.isEmpty()) {
             throw new IllegalArgumentException("content is empty && embeds are empty && component are empty; you fucked up! congratulations!");
@@ -87,7 +94,7 @@ public class EmbedMessageTemplate implements IMessageTemplate {
         // embeds //
 
         for (EmbedTemplate embed : embeds) {
-            builder.addEmbeds(embed.build(parser));
+            builder.addEmbeds(embed.build(parser).build());
         }
 
         // components //
@@ -137,7 +144,7 @@ public class EmbedMessageTemplate implements IMessageTemplate {
 
         }
 
-        return builder.build();
+        return builder;
 
     }
 
@@ -247,11 +254,13 @@ public class EmbedMessageTemplate implements IMessageTemplate {
             return this;
         }
 
-        public @NotNull Builder addEmbed(@NotNull Function<EmbedTemplate.Builder, EmbedTemplate> function) {
+        public @NotNull Builder addEmbed(@NotNull Consumer<EmbedTemplate.Builder> function) {
 
             var builder = EmbedTemplate.builder();
 
-            EmbedTemplate embed = function.apply(builder);
+            function.accept(builder);
+
+            EmbedTemplate embed = builder.build();
             this.embeds.add(embed);
 
             return this;
