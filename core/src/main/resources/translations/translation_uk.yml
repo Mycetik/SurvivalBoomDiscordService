@@ -20,6 +20,9 @@ values:
 
 sbds:
 
+  config:
+    prefix: "Префікс команд"
+
   command:
 
     status:
