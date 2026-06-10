@@ -6,6 +6,7 @@ import net.survivalboom.sbds.api.database.guildconfig.IGuildConfig;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.Valid;
@@ -61,6 +62,11 @@ public class GuildConfig extends Valid implements IGuildConfig {
     @Override
     public @NotNull IGuildConfigTemplate getTemplate() {
         return template;
+    }
+
+    @Override
+    public @NotNull Registration<IGuildConfigTemplate> getRegistration() {
+        return template.getRegistration();
     }
 
     @Override
