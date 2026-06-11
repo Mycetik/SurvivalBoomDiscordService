@@ -4,7 +4,7 @@
 #
 
 $name: "ukrainian"
-$display-name: "$[lang.ukrainian]"
+$displayName: "$[lang.ukrainian]"
 $icon: "🇺🇦"
 $locale: UKRAINIAN
 

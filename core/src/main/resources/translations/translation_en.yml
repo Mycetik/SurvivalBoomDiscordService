@@ -4,7 +4,7 @@
 #
 
 $name: "english"
-$display-name: "$[lang.english]"
+$displayName: "$[lang.english]"
 $icon: "🇺🇸"
 $locale: ENGLISH_US
 
