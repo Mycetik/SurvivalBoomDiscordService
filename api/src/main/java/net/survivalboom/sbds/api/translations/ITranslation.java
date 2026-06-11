@@ -21,6 +21,10 @@ public interface ITranslation extends IValid {
 
     @NotNull Registration<ITranslation> getRegistration();
 
+    default @NotNull String getName() {
+        return getRegistration().key().toString();
+    }
+
     //
     // MESSAGES
     //
