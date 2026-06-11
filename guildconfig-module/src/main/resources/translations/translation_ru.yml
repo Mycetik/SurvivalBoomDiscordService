@@ -1,0 +1,97 @@
+#
+# GuildConfigModule | SurvivalBoom Discord Service 4.0
+# Stinky Translation | By TIMURishche
+#
+
+$name: sbds:russian
+
+guildconfig:
+
+  command:
+
+    # /config [...]
+    config:
+
+      # /config list
+      list:
+
+        description: Управление настройками SurvivalBoom Discord Service
+
+        root:
+          $embed:
+            title: Конфигурация SurvivalBoom Discord Service
+            color: 2B00FF
+            description: |
+              Каждый модуль, и даже само ядро, имеют собственные настройки.
+              Именно тут вы можете их изменить!
+              
+              Ниже показан список доступных настроек. 
+              - Установите значение настройкам с помощью `/config set`
+            footer:
+              Доступно {configs} конфигураций из {modules} модулей.
+
+        config-root:
+          $embed:
+            title: "{module.name} v{module.version}"
+            color: 474D19
+        config-field-format:
+          name: "{option.translated}"
+          value: "**{option.value}** *({option.default})*"
+
+      # /config set
+      set:
+
+        description: Установить значение настройки в конфигурации этого сервера.
+
+        config:
+          name: конфигурация
+          description: Название конфігурации сервера
+
+        key:
+          name: опция
+          description: Название настройки в конфигурации сервера
+
+        string:
+          name: текст
+          description: Текстовое значення
+
+        integer:
+          name: число
+          description: Цифровое значення
+
+        bool:
+          name: значение
+          description: Значение true/false
+
+        textchannel:
+          name: текстовый-канал
+          description: Установить текстовий канал
+
+        voicechannel:
+          name: голосовой-канал
+          description: Установить голосовой канал
+
+        user:
+          name: пользователь
+          description: Указать пользователя
+
+
+        success:
+          $embed:
+            description: Установлено настройку `{option.translated}` на **{value}**.
+            color: 33d17a
+
+        empty:
+          $embed:
+            description: Пожалуйста, укажите значение.
+            color: ff0000
+
+        invalid-key:
+          $embed:
+            description: Неверная настройка `{option}`. Проверьте правильность."
+            color: ff0000
+
+        invalid-value:
+          $embed:
+            description: Неверное значение **{value}** для настройки `{option}`."
+            color: ff0000

@@ -1,0 +1,97 @@
+#
+# GuildConfigModule | SurvivalBoom Discord Service 4.0
+# English Translation | By TIMURishche
+#
+
+$name: sbds:english
+
+guildconfig:
+
+  command:
+
+    # /config [...]
+    config:
+
+      # /config list
+      list:
+
+        description: Manage SurvivalBoom Discord Service settings
+
+        root:
+          $embed:
+            title: SurvivalBoom Discord Service Configuration
+            color: 2B00FF
+            description: |
+              Every module, and even the core itself, has its own settings.
+              This is exactly where you can change them!
+              
+              Below is a list of available settings. 
+              - Set values for options using `/config set`
+            footer: "{configs} configurations available from {modules} modules."
+
+        config-root:
+          $embed:
+            title: "{module.name} v{module.version}"
+            color: 474D19
+        config-field-format:
+          name: "{option.translated}"
+          value: "**{option.value}** *({option.default})*"
+
+      # /config set
+      set:
+
+        description: Set an option value in this server's configuration
+
+        config:
+          name: configuration
+          description: Server configuration name
+
+        key:
+          name: option
+          description: Option name in the server configuration
+
+        string:
+          name: text
+          description: Text value
+
+        integer:
+          name: integer
+          description: Numeric value
+
+        bool:
+          name: value
+          description: True/false value
+
+        textchannel:
+          name: text-channel
+          description: Set a text channel
+
+        voicechannel:
+          name: voice-channel
+          description: Set a voice channel
+
+        user:
+          name: user
+          description: Specify a user
+
+
+
+        success:
+          $embed:
+            description: Option `{option.translated}` has been set to **{value}**.
+            color: 33d17a
+
+        empty:
+          $embed:
+            description: Please provide a value.
+            color: ff0000
+
+        invalid-key:
+          $embed:
+            description: Invalid option `{option}`. Please check if it's correct.
+            color: ff0000
+
+        invalid-value:
+          $embed:
+            description: Invalid value **{value}** for option `{option}`.
+            color: ff0000

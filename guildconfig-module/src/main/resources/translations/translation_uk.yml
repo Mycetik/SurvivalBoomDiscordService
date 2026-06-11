@@ -1,0 +1,98 @@
+#
+# GuildConfigModule | SurvivalBoom Discord Service 4.0
+# Ukrainian Translation | By TIMURishche
+#
+
+$name: sbds:ukrainian
+
+guildconfig:
+
+  command:
+
+    # /config [...]
+    config:
+
+      # /config list
+      list:
+
+        description: Керування налаштуваннями SurvivalBoom Discord Service
+
+        root:
+          $embed:
+            title: Конфігурація SurvivalBoom Discord Service
+            color: 2B00FF
+            description: |
+              Кожен модуль, і навіть саме ядро, має власні налаштування.
+              Саме тут ви можете їх змінити!
+              
+              Нижче показано список доступних налаштувань. 
+              - Встановіть значення опціям за допомогою `/config set`
+            footer:
+              Доступно {configs} конфігурацій із {modules} модулів.
+
+        config-root:
+          $embed:
+            title: "{module.name} v{module.version}"
+            color: 474D19
+        config-field-format:
+          name: "{option.translated}"
+          value: "**{option.value}** *({option.default})*"
+
+      # /config set
+      set:
+
+        description: Встановити значення опції у конфігурації цього сервера
+
+        config:
+          name: конфігурація
+          description: Назва конфігурації сервера
+
+        key:
+          name: опція
+          description: Назва опції в конфігурації сервера
+
+        string:
+          name: текст
+          description: Текстове значення
+
+        integer:
+          name: число
+          description: Цифрове значення
+
+        bool:
+          name: значення
+          description: Значення true/false
+
+        textchannel:
+          name: текстовий-канал
+          description: Встановити тектовий канал
+
+        voicechannel:
+          name: голосовий-канал
+          description: Встановити голосовий канал
+
+        user:
+          name: користувач
+          description: Вказати користувача
+
+
+
+        success:
+          $embed:
+            description: Встановлено опцію `{option.translated}` на **{value}**.
+            color: 33d17a
+
+        empty:
+          $embed:
+            description: Будь ласка, вкажіть значення.
+            color: ff0000
+
+        invalid-key:
+          $embed:
+            description: Невірна опція `{option}`. Перевірте правильність.
+            color: ff0000
+
+        invalid-value:
+          $embed:
+            description: Невірне значення **{value}** для опції `{option}`.
+            color: ff0000
