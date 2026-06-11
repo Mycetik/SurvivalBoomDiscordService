@@ -322,48 +322,43 @@ public class CommonUtils {
 
     public static @Nullable Object invokeMethod(@NotNull Object origin, @NotNull Method method, Object... resources) {
 
-        // Создаем карту доступных ресурсов с ключами по их классам
-        Map<Class<?>, Object> resourceMap = new HashMap<>();
-        for (Object resource : resources) {
-            if (resource == null) continue;
-            resourceMap.put(resource.getClass(), resource);
-        }
-
-        // Получаем параметры метода
         Class<?>[] parameterTypes = method.getParameterTypes();
         Object[] arguments = new Object[parameterTypes.length];
 
-        // Подбираем ресурсы для каждого параметра метода
         for (int i = 0; i < parameterTypes.length; i++) {
-
             Class<?> paramType = parameterTypes[i];
+            Object matchedResource = null;
 
-            if (resourceMap.containsKey(paramType)) arguments[i] = resourceMap.get(paramType);
+            // Перебираем массив ресурсов и ищем подходящий по типу
+            for (Object resource : resources) {
+                if (resource == null) continue;
 
-            else {
-
-                String errorMsg = String.format("Failed to invoke %s.%s. No resource found for parameter type: %s", method.getDeclaringClass().getSimpleName(), method.getName(), paramType.getName());
-
-                throw new IllegalArgumentException(errorMsg);
-
+                // Если тип параметра можно присвоить из класса ресурса (paramType = ResourceClass)
+                if (paramType.isAssignableFrom(resource.getClass())) {
+                    matchedResource = resource;
+                    break; // Нашли первое подходящее совпадение
+                }
             }
 
+            if (matchedResource != null) {
+                arguments[i] = matchedResource;
+            } else {
+                throw new IllegalArgumentException(
+                        String.format("Failed to invoke %s.%s. No resource found for parameter type: %s",
+                                method.getDeclaringClass().getSimpleName(), method.getName(), paramType.getName())
+                );
+            }
         }
 
-        // Делаем метод доступным, если он private
         if (!method.canAccess(origin)) {
             method.setAccessible(true);
         }
 
-        // Вызываем метод
         try {
             return method.invoke(origin, arguments);
-        }
-
-        catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     //

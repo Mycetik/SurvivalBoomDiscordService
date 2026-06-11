@@ -1,10 +1,12 @@
 package net.survivalboom.sbds.api.commands.base;
 
+import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.permissions.Permission;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
@@ -63,10 +65,10 @@ public abstract class CommandBase implements CommandExecutor {
 
             Argument<?> argument;
             try {
-                argument = (Argument<?>) method.invoke(this);
+                argument = (Argument<?>) CommonUtils.invokeMethod(this, method, SbdsProvider.getInstance());
             }
 
-            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | ClassCastException e) {
+            catch (Exception e) {
                 throw new InvalidCommandException("Invalid command argument `" + name + "`", e);
             }
 
