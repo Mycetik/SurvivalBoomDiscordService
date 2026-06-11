@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.modules.translation.commands;
 
 import net.dv8tion.jda.api.entities.User;
-import net.survivalboom.sbds.api.SbdsProvider;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
@@ -14,68 +14,67 @@ import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.users.IUserData;
-import net.survivalboom.sbds.api.database.users.IUserRepositoryHandler;
+import net.survivalboom.sbds.api.database.users.IUserDataManager;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.translations.ITranslationManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@CommandClass(name = "translation", description = "Sets translation of the bot for you", translationKey = "translation.command.translation")
+@CommandClass(name = "translation", description = "Manage SBDS translation", translationKey = "translation.command.translation")
 public class TranslationCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
-
-    private final ITranslationManager translationManager;
-
-    private final IUserRepositoryHandler repository;
-
-
-    public TranslationCommand(@NotNull IDatabase database, @NotNull ITranslationManager translationManager) {
-        this.translationManager = translationManager;
-        this.repository = database.getRepositoryHandler("sbds:users", IUserRepositoryHandler.class);
-    }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
-        String translationRaw = info.arguments().getCastOrNull("translation", String.class);
-        IUserData userData = repository.createUser(info.user()).join();
+        String translationRaw = info.arguments().getCast("translation", String.class).orElse(null);
+
+        IUserDataManager userDataManager = info.sbds().getUserDataManager();
+        IUserData userData = userDataManager.get(info.user()).join();
 
         if (translationRaw == null) {
 
-            ITranslation currentTranslation = userData.getTranslation();
-            String displayName = currentTranslation != null ? currentTranslation.getDisplayName() : "[values.none]";
+            ITranslation currentTranslation = userData != null ? userData.getTranslation() : null;
 
-            info.reply("translation.command.translation.show").withPlaceholders("{TRANSLATION}", displayName).queue();
+            info.reply("translation.command.translation.show")
+                    .withPlaceholders("translation", Objects.requireNonNullElse(currentTranslation, "$[values.none]"))
+                    .queue();
 
             return;
 
         }
 
+        ITranslationManager translationManager = info.sbds().getTranslationManager();
         ITranslation translation = translationManager.getTranslation(translationRaw);
         Objects.requireNonNull(translation, "Invalid translation");
+
+        if (userData == null) {
+            userData = userDataManager.obtain(info.user()).join();
+        }
 
         userData.setTranslation(translation);
         userData.save();
 
-        info.reply("translation.command.translation.set").withPlaceholders("{TRANSLATION}", translation.getDisplayName()).queue();
+        info.reply("translation.command.translation.set")
+                .withPlaceholders("translation", translation)
+                .queue();
 
     }
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        User user = info.arguments().getCastOrNull("user", User.class);
+        User user = info.arguments().getCast("user", User.class).orElse(null);
         Objects.requireNonNull(user, "user == null");
 
-        IUserData userData = repository.createUser(user).join();
+        IUserDataManager userDataManager = info.sbds().getUserDataManager();
+        IUserData userData = userDataManager.get(user).join();
 
-        ITranslation translation = info.arguments().getCastOrNull("translation0", ITranslation.class);
+        ITranslation translation = info.arguments().getCast("translation0", ITranslation.class).orElse(null);
         if (translation == null) {
 
-
-            ITranslation currentTranslation = userData.getTranslation();
+            ITranslation currentTranslation = userData != null ? userData.getTranslation() : null;
 
             if (currentTranslation != null) {
                 info.logger().info("Current translation for `{}` is `{}`.", user.getEffectiveName(), currentTranslation.getName());
@@ -89,6 +88,10 @@ public class TranslationCommand extends CommandBase implements SlashCommandExecu
 
         }
 
+        if (userData == null) {
+            info.logger().info("Creating user `{}` in the database...", user.getEffectiveName());
+            userData = userDataManager.obtain(user).join();
+        }
 
         userData.setTranslation(translation);
         userData.save();
@@ -97,30 +100,26 @@ public class TranslationCommand extends CommandBase implements SlashCommandExecu
 
     }
 
-    @ArgumentMethod(name = "translation0", description = "A translation", scope = ArgumentScope.CONSOLE, required = false)
+    @ArgumentMethod(description = "A translation", scope = ArgumentScope.CONSOLE, required = false)
     public Argument<?> translation0() {
         return new TranslationArgument();
     }
 
-    @ArgumentMethod(name = "user", description = "A user", index = 1, scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(description = "A user", index = 1, scope = ArgumentScope.CONSOLE)
     public Argument<?> user() {
         return new UserArgument();
     }
 
     // TODO: Замінити на нормальний TranslationArgument з AbstractSelectArgument.
     // TODO: ! Варіанти вибору не динамічні, це значить що кожен раз після видалення/створення нового перекладу потрібно перереєструвати цю команду !
-    @ArgumentMethod(name = "translation", description = "A translation", scope = ArgumentScope.SLASH, required = false)
-    public Argument<?> translation() {
-
-        // Ось що буває, коли сам себе в свої ж костилі заплутуєш.
-        // Неможливо викликати translationManager, тому що конструктор CommandBase, який створює аргументи, викликається перед конструктором цього класу.
-        // Тому translationManager з цього класу, в CommandBase буде завжди null.
-        // А ви ще питаєте чому я стільки часу витрачаю на розробку систем без костилів?
-//        return new StringSelectArgument(translationManager.getTranslations().stream().map(ITranslation::getName).toList());
-
-        // Поки що використаю затичку, але треба виправити цей костиль!
-        return new StringSelectArgument(SbdsProvider.getInstance().getTranslationManager().getTranslations().stream().map(ITranslation::getName).toList());
-
+    // TODO: Бажано б було по-нормальному використовувати TranslationArgument.
+    @ArgumentMethod(description = "A translation", scope = ArgumentScope.SLASH, required = false)
+    public Argument<?> translation(@NotNull ISBDS sbds) {
+        return new StringSelectArgument(sbds.getTranslationManager().getTranslations()
+                .stream()
+                .map(ITranslation::getName)
+                .toList()
+        );
     }
 
 }
