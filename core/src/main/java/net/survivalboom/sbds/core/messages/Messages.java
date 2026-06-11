@@ -229,7 +229,7 @@ public class Messages extends Manager implements IMessages {
         String lastAttempt = in;
         while (true) {
 
-            String attempt = parseTranslations(in, user);
+            String attempt = parseTranslations(lastAttempt, user);
 
             if (parser != null) {
                 Placeholders placeholders = parser.getPlaceholders();
