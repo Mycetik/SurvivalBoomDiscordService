@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.commands.argument.sbds;
 
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
@@ -12,7 +13,16 @@ public class GuildConfigArgument extends Argument<IGuildConfigTemplate> {
     @Override
     public @NotNull IGuildConfigTemplate parse(@NotNull Object input, @NotNull ArgumentParsingContext context) throws ArgumentParseException {
 
-        if (!(input instanceof String string)) {
+        String string;
+        if (input instanceof String s) {
+            string = s;
+        }
+
+        else if (input instanceof OptionMapping mapping) {
+            string = mapping.getAsString();
+        }
+
+        else {
             throw new ArgumentParseException("Invalid obj `" + input + "`");
         }
 
