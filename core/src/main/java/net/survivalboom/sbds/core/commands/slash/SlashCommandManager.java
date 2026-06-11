@@ -114,6 +114,11 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
         try {
 
             Command command = getCommand(baseCommand, event);
+
+            if (!event.isAcknowledged() && command.isDeferReply()) {
+                event.deferReply(command.isEphemeral()).queue();
+            }
+
             SlashCommandExecutor executor = (SlashCommandExecutor) command.getExecutor();
 
             if (executor == null) {
@@ -124,10 +129,34 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
                 return;
             }
 
-            TypeMap arguments = SlashCommandParser.parse(registeredCommand, command, event);
+            TypeMap arguments;
 
-            if (command.isDeferReply()) {
-                event.deferReply(command.isEphemeral()).queue();
+            try {
+                arguments = SlashCommandParser.parse(registeredCommand, command, event);
+            }
+
+            catch (SlashCommandParser.ArgumentParsingException e) {
+
+                var argument = e.getArgument();
+
+                String argTranslated;
+                if (command.getTranslationKey() != null) {
+                    argTranslated = "$[" + command.getTranslationKey() + "." + argument.name() + ".name" + "]";
+                }
+
+                else {
+                    argTranslated = argument.name();
+                }
+
+                messages.reply(event, "sbds.invalid-argument", event.getUser())
+                        .withPlaceholders(
+                                "argument", argTranslated,
+                                "message", e.getCause().getMessage().replace("`", "")
+                        )
+                        .queue();
+
+                return;
+
             }
 
             SlashExecutionInfo info = new SlashExecutionInfo(event, registeredCommand, command, commandName, arguments);

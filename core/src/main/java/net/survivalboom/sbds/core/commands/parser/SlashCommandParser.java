@@ -22,7 +22,7 @@ public class SlashCommandParser {
             @NotNull ISlashCommandManager.IRegisteredSlashCommand rootCommand,
             @NotNull Command currentCommand,
             @NotNull SlashCommandInteraction interaction
-    ) throws ArgumentParseException {
+    ) throws ArgumentParsingException {
 
         List<CommandArgument> arguments = currentCommand.getArguments().stream()
                 .filter(argument -> argument.scopes().contains(ArgumentScope.SLASH))
@@ -37,13 +37,41 @@ public class SlashCommandParser {
             }
 
             ArgumentParsingContext context = new ArgumentParsingContext(rootCommand, currentCommand, argument);
-            Object object = argument.argument().parse(mapping, context);
+
+            Object object;
+            try {
+                object = argument.argument().parse(mapping, context);
+            } catch (ArgumentParseException e) {
+                throw new ArgumentParsingException(argument, mapping.getAsString(), e);
+            }
 
             map.put(argument.name(), object);
 
         }
 
         return UnmodifiableTypeMap.ofMap(map);
+
+    }
+
+    public static class ArgumentParsingException extends Exception {
+
+        private final CommandArgument argument;
+
+        private final String input;
+
+        public ArgumentParsingException(@NotNull CommandArgument argument, @NotNull String input, Exception e) {
+            super(e);
+            this.argument = argument;
+            this.input = input;
+        }
+
+        public @NotNull CommandArgument getArgument() {
+            return argument;
+        }
+
+        public @NotNull String getInput() {
+            return input;
+        }
 
     }
 

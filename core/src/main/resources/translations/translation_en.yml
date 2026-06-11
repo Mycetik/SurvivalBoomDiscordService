@@ -61,3 +61,11 @@ sbds:
         Looks like this interaction was expired or does not exist!
         Try again or contact bot's developer.
       footer: "Interaction id: {id}"
+
+  invalid-argument:
+    $embed:
+      title: "Invalid argument!"
+      color: ff0000
+      description: |
+        Invalid argument `{argument}`. Seems like you did something wrong.
+        `{message}`
