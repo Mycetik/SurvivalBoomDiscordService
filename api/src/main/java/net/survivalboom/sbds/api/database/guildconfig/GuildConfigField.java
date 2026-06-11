@@ -12,4 +12,14 @@ public record GuildConfigField(@NotNull String key, @Nullable String translation
         Objects.requireNonNull(type, "type == null");
     }
 
+    public boolean isValueAllowed(@Nullable Object value) {
+
+        if (value == null) {
+            return true;
+        }
+
+        return !value.getClass().isAssignableFrom(type);
+
+    }
+
 }

@@ -6,6 +6,7 @@ import net.survivalboom.sbds.api.utils.valid.IValid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +24,16 @@ public interface IGuildConfig extends IValid {
     @NotNull Registration<IGuildConfigTemplate> getRegistration();
 
     @NotNull String getKey();
+
+    // FIELDS //
+
+    default @Nullable GuildConfigField getField(@NotNull String key) {
+        return getTemplate().getField(key);
+    }
+
+    default @NotNull Map<String, GuildConfigField> getFields() {
+        return getTemplate().getFields();
+    }
 
     // CONFIG //
 
