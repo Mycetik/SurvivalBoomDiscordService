@@ -23,7 +23,7 @@ public class CommandLocalizator {
 
     private static final Logger log = LoggerFactory.getLogger(CommandLocalizator.class.getSimpleName());
 
-    private static final Pattern OPTION_PATTERN = Pattern.compile("^[a-zа-яіїєґ]+$");
+    private static final Pattern OPTION_PATTERN = Pattern.compile("^[a-zа-яіїєґ-]+$");
 
     private final TranslationManager translationManager;
 
