@@ -17,6 +17,7 @@ public class GuildPlaceholder implements IPlaceholders {
     @Override
     public @NotNull Placeholders placeholders() {
         return Placeholders.of(
+                " ", guild.getName(),
                 "id", guild.getId(),
                 "name", guild.getName()
         );

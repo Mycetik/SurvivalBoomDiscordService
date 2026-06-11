@@ -18,6 +18,7 @@ public class MemberPlaceholder implements IPlaceholders {
     @Override
     public @NotNull Placeholders placeholders() {
         return Placeholders.of(
+                " ", member.getAsMention(),
                 "id", member.getId(),
                 "name", member.getEffectiveName(),
                 "user", member.getUser(),

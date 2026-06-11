@@ -9,7 +9,6 @@ public class ChannelPlaceholder implements IPlaceholders {
 
     private final Channel channel;
 
-
     public ChannelPlaceholder(@NotNull Channel channel) {
         this.channel = channel;
     }
@@ -17,6 +16,7 @@ public class ChannelPlaceholder implements IPlaceholders {
     @Override
     public @NotNull Placeholders placeholders() {
         return Placeholders.of(
+                " ", channel.getAsMention(),
                 "id", channel.getId(),
                 "name", channel.getName(),
                 "mention", channel.getAsMention()

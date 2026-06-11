@@ -17,6 +17,7 @@ public class UserPlaceholder implements IPlaceholders {
     @Override
     public @NotNull Placeholders placeholders() {
         return Placeholders.of(
+                " ", user.getAsMention(),
                 "id", user.getId(),
                 "username", user.getName(),
                 "displayName", user.getGlobalName(),

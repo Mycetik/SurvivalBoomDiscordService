@@ -20,12 +20,14 @@ public class ModulePlaceholder implements IPlaceholders {
 
         if (module == null) {
             return Placeholders.of(
+                    " ", "SBDS " + SbdsProvider.getInstance().getVersion(),
                     "name", "SBDS",
                     "version", SbdsProvider.getInstance().getVersion()
             );
         }
 
         return Placeholders.of(
+                " ", module.toString(),
                 "name", module.getName(),
                 "version", module.getMeta().getVersion()
         );
