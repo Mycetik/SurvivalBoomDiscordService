@@ -63,7 +63,7 @@ public class EventManager extends Manager implements net.dv8tion.jda.api.hooks.E
         // TODO Оптимізувати із кешуванням. Поки що нехай буде так.
         List<IRegisteredEventHandler> eventHandlers = registry.getRegisteredObjects().stream()
                 .filter(handler -> handler.getEventClass().isAssignableFrom(event.getClass()))
-                .sorted(Comparator.comparing(IRegisteredEventHandler::getPriority))
+                .sorted(Comparator.comparing(IRegisteredEventHandler::getPriority).reversed())
                 .toList();
 
         boolean cancelled = false; // TODO Реалізувати.
