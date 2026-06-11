@@ -19,7 +19,7 @@ subprojects {
 
         if (hasModuleYml) {
 
-            val copyToRun by tasks.registering(Copy::class) {
+            val copyModuleToRun by tasks.registering(Copy::class) {
 
                 val jarTask = tasks.named<Jar>("jar")
                 dependsOn(jarTask)
@@ -47,35 +47,6 @@ tasks {
 
             Files.deleteIfExists(runFile.toPath())
             Files.copy(outFile.toPath(), runFile.toPath())
-
-        }
-
-    }
-
-    val copyModulesToRun = create("copyModulesToRun") {
-
-        dependsOn(copyToRun)
-
-        val projects = subprojects.stream().filter { project ->
-            File(project.projectDir, "src/main/resources/module.yml").exists()
-        }.toList()
-
-        projects.forEach { project -> dependsOn("${project.name}:build") }
-
-      doLast {
-
-            runModules.mkdirs()
-
-            projects.forEach { project ->
-
-                val jarTask = project.tasks.named("jar", Jar::class)
-                val moduleFile = jarTask.get().archiveFile.get().asFile
-                val newModuleFile = File(runModules, moduleFile.name)
-
-                Files.deleteIfExists(newModuleFile.toPath())
-                Files.copy(moduleFile.toPath(), newModuleFile.toPath())
-
-            }
 
         }
 
