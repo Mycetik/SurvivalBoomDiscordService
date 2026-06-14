@@ -95,6 +95,8 @@ public class ContextCommandManager extends AbstractCommandManager<IContextComman
 
             String name = event.getName();
 
+            logger.info("User &b{} &rexecuted context-command &b/{}", event.getUser().getEffectiveName(), name);
+
             IRegisteredContextCommand registeredContextCommand = registry.getRegisteredObjects().stream()
                     .filter(c -> c.getCommand().getName().equals(name))
                     .findAny()

@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ModalInteractionManager extends Manager implements IModalInteractionManager, EventListener {
 
@@ -135,6 +136,8 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
                 log.info("Modal interaction `{}` has no executor!", nameStr);
                 return;
             }
+
+            log.info("User &b{} &rsubmitted modal &b{} &rwith &e{}", event.getUser().getEffectiveName(), nameStr, info.fields().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getAsString())));
 
             pendingModalMap.remove(id);
 
