@@ -119,6 +119,10 @@ public class Scheduler extends Manager implements IScheduler, RegistrationManage
 
     }
 
+    public @NotNull SchedulerTask schedule0(@Nullable IModule module, @Nullable String name, @NotNull Runnable runnable, int delay, int period) {
+        return schedule0(module, name, task -> runnable.run(), delay, period);
+    }
+
     @Override
     public @NotNull List<ISchedulerTask> getTasks() {
         return registry.getRegisteredObjects();
