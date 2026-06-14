@@ -43,7 +43,7 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
             "&r", RESET,
             "&e", YELLOW,
             "&a", GREEN,
-            "&3", CYAN,
+            "&b", CYAN,
             "&9", BLUE
     );
 
@@ -110,7 +110,7 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
         boolean isRoot = loggerName.equals(Logger.ROOT_LOGGER_NAME);
         String timeFormatted = dtf.format(LocalDateTime.now());
 
-        String loggerNamePart = !isRoot ? "&r/&3" + loggerName  : "";
+        String loggerNamePart = !isRoot ? "&r/&b" + loggerName  : "";
         String levelColored = colorLevel(event.getLevel().levelStr);
 
         String messageFormatted = parsePlaceholders(event);
@@ -179,8 +179,8 @@ public class LoggerLayout extends LayoutBase<ILoggingEvent> {
             case "ERROR" -> "&cERROR";
             case "WARN" -> "&eWARN";
             case "INFO" -> "&aINFO";
-            case "DEBUG" -> "&9DEBUG";
-            case "TRACE" -> "&9TRACE";
+            case "DEBUG" -> "&bDEBUG";
+            case "TRACE" -> "&bTRACE";
             default -> levelStr;
         };
 
