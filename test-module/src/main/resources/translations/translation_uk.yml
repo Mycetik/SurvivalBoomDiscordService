@@ -22,6 +22,15 @@ testmodule:
           title: "Успіх!"
           description: Ваш запит успішно прийнято, дякуємо за звернення!
 
+    test-modal:
+
+      modal:
+        title: Напишіть фанфік
+        label: Фанфік
+        text: Жив був дракон, він усіх зжер, кінець...
+
+      success: "**СВІНТУС!** {text}"
+
     ban:
 
       confirm:
