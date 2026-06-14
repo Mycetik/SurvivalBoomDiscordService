@@ -16,12 +16,12 @@ public class ModalTemplate {
 
     private final String title;
 
-    private final List<ModalComponentTemplate> components = new ArrayList<>();
+    private final List<ModalComponentTemplate<?>> components = new ArrayList<>();
 
 
     public ModalTemplate(
             @NotNull String title,
-            @NotNull Collection<ModalComponentTemplate> components
+            @NotNull Collection<ModalComponentTemplate<?>> components
     ) {
 
         Objects.requireNonNull(title, "title == null");
@@ -43,7 +43,7 @@ public class ModalTemplate {
         String title = StringParser.stParse(parser, this.title);
         Modal.Builder builder = Modal.create(id, title);
 
-        for (ModalComponentTemplate template : components) {
+        for (ModalComponentTemplate<?> template : components) {
 
             ModalTopLevelComponent component = template.build(parser, null);
             builder.addComponents(component);
@@ -70,7 +70,7 @@ public class ModalTemplate {
 
         private String title;
 
-        private final List<ModalComponentTemplate> components = new ArrayList<>();
+        private final List<ModalComponentTemplate<?>> components = new ArrayList<>();
 
 
         private Builder() {}
@@ -99,7 +99,7 @@ public class ModalTemplate {
 
         // COMPONENTS //
 
-        public @NotNull Builder setComponents(@Nullable Collection<ModalComponentTemplate> components) {
+        public @NotNull Builder setComponents(@Nullable Collection<ModalComponentTemplate<?>> components) {
 
             this.components.clear();
 
@@ -111,17 +111,17 @@ public class ModalTemplate {
 
         }
 
-        public @NotNull Builder addComponents(@NotNull Collection<ModalComponentTemplate> components) {
+        public @NotNull Builder addComponents(@NotNull Collection<ModalComponentTemplate<?>> components) {
             this.components.addAll(components);
             return this;
         }
 
-        public @NotNull Builder addComponents(@NotNull ModalComponentTemplate... components) {
+        public @NotNull Builder addComponents(@NotNull ModalComponentTemplate<?>... components) {
             this.components.addAll(List.of(components));
             return this;
         }
 
-        public @NotNull Builder addComponent(@NotNull ModalComponentTemplate component) {
+        public @NotNull Builder addComponent(@NotNull ModalComponentTemplate<?> component) {
             this.components.add(component);
             return this;
         }

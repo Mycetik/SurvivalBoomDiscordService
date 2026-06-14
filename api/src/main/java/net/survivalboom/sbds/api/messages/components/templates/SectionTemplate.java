@@ -19,14 +19,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-@ConfigSerializable
 public class SectionTemplate implements ComponentTemplate<Section> {
 
-    private int index = 0;
+    private final int index;
 
-    private ComponentTemplate<? extends SectionAccessoryComponent> accessor;
+    private final ComponentTemplate<? extends SectionAccessoryComponent> accessor;
 
-    private List<ComponentTemplate<? extends SectionContentComponent>> children;
+    private final List<ComponentTemplate<? extends SectionContentComponent>> children;
 
 
     public SectionTemplate(
@@ -41,28 +40,6 @@ public class SectionTemplate implements ComponentTemplate<Section> {
         this.index = index;
         this.accessor = accessor;
         this.children = new ArrayList<>(children);
-
-    }
-
-    @ApiStatus.Internal
-    public SectionTemplate() {
-
-    }
-
-    @PostProcess
-    private void validate() throws SerializationException {
-
-        if (accessor == null) {
-            throw new SerializationException("accessor == null");
-        }
-
-        if (children == null) {
-            throw new SerializationException("children == null");
-        }
-
-        if (children.isEmpty()) {
-            throw new SerializationException("children list is empty");
-        }
 
     }
 

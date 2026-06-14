@@ -1,11 +1,10 @@
 package net.survivalboom.sbds.core.interaction.modal;
 
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
-import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.EventListener;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
 import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
 import net.survivalboom.sbds.api.interaction.modal.ModalInteractionInfo;
@@ -32,9 +31,7 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
     private final SBDS sbds;
 
-    private final InternalRegistrationManager<IRegisteredModalTemplate> modalTemplateRegistry;
-
-    private final InternalRegistrationManager<IRegisteredModal> staticModalRegistry;
+    private final InternalRegistrationManager<IRegisteredModal> registry;
 
     private final Map<String, PendingModal> pendingModalMap = new HashMap<>();
 
@@ -44,8 +41,7 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
     public ModalInteractionManager(@NotNull SBDS sbds) {
         this.sbds = sbds;
-        this.modalTemplateRegistry = new InternalRegistrationManager<>(this, "template", null, sbds.getRegistrationRegistry());
-        this.staticModalRegistry = new InternalRegistrationManager<>(this, "listener", null, sbds.getRegistrationRegistry());
+        this.registry = new InternalRegistrationManager<>(this, null, sbds.getRegistrationRegistry());
     }
 
     //
@@ -60,11 +56,10 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
     @Override
     protected void init0() {
 
-        modalTemplateRegistry.init();
-        staticModalRegistry.init();
+        registry.init();
 
         sbds.getEventManager().registerEvents0(null, this);
-        task = sbds.getScheduler().schedule0(null, "ModalInteractionManager-TimeoutChecker", task -> timeoutChecker(), 1000, 1000);
+        task = sbds.getScheduler().schedule0(null, "ModalInteractionManager-TimeoutChecker", this::timeoutChecker, 1000, 1000);
 
     }
 
@@ -77,9 +72,6 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
         task = null;
 
         pendingModalMap.clear();
-
-        staticModalRegistry.shutdown();
-        modalTemplateRegistry.shutdown();
 
     }
 
@@ -97,8 +89,10 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
                 continue;
             }
 
+            String nameStr = modal.getOriginModal() != null ? modal.getOriginModal().getRegistration().key().toString() : id;
+
             this.pendingModalMap.remove(id);
-            log.info("Pending modal `{}` expired.", id);
+            log.info("Pending modal `{}` expired.", nameStr);
 
             Runnable failureCallback = modal.getFailureCallback();
             if (failureCallback == null) {
@@ -110,7 +104,7 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
             }
 
             catch (Throwable t) {
-                log.error("An exception was thrown while attempting to run failure callback for modal `{}`.", id, t);
+                log.error("An exception was thrown while attempting to run failure callback for modal `{}`.", nameStr, t);
             }
 
         }
@@ -121,191 +115,92 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
     public void onModal(ModalInteractionEvent event) {
 
         String id = event.getModalId();
+        IPendingModal pendingModal = pendingModalMap.get(id);
+        if (pendingModal == null) {
+            sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser())
+                    .withPlaceholders("id", id)
+                    .queue();
+            return;
+        }
+
+        String nameStr = pendingModal.getOriginModal() != null ? pendingModal.getOriginModal().getRegistration().key().toString() : id;
 
         try {
 
-            if (id.contains(":")) {
-                processStatic(event);
-            } else {
-                processPending(event);
+            ModalInteractionInfo info = new ModalInteractionInfo(sbds, event);
+
+            Consumer<ModalInteractionInfo> callback = pendingModal.getEffectiveSuccessCallback();
+            if (callback == null) {
+                sbds.getMessages().reply(event, "sbds.interaction-no-response", event.getUser()).queue();
+                log.info("Modal interaction `{}` has no executor!", nameStr);
+                return;
             }
+
+            pendingModalMap.remove(id);
+
+            callback.accept(info);
 
         }
 
         catch (Throwable t) {
-
-            log.error("An exception was thrown while tried to process modal `{}`.", id, t);
-
-            sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser())
+            log.error("An exception was thrown while tried to process modal `{}`.", nameStr, t);
+            sbds.getMessages().reply(event, "sbds.error", event.getUser())
                     .withPlaceholders("exception", t)
                     .setEphemeral(true)
                     .queue();
-
         }
-
-    }
-
-    private void processStatic(@NotNull ModalInteractionEvent event) {
-
-        String id = event.getModalId();
-        NamespacedKey key = NamespacedKey.fromString(id);
-
-        User user = event.getUser();
-
-        IRegisteredModal listener = staticModalRegistry.getRegistrationAsObject(key);
-
-        if (listener == null) {
-
-            sbds.getMessages().reply(event, "sbds.invalid-interaction", user)
-                    .withPlaceholders("{id}", id)
-                    .setEphemeral(true)
-                    .queue();
-
-            return;
-
-        }
-
-        ModalInteractionInfo info = new ModalInteractionInfo(sbds, event);
-        listener.getExecutor().accept(info);
-
-    }
-
-    private void processPending(@NotNull ModalInteractionEvent event) {
-
-        String id = event.getModalId();
-        IPendingModal pending = pendingModalMap.get(id);
-
-        User user = event.getUser();
-
-        if (pending == null) {
-
-            sbds.getMessages().reply(event, "sbds.invalid-interaction", user)
-                    .withPlaceholders("{id}", id)
-                    .setEphemeral(true)
-                    .queue();
-
-            return;
-        }
-
-        pendingModalMap.remove(id);
-
-        ModalInteractionInfo info = new ModalInteractionInfo(sbds, event);
-        pending.getSuccessCallback().accept(info);
 
     }
 
     //
-    // MODAL TEMPLATES
+    // MODALS REGISTRY
     //
 
     // REG //
 
-    @Override
-    public @NotNull IRegisteredModalTemplate registerModalTemplate(@NotNull IModule module, @NotNull String name, @NotNull ModalTemplate modal) {
-
-        Objects.requireNonNull(module, "module == null");
-        Objects.requireNonNull(name, "name == null");
-        Objects.requireNonNull(modal, "modal == null");
-        checkValid();
-
-        RegisteredModalTemplate modalTemplate = new RegisteredModalTemplate(this, modal);
-        modalTemplate.registration = modalTemplateRegistry.register(module, name, modalTemplate);
-
-        return modalTemplate;
-
-    }
-
-    // UNREG //
-
-    @Override
-    public boolean unregisterModalTemplate(@NotNull IRegisteredModalTemplate modal) {
-        checkValid();
-        return modalTemplateRegistry.unregister(modal) != null;
-    }
-
-    // GETTERS //
-
-    @Override
-    public @NotNull List<IRegisteredModalTemplate> getRegisteredModalTemplates() {
-        checkValid();
-        return modalTemplateRegistry.getRegisteredObjects();
-    }
-
-    @Override
-    public @Nullable IRegisteredModalTemplate getRegisteredModalTemplate(@NotNull NamespacedKey key) {
-        checkValid();
-        return modalTemplateRegistry.getRegistrationAsObject(key);
-    }
-
-    //
-    // PENDING MODALS
-    //
-
-    // REG //
-
-    @Override
-    public @NotNull IPendingModal registerPendingModal(
-            @NotNull String id,
-            @NotNull Consumer<ModalInteractionInfo> successCallback,
-            @Nullable Runnable failureCallback,
-            int timeout
+    public @NotNull IRegisteredModal registerModal0(
+            @Nullable IModule module,
+            @NotNull String name,
+            @NotNull ModalTemplate template,
+            @Nullable Consumer<ModalInteractionInfo> executor
     ) {
 
-        Objects.requireNonNull(id, "id == null");
-        Objects.requireNonNull(successCallback, "successCallback == null");
-        checkValid();
-
-        if (pendingModalMap.containsKey(id)) {
-            throw new IllegalStateException("Pending modal with id `" + id + "` already exists");
-        }
-
-        PendingModal pendingModal = new PendingModal(this, id, successCallback, failureCallback, timeout);
-        pendingModalMap.put(id, pendingModal);
-
-        return pendingModal;
-
-    }
-
-    // UNREG //
-
-    @Override
-    public @Nullable IPendingModal forgetPendingModal(@NotNull String id) {
-        checkValid();
-        return pendingModalMap.remove(id);
-    }
-
-    // GETTERS //
-
-    @Override
-    public @Nullable IPendingModal getPendingModal(@NotNull String id) {
-        checkValid();
-        return pendingModalMap.get(id);
-    }
-
-    @Override
-    public @NotNull List<IPendingModal> getPendingModals() {
-        checkValid();
-        return new ArrayList<>(pendingModalMap.values());
-    }
-
-    //
-    // MODAL LISTENERS
-    //
-
-    // REG //
-
-    @Override
-    public @NotNull IRegisteredModal registerModal(@NotNull IModule module, @NotNull String name, @NotNull Consumer<ModalInteractionInfo> executor) {
-
-        Objects.requireNonNull(module, "module == null");
         Objects.requireNonNull(name, "name == null");
-        Objects.requireNonNull(executor, "executor == null");
+        Objects.requireNonNull(template, "template == null");
         checkValid();
 
-        RegisteredModal modal = new RegisteredModal(this, executor);
-        modal.registration = staticModalRegistry.register(module, name, modal);
+        RegisteredModal modal = new RegisteredModal(this, template, executor);
+        modal.registration = registry.register0(module, name, modal);
 
         return modal;
+
+    }
+
+    @Override
+    public @NotNull IRegisteredModal registerModal(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull ModalTemplate template,
+            @Nullable Consumer<ModalInteractionInfo> executor
+    ) {
+        Objects.requireNonNull(module, "module == null");
+        return registerModal0(module, name, template, executor);
+    }
+
+    @Override
+    public @NotNull IRegisteredModal registerModal(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ModalTemplate.Builder> builder,
+            @Nullable Consumer<ModalInteractionInfo> executor
+    ) {
+
+        ModalTemplate.Builder b = ModalTemplate.builder();
+        builder.accept(b);
+
+        ModalTemplate template = b.build();
+
+        return registerModal(module, name, template, executor);
 
     }
 
@@ -314,7 +209,7 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
     @Override
     public boolean unregisterModal(@NotNull IRegisteredModal modal) {
         checkValid();
-        return staticModalRegistry.unregister(modal) != null;
+        return registry.unregister(modal) != null;
     }
 
     // GETTERS //
@@ -322,63 +217,97 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
     @Override
     public @Nullable IRegisteredModal getRegisteredModal(@NotNull NamespacedKey key) {
         checkValid();
-        return staticModalRegistry.getRegistrationAsObject(key);
+        return registry.getRegistrationAsObject(key);
     }
 
     @Override
     public @NotNull List<IRegisteredModal> getRegisteredModals() {
         checkValid();
-        return staticModalRegistry.getRegisteredObjects();
+        return registry.getRegisteredObjects();
     }
 
+    //
+    // MODAL SENDING
+    //
+
+    @Override
+    public @NotNull ModalActionBuilder replyModal(
+            @NotNull InteractionHolder interaction,
+            @NotNull ModalTemplate template
+    ) {
+        checkValid();
+        return new ModalActionBuilder(interaction, template, this);
+    }
+
+    @Override
+    public @NotNull ModalActionBuilder replyModal(
+            @NotNull InteractionHolder interaction,
+            @NotNull Consumer<ModalTemplate.Builder> builder
+    ) {
+
+        ModalTemplate.Builder b = ModalTemplate.builder();
+        builder.accept(b);
+
+        ModalTemplate template = b.build();
+
+        return replyModal(interaction, template);
+
+    }
+
+    @Override
+    public @NotNull ModalActionBuilder replyModal(
+            @NotNull InteractionHolder interaction,
+            @NotNull NamespacedKey key
+    ) {
+
+        IRegisteredModal modal = getRegisteredModal(key);
+        if (modal == null) {
+            throw new IllegalArgumentException("No modal with name `" + key + "` exists");
+        }
+
+        return new ModalActionBuilder(interaction, modal, this);
+
+    }
+
+    @Override
+    public @NotNull IPendingModal createPending(@NotNull ModalActionBuilder builder) {
+
+        checkValid();
+
+        Consumer<ModalInteractionInfo> onSuccess = builder.getOnSuccess();
+        Runnable onFail = builder.onFail();
+        int timeout = builder.getTimeout();
+
+        IRegisteredModal origin = builder.getOriginModal();
+        if (origin == null) {
+            Objects.requireNonNull(onSuccess, "onSuccess == null");
+        }
+
+        String id = UUID.randomUUID().toString();
+
+        PendingModal pendingModal = new PendingModal(this, origin, builder.getTemplate(), id, onSuccess, onFail, timeout);
+        pendingModalMap.put(id, pendingModal);
+
+        return pendingModal;
+
+    }
+
+    @Override
+    public @NotNull List<IPendingModal> getPendingModals() {
+        return new ArrayList<>(pendingModalMap.values());
+    }
 
     //
     // DATA CLASSES
     //
 
-    public static class RegisteredModalTemplate implements IRegisteredModalTemplate {
-
-        private final ModalInteractionManager manager;
-
-        private final ModalTemplate template;
-
-        private Registration<IRegisteredModalTemplate> registration;
-
-
-        public RegisteredModalTemplate(
-                @NotNull ModalInteractionManager manager,
-                @NotNull ModalTemplate template
-        ) {
-            this.manager = manager;
-            this.template = template;
-        }
-
-
-        @Override
-        public @NotNull Registration<IRegisteredModalTemplate> getRegistration() {
-            return registration;
-        }
-
-        @Override
-        public @NotNull ModalTemplate getTemplate() {
-            return template;
-        }
-
-        @Override
-        public @NotNull ModalActionBuilder createModal(@NotNull IModalCallback interaction) {
-            return new ModalActionBuilder(manager, interaction, registration.key());
-        }
-
-        @Override
-        public @NotNull IModalInteractionManager getManager() {
-            return manager;
-        }
-
-    }
-
     public static class PendingModal implements IPendingModal {
 
         private final ModalInteractionManager manager;
+
+        private final IRegisteredModal originModal;
+
+        private final ModalTemplate template;
 
         private final String id;
 
@@ -393,13 +322,17 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
         public PendingModal(
                 @NotNull ModalInteractionManager manager,
+                @Nullable IRegisteredModal originModal,
+                @NotNull ModalTemplate template,
                 @NotNull String id,
-                @NotNull Consumer<ModalInteractionInfo> successfulCallback,
+                @Nullable Consumer<ModalInteractionInfo> successfulCallback,
                 @Nullable Runnable failureCallback,
                 int timeout
         ) {
 
             this.manager = manager;
+            this.originModal = originModal;
+            this.template = template;
             this.id = id;
 
             this.successfulCallback = successfulCallback;
@@ -410,15 +343,23 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
         }
 
-
-
         @Override
         public @NotNull String getId() {
             return id;
         }
 
         @Override
-        public @NotNull Consumer<ModalInteractionInfo> getSuccessCallback() {
+        public @Nullable IRegisteredModal getOriginModal() {
+            return originModal;
+        }
+
+        @Override
+        public @NotNull ModalTemplate getTemplate() {
+            return template;
+        }
+
+        @Override
+        public @Nullable Consumer<ModalInteractionInfo> getSuccessCallback() {
             return successfulCallback;
         }
 
@@ -448,6 +389,8 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
         private final ModalInteractionManager manager;
 
+        private final ModalTemplate template;
+
         private final Consumer<ModalInteractionInfo> executor;
 
         private Registration<IRegisteredModal> registration;
@@ -455,9 +398,11 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
 
         public RegisteredModal(
                 @NotNull ModalInteractionManager manager,
-                @NotNull Consumer<ModalInteractionInfo> executor
+                @NotNull ModalTemplate template,
+                @Nullable Consumer<ModalInteractionInfo> executor
         ) {
             this.manager = manager;
+            this.template = template;
             this.executor = executor;
         }
 
@@ -468,13 +413,18 @@ public class ModalInteractionManager extends Manager implements IModalInteractio
         }
 
         @Override
-        public @NotNull Consumer<ModalInteractionInfo> getExecutor() {
+        public @Nullable Consumer<ModalInteractionInfo> getExecutor() {
             return executor;
         }
 
         @Override
         public @NotNull IModalInteractionManager getManager() {
             return manager;
+        }
+
+        @Override
+        public @NotNull ModalTemplate getTemplate() {
+            return template;
         }
 
     }

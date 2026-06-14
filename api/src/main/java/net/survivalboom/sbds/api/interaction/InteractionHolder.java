@@ -9,10 +9,13 @@ import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
+import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.function.Consumer;
 
 /**
  * <bold>Увага! Від цього класу смердить помиями! Триматись подалі задля вашого ж здорового глузду!</bold>
@@ -94,7 +97,39 @@ public interface InteractionHolder {
             throw new IllegalStateException("Execution `" + this + "` cannot send a modal");
         }
 
-        return new ModalActionBuilder(sbds().getModalInteractionManager(), callback, NamespacedKey.fromString(key));
+        if (callback.isAcknowledged()) {
+            throw new IllegalStateException("Interaction was already acknowledged, cannot send modal. Maybe you should turn deferReply to false?");
+        }
+
+        return sbds().getModalInteractionManager().replyModal(this, key);
+
+    }
+
+    default @NotNull ModalActionBuilder replyModal(@NotNull ModalTemplate template) {
+
+        if (!(source() instanceof IModalCallback callback)) {
+            throw new IllegalStateException("Execution `" + this + "` cannot send a modal");
+        }
+
+        if (callback.isAcknowledged()) {
+            throw new IllegalStateException("Interaction was already acknowledged, cannot send modal. Maybe you should turn deferReply to false?");
+        }
+
+        return sbds().getModalInteractionManager().replyModal(this, template);
+
+    }
+
+    default @NotNull ModalActionBuilder replyModal(@NotNull Consumer<ModalTemplate.Builder> builder) {
+
+        if (!(source() instanceof IModalCallback callback)) {
+            throw new IllegalStateException("Execution `" + this + "` cannot send a modal");
+        }
+
+        if (callback.isAcknowledged()) {
+            throw new IllegalStateException("Interaction was already acknowledged, cannot send modal. Maybe you should turn deferReply to false?");
+        }
+
+        return sbds().getModalInteractionManager().replyModal(this, builder);
 
     }
 

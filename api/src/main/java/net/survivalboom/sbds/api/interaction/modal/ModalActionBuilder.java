@@ -1,122 +1,124 @@
 package net.survivalboom.sbds.api.interaction.modal;
 
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
 import net.dv8tion.jda.api.modals.Modal;
 import net.dv8tion.jda.api.requests.restaction.interactions.ModalCallbackAction;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.messages.parsers.LinkedTextParser;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class ModalActionBuilder {
 
-    private final IModalInteractionManager modalInteractionManager;
+    private final IModalInteractionManager manager;
 
-    private final NamespacedKey key;
+    private final InteractionHolder interaction;
 
-    private final IModalCallback callback;
+    private final @Nullable IModalInteractionManager.IRegisteredModal originModal;
+
+    private final ModalTemplate template;
 
 
-    private final LinkedTextParser.Builder builder;
+    private final LinkedTextParser.Builder parser;
 
 
-    private Consumer<ModalInteractionInfo> onSuccess;
+    private @Nullable Consumer<ModalInteractionInfo> onSuccess;
 
-    private Runnable onFail;
+    private @Nullable Runnable onFail;
 
     private int timeout = 120000;
 
 
     public ModalActionBuilder(
-            @NotNull IModalInteractionManager modalInteractionManager,
-            @NotNull IModalCallback callback,
-            @NotNull NamespacedKey key
+            @NotNull InteractionHolder interaction,
+            @NotNull IModalInteractionManager.IRegisteredModal modal,
+            @NotNull IModalInteractionManager manager
     ) {
 
-        this.modalInteractionManager = modalInteractionManager;
+        Objects.requireNonNull(interaction, "interaction == null");
+        Objects.requireNonNull(modal, "modal == null");
+        Objects.requireNonNull(manager, "manager == null");
 
-        User user = callback.getUser();
+        if (!(interaction.source() instanceof IModalCallback)) {
+            throw new IllegalArgumentException("interaction object `" + interaction + "` is not ModalCallback");
+        }
 
-        this.callback = callback;
-        this.key = key;
+        this.originModal = modal;
+        this.template = modal.getTemplate();
 
-        this.builder = LinkedTextParser.builder(modalInteractionManager.getSbds().getMessages(), user);
+        this.parser = LinkedTextParser.builder(manager.getSbds().getMessages(), interaction.user());
+
+        this.interaction = interaction;
+        this.manager = manager;
 
     }
 
-    public @NotNull ModalCallbackAction send() {
+    public ModalActionBuilder(
+            @NotNull InteractionHolder interaction,
+            @NotNull ModalTemplate template,
+            @NotNull IModalInteractionManager manager
+    ) {
 
-        IModalInteractionManager.IRegisteredModalTemplate registeredModal = modalInteractionManager.getRegisteredModalTemplate(key);
-        if (registeredModal == null) {
-            throw new IllegalArgumentException("No modal found by key `" + key + "`");
+        Objects.requireNonNull(interaction, "interaction == null");
+        Objects.requireNonNull(template, "template == null");
+        Objects.requireNonNull(manager, "manager == null");
+
+        if (!(interaction.source() instanceof IModalCallback)) {
+            throw new IllegalArgumentException("interaction object `" + interaction + "` is not ModalCallback");
         }
 
-        ModalTemplate template = registeredModal.getTemplate();
+        this.originModal = null;
+        this.template = template;
 
-        boolean isStatic = onSuccess == null;
-        String id = !isStatic ? UUID.randomUUID().toString() : key.toString();
+        this.parser = LinkedTextParser.builder(manager.getSbds().getMessages(), interaction.user());
 
-        StringParser parser = builder.build();
+        this.interaction = interaction;
+        this.manager = manager;
 
-        Modal modal = template.build(id, parser);
-
-        if (!isStatic) {
-            modalInteractionManager.registerPendingModal(id, onSuccess, onFail, timeout);
-        }
-
-        return callback.replyModal(modal);
-
-    }
-
-    public void queue() {
-        send().queue();
     }
 
     //
-    // TEXTPARSER
+    // BUILDER
     //
 
     public @NotNull LinkedTextParser.Builder parser() {
-        return builder;
+        return parser;
     }
 
     // PLACEHOLDERS //
 
     public @NotNull ModalActionBuilder withPlaceholders(@Nullable Placeholders placeholders) {
-        this.builder.addPlaceholders(placeholders);
+        this.parser.addPlaceholders(placeholders);
         return this;
     }
 
     public @NotNull ModalActionBuilder withPlaceholders(Object... placeholders) {
-        this.builder.addPlaceholders(placeholders);
+        this.parser.addPlaceholders(placeholders);
         return this;
     }
 
     // PARSERS //
 
     public @NotNull ModalActionBuilder withParsers(StringParser... parsers) {
-        this.builder.addParsers(List.of(parsers));
+        this.parser.addParsers(List.of(parsers));
         return this;
     }
 
     public @NotNull ModalActionBuilder withParsers(@NotNull Collection<StringParser> parsers) {
-        this.builder.addParsers(parsers);
+        this.parser.addParsers(parsers);
         return this;
     }
 
-    //
-    // CALLBACK
-    //
+    // CALLBACK //
 
-    public @NotNull ModalActionBuilder onSuccess(@NotNull Consumer<ModalInteractionInfo> consumer) {
+    public @NotNull ModalActionBuilder onSuccess(@Nullable Consumer<ModalInteractionInfo> consumer) {
         this.onSuccess = consumer;
         return this;
     }
@@ -129,6 +131,45 @@ public class ModalActionBuilder {
     public @NotNull ModalActionBuilder withTimeout(int timeout) {
         this.timeout = timeout;
         return this;
+    }
+
+
+
+    public @Nullable Consumer<ModalInteractionInfo> getOnSuccess() {
+        return onSuccess;
+    }
+
+    public @Nullable Runnable onFail() {
+        return onFail;
+    }
+
+    public int getTimeout() {
+        return timeout;
+    }
+
+    public @Nullable IModalInteractionManager.IRegisteredModal getOriginModal() {
+        return originModal;
+    }
+
+    public @NotNull ModalTemplate getTemplate() {
+        return template;
+    }
+
+    //
+    // BUILD
+    //
+
+    public @NotNull ModalCallbackAction send() {
+
+        String id = manager.createPending(this).getId();
+        Modal modal = template.build(id, parser.build());
+
+        return ((IModalCallback) interaction.source()).replyModal(modal);
+
+    }
+
+    public void queue() {
+        send().queue();
     }
 
 

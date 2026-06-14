@@ -6,35 +6,30 @@ import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.ComponentTemplate;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.PostProcess;
-import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.Objects;
 
-@ConfigSerializable
 public class TextInputTemplate implements ComponentTemplate<TextInput> {
 
-    private String name;
+    private final String name;
 
-    private int index = 0;
-
-
-    private int min = 1;
-
-    private int max = -1;
-
-    private boolean required = true;
+    private final int index;
 
 
-    private @Nullable String placeholder = null;
+    private final int min;
 
-    private @Nullable String value = null;
+    private final int max;
 
-    private TextInputStyle style = TextInputStyle.SHORT;
+    private final boolean required;
+
+
+    private final @Nullable String placeholder;
+
+    private final @Nullable String value;
+
+    private final TextInputStyle style;
 
 
     public TextInputTemplate(
@@ -55,6 +50,10 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
         Objects.requireNonNull(name, "name == null");
         Objects.requireNonNull(style, "style == null");
 
+        if (style == TextInputStyle.UNKNOWN) {
+            throw new IllegalArgumentException("Invalid style `" + style + "`");
+        }
+
         this.name = name;
         this.index = index;
 
@@ -68,24 +67,6 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
         this.style = style;
 
     }
-
-    @ApiStatus.Internal
-    public TextInputTemplate() {}
-
-
-    @PostProcess
-    private void validate() throws SerializationException {
-
-        if (name == null) {
-            throw new SerializationException("name == null");
-        }
-
-        if (style == null) {
-            throw new SerializationException("style == null");
-        }
-
-    }
-
 
     @Override
     public int getRow() {
@@ -169,7 +150,7 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
 
         private @Nullable String value = null;
 
-        private TextInputStyle style;
+        private TextInputStyle style = TextInputStyle.SHORT;
 
 
         private Builder(TextInputTemplate template) {

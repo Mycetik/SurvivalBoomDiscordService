@@ -5,30 +5,26 @@ import net.dv8tion.jda.api.components.radiogroup.RadioGroup;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.ComponentTemplate;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
-import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-@ConfigSerializable
 public class RadioSelectTemplate implements ComponentTemplate<RadioGroup> {
 
-    private String name = "null";
+    private final String name;
 
-    private int index = 0;
+    private final int index;
 
-    private boolean required = true;
+    private final boolean required;
 
 
-    private List<Option> options;
+    private final List<Option> options;
 
 
     public RadioSelectTemplate(
@@ -49,24 +45,6 @@ public class RadioSelectTemplate implements ComponentTemplate<RadioGroup> {
         this.required = required;
 
         this.options = new ArrayList<>(options);
-
-    }
-
-    @ApiStatus.Internal
-    public RadioSelectTemplate() {
-
-    }
-
-    @PostProcess
-    private void validate() throws SerializationException {
-
-        if (name == null) {
-            throw new SerializationException("name == null");
-        }
-
-        if (options.isEmpty()) {
-            throw new SerializationException("options are empty");
-        }
 
     }
 

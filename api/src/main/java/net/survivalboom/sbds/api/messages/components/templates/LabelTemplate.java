@@ -5,26 +5,22 @@ import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.label.LabelChildComponent;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.ComponentTemplate;
+import net.survivalboom.sbds.api.messages.components.ModalComponentTemplate;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.PostProcess;
-import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.Objects;
 
-@ConfigSerializable
-public class LabelTemplate implements ComponentTemplate<Label> {
+public class LabelTemplate implements ModalComponentTemplate<Label> {
 
-    private int index = 0;
+    private final int index;
 
-    private String label = "null";
+    private final String label;
 
-    private @Nullable String description = null;
+    private final @Nullable String description;
 
-    private ComponentTemplate<? extends LabelChildComponent> child;
+    private final ComponentTemplate<? extends LabelChildComponent> child;
 
 
     public LabelTemplate(
@@ -51,32 +47,6 @@ public class LabelTemplate implements ComponentTemplate<Label> {
         this.index = index;
 
         this.child = child;
-
-    }
-
-    @ApiStatus.Internal
-    public LabelTemplate() {
-
-    }
-
-    @PostProcess
-    private void validate() throws SerializationException {
-
-        if (child == null) {
-            throw new SerializationException("child == null");
-        }
-
-        if (label == null) {
-            throw new SerializationException("label == null");
-        }
-
-        if (label.isBlank()) {
-            throw new SerializationException("label is blank");
-        }
-
-        if (description != null && description.isBlank()) {
-            throw new SerializationException("description is blank");
-        }
 
     }
 

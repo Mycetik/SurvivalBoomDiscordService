@@ -5,19 +5,16 @@ import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.ComponentTemplate;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 import java.util.Objects;
 
-@ConfigSerializable
 public class TextDisplayTemplate implements ComponentTemplate<TextDisplay> {
 
-    private int index = 0;
+    private final int index;
 
-    private String content = "null";
+    private final String content;
 
 
     public TextDisplayTemplate(
@@ -32,11 +29,6 @@ public class TextDisplayTemplate implements ComponentTemplate<TextDisplay> {
 
         this.content = content;
         this.index = index;
-
-    }
-
-    @ApiStatus.Internal
-    public TextDisplayTemplate() {
 
     }
 

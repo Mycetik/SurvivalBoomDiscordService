@@ -5,23 +5,18 @@ import net.dv8tion.jda.api.components.separator.Separator;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.ComponentTemplate;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.PostProcess;
-import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.Objects;
 
-@ConfigSerializable
 public class SeparatorTemplate implements ComponentTemplate<Separator> {
 
-    private int index = 0;
+    private final int index;
 
-    private boolean divider = false;
+    private final boolean divider;
 
-    private Separator.Spacing type = Separator.Spacing.SMALL;
+    private final Separator.Spacing type;
 
 
     public SeparatorTemplate(
@@ -35,20 +30,6 @@ public class SeparatorTemplate implements ComponentTemplate<Separator> {
         this.index = index;
         this.divider = divider;
         this.type = type;
-
-    }
-
-    @ApiStatus.Internal
-    public SeparatorTemplate() {
-
-    }
-
-    @PostProcess
-    private void validate() throws SerializationException {
-
-        if (type == null) {
-            throw new SerializationException("type == null");
-        }
 
     }
 

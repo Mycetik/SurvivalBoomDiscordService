@@ -44,6 +44,14 @@ sbds:
         - name: "Exception:"
           value: "{exception}"
 
+  interaction-no-response:
+    title: "A Dead Silence Fell"
+    color: ff0000
+    description: |
+      It looks like no response was received for this interaction...
+      Perhaps something went wrong somewhere, or SBDS does not wish to speak with you. 
+      Error details have been sent to the console. Please try again later or contact the developer.
+
   no-permission:
     $embed:
       title: "You don't have a permission!"
