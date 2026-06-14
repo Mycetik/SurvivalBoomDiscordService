@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.api.commands.base;
 
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.SbdsProvider;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
@@ -9,11 +10,12 @@ import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
 public abstract class CommandBase implements CommandExecutor {
+
+    private boolean initialized = false;
 
     public @NotNull Command build() {
 
@@ -91,7 +93,16 @@ public abstract class CommandBase implements CommandExecutor {
 
         out.sort(Comparator.comparing(CommandArgument::index));
 
+        if (!initialized) {
+            init(SbdsProvider.getInstance());
+            this.initialized = true;
+        }
+
         return out;
+
+    }
+
+    protected void init(@NotNull ISBDS sbds) {
 
     }
 
