@@ -10,6 +10,9 @@ import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.modules.IModuleManager;
 import net.survivalboom.sbds.api.monitoring.ISystemMonitor;
 import net.survivalboom.sbds.api.monitoring.cpu.ICpuInfo;
@@ -28,10 +31,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @CommandClass(name = "status", description = "Shows a status of the discord bot.", translationKey = "sbds.command.status", permission = "sbds.commands.status", defaultPermission = true)
-public class StatusCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+public class StatusCommand extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
+
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) throws Throwable {
+        executes0(info);
+    }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
+        executes0(info);
+    }
+
+    private void executes0(@NotNull InteractionHolder info) {
 
         Placeholders placeholders = placeholders(info.sbds());
 

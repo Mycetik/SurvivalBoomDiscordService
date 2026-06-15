@@ -10,6 +10,8 @@ import net.survivalboom.sbds.api.commands.context.ContextCommandExecutor;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.IStringCommandManager;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
@@ -147,9 +149,9 @@ public abstract class ModuleMain {
             registerContextCommand(command);
         }
 
-//        if (executor instanceof StringCommandExecutor) {
-//            registerStringCommand(command);
-//        }
+        if (executor instanceof StringCommandExecutor) {
+            registerStringCommand(command);
+        }
 
     }
 
@@ -165,6 +167,10 @@ public abstract class ModuleMain {
 
         if (command instanceof ContextCommandExecutor) {
             registerContextCommand(command);
+        }
+
+        if (command instanceof StringCommandExecutor) {
+            registerStringCommand(command);
         }
 
     }
@@ -197,6 +203,16 @@ public abstract class ModuleMain {
 
     public @NotNull IContextCommandManager.IRegisteredContextCommand registerContextCommand(@NotNull CommandBase command) {
         return sbds.getContextCommandManager().registerCommand(this, command);
+    }
+
+    // STRING COMMANDS //
+
+    public @NotNull IStringCommandManager.IRegisteredStringCommand registerStringCommand(@NotNull Command command) {
+        return sbds.getStringCommandManager().registerCommand(this, command);
+    }
+
+    public @NotNull IStringCommandManager.IRegisteredStringCommand registerStringCommand(@NotNull CommandBase command) {
+        return sbds.getStringCommandManager().registerCommand(this, command);
     }
 
     // TRANSLATIONS //
