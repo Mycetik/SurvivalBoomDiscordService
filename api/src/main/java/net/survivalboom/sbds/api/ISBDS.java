@@ -3,6 +3,7 @@ package net.survivalboom.sbds.api;
 import net.dv8tion.jda.api.JDA;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.console.IConsoleListener;
+import net.survivalboom.sbds.api.commands.string.IStringCommandManager;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
 import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
@@ -59,6 +60,8 @@ public interface ISBDS {
     @NotNull ISlashCommandManager getSlashCommandManager();
 
     @NotNull IContextCommandManager getContextCommandManager();
+
+    @NotNull IStringCommandManager getStringCommandManager();
 
 
     @NotNull IComponentInteractionManager getComponentInteractionManager();

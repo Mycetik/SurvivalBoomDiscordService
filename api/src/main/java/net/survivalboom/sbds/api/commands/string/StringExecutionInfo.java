@@ -12,7 +12,9 @@ import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
 import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandManager.IRegisteredStringCommand, IStringCommandManager> implements InteractionHolder {
 
@@ -41,8 +43,14 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
         return message;
     }
 
+
     public Message response() {
         return response;
+    }
+
+    @ApiStatus.Internal
+    public void response(@Nullable Message response) {
+        this.response = response;
     }
 
 

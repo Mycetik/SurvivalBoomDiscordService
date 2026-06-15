@@ -151,7 +151,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
                     argTranslated = argument.name();
                 }
 
-                messages.reply(event, "sbds.invalid-argument", event.getUser())
+                messages.reply(event, "sbds.slash-invalid-argument", event.getUser())
                         .withPlaceholders(
                                 "argument", argTranslated,
                                 "message", e.getCause().getMessage().replace("`", "")

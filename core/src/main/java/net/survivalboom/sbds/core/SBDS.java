@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.SbdsProvider;
+import net.survivalboom.sbds.api.commands.string.IStringCommandManager;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
 import net.survivalboom.sbds.api.database.members.IMemberDataManager;
 import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
@@ -16,6 +17,7 @@ import net.survivalboom.sbds.api.utils.placeholders.IPlaceholderRegistry;
 import net.survivalboom.sbds.core.commands.console.ConsoleListener;
 import net.survivalboom.sbds.core.commands.context.ContextCommandManager;
 import net.survivalboom.sbds.core.commands.slash.SlashCommandManager;
+import net.survivalboom.sbds.core.commands.string.StringCommandManager;
 import net.survivalboom.sbds.core.database.Database;
 import net.survivalboom.sbds.core.database.guildconfig.GuildConfigManager;
 import net.survivalboom.sbds.core.database.guilds.GuildDataManager;
@@ -90,6 +92,8 @@ public class SBDS implements ISBDS {
     private final ConsoleListener consoleListener;
 
     private final SlashCommandManager slashCommandManager;
+
+    private final StringCommandManager stringCommandManager;
 
     private final ContextCommandManager contextCommandManager;
 
@@ -180,6 +184,7 @@ public class SBDS implements ISBDS {
         this.commandInteractionManager = new CommandInteractionManager(this);
         this.contextCommandManager = new ContextCommandManager(this);
         this.slashCommandManager = new SlashCommandManager(this);
+        this.stringCommandManager = new StringCommandManager(this);
 
         this.componentInteractionManager = new ComponentInteractionManager(this);
         this.modalInteractionManager = new ModalInteractionManager(this);
@@ -242,6 +247,7 @@ public class SBDS implements ISBDS {
 
         commandInteractionManager.init();
         slashCommandManager.init();
+        stringCommandManager.init();
         contextCommandManager.init();
         consoleListener.init();
 
@@ -292,6 +298,7 @@ public class SBDS implements ISBDS {
 
         consoleListener.shutdown();
         slashCommandManager.shutdown();
+        stringCommandManager.shutdown();
         permissionManager.shutdown();
         contextCommandManager.shutdown();
         commandInteractionManager.shutdown();
@@ -401,6 +408,11 @@ public class SBDS implements ISBDS {
     @Override
     public @NotNull ContextCommandManager getContextCommandManager() {
         return contextCommandManager;
+    }
+
+    @Override
+    public @NotNull StringCommandManager getStringCommandManager() {
+        return stringCommandManager;
     }
 
     @Override

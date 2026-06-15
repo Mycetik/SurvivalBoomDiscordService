@@ -46,7 +46,8 @@ public class MessageActionBuilder extends AbstractMessageBuilder<MessageActionBu
         return this;
     }
 
-    public void queue() {
+
+    public @NotNull RestAction<?> send() {
 
         MessageCreateData messageCreateData = build().build();
         var rest = action.apply(messageCreateData);
@@ -59,8 +60,12 @@ public class MessageActionBuilder extends AbstractMessageBuilder<MessageActionBu
             messageCreateRequest.setTTS(tts).setSuppressedNotifications(silent);
         }
 
-        rest.queue();
+        return rest;
 
+    }
+
+    public void queue() {
+        send().queue();
     }
 
 }

@@ -30,7 +30,7 @@ sbds:
 
   loading:
     $embed:
-      description: "<a:loading:1086970461549756536> Оброблюємо ваш запит, зачекайте..."
+      description: ":pencil: Оброблюємо ваш запит, зачекайте..."
       color: f9f06b
 
   error:
@@ -72,10 +72,60 @@ sbds:
         Спробуйте виконати команду ще раз або зверніться до розробника, якщо ви думаєте що це помилка.
       footer: "Interaction id: {id}"
 
-  invalid-argument:
+  slash-invalid-argument:
     $embed:
       title: "Невірний аргумент!"
       color: ff0000
       description: |
         Невірний аргумент `{argument}`. Схоже, ви десь припустились помилки.
         `{message}`
+
+  string-argument-invalid:
+    $embed:
+      title: "Невірний аргумент!"
+      color: ff0000
+      description: |
+        Ви вказали невірне значення аргументу. 
+        Будь ласка, перевірте вказане вами значення на правильність.
+      fields:
+
+        - name: Аргумент
+          value: "`{argument}`"
+          inline: true
+
+        - name: Вказане значення
+          value: "`{input}`"
+          inline: true
+
+        - name: Помилка
+          value: "`{message}`"
+          inline: true
+
+  string-argument-error:
+    $embed:
+      title: "Помилка аргументу :("
+      color: ff0000
+      description: |
+        Йойки! Схоже, що аргумент несподівано видав помилку при спробі обробити вказане вами значення.
+        Скоріш за все це помилка розробника. Повідомлення про помилку надіслано у консоль. Зв'яжіться із розробником або ж спробуйте трішки пізніше...
+      fields:
+
+        - name: Аргумент
+          value: "`{argument}`"
+          inline: true
+
+        - name: Вказане значення
+          value: "`{input}`"
+          inline: true
+
+        - name: Помилка
+          value: "`{exception}`"
+          inline: true
+
+  string-not-enough-arguments:
+    $embed:
+      title: "Неповна команда"
+      color: ff0000
+      description: |
+        Ця команда вимагає **{expected}** кількість аргументів. Ви вказали **{got}**.
+        Використання: `{usage}`

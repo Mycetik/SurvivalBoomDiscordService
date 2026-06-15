@@ -166,7 +166,7 @@ public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRe
 
     }
 
-    private String createUsage(@NotNull String prefix, @NotNull List<CommandArgument> args, @NotNull Map<CommandArgument, String> parsed) {
+    public static String createUsage(@NotNull String prefix, @NotNull List<CommandArgument> args, @NotNull Map<CommandArgument, String> parsed) {
 
         List<String> strings = new ArrayList<>();
         for (CommandArgument argument : args) {

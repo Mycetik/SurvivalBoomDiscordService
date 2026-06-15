@@ -30,7 +30,7 @@ sbds:
 
   loading:
     $embed:
-      description: "<a:loading:1086970461549756536> Processing your request, please wait..."
+      description: ":pencil: Processing your request, please wait..."
       color: f9f06b
 
   error:
@@ -70,10 +70,60 @@ sbds:
         Try again or contact bot's developer.
       footer: "Interaction id: {id}"
 
-  invalid-argument:
+  slash-invalid-argument:
     $embed:
       title: "Invalid argument!"
       color: ff0000
       description: |
         Invalid argument `{argument}`. Seems like you did something wrong.
         `{message}`
+        
+  string-argument-invalid:
+    $embed:
+      title: "Invalid argument!"
+      color: ff0000
+      description: |
+        You specified an invalid argument value. 
+        Please check the value you entered for correctness.
+      fields:
+
+        - name: Argument
+          value: "`{argument}`"
+          inline: true
+
+        - name: Provided value
+          value: "`{input}`"
+          inline: true
+
+        - name: Error
+          value: "`{message}`"
+          inline: true
+
+  string-argument-error:
+    $embed:
+      title: "Argument error :("
+      color: ff0000
+      description: |
+        Oops! It looks like the argument unexpectedly threw an error while trying to process your value.
+        This is most likely a developer error. The error message has been sent to the console. Please contact the developer or try again a bit later...
+      fields:
+
+        - name: Argument
+          value: "`{argument}`"
+          inline: true
+
+        - name: Provided value
+          value: "`{input}`"
+          inline: true
+
+        - name: Error
+          value: "`{exception}`"
+          inline: true
+
+  string-not-enough-arguments:
+    $embed:
+      title: "Incomplete command"
+      color: ff0000
+      description: |
+        This command requires **{expected}** argument(s). You provided **{got}**.
+        Usage: `{usage}`
