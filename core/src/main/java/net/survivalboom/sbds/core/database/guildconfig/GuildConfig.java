@@ -98,12 +98,12 @@ public class GuildConfig extends Valid implements IGuildConfig {
         return manager.guildDataManager.get(guildId).thenApply(guildData -> {
 
             if (guildData == null) {
-                return Optional.empty();
+                return defaultValue ? Optional.ofNullable((T) field.defaultValue()) : Optional.empty();
             }
 
             ConfigurationNode rootNode = guildData.container().getNode(this.key);
             if (rootNode == null) {
-                return Optional.empty();
+                return defaultValue ? Optional.ofNullable((T) field.defaultValue()) : Optional.empty();
             }
 
             ConfigurationNode node = rootNode.node((Object[]) path0);
