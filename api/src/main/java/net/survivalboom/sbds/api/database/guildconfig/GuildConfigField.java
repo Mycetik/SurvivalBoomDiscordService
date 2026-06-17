@@ -18,7 +18,7 @@ public record GuildConfigField(@NotNull String key, @Nullable String translation
             return true;
         }
 
-        return !value.getClass().isAssignableFrom(type);
+        return type.isAssignableFrom(value.getClass());
 
     }
 

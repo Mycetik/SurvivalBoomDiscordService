@@ -1,11 +1,12 @@
 package net.survivalboom.sbds.api.utils.container;
 
+import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.Valid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurationNode;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
+import org.spongepowered.configurate.jackson.JacksonConfigurationLoader;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +14,7 @@ import java.util.Objects;
 
 public class NamespacedDataContainer extends Valid implements INamespacedDataContainer {
 
-    private final YamlConfigurationLoader loader = YamlConfigurationLoader.builder().build();
+    private final JacksonConfigurationLoader loader = IDatabase.createConfigurateLoader().build();
 
     private final Map<NamespacedKey, ConfigurationNode> map = new HashMap<>();
 

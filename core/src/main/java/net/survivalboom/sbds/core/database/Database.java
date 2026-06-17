@@ -2,17 +2,17 @@ package net.survivalboom.sbds.core.database;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import net.dv8tion.jda.api.entities.channel.Channel;
 import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
+import net.survivalboom.sbds.api.database.converters.ChannelConverter;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.core.database.guilds.GuildDataRecord;
-import net.survivalboom.sbds.core.database.users.UserDataRecord;
 import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
 import net.survivalboom.sbds.core.utils.InternalPushQueue;
 import org.hibernate.Session;
@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.serialize.TypeSerializer;
 
 import java.io.File;
 import java.util.*;
@@ -40,7 +41,9 @@ public class Database extends Manager implements IDatabase {
     private @Nullable SessionFactory sessionFactory = null;
 
 
-    private final InternalRegistrationManager<IRepository<?>> registry;
+    private final InternalRegistrationManager<IRepository<?>> repositoriesRegistry;
+
+    private final InternalRegistrationManager<IRegisteredTypeSerializer<?>> typeSerializersRegistry;
 
     private final DatabaseQueue queue;
 
@@ -55,7 +58,8 @@ public class Database extends Manager implements IDatabase {
 
     public Database(@NotNull SBDS sbds) {
         this.sbds = sbds;
-        this.registry = new InternalRegistrationManager<>(this, "database", null, sbds.getRegistrationRegistry());
+        this.repositoriesRegistry = new InternalRegistrationManager<>(this, "repository", null, sbds.getRegistrationRegistry());
+        this.typeSerializersRegistry = new InternalRegistrationManager<>(this, "serializers", null, sbds.getRegistrationRegistry());
         this.queue = new DatabaseQueue(this, sbds.getScheduler());
         this.rebuildQueue = new InternalPushQueue<>(this::rebuildQueue, "DatabaseRebuild", 500, sbds);
     }
@@ -73,8 +77,11 @@ public class Database extends Manager implements IDatabase {
 
         reload0(null, true, false);
 
-        registry.init();
+        typeSerializersRegistry.init();
+        repositoriesRegistry.init();
         rebuildQueue.init();
+
+        registerSerializer0(null, Channel.class, new ChannelConverter());
 
         queue.init();
 
@@ -85,7 +92,8 @@ public class Database extends Manager implements IDatabase {
 
         log.info("Shutting down database...");
 
-        registry.shutdown();
+        repositoriesRegistry.shutdown();
+        typeSerializersRegistry.shutdown();
 
         rebuildQueue.shutdown();
         queue.shutdown();
@@ -275,7 +283,7 @@ public class Database extends Manager implements IDatabase {
         }
 
         String tableName = table.name();
-        boolean tableExists = registry.getRegistrations().stream()
+        boolean tableExists = repositoriesRegistry.getRegistrations().stream()
                 .map(Registration::object)
                 .map(IRepository::getRecordClass)
                 .anyMatch(cls -> cls.getAnnotation(Table.class).name().equals(tableName));
@@ -289,7 +297,7 @@ public class Database extends Manager implements IDatabase {
         }
 
         Repository<T> repository = new Repository<>(clazz, this);
-        repository.registration = (Registration<IRepository<T>>) (Registration<?>) registry.register0(module, name, repository);
+        repository.registration = (Registration<IRepository<T>>) (Registration<?>) repositoriesRegistry.register0(module, name, repository);
 
         rebuildQueue.append(repository);
 
@@ -305,7 +313,7 @@ public class Database extends Manager implements IDatabase {
 
         checkValid();
 
-        var reg = registry.unregister(repository);
+        var reg = repositoriesRegistry.unregister(repository);
 
         return reg != null;
 
@@ -318,7 +326,7 @@ public class Database extends Manager implements IDatabase {
 
         checkValid();
 
-        var reg = registry.getRegistration(key);
+        var reg = repositoriesRegistry.getRegistration(key);
         if (reg == null) {
             return null;
         }
@@ -329,7 +337,7 @@ public class Database extends Manager implements IDatabase {
 
     @Override
     public @NotNull List<IRepository<?>> getRepositories() {
-        return registry.getRegisteredObjects();
+        return repositoriesRegistry.getRegisteredObjects();
     }
 
     //
@@ -387,6 +395,119 @@ public class Database extends Manager implements IDatabase {
     }
 
     //
+    // TYPE SERIALIZERS
+    //
+
+    // REG //
+
+    @Override
+    public @NotNull <T> IRegisteredTypeSerializer<T> registerSerializer(
+            @NotNull IModule module,
+            @NotNull Class<T> clazz,
+            @NotNull TypeSerializer<T> serializer
+    ) {
+        Objects.requireNonNull(module, "module == null");
+        return registerSerializer0(module, clazz, serializer);
+    }
+
+    @SuppressWarnings("unchecked") // <-- Я сказав тобі, сходи нахуй!
+    public @NotNull <T> IRegisteredTypeSerializer<T> registerSerializer0(
+            @Nullable IModule module,
+            @NotNull Class<T> clazz,
+            @NotNull TypeSerializer<T> serializer
+    ) {
+
+        Objects.requireNonNull(clazz, "clazz == null");
+        Objects.requireNonNull(serializer, "serializer == null");
+        checkValid();
+
+        IRegisteredTypeSerializer<?> reg = getRegisteredSerializers().stream()
+                .filter(ser -> ser.getClazz().equals(clazz))
+                .findAny()
+                .orElse(null);
+        if (reg != null) {
+            throw new IllegalStateException("TypeSerializer for `" + clazz + "` already exists: `" + reg.getRegistration().key() + "`");
+        }
+
+        RegisteredTypeSerializer<T> registeredTypeSerializer = new RegisteredTypeSerializer<>(clazz, serializer);
+        String name = clazz.getSimpleName().toLowerCase();
+
+        registeredTypeSerializer.registration = (Registration<IRegisteredTypeSerializer<T>>) (Registration<?>) typeSerializersRegistry.register0(module, name, registeredTypeSerializer);
+
+        return registeredTypeSerializer;
+
+    }
+
+    // UNREG //
+
+    @Override
+    public boolean unregisterSerializer(@NotNull IRegisteredTypeSerializer<?> registration) {
+        checkValid();
+        return typeSerializersRegistry.unregister(registration) != null;
+    }
+
+    @Override
+    public @Nullable IRegisteredTypeSerializer<?> unregisterSerializer(@NotNull NamespacedKey key) {
+
+        var reg = getSerializer(key);
+        if (reg == null) {
+            return null;
+        }
+
+        unregisterSerializer(reg);
+        return reg;
+
+    }
+
+    // GET //
+
+    @Override
+    public @Nullable IRegisteredTypeSerializer<?> getSerializer(@NotNull NamespacedKey key) {
+        checkValid();
+        return typeSerializersRegistry.getRegistrationAsObject(key);
+    }
+
+    @Override
+    public @NotNull List<IRegisteredTypeSerializer<?>> getRegisteredSerializers() {
+        checkValid();
+        return typeSerializersRegistry.getRegisteredObjects();
+    }
+
+    // RECORD //
+
+    public static class RegisteredTypeSerializer<T> implements IRegisteredTypeSerializer<T> {
+
+        private final TypeSerializer<T> serializer;
+
+        private final Class<T> clazz;
+
+        private Registration<IRegisteredTypeSerializer<T>> registration;
+
+
+        public RegisteredTypeSerializer(@NotNull Class<T> clazz, @NotNull TypeSerializer<T> serializer) {
+            this.serializer = serializer;
+            this.clazz = clazz;
+        }
+
+
+        @Override
+        public @NotNull Registration<IRegisteredTypeSerializer<T>> getRegistration() {
+            return registration;
+        }
+
+        @Override
+        public @NotNull TypeSerializer<T> getSerializer() {
+            return serializer;
+        }
+
+        @Override
+        public @NotNull Class<T> getClazz() {
+            return clazz;
+        }
+    }
+
+
+    //
     // UTILS
     //
 
@@ -394,7 +515,7 @@ public class Database extends Manager implements IDatabase {
 
         Objects.requireNonNull(record, "record == null");
 
-        if (registry.getRegistrations().stream().noneMatch(reg -> reg.object().getRecordClass().equals(record.getClass()))) {
+        if (repositoriesRegistry.getRegistrations().stream().noneMatch(reg -> reg.object().getRecordClass().equals(record.getClass()))) {
             throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");
         }
 
@@ -402,7 +523,7 @@ public class Database extends Manager implements IDatabase {
 
     private void checkRepository(@NotNull Repository<?> repository) {
 
-        if (registry.getObjectRegistration(repository) == null) {
+        if (repositoriesRegistry.getObjectRegistration(repository) == null) {
             throw new IllegalArgumentException("Repository object is not registered in the Database. Looks like this repository object is no longer valid.");
         }
 

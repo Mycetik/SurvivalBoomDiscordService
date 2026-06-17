@@ -53,14 +53,14 @@ public class ConfigSetCommand extends CommandBase implements SlashCommandExecuto
             value = null;
         }
 
-        if (field.isValueAllowed(value)) {
+        if (!field.isValueAllowed(value)) {
             info.reply("guildconfig.command.config.set.invalid-value")
                     .withPlaceholders("value", value, "option", template.getKey() + ":" + key)
                     .queue();
             return;
         }
 
-        config.set(key, value);
+        config.set(key, value).join();
 
         info.reply("guildconfig.command.config.set.success")
                 .withPlaceholders(

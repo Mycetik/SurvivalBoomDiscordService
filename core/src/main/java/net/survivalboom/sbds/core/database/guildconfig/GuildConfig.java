@@ -142,7 +142,7 @@ public class GuildConfig extends Valid implements IGuildConfig {
 
         Map<GuildConfigField, CompletableFuture<Optional<Object>>> futures = new HashMap<>();
         for (var field : template.getFields().values()) {
-            var future = get(field.key(), Object.class, defaultValue);
+            var future = get(field, defaultValue);
             futures.put(field, future);
         }
 
@@ -163,8 +163,13 @@ public class GuildConfig extends Valid implements IGuildConfig {
 
     }
 
+    @SuppressWarnings("unchecked") // Знову мучаємось із прирученням Generic Types. Гр-р-р-р! Злий динозаврик позаду тебе!
+    private <T> @NotNull CompletableFuture<Optional<T>> get(@NotNull GuildConfigField field, boolean def) {
+        return get(field.key(), (Class<T>) field.type(), def);
+    }
+
     @Override
-    public void set(@NotNull String key, @Nullable Object obj) {
+    public @NotNull CompletableFuture<Void> set(@NotNull String key, @Nullable Object obj) {
 
         Objects.requireNonNull(key, "key == null");
         checkValid();
@@ -174,13 +179,13 @@ public class GuildConfig extends Valid implements IGuildConfig {
             throw new IllegalArgumentException("No config value by path `" + key + "` exists");
         }
 
-        if (obj != null && !obj.getClass().isAssignableFrom(field.type())) {
+        if (!field.isValueAllowed(obj)) {
             throw new IllegalArgumentException("Cannot cast `" + obj.getClass() + "` to field `" + field.type() + "`");
         }
 
         String[] path0 = CommonUtils.splitString(key, "\\.");
 
-        manager.guildDataManager.obtain(guildId).thenAccept(guildData -> {
+        return manager.guildDataManager.obtain(guildId).thenAccept(guildData -> {
 
             ConfigurationNode rootNode = guildData.container().obtainNode(this.key);
             ConfigurationNode node = rootNode.node((Object[]) path0);

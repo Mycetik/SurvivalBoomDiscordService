@@ -6,7 +6,6 @@ import net.survivalboom.sbds.api.utils.valid.IValid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +49,6 @@ public interface IGuildConfig extends IValid {
         return getValues(true);
     }
 
-    void set(@NotNull String key, @Nullable Object obj);
+    @NotNull CompletableFuture<Void> set(@NotNull String key, @Nullable Object obj);
 
 }
