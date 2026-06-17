@@ -1,8 +1,10 @@
 package net.survivalboom.sbds.modules.test;
 
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.modules.test.commands.*;
 import net.survivalboom.sbds.modules.test.events.EventListenerTest;
+import net.survivalboom.sbds.modules.test.listeners.MessageReplier;
 
 public class TestModule extends ModuleMain {
 
@@ -19,6 +21,11 @@ public class TestModule extends ModuleMain {
         registerCommand(new TestUserContext());
 
         registerCommand(new TestModalCommand());
+
+        createGuildConfig(builder -> {
+            builder.addField("replier", "testmodule.config.replier", TextChannel.class, null);
+        });
+        registerEvents(new MessageReplier(this));
 
         registerEvents(new EventListenerTest(this));
 

@@ -3,6 +3,9 @@ $name: sbds:ukrainian
 
 testmodule:
 
+  config:
+    replier: "Відповідач"
+
   event:
 
     on_message: "ХРЮ-ХРЮ-ХРЮ! Я СВІНТУС! :pig:"
