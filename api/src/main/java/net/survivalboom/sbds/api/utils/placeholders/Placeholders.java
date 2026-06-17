@@ -211,7 +211,12 @@ public class Placeholders implements StringParser {
             Object object = entry.getValue();
 
             if (key.isBlank()) {
-                out.put(prefix.substring(0, prefix.length() - 1).replace(".", ""), String.valueOf(object));
+                out.put(prefix.substring(0, prefix.length() - 1), String.valueOf(object));
+                continue;
+            }
+
+            if (object instanceof String string) {
+                out.put(prefix + key, string);
                 continue;
             }
 
