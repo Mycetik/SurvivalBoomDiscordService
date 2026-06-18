@@ -2,34 +2,54 @@ package net.survivalboom.sbds.api.service;
 
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.modules.ModuleMain;
+import net.survivalboom.sbds.api.registrations.Registration;
+import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.utils.valid.IManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public interface IServiceProvider {
+public interface IServiceProvider extends IManager {
 
-    @NotNull IServiceProvider.RegisteredService registerService(@NotNull IModule module, @NotNull Object service);
+    // REG //
 
-    default @NotNull IServiceProvider.RegisteredService registerService(@NotNull ModuleMain main, @NotNull Object service) {
-        return registerService(main.getModule(), service);
+    <T> @NotNull IRegisteredService<?> registerService(@NotNull IModule module, @NotNull Class<T> clazz, @NotNull T service);
+
+    default <T> @NotNull IRegisteredService<?> registerService(@NotNull ModuleMain main, @NotNull Class<T> clazz, @NotNull T service) {
+        return registerService(main.getModule(), clazz, service);
     }
 
-    void unregisterService(@NotNull IModule module, @NotNull Class<?> clazz);
+    // UNREG //
 
-    default void unregisterService(@NotNull ModuleMain main, @NotNull Class<?> clazz) {
-        unregisterService(main.getModule(), clazz);
-    }
+    boolean unregisterService(@NotNull IRegisteredService<?> reg);
 
+    // GET //
 
     @Nullable <T> T getService(@NotNull Class<T> clazz);
 
-    @Nullable RegisteredService getRegisteredService(@NotNull Class<?> clazz);
+    <T> @Nullable IRegisteredService<T> getRegisteredService(@NotNull Class<T> clazz);
 
+    @Nullable IRegisteredService<?> getRegisteredService(@NotNull NamespacedKey key);
 
-    @NotNull List<RegisteredService> getRegisteredServices();
+    default @Nullable IRegisteredService<?> getRegisteredService(@NotNull String key) {
+        return getRegisteredService(NamespacedKey.fromString(key));
+    }
 
+    @NotNull List<IRegisteredService<?>> getRegistry();
 
-    record RegisteredService(@NotNull IModule module, @NotNull Class<?> clazz, @NotNull Object service) {}
+    // RECORD //
+
+    interface IRegisteredService<T> {
+
+        @NotNull IServiceProvider getManager();
+
+        @NotNull Registration<IRegisteredService<T>> getRegistration();
+
+        @NotNull Class<T> getClazz();
+
+        @NotNull T getObject();
+
+    }
 
 }
