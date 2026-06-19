@@ -1,12 +1,14 @@
-package net.survivalboom.sbds.api.interaction;
+package net.survivalboom.sbds.api.interaction.component;
 
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.interaction.InteractionExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import org.jetbrains.annotations.NotNull;
 
 public class ComponentInteractionInfo<
         event extends GenericComponentInteractionCreateEvent,
-        reg extends IComponentInteractionManager.IRegisteredComponent<event, reg>
+        reg extends IComponentInteractionManager.IRegisteredComponent
 > extends InteractionExecutionInfo<event> implements InteractionHolder {
 
     private final reg reg;

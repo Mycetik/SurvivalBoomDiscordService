@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.api.interaction;
+package net.survivalboom.sbds.api.interaction.component;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
@@ -8,10 +8,12 @@ import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.IManager;
+import net.survivalboom.sbds.api.utils.valid.IValid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public interface IComponentInteractionManager extends IManager {
@@ -20,26 +22,9 @@ public interface IComponentInteractionManager extends IManager {
     // PENDING INTERACTIONS
     //
 
-    // REG //
+    @NotNull IPendingInteraction createPending(@NotNull ComponentInteractionRequest builder);
 
-    <event extends GenericComponentInteractionCreateEvent> @NotNull IPendingInteraction<event> registerPendingInteraction(
-            @NotNull String id,
-            @Nullable User user,
-            @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> successCallback,
-            @Nullable Runnable failureCallback,
-            int timeout
-    );
-
-    // UNREG //
-
-    @Nullable IPendingInteraction<?> forgetPendingInteraction(@NotNull String id);
-
-    // GETTERS //
-
-    @Nullable IPendingInteraction<?> getPendingUInteraction(@Nullable String id);
-
-    @NotNull List<IPendingInteraction<?>> getPendingInteractions();
+    @NotNull List<IPendingInteraction> getPendingInteractions();
 
     //
     // STATIC COMPONENTS
@@ -50,9 +35,9 @@ public interface IComponentInteractionManager extends IManager {
     <event extends GenericComponentInteractionCreateEvent> @NotNull IRegisteredListener<event> registerListener(
             @NotNull IModule module,
             @NotNull String name,
+            @Nullable Permission permission,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor,
-            @Nullable Permission permission
+            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
     );
 
     default <event extends GenericComponentInteractionCreateEvent> @NotNull IRegisteredListener<event> registerListener(
@@ -61,7 +46,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull Class<event> clazz,
             @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
     ) {
-        return registerListener(module, name, clazz, executor, null);
+        return registerListener(module, name, null, clazz, executor);
     }
 
     default <event extends GenericComponentInteractionCreateEvent> @NotNull IRegisteredListener<event> registerListener(
@@ -71,7 +56,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor,
             @Nullable Permission permission
     ) {
-        return registerListener(module.getModule(), name, clazz, executor, permission);
+        return registerListener(module.getModule(), name, permission, clazz, executor);
     }
 
     default <event extends GenericComponentInteractionCreateEvent> @NotNull IRegisteredListener<event> registerListener(
@@ -80,7 +65,7 @@ public interface IComponentInteractionManager extends IManager {
             @NotNull Class<event> clazz,
             @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
     ) {
-        return registerListener(module.getModule(), name, clazz, executor, null);
+        return registerListener(module.getModule(), name, null, clazz, executor);
     }
 
     // UNREG //
@@ -105,17 +90,15 @@ public interface IComponentInteractionManager extends IManager {
     // Злий динозаврик позаду тебе! Він проковтне тебе і ти більше не будеш писати код! Бу-га-га-га!
     //
 
-    interface IRegisteredComponent<event extends GenericComponentInteractionCreateEvent, reg extends IRegisteredComponent<event, reg>> {
+    interface IRegisteredComponent {
 
         @NotNull IComponentInteractionManager getManager();
 
         boolean isEphemeral();
 
-        @NotNull Consumer<ComponentInteractionInfo<event, reg>> getCallback();
-
     }
 
-    interface IRegisteredListener<event extends GenericComponentInteractionCreateEvent> extends IRegisteredComponent<event, IRegisteredListener<event>> {
+    interface IRegisteredListener<event extends GenericComponentInteractionCreateEvent> extends IRegisteredComponent {
 
         @NotNull Registration<IRegisteredListener<event>> getRegistration();
 
@@ -128,13 +111,9 @@ public interface IComponentInteractionManager extends IManager {
 
     }
 
-    interface IPendingInteraction<event extends GenericComponentInteractionCreateEvent> extends IRegisteredComponent<event, IPendingInteraction<event>> {
-
-        @NotNull String getId();
+    interface IPendingInteraction extends IRegisteredComponent, IValid {
 
         @Nullable User getUser();
-
-        @Nullable Runnable getFailureCallback();
 
 
         long getTimestamp();
@@ -142,7 +121,38 @@ public interface IComponentInteractionManager extends IManager {
         int getTimeout();
 
 
-        @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> getCallback();
+        @Nullable Runnable getFailureCallback();
+
+        @NotNull Map<String, IPendingInteractionAction> getActions();
+
+        @NotNull Map<String, String> getGeneratedIds();
+
+        default @Nullable IPendingInteractionAction getActionByGeneratedId(@NotNull String id) {
+
+            String name = getGeneratedIds().entrySet().stream()
+                    .filter(entry -> entry.getValue().equals(id))
+                    .map(Map.Entry::getKey)
+                    .findAny()
+                    .orElse(null);
+
+            if (name == null) {
+                return null;
+            }
+
+            return getActions().get(name);
+
+        }
+
+
+    }
+
+    interface IPendingInteractionAction {
+
+        @NotNull ComponentInteractionRequest.Action<?> getAction();
+
+        @NotNull IPendingInteraction getPending();
+
+        boolean isExpired();
 
     }
 

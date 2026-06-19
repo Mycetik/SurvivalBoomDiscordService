@@ -162,7 +162,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
 
             }
 
-            SlashExecutionInfo info = new SlashExecutionInfo(event, registeredCommand, command, commandName, arguments);
+            SlashExecutionInfo info = new SlashExecutionInfo(event, registeredCommand, command, commandName, arguments, command.isEphemeral());
 
             if (!permissionCheck(info)) {
                 return;

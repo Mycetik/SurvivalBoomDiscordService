@@ -2,6 +2,7 @@ package net.survivalboom.sbds.api.commands.slash;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
@@ -18,20 +19,29 @@ public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManage
 
     protected final SlashCommandInteraction interaction;
 
+    protected final boolean ephemeral;
+
     public SlashExecutionInfo(
             @NotNull SlashCommandInteraction interaction,
             @NotNull ISlashCommandManager.IRegisteredSlashCommand rootCommand,
             @NotNull Command currentCommand,
             @NotNull String alias,
-            @NotNull TypeMap arguments
+            @NotNull TypeMap arguments,
+            boolean ephemeral
     ) {
         super(rootCommand, currentCommand, alias, arguments);
         this.interaction = interaction;
+        this.ephemeral = ephemeral;
     }
 
     @Override
     public @NotNull Object source() {
         return interaction;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return ephemeral;
     }
 
     public @NotNull SlashCommandInteraction interaction() {
@@ -127,6 +137,25 @@ public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManage
         else {
             return sendRaw(data);
         }
+
+    }
+
+    // COMPONENT //
+
+    @Override
+    public void invalidateInputs() {
+
+        if (isEphemeral()) {
+            return;
+        }
+
+        Message message = interaction.getHook().retrieveOriginal().complete();
+        if (message == null) {
+            throw new IllegalStateException("No message sent yet");
+        }
+
+        invalidateInputs0(message);
+
 
     }
 

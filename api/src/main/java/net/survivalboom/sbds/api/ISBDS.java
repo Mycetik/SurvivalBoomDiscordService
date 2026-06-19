@@ -10,7 +10,7 @@ import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
 import net.survivalboom.sbds.api.database.members.IMemberDataManager;
 import net.survivalboom.sbds.api.database.users.IUserDataManager;
 import net.survivalboom.sbds.api.events.IEventManager;
-import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
+import net.survivalboom.sbds.api.interaction.component.IComponentInteractionManager;
 import net.survivalboom.sbds.api.commands.context.IContextCommandManager;
 import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
 import net.survivalboom.sbds.api.libraries.ILibrariesManager;

@@ -1,20 +1,29 @@
 package net.survivalboom.sbds.api.interaction;
 
+import net.dv8tion.jda.api.components.Component;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.MessageTopLevelComponentUnion;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.interactions.callbacks.IDeferrableCallback;
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
 import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
 import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
-import net.survivalboom.sbds.api.utils.NamespacedKey;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -29,6 +38,8 @@ public interface InteractionHolder {
 
 
     @NotNull Object source();
+
+    boolean isEphemeral();
 
 
     Guild guild();
@@ -130,6 +141,42 @@ public interface InteractionHolder {
         }
 
         return sbds().getModalInteractionManager().replyModal(this, builder);
+
+    }
+
+    // COMPONENTS //
+
+    default void invalidateInputs() {
+        throw new IllegalStateException("No invalidateButtons() method applicable to `" + this + "`");
+    }
+
+    @ApiStatus.Internal
+    default void invalidateInputs0(@NotNull Message message) {
+
+        MessageCreateBuilder builder = MessageCreateBuilder.fromMessage(message);
+        if (builder.isUsingComponentsV2()) {
+            return;
+        }
+
+        List<MessageTopLevelComponentUnion> components = builder.getComponents();
+        List<MessageTopLevelComponent> components0 = new ArrayList<>();
+
+        for (MessageTopLevelComponentUnion component : components) {
+
+            if (component.getType() != Component.Type.ACTION_ROW) {
+                components0.add(component);
+                continue;
+            }
+
+            ActionRow actionRow = component.asActionRow();
+            ActionRow newRow = actionRow.withDisabled(true);
+            components0.add(newRow);
+
+        }
+
+        builder.setComponents(components0);
+
+        editRaw(builder.build()).queue();
 
     }
 

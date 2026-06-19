@@ -1,13 +1,9 @@
 package net.survivalboom.sbds.api.messages.builder;
 
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
-import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
-import net.survivalboom.sbds.api.interaction.ComponentInteractionInfo;
-import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
+import net.survivalboom.sbds.api.interaction.component.ComponentInteractionRequest;
+import net.survivalboom.sbds.api.interaction.component.IComponentInteractionManager;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.components.MessageInteractableComponentTemplate;
@@ -25,7 +21,9 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
 
     protected final LinkedTextParser.Builder builder;
 
-    protected final List<ComponentCallback<?>> callbacks = new ArrayList<>();
+    protected ComponentInteractionRequest components = null;
+
+    protected Map<String, String> generatedComponentsIds = null;
 
     protected final String messageKey;
 
@@ -76,49 +74,19 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
     }
 
     //
-    // CALLBACKS
+    // COMPONENTS
     //
 
-    // BUTTONS //
-
-    public @NotNull it buttonCallback(
-            @NotNull String name,
-            boolean userSpecific,
-            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent, IComponentInteractionManager.IPendingInteraction<ButtonInteractionEvent>>> onSuccess,
-            @Nullable Runnable onFail,
-            int timeout
-    ) {
-        var callback = new ComponentCallback<>(name, userSpecific, ButtonInteractionEvent.class, onSuccess, onFail, timeout);
-        callbacks.add(callback);
+    public @NotNull it setComponents(@Nullable ComponentInteractionRequest request) {
+        this.components = request;
         return it();
     }
 
-    // ENTITY SELECT //
-
-    public @NotNull it entityDropdownCallback(
-            @NotNull String name,
-            boolean userSpecific,
-            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent, IComponentInteractionManager.IPendingInteraction<EntitySelectInteractionEvent>>> onSuccess,
-            @Nullable Runnable onFail,
-            int timeout
-    ) {
-        var callback = new ComponentCallback<>(name, userSpecific, EntitySelectInteractionEvent.class, onSuccess, onFail, timeout);
-        callbacks.add(callback);
-        return it();
-    }
-
-    // STRING SELECT //
-
-    public @NotNull it stringDropdownCallback(
-            @NotNull String name,
-            boolean userSpecific,
-            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent, IComponentInteractionManager.IPendingInteraction<StringSelectInteractionEvent>>> onSuccess,
-            @Nullable Runnable onFail,
-            int timeout
-    ) {
-        var callback = new ComponentCallback<>(name, userSpecific, StringSelectInteractionEvent.class, onSuccess, onFail, timeout);
-        callbacks.add(callback);
-        return it();
+    public @NotNull it withComponents(@NotNull Consumer<ComponentInteractionRequest.Builder> builder) {
+        ComponentInteractionRequest.Builder b = ComponentInteractionRequest.builder();
+        builder.accept(b);
+        b.setTarget(this.builder.getTarget());
+        return setComponents(b.build());
     }
 
     //
@@ -127,11 +95,23 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
 
     public @NotNull MessageCreateBuilder build() {
 
-        StringParser parser = builder.build();
+        LinkedTextParser parser = builder.build();
+
+        IMessages messages = parser.getMessages();
 
         IMessageTemplate template = builder.getMessages().getMessage(messageKey, builder.getTarget(), true);
         if (template == null) {
             return new MessageCreateBuilder().setContent(messageKey);
+        }
+
+        if (components != null) {
+            IComponentInteractionManager manager = messages.getSbds().getComponentInteractionManager();
+            IComponentInteractionManager.IPendingInteraction pending = manager.createPending(components);
+            generatedComponentsIds = pending.getGeneratedIds();
+        }
+
+        else {
+            generatedComponentsIds = null;
         }
 
         return template.createMessageData(parser, this);
@@ -141,38 +121,17 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
     @Override
     public @NotNull String link(@NotNull MessageInteractableComponentTemplate<?> component) {
 
-        String id = UUID.randomUUID().toString();
-        if (component.isStatic()) {
-            throw new RuntimeException("tried to link static component");
+        if (generatedComponentsIds == null) {
+            throw new IllegalStateException("Component ids were not generated yet!");
         }
 
-        callbacks.stream()
-                .filter(c -> c.name.equals(component.getName()))
-                .findAny()
-                .ifPresent(callback -> registerComponentCallback(id, callback));
+        String componentName = component.getName();
+        String id = generatedComponentsIds.get(componentName);
+        if (id == null) {
+            throw new IllegalArgumentException("There is no generated id for component with name `" + componentName + "`. Generated: " + generatedComponentsIds);
+        }
 
         return id;
-
-    }
-
-    private <T extends GenericComponentInteractionCreateEvent> void registerComponentCallback(@NotNull String id, @NotNull ComponentCallback<T> callback) {
-
-        boolean userSpecific = callback.userSpecific;
-        Class<T> clazz = callback.clazz;
-
-        Consumer<ComponentInteractionInfo<T, IComponentInteractionManager.IPendingInteraction<T>>> onSuccess = callback.onSuccess;
-        Runnable onFail = callback.onFail;
-
-        int timeout = callback.timeout;
-
-        builder.getMessages().getSbds().getComponentInteractionManager().registerPendingInteraction(
-                id,
-                userSpecific ? builder.getTarget() : null,
-                clazz,
-                onSuccess,
-                onFail,
-                timeout
-        );
 
     }
 
@@ -181,20 +140,5 @@ public abstract class AbstractMessageBuilder<it extends AbstractMessageBuilder<i
     private @NotNull it it() {
         return (it) this;
     }
-
-
-    protected record ComponentCallback<event extends GenericComponentInteractionCreateEvent>(
-
-            @NotNull String name,
-
-            boolean userSpecific,
-            Class<event> clazz,
-
-            @NotNull Consumer<ComponentInteractionInfo<event, IComponentInteractionManager.IPendingInteraction<event>>> onSuccess,
-            @Nullable Runnable onFail,
-
-            int timeout
-
-    ) {}
 
 }

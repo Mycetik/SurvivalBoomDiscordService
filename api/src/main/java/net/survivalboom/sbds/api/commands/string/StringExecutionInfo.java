@@ -39,6 +39,11 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
         return message;
     }
 
+    @Override
+    public boolean isEphemeral() {
+        return false;
+    }
+
     public @NotNull Message message() {
         return message;
     }
@@ -139,4 +144,17 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
 
     }
 
+    // COMPONENT //
+
+
+    @Override
+    public void invalidateInputs() {
+
+        if (response == null) {
+            throw new IllegalStateException("No message sent yet");
+        }
+
+        invalidateInputs0(message);
+
+    }
 }

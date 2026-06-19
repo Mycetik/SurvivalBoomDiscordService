@@ -1,20 +1,23 @@
-package net.survivalboom.sbds.core.interaction;
+package net.survivalboom.sbds.core.interaction.component;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.EventListener;
-import net.survivalboom.sbds.api.interaction.ComponentInteractionInfo;
-import net.survivalboom.sbds.api.interaction.IComponentInteractionManager;
+import net.survivalboom.sbds.api.interaction.component.ComponentInteractionInfo;
+import net.survivalboom.sbds.api.interaction.component.ComponentInteractionRequest;
+import net.survivalboom.sbds.api.interaction.component.IComponentInteractionManager;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.Manager;
+import net.survivalboom.sbds.api.utils.valid.Valid;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
+import org.checkerframework.checker.signature.qual.BinaryNameOrPrimitiveType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -22,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ComponentInteractionManager extends Manager implements IComponentInteractionManager, EventListener {
 
@@ -32,7 +36,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
     private final InternalRegistrationManager<IRegisteredListener<?>> registry;
 
-    private final Map<String, IPendingInteraction<?>> pendingInteractions = new HashMap<>();
+    private final Set<IPendingInteraction> pendingInteractions = new HashSet<>();
 
     private ISchedulerTask task;
 
@@ -86,7 +90,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
             log.error("An exception was thrown while tried to process interaction `{}`.", id, t);
 
-            sbds.getMessages().reply(event, "sbds.invalid-interaction", event.getUser())
+            sbds.getMessages().reply(event, "sbds.error", event.getUser())
                     .withPlaceholders("exception", t)
                     .setEphemeral(true)
                     .queue();
@@ -145,7 +149,14 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
     private void processPending(@NotNull GenericComponentInteractionCreateEvent event) {
 
         String id = event.getComponentId();
-        IPendingInteraction<?> pending = pendingInteractions.get(id);
+
+        IPendingInteractionAction pendingAction = pendingInteractions.stream()
+                .map(p -> p.getActionByGeneratedId(id))
+                .filter(Objects::nonNull)
+                .findAny()
+                .orElse(null);
+
+        IPendingInteraction pending = pendingAction != null ? pendingAction.getPending() : null;
 
         User user = event.getUser();
 
@@ -157,39 +168,58 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
                     .queue();
 
             return;
+
         }
 
-        pendingInteractions.remove(id);
+        Objects.requireNonNull(pendingAction, "actionAction == null?");
 
-        callExecutor(pending, event);
+        if (pendingAction.isExpired()) {
+
+            sbds.getMessages().reply(event, "sbds.invalid-interaction", user)
+                    .withPlaceholders("id", id)
+                    .setEphemeral(true)
+                    .queue();
+
+            return;
+
+        }
+
+        ComponentInteractionRequest.Action<?> action = pendingAction.getAction();
+        if (action.expire() == ComponentInteractionRequest.ExpireMode.ALL) {
+            pendingInteractions.remove(pending);
+        }
+
+        else if (action.expire() == ComponentInteractionRequest.ExpireMode.SINGLE) {
+            ((PendingInteractionAction) pendingAction).setExpired(true);
+        }
+
+        callExecutor(pending, action, event);
 
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends GenericComponentInteractionCreateEvent> void callExecutor(IPendingInteraction<?> pending, GenericComponentInteractionCreateEvent event) {
-        IPendingInteraction<T> castedPending = (IPendingInteraction<T>) pending;
-        ComponentInteractionInfo<T, IPendingInteraction<T>> info = new ComponentInteractionInfo<>((T) event, castedPending, sbds);
-        castedPending.getCallback().accept(info);
+    private <T extends GenericComponentInteractionCreateEvent> void callExecutor(
+            @NotNull IPendingInteraction pending,
+            @NotNull ComponentInteractionRequest.Action<T> action,
+            @NotNull GenericComponentInteractionCreateEvent event) {
+        ComponentInteractionInfo<T, IPendingInteraction> info = new ComponentInteractionInfo<>((T) event, pending, sbds);
+        action.action().accept(info);
     }
 
     private void timeoutChecker() {
 
-        var pendingInteractions = new HashMap<>(this.pendingInteractions);
+        List<IPendingInteraction> pendingInteractions = new ArrayList<>(this.pendingInteractions);
 
         long time = System.currentTimeMillis();
-        for (var entry : pendingInteractions.entrySet()) {
+        for (IPendingInteraction pending : pendingInteractions) {
 
-            String id = entry.getKey();
-            IPendingInteraction<?> interaction = entry.getValue();
-
-            if (interaction.getTimestamp() + interaction.getTimeout() > time) {
+            if (pending.getTimestamp() + pending.getTimeout() > time) {
                 continue;
             }
 
-            this.pendingInteractions.remove(id);
-            log.info("Pending interaction `{}` expired.", id);
+            this.pendingInteractions.remove(pending);
 
-            Runnable failureCallback = interaction.getFailureCallback();
+            Runnable failureCallback = pending.getFailureCallback();
             if (failureCallback == null) {
                 continue;
             }
@@ -199,7 +229,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
             }
 
             catch (Throwable t) {
-                log.error("An exception was thrown while attempting to run failure callback for interaction `{}`.", id, t);
+                log.error("An exception was thrown while attempting to run failure callback for interaction `{}`.", pending, t);
             }
 
         }
@@ -213,52 +243,34 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
     // REG //
 
     @Override
-    public @NotNull <event extends GenericComponentInteractionCreateEvent> IPendingInteraction<event> registerPendingInteraction(
-            @NotNull String id,
-            @Nullable User user,
-            @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> successCallback,
-            @Nullable Runnable failureCallback,
-            int timeout
-    ) {
+    public @NotNull IPendingInteraction createPending(@NotNull ComponentInteractionRequest builder) {
 
-
-        Objects.requireNonNull(id, "id == null");
-        Objects.requireNonNull(clazz, "clazz == null");
-        Objects.requireNonNull(successCallback, "successCallback == null");
+        Objects.requireNonNull(builder, "builder == null");
         checkValid();
 
-        if (pendingInteractions.containsKey(id)) {
-            throw new IllegalArgumentException("Id `" + id + "` already exists");
-        }
+        Map<String, ComponentInteractionRequest.Action<?>> actions = builder.getActions();
+        Map<String, String> generatedIds = new HashMap<>();
+        actions.forEach((key, value) -> {
+            String id = UUID.randomUUID().toString();
+            generatedIds.put(key, id);
+        });
 
-        PendingInteraction<event> pendingInteraction = new PendingInteraction<>(this, id, user, successCallback, failureCallback, timeout);
-        pendingInteractions.put(id, pendingInteraction);
+        Runnable onExpire = builder.getExpireAction();
+        int expireTimeout = builder.getExpireInterval();
+
+        User target = builder.getTarget();
+
+        PendingInteraction pendingInteraction = new PendingInteraction(this, actions, generatedIds, target, onExpire, expireTimeout);
+        pendingInteractions.add(pendingInteraction);
 
         return pendingInteraction;
 
     }
 
-    // UNREG //
-
     @Override
-    public @Nullable IPendingInteraction<?> forgetPendingInteraction(@NotNull String id) {
+    public @NotNull List<IPendingInteraction> getPendingInteractions() {
         checkValid();
-        return pendingInteractions.remove(id);
-    }
-
-    // GETTERS //
-
-    @Override
-    public @Nullable IPendingInteraction<?> getPendingUInteraction(@Nullable String id) {
-        checkValid();
-        return pendingInteractions.get(id);
-    }
-
-    @Override
-    public @NotNull List<IPendingInteraction<?>> getPendingInteractions() {
-        checkValid();
-        return new ArrayList<>(pendingInteractions.values());
+        return new ArrayList<>(pendingInteractions);
     }
 
     //
@@ -272,9 +284,9 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
     public @NotNull <event extends GenericComponentInteractionCreateEvent> IRegisteredListener<event> registerListener(
             @NotNull IModule module,
             @NotNull String name,
+            @Nullable Permission permission,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor,
-            @Nullable Permission permission
+            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
     ) {
 
         Objects.requireNonNull(module, "module == null");
@@ -313,6 +325,9 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
     }
 
 
+    //
+    // RECORDS
+    //
 
     public static class RegisteredListener<event extends GenericComponentInteractionCreateEvent> implements IComponentInteractionManager.IRegisteredListener<event> {
 
@@ -373,15 +388,15 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
     }
 
-    public static class PendingInteraction<event extends GenericComponentInteractionCreateEvent> implements IComponentInteractionManager.IPendingInteraction<event> {
+    public static class PendingInteraction extends Valid implements IComponentInteractionManager.IPendingInteraction {
 
         private final ComponentInteractionManager manager;
 
-        private final String id;
-
         private final @Nullable User user;
 
-        private final Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> successCallback;
+        private final Map<String, IPendingInteractionAction> actionMap = new HashMap<>();
+
+        private final Map<String, String> generatedIdsMap = new HashMap<>();
 
         private final @Nullable Runnable failureCallback;
 
@@ -392,31 +407,28 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
         public PendingInteraction(
                 @NotNull ComponentInteractionManager manager,
-                @NotNull String id,
+                @NotNull Map<String, ComponentInteractionRequest.Action<?>> actionMap,
+                @NotNull Map<String, String> generatedIdsMap,
                 @Nullable User user,
-                @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> successCallback,
                 @Nullable Runnable failureCallback,
                 int timeout
         ) {
 
             this.manager = manager;
 
-            this.id = id;
+            this.actionMap.putAll(actionMap.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> (IPendingInteractionAction) new PendingInteractionAction(entry.getValue(), this)))
+            );
+            this.generatedIdsMap.putAll(generatedIdsMap);
+
             this.user = user;
 
-            this.successCallback = successCallback;
             this.failureCallback = failureCallback;
-
             this.timestamp = System.currentTimeMillis();
-            this.timeout = timeout;
+            this.timeout = timeout * 1000;
 
         }
 
-
-        @Override
-        public @NotNull String getId() {
-            return id;
-        }
 
         @Override
         public @Nullable User getUser() {
@@ -424,13 +436,18 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         }
 
         @Override
-        public @NotNull Consumer<ComponentInteractionInfo<event, IPendingInteraction<event>>> getCallback() {
-            return successCallback;
+        public @Nullable Runnable getFailureCallback() {
+            return failureCallback;
         }
 
         @Override
-        public @Nullable Runnable getFailureCallback() {
-            return failureCallback;
+        public @NotNull Map<String, IPendingInteractionAction> getActions() {
+            return new HashMap<>(actionMap);
+        }
+
+        @Override
+        public @NotNull Map<String, String> getGeneratedIds() {
+            return new HashMap<>(generatedIdsMap);
         }
 
 
@@ -453,6 +470,42 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         @Override
         public boolean isEphemeral() {
             return true;
+        }
+
+    }
+
+    public static class PendingInteractionAction implements IPendingInteractionAction {
+
+        private final ComponentInteractionRequest.Action<?> action;
+
+        private final IPendingInteraction pendingInteraction;
+
+        private boolean expired = false;
+
+
+        public PendingInteractionAction(@NotNull ComponentInteractionRequest.Action<?> action, @NotNull IPendingInteraction pendingInteraction) {
+            this.action = action;
+            this.pendingInteraction = pendingInteraction;
+        }
+
+        @Override
+        public @NotNull ComponentInteractionRequest.Action<?> getAction() {
+            return action;
+        }
+
+        @Override
+        public @NotNull IPendingInteraction getPending() {
+            return pendingInteraction;
+        }
+
+
+        @Override
+        public boolean isExpired() {
+            return expired;
+        }
+
+        public void setExpired(boolean expired) {
+            this.expired = expired;
         }
 
     }

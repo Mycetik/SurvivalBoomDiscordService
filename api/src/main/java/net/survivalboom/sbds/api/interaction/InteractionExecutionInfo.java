@@ -2,6 +2,7 @@ package net.survivalboom.sbds.api.interaction;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
@@ -169,6 +170,28 @@ public abstract class InteractionExecutionInfo<event extends GenericInteractionC
         else {
             return sendRaw(data);
         }
+
+    }
+
+    // COMPONENTS //
+
+    @Override
+    public void invalidateInputs() {
+
+        if (isEphemeral()) {
+            return;
+        }
+
+        if (!(event instanceof IDeferrableCallback callback)) {
+            throw new IllegalStateException("No edit method applicable to `" + this + "`");
+        }
+
+        Message message = callback.getHook().retrieveOriginal().complete();
+        if (message == null) {
+            throw new IllegalStateException("No message sent yet");
+        }
+
+        invalidateInputs0(message);
 
     }
 
