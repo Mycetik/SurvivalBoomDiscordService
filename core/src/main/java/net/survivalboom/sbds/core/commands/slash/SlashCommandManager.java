@@ -68,11 +68,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
         Command command = registration.object().getCommand();
         CommandExecutor executor = command.getExecutor();
 
-        if (executor == null) {
-            return;
-        }
-
-        if (!(executor instanceof SlashCommandExecutor)) {
+        if (executor != null && !(executor instanceof SlashCommandExecutor)) {
             throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a slash command");
         }
 
