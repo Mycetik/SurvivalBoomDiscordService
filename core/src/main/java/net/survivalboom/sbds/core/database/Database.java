@@ -41,11 +41,8 @@ public class Database extends Manager implements IDatabase {
 
     private final SBDS sbds;
 
-
-    private final @NotNull BootstrapServiceRegistry serviceRegistry;
     private @Nullable Properties properties = null;
     private @Nullable SessionFactory sessionFactory = null;
-
 
     private final InternalRegistrationManager<IRepository<?>> repositoriesRegistry;
 
@@ -68,12 +65,6 @@ public class Database extends Manager implements IDatabase {
         this.typeSerializersRegistry = new InternalRegistrationManager<>(this, "serializers", null, sbds.getRegistrationRegistry());
         this.queue = new DatabaseQueue(this, sbds.getScheduler());
         this.rebuildQueue = new InternalPushQueue<>(this::rebuildQueue, "DatabaseRebuild", 500, sbds);
-
-        // Нам потрібно щоб Hibernate вантажив класи репозиторіїв від імені Root Class Loader, оскільки виявляється Hibernate не має доступу до класів модулів :(
-        // Це може викликати проблеми, оскільки тоді Hibernate повністю обходить ізоляцію, але... Коли будуть проблеми, от тоді зробимо розумніше!
-        this.serviceRegistry = new BootstrapServiceRegistryBuilder()
-                .applyClassLoader(sbds.getLibrariesManager().getRootClassLoader())
-                .build();
     }
 
     //
@@ -253,6 +244,12 @@ public class Database extends Manager implements IDatabase {
             sessionFactory.close();
             sessionFactory = null;
         }
+
+        // Нам потрібно щоб Hibernate вантажив класи репозиторіїв від імені Root Class Loader, оскільки виявляється Hibernate не має доступу до класів модулів :(
+        // Це може викликати проблеми, оскільки тоді Hibernate повністю обходить ізоляцію, але... Коли будуть проблеми, от тоді зробимо розумніше!
+        BootstrapServiceRegistry serviceRegistry = new BootstrapServiceRegistryBuilder()
+                        .applyClassLoader(sbds.getLibrariesManager().getRootClassLoader())
+                        .build();
 
         org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration(serviceRegistry);
         configuration.setProperties(properties);
