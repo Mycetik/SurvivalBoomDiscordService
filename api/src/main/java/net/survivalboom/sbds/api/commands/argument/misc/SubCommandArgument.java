@@ -15,6 +15,8 @@ public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> 
 
     private final Map<String, Command> subcommands = new HashMap<>();
 
+    private final Map<String, Command> subcommandsByAliases = new HashMap<>();
+
     public SubCommandArgument(@NotNull Collection<Command> subcommands) {
 
         Objects.requireNonNull(subcommands, "subcommands == null");
@@ -26,19 +28,20 @@ public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> 
         for (Command command : subcommands) {
 
             String name = command.getName();
-            if (this.subcommands.containsKey(name)) {
+            if (this.subcommandsByAliases.containsKey(name)) {
                 throw new IllegalArgumentException("Duplicate subcommand `" + name + "in " + subcommands);
             }
 
+            this.subcommandsByAliases.put(name, command);
             this.subcommands.put(name, command);
 
             for (String alias : command.getAliases()) {
 
-                if (this.subcommands.containsKey(alias)) {
+                if (this.subcommandsByAliases.containsKey(alias)) {
                     throw new IllegalArgumentException("Duplicate subcommand `" + alias + "in " + subcommands);
                 }
 
-                this.subcommands.put(alias, command);
+                this.subcommandsByAliases.put(alias, command);
 
             }
 
@@ -59,7 +62,7 @@ public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> 
 
         if (input instanceof String string) {
 
-            Command command = subcommands.get(string);
+            Command command = subcommandsByAliases.get(string);
             if (command == null) {
                 throw new ArgumentParseException("Invalid subcommand `" + string + "`");
             }
@@ -78,7 +81,11 @@ public class SubCommandArgument extends Argument<SubCommandArgument.SubCommand> 
     }
 
     public @Nullable Command getSubCommand(@NotNull String alias) {
-        return subcommands.get(alias);
+        return subcommandsByAliases.get(alias);
+    }
+
+    public @NotNull Map<String, Command> getSubCommandsAliases() {
+        return new HashMap<>(subcommandsByAliases);
     }
 
     public @NotNull List<Command> getSubcommands() {
