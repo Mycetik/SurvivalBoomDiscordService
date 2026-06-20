@@ -87,7 +87,7 @@ public class NamespacedKey {
         Objects.requireNonNull(module, "module == null");
         Objects.requireNonNull(key, "value == null");
 
-        return create(module.getName().toLowerCase(), key);
+        return create(module.getId(), key);
 
     }
 

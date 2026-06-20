@@ -24,6 +24,7 @@ public class ModuleInfoCommand extends CommandBase implements ConsoleCommandExec
 
         logger.info("---- < Module Info > ----");
         logger.info("> Name: {}", module.getName());
+        logger.info("> ID: {}", module.getId());
         logger.info("> Description: {}", module.getMeta().getDescription());
         logger.info("> Authors: {}", String.join(", ", module.getMeta().getAuthors()));
         logger.info("> Website: {}", module.getMeta().getWebsite());

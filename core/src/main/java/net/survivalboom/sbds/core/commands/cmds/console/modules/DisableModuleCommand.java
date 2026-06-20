@@ -8,7 +8,7 @@ import net.survivalboom.sbds.api.commands.argument.sbds.ModuleArgument;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.modules.ModuleStateCallbackException;
+import net.survivalboom.sbds.api.modules.IModuleManager;
 import org.jetbrains.annotations.NotNull;
 
 @CommandClass(name = "disable")
@@ -23,7 +23,7 @@ public class DisableModuleCommand extends CommandBase implements ConsoleCommandE
             info.sbds().getModuleManager().disableModule(module);
         }
 
-        catch (ModuleStateCallbackException e) {
+        catch (IModuleManager.ModuleStateCallbackException e) {
             info.logger().error("Failed to disable module properly! An exception was thrown.", e);
             return;
         }

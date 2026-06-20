@@ -8,8 +8,7 @@ import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.modules.ModuleRefusedException;
-import net.survivalboom.sbds.api.modules.ModuleStateCallbackException;
+import net.survivalboom.sbds.api.modules.IModuleManager;
 import org.jetbrains.annotations.NotNull;
 
 @CommandClass(name = "restart")
@@ -24,7 +23,7 @@ public class RestartModuleCommand extends CommandBase implements ConsoleCommandE
             info.sbds().getModuleManager().disableModule(module);
         }
 
-        catch (ModuleStateCallbackException e) {
+        catch (IModuleManager.ModuleStateCallbackException e) {
             info.logger().error("Failed to disable module properly! An exception was thrown.", e);
         }
 
@@ -32,7 +31,7 @@ public class RestartModuleCommand extends CommandBase implements ConsoleCommandE
             info.sbds().getModuleManager().enableModule(module);
         }
 
-        catch (ModuleStateCallbackException | ModuleRefusedException e) {
+        catch (IModuleManager.ModuleStateCallbackException | IModuleManager.ModuleRefusedException e) {
             info.logger().error("Failed to enable module `{}`. An exception was thrown.", module.getName(), e);
             return;
         }

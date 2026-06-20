@@ -398,7 +398,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
         }
 
         catch (Exception e) {
-            throw new PomResolutionException("POM resolution failed. Failed to retrieve POM from repository. " + url);
+            throw new PomResolutionException("POM resolution failed. Failed to retrieve POM from repository. " + url, e);
         }
 
         int status = response.statusCode();
@@ -704,7 +704,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     // Кончені довбойоби блять.
     private @NotNull List<? extends ConfigurationNode> матьЕбал(@NotNull ConfigurationNode node, @NotNull String... target) {
 
-        ConfigurationNode section = node.node(target);
+        ConfigurationNode section = node.node((Object[]) target);
         if (section.virtual()) {
             return new ArrayList<>();
         }

@@ -2,6 +2,7 @@ package net.survivalboom.sbds.api.utils;
 
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.survivalboom.sbds.api.modules.IModuleManager;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -164,6 +165,15 @@ public class CommonUtils {
         }
 
         return null;
+
+    }
+
+    public static void checkStringExceptionally(@NotNull String name, @NotNull String string, @NotNull String allowed) {
+
+        Character c = checkString(string, allowed);
+        if (c != null) {
+            throw new IllegalArgumentException("Illegal input `" + string + "` for `" + name + "`. Illegal character `" + c + "`. Valid characters: `" + allowed + "`");
+        }
 
     }
 

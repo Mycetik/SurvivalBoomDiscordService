@@ -17,15 +17,27 @@ public interface IModule extends IValid {
 
     @NotNull IModuleManager getManager();
 
-    // MODULE INFO //
-
-    @NotNull String getName();
-
-    @NotNull ModuleMeta getMeta();
+    // MODULE STATE //
 
     boolean isEnabled();
 
     @NotNull Logger getLogger();
+
+    // MODULE META //
+
+    default @NotNull String getName() {
+        return getMeta().getName();
+    }
+
+    default @NotNull String getId() {
+        return getMeta().getId();
+    }
+
+    default @NotNull String getVersion() {
+        return getMeta().getVersion();
+    }
+
+    @NotNull ModuleMeta getMeta();
 
     // MODULE LOCATION //
 

@@ -3,6 +3,7 @@ package net.survivalboom.sbds.api.modules;
 import net.survivalboom.sbds.api.libraries.LibrarySatisfyConfiguration;
 import net.survivalboom.sbds.api.modules.dependencies.LoadOrder;
 import net.survivalboom.sbds.api.modules.dependencies.ModuleDependency;
+import net.survivalboom.sbds.api.utils.CommonUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurateException;
@@ -16,6 +17,8 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 public final class ModuleMeta {
+
+    private final String id;
 
     private final String name;
 
@@ -55,7 +58,13 @@ public final class ModuleMeta {
         Objects.requireNonNull(main, "main == null");
         Objects.requireNonNull(version, "version == null");
 
+        String id = name.toLowerCase();
+
+        CommonUtils.checkStringExceptionally("id", id, IModuleManager.ALLOWED_ID_CHARACTERS);
+        CommonUtils.checkStringExceptionally("name", name, IModuleManager.ALLOWED_NAME_CHARACTERS);
+
         this.name = name;
+        this.id = id;
         this.main = main;
         this.apiVersion = apiVersion;
 
@@ -68,6 +77,10 @@ public final class ModuleMeta {
         this.dependencies = dependencies != null ? new ArrayList<>(dependencies) : new ArrayList<>();
         this.libraries = libraries;
 
+    }
+
+    public @NotNull String getId() {
+        return id;
     }
 
     public @NotNull String getName() {
@@ -119,7 +132,7 @@ public final class ModuleMeta {
     // BUILDER
     //
 
-    public static @NotNull ModuleMeta fromStream(@NotNull InputStream stream) throws InvalidModuleMetaException {
+    public static @NotNull ModuleMeta fromStream(@NotNull InputStream stream) throws InvalidMetaException {
 
         ConfigurationNode node;
         try {
@@ -128,32 +141,32 @@ public final class ModuleMeta {
                     .build()
                     .load();
         } catch (ConfigurateException e) {
-            throw new InvalidModuleMetaException("Failed to load ModuleMeta", e);
+            throw new InvalidMetaException("Failed to load ModuleMeta", e);
         }
 
         return fromSection(node);
 
     }
 
-    public static @NotNull ModuleMeta fromSection(@NotNull ConfigurationNode section) throws InvalidModuleMetaException {
+    public static @NotNull ModuleMeta fromSection(@NotNull ConfigurationNode section) throws InvalidMetaException {
 
         String name = section.node("name").getString();
         String main = section.node("main").getString();
         String apiVersion = section.node("api-version").getString();
 
         if (name == null) {
-            throw new InvalidModuleMetaException("Key `name` does not exist");
+            throw new InvalidMetaException("Key `name` does not exist");
         }
 
         if (main == null) {
-            throw new InvalidModuleMetaException("Key `main` does not exist");
+            throw new InvalidMetaException("Key `main` does not exist");
         }
 
         String description = section.node("description").getString();
         String version = section.node("version").getString();
 
         if (version == null) {
-            throw new InvalidModuleMetaException("Key `version` does not exist");
+            throw new InvalidMetaException("Key `version` does not exist");
         }
 
         String website = section.node("website").getString();
@@ -171,7 +184,7 @@ public final class ModuleMeta {
             try {
                 authors = authorsNode.getList(String.class);
             } catch (SerializationException e) {
-                throw new InvalidModuleMetaException("Failed to load `authors` section", e);
+                throw new InvalidMetaException("Failed to load `authors` section", e);
             }
 
         }
@@ -179,22 +192,30 @@ public final class ModuleMeta {
         ConfigurationNode dependenciesSection = section.node("dependencies");
         List<ModuleDependency> dependencyList;
         try {
-            dependencyList = dependenciesSection.getList(ModuleDependency.class);
-        } catch (SerializationException e) {
-            throw new InvalidModuleMetaException("Failed to load `dependencies`", e);
+            dependencyList = ModuleDependency.fromMultiSection(dependenciesSection);
+        }
+
+        catch (IllegalArgumentException e) {
+            throw new InvalidMetaException("Failed to load module dependencies: " + e.getMessage());
         }
 
         ConfigurationNode librariesSection = section.node("libraries");
         var librariesResult = LibrarySatisfyConfiguration.fromSection(librariesSection);
         for (var entry : librariesResult.declarationsFailed().entrySet()) {
-            throw new InvalidModuleMetaException("Invalid library declaration `" + entry.getKey() + "`", entry.getValue());
+            throw new InvalidMetaException("Invalid library declaration `" + entry.getKey() + "`", entry.getValue());
         }
 
         for (var entry : librariesResult.pinnedFailed().entrySet()) {
-            throw new InvalidModuleMetaException("Invalid pinned library declaration `" + entry.getKey() + "`", entry.getValue());
+            throw new InvalidMetaException("Invalid pinned library declaration `" + entry.getKey() + "`", entry.getValue());
         }
 
-        return new ModuleMeta(name, main, apiVersion, description, version, website, authors, dependencyList, librariesResult.result());
+        try {
+            return new ModuleMeta(name, main, apiVersion, description, version, website, authors, dependencyList, librariesResult.result());
+        }
+
+        catch (IllegalArgumentException e) {
+            throw new InvalidMetaException(e.getMessage());
+        }
 
     }
 
@@ -401,6 +422,23 @@ public final class ModuleMeta {
             return new ModuleMeta(name, main, apiVersion, description, version, website, authors, dependencies, libraries);
         }
 
+
+    }
+
+
+    public static class InvalidMetaException extends Exception {
+
+        public InvalidMetaException(String message) {
+            super(message);
+        }
+
+        public InvalidMetaException(Throwable cause) {
+            super(cause);
+        }
+
+        public InvalidMetaException(String message, Throwable cause) {
+            super(message, cause);
+        }
 
     }
 

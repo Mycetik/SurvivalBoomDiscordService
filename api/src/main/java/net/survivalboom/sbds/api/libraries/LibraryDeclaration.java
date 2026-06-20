@@ -33,7 +33,11 @@ public record LibraryDeclaration(ArtifactAddress address, @Nullable String sourc
         MassLoadResult result = new MassLoadResult(new ArrayList<>(), new HashMap<>());
 
         var list = section.childrenList();
-        if (!list.isEmpty()) {
+        if (list.isEmpty()) {
+            return result;
+        }
+
+        if (!list.getFirst().isMap()) {
 
             for (var node : list) {
 
@@ -59,7 +63,7 @@ public record LibraryDeclaration(ArtifactAddress address, @Nullable String sourc
 
         }
 
-        for (ConfigurationNode node : section.childrenMap().values()) {
+        for (ConfigurationNode node : section.childrenList()) {
 
             try {
                 result.loaded.add(fromSection(node));
@@ -75,6 +79,10 @@ public record LibraryDeclaration(ArtifactAddress address, @Nullable String sourc
 
     }
 
+    @Override
+    public String toString() {
+        return address.toString();
+    }
 
     public record MassLoadResult(@NotNull List<LibraryDeclaration> loaded, @NotNull Map<String, Exception> failed) {}
 

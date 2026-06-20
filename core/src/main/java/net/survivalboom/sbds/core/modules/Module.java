@@ -81,11 +81,6 @@ public class Module extends Valid implements IModule {
     // MODULE INFO //
 
     @Override
-    public @NotNull String getName() {
-        return meta.getName();
-    }
-
-    @Override
     public @NotNull ModuleMeta getMeta() {
         return meta;
     }

@@ -23,39 +23,29 @@ public class ModuleArgument extends Argument<IModule> {
     @Override
     public @NotNull IModule parse(@NotNull Object input, @NotNull ArgumentParsingContext context) throws ArgumentParseException {
 
+        String moduleName;
         if (input instanceof String s) {
-
-            IModule module = context.sbds().getModuleManager().getModule(s);
-            if (module == null) {
-                throw new ArgumentParseException("Invalid module `" + s + "`");
-            }
-
-            if (enabled != null && module.isEnabled() != enabled) {
-                throw new ArgumentParseException("Invalid module `" + s + "`");
-            }
-
-            return module;
-
+            moduleName = s;
         }
 
         else if (input instanceof OptionMapping mapping) {
-
-            String s = mapping.getAsString();
-
-            IModule module = context.sbds().getModuleManager().getModule(s);
-            if (module == null) {
-                throw new ArgumentParseException("Invalid module `" + s + "`");
-            }
-
-            if (enabled != null && module.isEnabled() != enabled) {
-                throw new ArgumentParseException("Invalid module `" + s + "`");
-            }
-
-            return module;
-
+            moduleName = mapping.getAsString();
         }
 
-        throw new ArgumentParseException("Invalid object `" + input + "`");
+        else {
+            throw new ArgumentParseException("Invalid object `" + input + "`");
+        }
+
+        IModule module = context.sbds().getModuleManager().getModule(moduleName.toLowerCase());
+        if (module == null) {
+            throw new ArgumentParseException("Invalid module `" + moduleName + "`");
+        }
+
+        if (enabled != null && module.isEnabled() != enabled) {
+            throw new ArgumentParseException("Invalid module `" + moduleName + "`");
+        }
+
+        return module;
 
     }
 
