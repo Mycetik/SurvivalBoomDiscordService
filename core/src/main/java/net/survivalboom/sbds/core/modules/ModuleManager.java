@@ -157,8 +157,13 @@ public class ModuleManager extends Manager implements IModuleManager {
             log.info("Disabling modules...");
         }
 
-        var modules = getModules();
-        for (IModule module : modules) {
+
+        List<IModule> currentModules = getModules();
+        List<IModule> sortedModules = sortActiveModulesByDependencies(currentModules);
+
+        for (int i = sortedModules.size() - 1; i >= 0; i--) {
+
+            IModule module = sortedModules.get(i);
 
             if (module.isEnabled()) {
 
@@ -567,6 +572,8 @@ public class ModuleManager extends Manager implements IModuleManager {
     // MODULES SORTING
     //
 
+    // УВАГА! Нижче починається AI SLOP! //
+
     private SortingResult sortModulesByDependencies(List<ModuleMetaLoadResult> input) {
         Map<String, ModuleMetaLoadResult> registry = new HashMap<>();
         for (ModuleMetaLoadResult res : input) {
@@ -662,5 +669,72 @@ public class ModuleManager extends Manager implements IModuleManager {
             @NotNull List<ModuleMetaLoadResult> sorted,
             @NotNull List<ModuleMetaLoadResult> skipped
     ) {}
+
+
+    private List<IModule> sortActiveModulesByDependencies(List<IModule> input) {
+        Map<String, IModule> registry = new HashMap<>();
+        for (IModule mod : input) {
+            registry.put(mod.getMeta().getId(), mod);
+        }
+
+        List<IModule> result = new ArrayList<>();
+        Set<String> visiting = new HashSet<>();
+        Set<String> visited = new HashSet<>();
+
+        // Строим граф зависимостей (какие модули должны быть ДО текущего)
+        Map<String, List<String>> dependsOn = new HashMap<>();
+        for (IModule current : input) {
+            String currentId = current.getMeta().getId();
+            dependsOn.computeIfAbsent(currentId, k -> new ArrayList<>());
+
+            for (ModuleDependency dep : current.getMeta().getDependencies()) {
+                String depId = dep.id();
+
+                // Если зависимого модуля уже нет в памяти, игнорируем связь
+                if (!registry.containsKey(depId)) continue;
+
+                if (dep.order() == LoadOrder.AFTER) {
+                    dependsOn.get(currentId).add(depId);
+                } else if (dep.order() == LoadOrder.BEFORE) {
+                    dependsOn.computeIfAbsent(depId, k -> new ArrayList<>()).add(currentId);
+                }
+            }
+        }
+
+        // Запускаем DFS
+        for (String id : registry.keySet()) {
+            if (!visited.contains(id)) {
+                dfsSortActive(id, registry, dependsOn, visiting, visited, result);
+            }
+        }
+
+        return result;
+    }
+
+    private void dfsSortActive(String id,
+                               Map<String, IModule> registry,
+                               Map<String, List<String>> dependsOn,
+                               Set<String> visiting,
+                               Set<String> visited,
+                               List<IModule> result) {
+
+        if (visiting.contains(id)) {
+            log.error("Circular dependency detected during shutdown for module `{}`! Order might be broken.", id);
+            return;
+        }
+
+        if (!visited.contains(id)) {
+            visiting.add(id);
+
+            List<String> dependencies = dependsOn.getOrDefault(id, Collections.emptyList());
+            for (String depId : dependencies) {
+                dfsSortActive(depId, registry, dependsOn, visiting, visited, result);
+            }
+
+            visiting.remove(id);
+            visited.add(id);
+            result.add(registry.get(id));
+        }
+    }
 
 }
