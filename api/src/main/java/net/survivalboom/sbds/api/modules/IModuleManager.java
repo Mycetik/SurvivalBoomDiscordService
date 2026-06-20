@@ -1,13 +1,14 @@
 package net.survivalboom.sbds.api.modules;
 
 import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.utils.valid.IManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.List;
 
-public interface IModuleManager {
+public interface IModuleManager extends IManager {
 
     @NotNull ISBDS getSbds();
 

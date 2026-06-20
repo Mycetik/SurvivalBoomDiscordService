@@ -151,6 +151,8 @@ public class SBDS implements ISBDS {
             @NotNull String token
     ) {
 
+        librariesManager.sbds = this;
+
         this.logger = logger;
         this.configuration = configuration;
         this.jdaBuilder = JDABuilder.createDefault(token, resolveGatewayIntents(configuration));

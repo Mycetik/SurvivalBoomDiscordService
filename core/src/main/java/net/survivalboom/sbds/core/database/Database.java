@@ -17,6 +17,11 @@ import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
 import net.survivalboom.sbds.core.utils.InternalPushQueue;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.boot.registry.BootstrapServiceRegistry;
+import org.hibernate.boot.registry.BootstrapServiceRegistryBuilder;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.cfg.AvailableSettings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -37,6 +42,7 @@ public class Database extends Manager implements IDatabase {
     private final SBDS sbds;
 
 
+    private final @NotNull BootstrapServiceRegistry serviceRegistry;
     private @Nullable Properties properties = null;
     private @Nullable SessionFactory sessionFactory = null;
 
@@ -62,6 +68,12 @@ public class Database extends Manager implements IDatabase {
         this.typeSerializersRegistry = new InternalRegistrationManager<>(this, "serializers", null, sbds.getRegistrationRegistry());
         this.queue = new DatabaseQueue(this, sbds.getScheduler());
         this.rebuildQueue = new InternalPushQueue<>(this::rebuildQueue, "DatabaseRebuild", 500, sbds);
+
+        // Нам потрібно щоб Hibernate вантажив класи репозиторіїв від імені Root Class Loader, оскільки виявляється Hibernate не має доступу до класів модулів :(
+        // Це може викликати проблеми, оскільки тоді Hibernate повністю обходить ізоляцію, але... Коли будуть проблеми, от тоді зробимо розумніше!
+        this.serviceRegistry = new BootstrapServiceRegistryBuilder()
+                .applyClassLoader(sbds.getLibrariesManager().getRootClassLoader())
+                .build();
     }
 
     //
@@ -75,7 +87,7 @@ public class Database extends Manager implements IDatabase {
 
         new File(sbds.getWorkingDir(), "data").mkdirs();
 
-        reload0(null, true, false);
+        reload0(null, true, false, true, null);
 
         typeSerializersRegistry.init();
         repositoriesRegistry.init();
@@ -113,12 +125,11 @@ public class Database extends Manager implements IDatabase {
     private void rebuildQueue(InternalPushQueue<IRepository<?>> queue) {
 
         try {
-            rebuildSessionFactory(queue.getQueue());
+            reload0(null, true, true, false, queue.getQueue());
         }
 
         catch (Throwable t) {
             log.error("Failed to build the SessionFactory. Please ensure that database credentials are correct and your database is online.", t);
-            throw t;
         }
 
     }
@@ -128,12 +139,22 @@ public class Database extends Manager implements IDatabase {
     @Override
     public void reload(@NotNull IModule module) {
         Objects.requireNonNull(module, "module == null");
-        reload0(module, false, true);
+        reload0(module, false, true, true, null);
     }
 
-    public void reload0(@Nullable IModule module, boolean silent, boolean rebuildSessionFactory) {
+    public void reload0(
+            @Nullable IModule module,
+            boolean silent,
+            boolean rebuildSessionFactory,
+            boolean reloadProperties,
+            @Nullable Collection<IRepository<?>> toImport
+    ) {
 
         checkValid();
+        
+        if (!reloadProperties && !rebuildSessionFactory) {
+            throw new RuntimeException("Вітаємо! Ви - ідіот!");
+        }
 
         if (module != null) {
 
@@ -151,10 +172,12 @@ public class Database extends Manager implements IDatabase {
 
         try {
 
-            loadProperties();
+            if (reloadProperties) {
+                loadProperties();
+            }
 
             if (rebuildSessionFactory) {
-                rebuildSessionFactory(null);
+                rebuildSessionFactory(toImport);
             }
 
         }
@@ -231,7 +254,7 @@ public class Database extends Manager implements IDatabase {
             sessionFactory = null;
         }
 
-        org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration();
+        org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration(serviceRegistry);
         configuration.setProperties(properties);
 
         List<IRepository<?>> repos = new ArrayList<>(currentAttachedRepositories);

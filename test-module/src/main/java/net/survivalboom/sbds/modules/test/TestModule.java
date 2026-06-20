@@ -3,6 +3,7 @@ package net.survivalboom.sbds.modules.test;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.modules.test.commands.*;
+import net.survivalboom.sbds.modules.test.database.TestRecord;
 import net.survivalboom.sbds.modules.test.events.EventListenerTest;
 import net.survivalboom.sbds.modules.test.listeners.MessageReplier;
 
@@ -28,6 +29,8 @@ public class TestModule extends ModuleMain {
         registerEvents(new MessageReplier(this));
 
         registerEvents(new EventListenerTest(this));
+
+        getSbds().getDatabase().createRepository(this, "test", TestRecord.class);
 
         getLogger().info("Бугага! Мєня включілі! Вам всім кабздєц!");
 

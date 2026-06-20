@@ -1,11 +1,15 @@
 package net.survivalboom.sbds.core.libraries;
 
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.libraries.*;
+import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.modules.IModuleManager;
 import net.survivalboom.sbds.api.utils.SemanticVersion;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.libraries.simple.SimpleLibrariesDownloader;
 import net.survivalboom.sbds.core.libraries.simple.SimpleLibrary;
+import net.survivalboom.sbds.core.modules.Module;
 import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +48,9 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     private final List<LibraryDeclaration> globalPinned = new ArrayList<>();
 
 
+    public ISBDS sbds = null; // Я знаю що це безглуздно, але пішло нахуй! Має бути setter, замість public. ХРЮ ХРЮ ХРЮ! СВІНТУС!
+
+
     public LibrariesManager(
             @NotNull File librariesDir,
             @NotNull DynamicClassLoader rootClassLoader
@@ -68,16 +75,6 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     @Override
     protected void shutdown0() {
 
-    }
-
-    public void setupRootClassLoader() {
-        rootClassLoader.resetSuppliers();
-        rootClassLoader.addClassSupplier("ROOT", this::rootClassRequest);
-        rootClassLoader.addResourceSupplier("SPI", n -> n.startsWith("META-INF/services/"), this::findGlobalSPIMetaInf);
-    }
-
-    public void addGlobalPinned(@NotNull Collection<LibraryDeclaration> declarations) {
-        this.globalPinned.addAll(declarations);
     }
 
     public void loadLibrariesFromDisk() {
@@ -902,6 +899,16 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     // CLASSLOADER
     //
 
+    public void setupRootClassLoader() {
+        rootClassLoader.resetSuppliers();
+        rootClassLoader.addClassSupplier("ROOT", this::rootClassRequest);
+        rootClassLoader.addResourceSupplier("SPI", n -> n.startsWith("META-INF/services/"), this::findGlobalSPIMetaInf);
+    }
+
+    public void addGlobalPinned(@NotNull Collection<LibraryDeclaration> declarations) {
+        this.globalPinned.addAll(declarations);
+    }
+
     // Переналаштовуємо ClassLoader бібліотеки.
     // 1. Повністю очищаємо усі налаштування, які встановив SimpleLibrariesDownloader.
     // 2. Налаштовуємо вже повноцінну систему доступів до класів.
@@ -912,14 +919,7 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
     }
 
     public @Nullable Class<?> requestClass(@NotNull ILibrary library, @NotNull String name) {
-
-        // Шаг 1: Если это базовый класс Java, не пускаем его в циклы и рекурсии вообще!
-        if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("sun.") || name.startsWith("jdk.")) {
-            return rootClassLoader.getClass(name, false, true);
-        }
-
         return requestClass0(library, name, new HashSet<>());
-
     }
 
     private @Nullable Class<?> requestClass0(@NotNull ILibrary library, @NotNull String name, @NotNull Set<ILibrary> visited) {
@@ -967,6 +967,27 @@ public class LibrariesManager extends Manager implements ILibrariesManager {
 
             DynamicClassLoader dynamicClassLoader = (DynamicClassLoader) library.getClassLoader();
             Class<?> clazz = dynamicClassLoader.getClass(name, false, false);
+            if (clazz != null) {
+                return clazz;
+            }
+
+        }
+
+        if (sbds == null) {
+            return null;
+        }
+
+        IModuleManager moduleManager = sbds.getModuleManager();
+        if (!moduleManager.isValid()) {
+            return null;
+        }
+
+        for (IModule module : sbds.getModuleManager().getModules()) {
+
+            Module module0 = (Module) module;
+            DynamicClassLoader classLoader = module0.getClassLoader();
+
+            Class<?> clazz = classLoader.getClass(name, false, false);
             if (clazz != null) {
                 return clazz;
             }

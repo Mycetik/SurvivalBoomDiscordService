@@ -269,6 +269,18 @@ public class DynamicClassLoader extends URLClassLoader {
         Objects.requireNonNull(name, "name == null");
         checkValid();
 
+        // Ігноруємо усі вбудовані у JVM класи, оскільки навіщо нам їх взагалі тут шукати???
+        // Нічого собі, раптово швидкість роботи бота виросла на 50%! Вау! Не може бути!
+        if (name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("sun.") || name.startsWith("jdk.")) {
+
+            try {
+                return ClassLoader.getSystemClassLoader().loadClass(name);
+            } catch (ClassNotFoundException e) {
+                return null;
+            }
+
+        }
+
         // Шукаємо чи був цей клас вже завантажений цим об'єктом раніше. Якщо так, повертаємо його.
 
         Class<?> clazz = findLoadedClass(name);
