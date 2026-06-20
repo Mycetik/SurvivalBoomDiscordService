@@ -14,7 +14,13 @@ public class DatabaseCommand extends CommandBase implements ConsoleCommandExecut
 
     @ArgumentMethod
     public SubCommandArgument subcommand() {
-        return new SubCommandArgument(new DatabaseGuildCommand(), new DatabaseUserCommand(), new DatabaseMemberCommand());
+        return new SubCommandArgument(
+                new DatabaseGuildCommand(),
+                new DatabaseUserCommand(),
+                new DatabaseMemberCommand(),
+                new DatabaseReloadCommand(),
+                new DatabaseRepositoriesCommand()
+        );
     }
 
 }
