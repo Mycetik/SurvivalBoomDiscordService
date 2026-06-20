@@ -4,6 +4,7 @@ import net.survivalboom.sbds.api.libraries.ILibrary;
 import net.survivalboom.sbds.api.libraries.LibraryDeclaration;
 import net.survivalboom.sbds.api.libraries.LibrarySatisfyConfiguration;
 import net.survivalboom.sbds.api.modules.*;
+import net.survivalboom.sbds.api.modules.dependencies.LoadOrder;
 import net.survivalboom.sbds.api.modules.dependencies.ModuleDependency;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.api.utils.valid.Manager;
@@ -80,24 +81,37 @@ public class ModuleManager extends Manager implements IModuleManager {
 
         }
 
-        if (!modulesMetas.isEmpty()) {
+        SortingResult sortingResult = sortModulesByDependencies(modulesMetas);
+        if (!sortingResult.skipped().isEmpty()) {
+            log.error("The following modules were skipped due to circular dependencies or loop propagation: {}",
+                    String.join(", ", sortingResult.skipped().stream()
+                            .map(meta -> meta.meta().getId())
+                            .toList())
+            );
+        }
+
+        List<ModuleMetaLoadResult> sortedMetas = sortingResult.sorted();
+
+        if (!sortedMetas.isEmpty()) {
 
             log.info("Found {} valid modules. Loading them... \n - {}",
                     modulesMetas.size(),
-                    String.join(", ", modulesMetas.stream()
+                    String.join(", ", sortedMetas.stream()
                             .map(meta -> meta.meta().getName())
                             .toList())
             );
 
         }
 
+        List<IModule> successfullyLoaded = new ArrayList<>();
         for (ModuleMetaLoadResult meta : modulesMetas) {
 
             String name = meta.meta().getName();
             log.info("Loading module {}...", name);
 
             try {
-                createModule(meta.meta(), meta.file(), null);
+                IModule module = createModule(meta.meta(), meta.file(), null);
+                successfullyLoaded.add(module);
             }
 
             catch (ModuleUnsatisfiedLibraryException e) {
@@ -118,7 +132,7 @@ public class ModuleManager extends Manager implements IModuleManager {
 
         }
 
-        for (Module module : modules.values()) {
+        for (IModule module : successfullyLoaded) {
 
             try {
                 enableModule(module);
@@ -548,5 +562,105 @@ public class ModuleManager extends Manager implements IModuleManager {
         return module;
 
     }
+
+    //
+    // MODULES SORTING
+    //
+
+    private SortingResult sortModulesByDependencies(List<ModuleMetaLoadResult> input) {
+        Map<String, ModuleMetaLoadResult> registry = new HashMap<>();
+        for (ModuleMetaLoadResult res : input) {
+            registry.put(res.meta().getId(), res);
+        }
+
+        List<ModuleMetaLoadResult> sorted = new ArrayList<>();
+        List<ModuleMetaLoadResult> skipped = new ArrayList<>();
+
+        // Состояния для DFS: 0 - не посещен, 1 - в процессе (серый), 2 - успешно обработан (черный), -1 - ошибка/цикл
+        Map<String, Integer> states = new HashMap<>();
+
+        // Строим граф зависимостей (какие модули должны быть ДО текущего)
+        Map<String, List<String>> dependsOn = new HashMap<>();
+        for (ModuleMetaLoadResult current : input) {
+            String currentId = current.meta().getId();
+            dependsOn.computeIfAbsent(currentId, k -> new ArrayList<>());
+
+            for (ModuleDependency dep : current.meta().getDependencies()) {
+                String depId = dep.id();
+                if (!registry.containsKey(depId)) continue;
+
+                if (dep.order() == LoadOrder.AFTER) { //
+                    dependsOn.get(currentId).add(depId);
+                } else if (dep.order() == LoadOrder.BEFORE) { //
+                    dependsOn.computeIfAbsent(depId, k -> new ArrayList<>()).add(currentId);
+                }
+            }
+        }
+
+        // Запускаем DFS для каждого модуля
+        for (String id : registry.keySet()) {
+            int state = states.getOrDefault(id, 0);
+            if (state == 0) {
+                dfsSort(id, registry, dependsOn, states, sorted, skipped);
+            }
+        }
+
+        return new SortingResult(sorted, skipped);
+    }
+
+    private boolean dfsSort(String id,
+                            Map<String, ModuleMetaLoadResult> registry,
+                            Map<String, List<String>> dependsOn,
+                            Map<String, Integer> states,
+                            List<ModuleMetaLoadResult> sorted,
+                            List<ModuleMetaLoadResult> skipped) {
+
+        int state = states.getOrDefault(id, 0);
+
+        // Обнаружен цикл!
+        if (state == 1) {
+            log.error("Circular dependency detected involving module `{}`!", id);
+            states.put(id, -1);
+            skipped.add(registry.get(id));
+            return false;
+        }
+
+        // Если модуль уже был обработан ранее
+        if (state == 2) return true;
+        if (state == -1) return false;
+
+        // Входим в модуль (делаем «серым»)
+        states.put(id, 1);
+
+        List<String> dependencies = dependsOn.getOrDefault(id, Collections.emptyList());
+        boolean hasCircularDependency = false;
+
+        for (String depId : dependencies) {
+            // Если хотя бы одна зависимость упала в цикл, текущий модуль тоже не может быть загружен
+            if (!dfsSort(depId, registry, dependsOn, states, sorted, skipped)) {
+                hasCircularDependency = true;
+            }
+        }
+
+        // Если сам модуль или его зависимости цикличны
+        if (hasCircularDependency || states.get(id) == -1) {
+            if (states.get(id) != -1) { // Если его скипнули из-за родителей, а не из-за себя напрямую
+                log.error("Module `{}` skipped because one of its dependencies has a circular loop.", id);
+                states.put(id, -1);
+                skipped.add(registry.get(id));
+            }
+            return false;
+        }
+
+        // Успешно обработан (делаем «черным»)
+        states.put(id, 2);
+        sorted.add(registry.get(id));
+        return true;
+    }
+
+    private record SortingResult(
+            @NotNull List<ModuleMetaLoadResult> sorted,
+            @NotNull List<ModuleMetaLoadResult> skipped
+    ) {}
 
 }
