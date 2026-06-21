@@ -2,7 +2,6 @@ package net.survivalboom.sbds.api.utils;
 
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.survivalboom.sbds.api.modules.IModuleManager;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -701,6 +700,42 @@ public class CommonUtils {
         return parts;
 
     }
+
+    //
+    // REPEAT
+    //
+
+    public static <T> RepeatResult<T> tryRepeat(@NotNull ThrowingSupplier<T> supplier, int attempts, int sleep) {
+
+        if (attempts < 1) {
+            throw new IllegalArgumentException("attempts < 1");
+        }
+
+        List<Throwable> errors = new ArrayList<>();
+        int index = 0;
+        T value = null;
+
+        while (index <= attempts) {
+
+            try {
+                value = supplier.getThrowing();
+                break;
+            }
+
+            catch (Throwable t) {
+                errors.add(t);
+            }
+
+            index++;
+            sleep(sleep);
+
+        }
+
+        return new RepeatResult<>(errors, Optional.ofNullable(value), index);
+
+    }
+
+    public record RepeatResult<T>(@NotNull List<Throwable> errors, @NotNull Optional<T> result, int attempts) {}
 
 
 }
