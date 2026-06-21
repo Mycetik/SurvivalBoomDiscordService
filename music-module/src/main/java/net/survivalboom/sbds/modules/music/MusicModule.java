@@ -5,7 +5,8 @@ import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.commands.*;
-import net.survivalboom.sbds.modules.music.music.lavalink.AutoSetup;
+import net.survivalboom.sbds.modules.music.utils.IntegratedLavalinkManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -14,12 +15,12 @@ public class MusicModule extends ModuleMain {
 
     private MusicManager musicManager;
 
-    private AutoSetup autoSetup;
+    private IntegratedLavalinkManager integratedLavalinkManager;
 
     @Override
     public void onLoad() {
-        autoSetup = new AutoSetup(this);
-        musicManager = new MusicManager(this, autoSetup);
+        integratedLavalinkManager = new IntegratedLavalinkManager(this);
+        musicManager = new MusicManager(this, integratedLavalinkManager);
     }
 
     @Override
@@ -33,10 +34,12 @@ public class MusicModule extends ModuleMain {
                 "translation_en.yml"
         );
 
-        checkFiles2();
+        integratedLavalinkManager.init();
+        musicManager.init();
 
         List<Command> commands = prepareCommands();
         commands.forEach(this::registerSlashCommand);
+        commands.forEach(this::registerStringCommand);
 
         Command consoleCommand = Command.create("music")
                 .setDescription("Manage MusicModule")
@@ -45,35 +48,37 @@ public class MusicModule extends ModuleMain {
 
         getSbds().getConsoleListener().registerCommand(this, consoleCommand);
 
-        autoSetup.init();
-        musicManager.init();
-
     }
 
     @Override
     public void onDisable() {
         musicManager.shutdown();
-        autoSetup.shutdown();
+        integratedLavalinkManager.shutdown();
     }
 
     private List<Command> prepareCommands() {
 
         return Stream.of(
-                new PlayCommand(musicManager),
-                new StopCommand(musicManager),
-                new SkipCommand(musicManager),
-                new BackCommand(musicManager),
-                new PlaylistCommand(musicManager),
-                new LoopCommand(musicManager),
-                new PauseCommand(musicManager),
-                new Music247Command(musicManager),
-                new LockCommand(musicManager),
-                new MusicBanCommand(musicManager)
+                new PlayCommand(this),
+                new StopCommand(this),
+                new SkipCommand(this),
+                new BackCommand(this),
+                new PlaylistCommand(this),
+                new LoopCommand(this),
+                new PauseCommand(this),
+                new Music247Command(this),
+                new LockCommand(this),
+                new MusicBanCommand(this)
         ).map(CommandBase::build).toList();
 
     }
 
+    public @NotNull MusicManager getMusicManager() {
+        return musicManager;
+    }
 
-
+    public @NotNull IntegratedLavalinkManager getIntegratedLavalinkManager() {
+        return integratedLavalinkManager;
+    }
 
 }

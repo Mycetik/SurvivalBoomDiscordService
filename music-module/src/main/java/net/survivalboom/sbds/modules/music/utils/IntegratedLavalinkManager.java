@@ -1,4 +1,4 @@
-package net.survivalboom.sbds.modules.music.music.lavalink;
+package net.survivalboom.sbds.modules.music.utils;
 
 import dev.arbjerg.lavalink.client.NodeOptions;
 import net.survivalboom.sbds.api.modules.ModuleMain;
@@ -7,6 +7,7 @@ import net.survivalboom.sbds.api.utils.valid.Manager;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.File;
@@ -21,7 +22,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Random;
 
-public class AutoSetup extends Manager {
+public class IntegratedLavalinkManager extends Manager {
 
     public static final URI DOWNLOAD_LINK = URI.create("https://github.com/lavalink-devs/Lavalink/releases/download/4.2.2/Lavalink.jar");
 
@@ -44,7 +45,7 @@ public class AutoSetup extends Manager {
     private Process lavalinkProcess;
 
 
-    public AutoSetup(@NotNull ModuleMain main) {
+    public IntegratedLavalinkManager(@NotNull ModuleMain main) {
 
         this.module = main;
         this.logger = main.getLogger();
@@ -106,6 +107,7 @@ public class AutoSetup extends Manager {
         }
 
         YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
+                .nodeStyle(NodeStyle.BLOCK)
                 .path(lavalinkConfig.toPath())
                 .build();
 

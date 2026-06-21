@@ -11,8 +11,6 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.channel.Channel;
-import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
@@ -59,6 +57,18 @@ public class MusicBot extends Manager {
 
     }
 
+    public @NotNull JDA getBot() {
+        return bot;
+    }
+
+    public @NotNull String getName() {
+        return name;
+    }
+
+    public @NotNull MusicManager getManager() {
+        return manager;
+    }
+
     //
     // MANAGER
     //
@@ -71,7 +81,14 @@ public class MusicBot extends Manager {
     @Override
     protected void shutdown0() {
 
-        players.values().forEach(GuildPlayer::shutdownIfNeeded);
+        players.values().forEach(p -> {
+
+            if (p.isActive()) {
+                p.disconnect();
+            }
+
+        });
+
         players.clear();
 
         lavalink.close();
@@ -79,6 +96,11 @@ public class MusicBot extends Manager {
         bot.shutdown();
         bot = null;
 
+    }
+
+    @SubscribeEvent
+    public void onReady(ReadyEvent event) {
+        bot.getPresence().setStatus(OnlineStatus.INVISIBLE);
     }
 
     private void onTrackEnd(@NotNull TrackEndEvent event) {
@@ -93,7 +115,7 @@ public class MusicBot extends Manager {
             return;
         }
 
-        if (!player.isValid()) {
+        if (!player.isActive()) {
             return;
         }
 
@@ -105,29 +127,22 @@ public class MusicBot extends Manager {
     // PLAYER
     //
 
-    public @NotNull GuildPlayer createPlayer(@NotNull AudioChannelUnion channel) {
+    public @NotNull GuildPlayer createPlayer(@NotNull Guild guild) {
 
-        Objects.requireNonNull(channel, "channel == null");
+        Objects.requireNonNull(guild, "guild == null");
         checkValid();
-
-        Guild guild = channel.getGuild();
 
         GuildPlayer player = getPlayer(guild);
         if (player == null) {
 
             Link link = lavalink.getOrCreateLink(guild.getIdLong());
-            LavalinkPlayer lavalinkPlayer = link.createOrUpdatePlayer().block(Duration.ofSeconds(5000));
+            LavalinkPlayer lavalinkPlayer = link.createOrUpdatePlayer().block(Duration.ofSeconds(30));
             Objects.requireNonNull(lavalinkPlayer, "lavalinkPlayer == null; did something just break?");
 
             player = new GuildPlayer(this, guild, link, lavalinkPlayer);
 
             players.put(guild, player);
 
-        }
-
-        if (!player.isValid()) {
-            player.setChannel(channel);
-            player.init();
         }
 
         return player;
@@ -141,28 +156,5 @@ public class MusicBot extends Manager {
     public @NotNull List<GuildPlayer> getPlayers() {
         return new ArrayList<>(players.values());
     }
-
-    //
-    // GETTERS
-    //
-
-    public @NotNull JDA getBot() {
-        return bot;
-    }
-
-    public @NotNull String getName() {
-        return name;
-    }
-
-    public @NotNull MusicManager getManager() {
-        return manager;
-    }
-
-
-    @SubscribeEvent
-    public void onReady(ReadyEvent event) {
-        bot.getPresence().setStatus(OnlineStatus.INVISIBLE);
-    }
-
 
 }

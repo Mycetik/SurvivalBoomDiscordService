@@ -1,6 +1,5 @@
 package net.survivalboom.sbds.modules.music.utils;
 
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
@@ -55,7 +54,7 @@ public class Utils {
             }
 
             MusicBot bot = freeBots.getFirst();
-            player = bot.createPlayer(channel);
+            player = bot.createPlayer(channel.getGuild());
 
         }
 
@@ -85,7 +84,7 @@ public class Utils {
             }
 
             MusicBot bot = freeBots.getFirst();
-            player = bot.createPlayer(channel);
+            player = bot.createPlayer(channel.getGuild());
 
         }
 
@@ -95,29 +94,32 @@ public class Utils {
 
     public static @NotNull String createTracksString(@NotNull List<MusicTrack> tracks, int max) {
 
-        List<String> formatted = IntStream.of(0, Math.min(tracks.size(), max) - 1)
-                .mapToObj(index -> {
+        int limit = Math.max(0, Math.min(tracks.size(), max));
+        if (limit == 0) {
+            return !tracks.isEmpty() ? "..." : "";
+        }
 
+        List<String> formatted = IntStream.range(0, limit)
+                .mapToObj(index -> {
                     MusicTrack track = tracks.get(index);
 
                     Placeholders placeholders = Placeholders.of(
-                            "track.index", index,
+                            "track.index", index + 1,
                             "track", track
                     );
 
-                    String string = "`{track.index}.` **[{track.title}]({track.link})** `{track.duration}`";
-
-                    return placeholders.parse(string);
-
+                    String template = "`{track.index}.` **[{track.title}]({track.link})** `{track.duration}`";
+                    return placeholders.parse(template);
                 })
                 .toList();
 
-        String string = String.join("\n", formatted);
+        String result = String.join("\n", formatted);
+
         if (tracks.size() > max) {
-            string += "\n...";
+            result += "\n...";
         }
 
-        return string;
+        return result;
 
     }
 
@@ -128,21 +130,19 @@ public class Utils {
             boolean ephemeral
     ) {
 
-        Guild guild = info.guild();
-        Objects.requireNonNull(guild);
-
-        User user = info.user();
-        Objects.requireNonNull(user);
-
-        if (manager.isMusicBanned(guild, user)) {
+        if (manager.isMusicBanned(info.member())) {
             info.reply("music.command.music-ban.denied").setEphemeral(ephemeral).queue();
             return true;
         }
 
-        if (player.adminLock() && !info.hasPermission("music.command.lock.bypass")) {
+        if (!player.isActive()) {
+            return false;
+        }
+
+        if (player.hasAdminLock() && !info.hasPermission("music.command.lock.bypass")) {
             User botUser = player.getBot().getBot().getSelfUser();
             info.reply("music.command.lock.denied")
-                    .withPlaceholders("{bot}", botUser)
+                    .withPlaceholders("bot", botUser)
                     .setEphemeral(ephemeral)
                     .queue();
             return true;

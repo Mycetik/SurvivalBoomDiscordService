@@ -9,12 +9,12 @@ music:
 
   not-in-voice:
     $embed:
-      description: <:9752barrierblockmc:1013463226752696392> Вы не находитесь в голосовом канале.
+      description: 🚫 Вы не находитесь в голосовом канале.
       color: ff0000
 
   no-bot-in-voice:
     $embed:
-      description: <:9752barrierblockmc:1013463226752696392> В вашем голосовом канале нет музыкального бота.
+      description: 🚫 В вашем голосовом канале нет музыкального бота.
       color: ff0000
 
   command:
@@ -41,32 +41,32 @@ music:
         $embed:
           title: "Нету доступа :("
           description: |
-            Бот {bot.name} не может подключиться к {CHANNEL}.
+            Бот {bot.mention} не может подключиться к {channel.mention}.
             Может бот не имеет необходимых прав?
           color: ff0000
 
       no-tracks-found:
         $embed:
-          description: <:google_dinosaur:1077358570091319337> Результатов по запросу `{QUERY}` не найдено!
+          description: ⛓️‍💥 Результатов по запросу `{query}` не найдено!
           color: ff0000
 
       searching-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Поиск треков по запросу `{QUERY}`...
+          description: 🔎 Поиск треков по запросу `{query}`...
           color: ffce47
 
       loading-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Загружаем треки с `{URL}`...
+          description: 🛸 Загружаем треки с `{url}`...
           color: ffce47
 
       load-failed:
         $embed:
           title: "Ошибка загрузки!"
           description: |
-            <:9752barrierblockmc:1013463226752696392> Произошла ошибка при попытке загрузки трека. Может вы указали неправильну ссылку или динозаврик отгрыз что-то важное в коде.
+            🚫 Произошла ошибка при попытке загрузки трека. Может вы указали неправильну ссылку или динозаврик отгрыз что-то важное в коде.
             ```
-            {ERROR}
+            {error}
             ```
           color: ff0000
 
@@ -136,11 +136,11 @@ music:
           author: "{bot.name}"
           author-icon: "{bot.avatar}"
 
-          title: "Добавлено `{TRACKS-COUNT}` треков в плейлист!"
+          title: "Добавлено `{count}` треков в плейлист!"
           color: 8f00ff
           description: |
             Добавлено:
-            {TRACKS}
+            {tracks}
             
             Сейчас играет:
             - `{playing.title}`
@@ -261,7 +261,7 @@ music:
 
       success:
         $embed:
-          description: "<:blurple_verified:1024732810667364414> Стоп! Музыкальный бот остановлен!"
+          description: "🛑 Стоп! Музыкальный бот остановлен!"
           color: 8f00ff
 
     #
@@ -539,8 +539,17 @@ music:
 
       success:
         $embed:
-          title: "Плейлист из `{playlist.size}` песен."
-          description: "{playlist}"
+
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
+
+          title: "Плейлист из `{playlist.size}` треков."
+          description: |
+            **Текущий трек**
+            `{playing.index}.` [**{playing.title}**]({playing.link}) `{playing.duration}`
+
+            **Плейлист**
+            {playlist}
 
     #
     # /LOOP

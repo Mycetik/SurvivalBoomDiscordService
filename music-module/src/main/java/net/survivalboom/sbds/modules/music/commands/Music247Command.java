@@ -12,22 +12,40 @@ import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.modules.music.MusicModule;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
 
-@CommandClass(name = "music-24-7", description = "Disable disconnect on idle for the current music bot", translationKey = "music.command.24-7", permission = "music.command.24_7")
-public class Music247Command extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+@CommandClass(
+        name = "music-24-7",
+        description = "Disable disconnect on idle for the current music bot",
+        translationKey = "music.command.24-7",
+        permission = "music.command.24-7"
+)
+public class Music247Command extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
 
     private final MusicManager manager;
 
-    public Music247Command(@NotNull MusicManager manager) {
-        this.manager = manager;
+    public Music247Command(@NotNull MusicModule module) {
+        this.manager = module.getMusicManager();
     }
 
     @Override
-    public void executes(@NotNull SlashExecutionInfo info) throws Throwable {
+    public void executes(@NotNull SlashExecutionInfo info) {
+        executes0(info);
+    }
+
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) {
+        executes0(info);
+    }
+
+    private void executes0(@NotNull InteractionHolder info) {
 
         GuildPlayer player = Utils.getInteractionPlayer(manager, info, false, false);
         if (player == null) {
@@ -38,8 +56,8 @@ public class Music247Command extends CommandBase implements SlashCommandExecutor
             return;
         }
 
-        boolean state = !player.idleDisconnect();
-        player.idleDisconnect(state);
+        boolean state = !player.isIdleDisconnect();
+        player.setIdleDisconnect(state);
 
         String str = state ? "music.command.24-7.disable" : "music.command.24-7.enable";
 
@@ -60,8 +78,8 @@ public class Music247Command extends CommandBase implements SlashCommandExecutor
             return;
         }
 
-        boolean newState = !player.idleDisconnect();
-        player.idleDisconnect(newState);
+        boolean newState = !player.isIdleDisconnect();
+        player.setIdleDisconnect(newState);
 
         info.logger().info("24/7 mode is now {}", newState ? "ENABLED (idle disconnect disabled)" : "DISABLED (idle disconnect enabled)");
 

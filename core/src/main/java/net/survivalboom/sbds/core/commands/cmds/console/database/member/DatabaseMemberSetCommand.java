@@ -13,6 +13,7 @@ import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.database.guilds.IGuildData;
 import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
 import net.survivalboom.sbds.api.database.members.IMemberData;
+import net.survivalboom.sbds.api.database.members.IMemberDataManager;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
@@ -30,11 +31,11 @@ public class DatabaseMemberSetCommand extends CommandBase implements ConsoleComm
         String path = info.arguments().getCast("path", String.class).orElseThrow();
         Object data = info.arguments().getCast("data", Object.class).orElseThrow();
 
-        IGuildDataManager manager = info.sbds().getGuildDataManager();
+        IMemberDataManager manager = info.sbds().getMemberDataManager();
 
         info.logger().info("Retrieving member data of `{}` on the guild `{}`...", user.getEffectiveName(), guild.getName());
 
-        IMemberData memberData = info.sbds().getMemberDataManager().obtain(guild, user).join();
+        IMemberData memberData = manager.obtain(guild, user).join();
         INamespacedDataContainer container = memberData.container();
 
         info.logger().info("Applying changes...");

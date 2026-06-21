@@ -12,6 +12,10 @@ import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.modules.music.MusicModule;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import net.survivalboom.sbds.modules.music.music.MusicTrack;
@@ -19,19 +23,33 @@ import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Objects;
 
-@CommandClass(name = "playlist", description = "Shows current playlist", translationKey = "music.command.playlist")
-public class PlaylistCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+@CommandClass(
+        name = "playlist",
+        description = "Shows current playlist",
+        translationKey = "music.command.playlist",
+        permission = "music.command.playlist",
+        defaultPermission = true
+)
+public class PlaylistCommand extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
 
     private final MusicManager manager;
 
-    public PlaylistCommand(@NotNull MusicManager manager) {
-        this.manager = manager;
+    public PlaylistCommand(@NotNull MusicModule module) {
+        this.manager = module.getMusicManager();
     }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
+        executes0(info);
+    }
+
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) {
+        executes0(info);
+    }
+
+    private void executes0(@NotNull InteractionHolder info) {
 
         GuildPlayer player = Utils.getInteractionPlayer(manager, info, false, false);
         if (player == null) {
@@ -39,12 +57,16 @@ public class PlaylistCommand extends CommandBase implements SlashCommandExecutor
         }
 
         List<MusicTrack> playlist = player.getPlaylist();
-        String playListStr = Utils.createTracksString(playlist, 100);
+        String playListStr = Utils.createTracksString(playlist, 30);
         User botUser = player.getBot().getBot().getSelfUser();
+
+        int index = player.getPlayingIndex() + 1;
 
         info.reply("music.command.playlist.success")
                 .withPlaceholders(
                         "bot", botUser,
+                        "playing", player.getCurrentPlaying(),
+                        "playing.index", index,
                         "playlist", playListStr,
                         "playlist.size", playlist.size()
                 )
@@ -56,7 +78,6 @@ public class PlaylistCommand extends CommandBase implements SlashCommandExecutor
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
         AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
-        Objects.requireNonNull(channel);
 
         GuildPlayer player = Utils.getConsolePlayer(manager, info, channel, false);
         if (player == null) {

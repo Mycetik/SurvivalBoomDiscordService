@@ -2,6 +2,8 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
@@ -12,25 +14,51 @@ import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
 import net.survivalboom.sbds.api.interaction.InteractionHolder;
-import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
+import net.survivalboom.sbds.modules.music.MusicModule;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
 
-@CommandClass(name = "music-lock", description = "Locks current music bot for staff usage only", translationKey = "music.command.lock", permission = "music.command.lock")
-public class LockCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+@CommandClass(
+        name = "music-lock",
+        description = "Locks current music bot for staff usage only",
+        translationKey = "music.command.lock",
+        permission = "music.command.lock"
+)
+public class LockCommand extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
+
+    private final MusicModule module;
 
     private final MusicManager manager;
 
-    public LockCommand(@NotNull MusicManager musicManager) {
-        this.manager = musicManager;
+    public LockCommand(@NotNull MusicModule module) {
+        this.module = module;
+        this.manager = module.getMusicManager();
     }
 
+    @Override
+    protected void init(@NotNull ISBDS sbds) {
+
+        sbds.getComponentInteractionManager().registerListener(
+                module,
+                "lock",
+                ButtonInteractionEvent.class,
+                click -> executes0(click, true)
+        );
+
+    }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
+        executes0(info, false);
+    }
+
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) throws Throwable {
         executes0(info, false);
     }
 
@@ -41,8 +69,8 @@ public class LockCommand extends CommandBase implements SlashCommandExecutor, Co
             return;
         }
 
-        boolean state = !player.adminLock();
-        player.adminLock(state);
+        boolean state = !player.hasAdminLock();
+        player.setAdminLock(state);
 
         User botUser = player.getBot().getBot().getSelfUser();
 
@@ -64,8 +92,8 @@ public class LockCommand extends CommandBase implements SlashCommandExecutor, Co
             return;
         }
 
-        boolean newState = !player.adminLock(); // toggle lock
-        player.adminLock(newState);
+        boolean newState = !player.hasAdminLock(); // toggle lock
+        player.setAdminLock(newState);
 
         String msg = newState ? "Music bot is now &blocked &rfor staff-only use." : "Music bot is now &bunlocked &rfor all users.";
         info.logger().info(msg);

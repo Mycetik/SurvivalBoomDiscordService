@@ -15,19 +15,6 @@ manual-setup: false
 # Цей параметр буде проігноровано, якщо manual-setup == false.
 # Ноди lavalink. Можете вказати декілька для розподілення навантаження.
 nodes:
-
   - name: "main"
     url: "https://survivalboom.net"
     password: "dinoZaveriiik!!"
-
-# Налаштуйте які платформи будуть підтримуватись музичним ботом.
-# Якщо ви вмикаєте підтримку YouTube, потрібен додатковий плагін для Lavalink.
-# https://github.com/lavalink-devs/youtube-source#plugin
-support:
-  youtube: true
-  spotify: true
-  soundcloud: true
-  apple: true
-
-  # Дозволити боту здійснювати HTTP запит на прямі посилання на медіа? Це може виказати IP адресу вашого сервера й ви можете стати жертвою DDoS атак.
-  direct-media: true

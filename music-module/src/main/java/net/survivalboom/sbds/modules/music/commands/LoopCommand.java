@@ -2,6 +2,8 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
@@ -13,23 +15,44 @@ import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.modules.music.MusicModule;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import net.survivalboom.sbds.modules.music.music.LoopMode;
 import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
 
-@CommandClass(name = "loop", description = "Sets a loop mode for current music bot", translationKey = "music.command.loop")
-public class LoopCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+@CommandClass(
+        name = "loop",
+        description = "Sets a loop mode for current music bot",
+        translationKey = "music.command.loop",
+        permission = "music.command.loop",
+        defaultPermission = true
+)
+public class LoopCommand extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
 
     private final MusicManager manager;
 
-    public LoopCommand(@NotNull MusicManager manager) {
-        this.manager = manager;
+    public LoopCommand(@NotNull MusicModule module) {
+        this.manager = module.getMusicManager();
     }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
+        executes0(info);
+    }
+
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) {
+        executes0(info);
+    }
+
+    private void executes0(@NotNull InteractionHolder info) {
+
+        LoopMode mode = info.arguments().getCast("mode", LoopMode.class).orElseThrow();
 
         GuildPlayer player = Utils.getInteractionPlayer(manager, info, false, false);
         if (player == null) {
@@ -40,16 +63,14 @@ public class LoopCommand extends CommandBase implements SlashCommandExecutor, Co
             return;
         }
 
-        LoopMode loop = info.arguments().getCast("mode", LoopMode.class).orElseThrow();
-
-        player.loop(loop);
+        player.setLoopMode(mode);
 
         User botUser = player.getBot().getBot().getSelfUser();
 
         info.reply("music.command.loop.success")
                 .withPlaceholders(
                         "bot", botUser,
-                        "mode", loop
+                        "mode", mode
                 )
                 .queue();
 
@@ -65,8 +86,8 @@ public class LoopCommand extends CommandBase implements SlashCommandExecutor, Co
             return;
         }
 
-        boolean newState = !player.adminLock(); // toggle lock
-        player.adminLock(newState);
+        boolean newState = !player.hasAdminLock(); // toggle lock
+        player.setAdminLock(newState);
 
         if (newState) {
             info.logger().info("Music bot is now &clocked &rfor staff-only use.");

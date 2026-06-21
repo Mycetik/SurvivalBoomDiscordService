@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
@@ -13,30 +14,46 @@ import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.modules.music.MusicModule;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@CommandClass(name = "music-ban", description = "Bans member from using music bot", translationKey = "music.command.music-ban", permission = "music.command.musicban")
-public class MusicBanCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+@CommandClass(
+        name = "music-ban",
+        description = "Bans member from using music bot",
+        translationKey = "music.command.music-ban",
+        permission = "music.command.music-ban"
+)
+public class MusicBanCommand extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
 
     private final MusicManager manager;
 
-    public MusicBanCommand(@NotNull MusicManager manager) {
-        this.manager = manager;
+    public MusicBanCommand(@NotNull MusicModule module) {
+        this.manager = module.getMusicManager();
     }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
+        executes0(info);
+    }
 
-        Guild guild = info.guild();
-        Objects.requireNonNull(guild);
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) {
+        executes0(info);
+    }
+
+    private void executes0(@NotNull InteractionHolder info) {
 
         User target = info.arguments().getCast("target", User.class).orElseThrow();
+        Member member = info.guild().retrieveMember(target).complete();
 
-        boolean state = !manager.isMusicBanned(guild, target);
-        manager.setMusicBanned(guild, target, state);
+        boolean state = !manager.isMusicBanned(member);
+        manager.setMusicBanned(member, state);
 
         String str = state ? "music.command.music-ban.banned" : "music.command.music-ban.unbanned";
         info.reply(str)
@@ -50,11 +67,12 @@ public class MusicBanCommand extends CommandBase implements SlashCommandExecutor
 
         Guild guild = info.arguments().getCast("guild", Guild.class).orElseThrow();
         User user = info.arguments().getCast("target", User.class).orElseThrow();
+        Member member = guild.retrieveMember(user).complete();
 
         info.logger().info("Retrieving data from the database...");
 
-        boolean banned = !manager.isMusicBanned(guild, user);
-        manager.setMusicBanned(guild, user, banned);
+        boolean banned = !manager.isMusicBanned(member);
+        manager.setMusicBanned(member, banned);
 
         String result = banned ? "User has been music-banned" : "User has been unbanned from music";
         info.logger().info("{}: {} ({})", result, user.getAsTag(), user.getId());

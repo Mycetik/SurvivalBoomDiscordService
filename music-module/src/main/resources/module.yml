@@ -1,3 +1,7 @@
+#
+#  Music Module | SurvivalBoom Discord Service
+# Configuration | By TIMURishche
+#
 
 main: "net.survivalboom.sbds.modules.music.MusicModule"
 
@@ -5,9 +9,8 @@ name: "MusicModule"
 description: "Музичний модуль для SBDS. Музика!"
 version: "1.0"
 
-author: TIMURishche
+authors: TIMURishche
 website: "https://survivalboom.net"
-
 
 libraries:
   - "dev.arbjerg:lavalink-client:3.4.0"

@@ -2,6 +2,8 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
@@ -13,7 +15,10 @@ import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
 import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.modules.music.MusicModule;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import net.survivalboom.sbds.modules.music.music.MusicTrack;
@@ -22,17 +27,44 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-@CommandClass(name = "back", description = "Returns the previous song", translationKey = "music.command.back")
-public class BackCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+@CommandClass(
+        name = "back",
+        description = "Returns the previous song",
+        translationKey = "music.command.back",
+        permission = "music.command.back",
+        defaultPermission = true
+)
+public class BackCommand extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
+
+    private final MusicModule module;
 
     private final MusicManager manager;
 
-    public BackCommand(@NotNull MusicManager manager) {
-        this.manager = manager;
+    public BackCommand(@NotNull MusicModule module) {
+        this.module = module;
+        this.manager = module.getMusicManager();
+    }
+
+    @Override
+    protected void init(@NotNull ISBDS sbds) {
+
+        sbds.getComponentInteractionManager().registerListener(
+                module,
+                "back",
+                ButtonInteractionEvent.class,
+                click -> executes0(click, 1, true)
+        );
+
     }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) throws Throwable {
+        int steps = info.arguments().getCast("steps", Integer.class).orElse(1);
+        executes0(info, steps, false);
+    }
+
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) throws Throwable {
         int steps = info.arguments().getCast("steps", Integer.class).orElse(1);
         executes0(info, steps, false);
     }

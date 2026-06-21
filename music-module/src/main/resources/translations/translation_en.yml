@@ -9,12 +9,12 @@ music:
 
   not-in-voice:
     $embed:
-      description: <:9752barrierblockmc:1013463226752696392> You are not in a voice channel.
+      description: 🚫 You are not in a voice channel.
       color: ff0000
 
   no-bot-in-voice:
     $embed:
-      description: <:9752barrierblockmc:1013463226752696392> No music bot is in your voice channel.
+      description: 🚫 No music bot is in your voice channel.
       color: ff0000
 
   command:
@@ -44,24 +44,24 @@ music:
 
       no-tracks-found:
         $embed:
-          description: <:google_dinosaur:1077358570091319337> No results found for `{query}`!
+          description: ⛓️‍💥 No results found for `{query}`!
           color: ff0000
 
       searching-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Searching for tracks by `{query}`...
+          description: 🔎 Searching for tracks by `{query}`...
           color: ffce47
 
       loading-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Loading tracks from `{url}`...
+          description: 🛸 Loading tracks from `{url}`...
           color: ffce47
 
       load-failed:
         $embed:
           title: "Load Error!"
           description: |
-            <:9752barrierblockmc:1013463226752696392> Failed to load track. Bad link or something just broke.
+            🚫 Failed to load track. Bad link or something just broke.
             ```
             {error}
             ```
@@ -217,7 +217,7 @@ music:
       description: "Stops the music bot in your channel."
       success:
         $embed:
-          description: "<:blurple_verified:1024732810667364414> Stop! Music bot has been stopped!"
+          description: "🛑 Stop! Music bot has been stopped!"
           color: 8f00ff
 
     skip:
@@ -388,7 +388,7 @@ music:
           color: 8f00ff
           description: |
             Went back to:
-            - `{played.title}`
+            - `{skipped.title}`
             Now playing:
             - `{playing.title}`
           fields:
@@ -430,11 +430,22 @@ music:
             emoji: "🔒"
 
     playlist:
+
       description: "Displays the current music bot playlist."
+
       success:
         $embed:
-          title: "Playlist of `{playlist.size}` songs."
-          description: "{playlist}"
+
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
+
+          title: "Playlist of `{playlist.size}` tracks."
+          description: |
+            **Current**
+            `{playing.index}.` [**{playing.title}**]({playing.link}) `{playing.duration}`
+
+            **Playlist**
+            {playlist}
 
     loop:
       description: "Sets the loop mode for tracks in the music bot."

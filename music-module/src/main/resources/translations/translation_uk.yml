@@ -9,12 +9,12 @@ music:
 
   not-in-voice:
     $embed:
-      description: <:9752barrierblockmc:1013463226752696392> Ви не знаходитесь у голосовому каналі.
+      description: 🚫 Ви не знаходитесь у голосовому каналі.
       color: ff0000
 
   no-bot-in-voice:
     $embed:
-      description: <:9752barrierblockmc:1013463226752696392> У вашому голосовому каналі немає музичного бота.
+      description: 🚫 У вашому голосовому каналі немає музичного бота.
       color: ff0000
 
   command:
@@ -48,24 +48,24 @@ music:
 
       no-tracks-found:
         $embed:
-          description: <:google_dinosaur:1077358570091319337> Результатів за запитом `{query}` не знайдено!
+          description: ⛓️‍💥 Результатів за запитом `{query}` не знайдено!
           color: ff0000
 
       searching-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Шукаю треки за запитом `{query}`...
+          description: 🔎 Шукаю треки за запитом `{query}`...
           color: ffce47
 
       loading-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Завантажую треки за посиланням `{url}`...
+          description: 🛸 Завантажую треки за посиланням `{url}`...
           color: ffce47
 
       load-failed:
         $embed:
           title: "Помилка завантаження!"
           description: |
-            <:9752barrierblockmc:1013463226752696392> Сталась помилка при спробі завантажити трек. Можливо неправильне посилання або динозаврик усе зламав.
+            🚫 Сталась помилка при спробі завантажити трек. Можливо неправильне посилання або динозаврик усе зламав.
             ```
             {error}
             ```
@@ -144,7 +144,7 @@ music:
             {tracks}
             
             Зараз грає:
-            - `{playing.name}`
+            - `{playing.title}`
 
           fields:
 
@@ -203,7 +203,7 @@ music:
           color: 8f00ff
           description: |
             Зараз грає:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
@@ -262,7 +262,7 @@ music:
 
       success:
         $embed:
-          description: "<:blurple_verified:1024732810667364414> Стоп! Музичного бота зупинено!"
+          description: "🛑 Стоп! Музичного бота зупинено!"
           color: 8f00ff
 
     #
@@ -289,11 +289,11 @@ music:
           author: "{bot.name}"
           author-icon: "{bot.avatar}"
 
-          title: "Пропущено `{skipped}` пісень!"
+          title: "Пропущено `{count}` пісень!"
           color: 8f00ff
           description: |
             Зараз грає:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
@@ -418,11 +418,11 @@ music:
           author: "{bot.name}"
           author-icon: "{bot.avatar}"
 
-          title: "Пропущено `{skipped}` пісень!"
+          title: "Пропущено `{count}` пісень!"
           color: 8f00ff
           description: |
             Зараз грає:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
@@ -480,9 +480,9 @@ music:
           color: 8f00ff
           description: |
             Пропущено:
-            - `{skipped.name}`
+            - `{skipped.title}`
             Зараз грає:
-            - `{playing.name}`
+            - `{playing.title}`
 
           fields:
 
@@ -540,8 +540,17 @@ music:
 
       success:
         $embed:
-          title: "Плейліст з `{size}` пісень."
-          description: "{playlist}"
+
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
+
+          title: "Плейліст з `{playlist.size}` пісень."
+          description: |
+            **Зараз грає**
+            `{playing.index}.` [**{playing.title}**]({playing.link}) `{playing.duration}`
+            
+            **Плейліст**
+            {playlist}
 
     #
     # /LOOP

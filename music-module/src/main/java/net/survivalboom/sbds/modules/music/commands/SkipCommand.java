@@ -2,6 +2,8 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
@@ -13,24 +15,54 @@ import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
 import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.modules.music.MusicModule;
 import net.survivalboom.sbds.modules.music.music.MusicManager;
 import net.survivalboom.sbds.modules.music.music.GuildPlayer;
 import net.survivalboom.sbds.modules.music.music.MusicTrack;
 import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
 
-@CommandClass(name = "skip", description = "Skips the current playing song", translationKey = "music.command.skip")
-public class SkipCommand extends CommandBase implements SlashCommandExecutor, ConsoleCommandExecutor {
+@CommandClass(
+        name = "skip",
+        description = "Skips the current playing song",
+        translationKey = "music.command.skip",
+        permission = "music.command.skip",
+        defaultPermission = true
+)
+public class SkipCommand extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
+
+    private final MusicModule module;
 
     private final MusicManager manager;
 
-    public SkipCommand(@NotNull MusicManager manager) {
-        this.manager = manager;
+    public SkipCommand(@NotNull MusicModule module) {
+        this.module = module;
+        this.manager = module.getMusicManager();
+    }
+
+    @Override
+    protected void init(@NotNull ISBDS sbds) {
+
+        sbds.getComponentInteractionManager().registerListener(
+                module,
+                "next",
+                ButtonInteractionEvent.class,
+                click -> executes0(click, 1, true)
+        );
+
     }
 
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
+        int steps = info.arguments().getCast("steps", Integer.class).orElse(1);
+        executes0(info, steps, false);
+    }
+
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) {
         int steps = info.arguments().getCast("steps", Integer.class).orElse(1);
         executes0(info, steps, false);
     }
@@ -45,8 +77,8 @@ public class SkipCommand extends CommandBase implements SlashCommandExecutor, Co
         }
 
         if (player.isLastTrack()) {
-            player.shutdown();
-            info.reply("music.command.stop.success").queue();
+            player.disconnect();
+            info.reply("music.command.stop.success").setEphemeral(ephemeral).queue();
             return;
         }
 
@@ -59,6 +91,7 @@ public class SkipCommand extends CommandBase implements SlashCommandExecutor, Co
         catch (IllegalArgumentException e) {
             info.reply("music.command.skip.invalid-index")
                     .withPlaceholders("steps", player.getPlaylistSize() - player.getPlayingIndex())
+                    .setEphemeral(ephemeral)
                     .queue();
             return;
         }
@@ -75,6 +108,7 @@ public class SkipCommand extends CommandBase implements SlashCommandExecutor, Co
                         "playlist", Utils.createTracksString(player.getPlaylist(), 10),
                         "playlist.size", player.getPlaylistSize()
                 )
+                .setEphemeral(ephemeral)
                 .queue();
 
     }
@@ -91,7 +125,7 @@ public class SkipCommand extends CommandBase implements SlashCommandExecutor, Co
         }
 
         if (player.isLastTrack()) {
-            player.shutdown();
+            player.disconnect();
             info.logger().info("Last track reached. Stopping player.");
             return;
         }

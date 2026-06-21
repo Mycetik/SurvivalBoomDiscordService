@@ -2,14 +2,14 @@ package net.survivalboom.sbds.modules.music.music;
 
 import dev.arbjerg.lavalink.client.NodeOptions;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
-import net.survivalboom.sbds.api.database.guilds.IGuildData;
-import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
+import net.survivalboom.sbds.api.database.members.IMemberData;
+import net.survivalboom.sbds.api.database.members.IMemberDataManager;
 import net.survivalboom.sbds.api.utils.*;
 import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.modules.music.MusicModule;
-import net.survivalboom.sbds.modules.music.music.lavalink.AutoSetup;
+import net.survivalboom.sbds.modules.music.utils.IntegratedLavalinkManager;
 import org.jetbrains.annotations.Blocking;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -28,14 +28,14 @@ public class MusicManager extends Manager {
 
     private final MusicModule module;
 
-    private final AutoSetup autoSetup;
+    private final IntegratedLavalinkManager integratedLavalinkManager;
 
     private final Logger logger;
 
     private final File botsFolder;
 
 
-    private final IGuildDataManager guildData;
+    private final IMemberDataManager memberDataManager;
 
     private final NamespacedKey key;
 
@@ -45,16 +45,16 @@ public class MusicManager extends Manager {
     private final Set<NodeOptions> nodeInfos = new HashSet<>();
 
 
-    public MusicManager(@NotNull MusicModule module, @NotNull AutoSetup autoSetup) {
+    public MusicManager(@NotNull MusicModule module, @NotNull IntegratedLavalinkManager integratedLavalinkManager) {
 
         this.module = module;
-        this.autoSetup = autoSetup;
+        this.integratedLavalinkManager = integratedLavalinkManager;
 
         this.logger = module.getLogger();
         this.botsFolder = new File(module.getModule().getDataFolder(), "bots");
 
-        this.guildData = module.getSbds().getGuildDataManager();
-        this.key = NamespacedKey.fromModule(module, "music_module");
+        this.memberDataManager = module.getSbds().getMemberDataManager();
+        this.key = NamespacedKey.fromModule(module, "data");
 
     }
 
@@ -70,8 +70,8 @@ public class MusicManager extends Manager {
 
     private void loadNodes() {
 
-        if (autoSetup.isEnabled()) {
-            nodeInfos.add(autoSetup.createNodes());
+        if (integratedLavalinkManager.isEnabled()) {
+            nodeInfos.add(integratedLavalinkManager.createNodes());
             return;
         }
 
@@ -197,7 +197,7 @@ public class MusicManager extends Manager {
 
         return botsInGuild.stream().filter(bot -> {
             GuildPlayer player = bot.getPlayer(guild);
-            return player == null || !player.isValid();
+            return player == null || !player.isActive();
         }).toList();
 
     }
@@ -212,8 +212,8 @@ public class MusicManager extends Manager {
                 .stream()
                 .map(bot -> bot.getPlayer(guild))
                 .filter(Objects::nonNull)
-                .filter(GuildPlayer::isValid)
-                .filter(p -> channel.getIdLong() == Objects.requireNonNull(p.getChannel()).getIdLong())
+                .filter(GuildPlayer::isActive)
+                .filter(p -> channel.getIdLong() == Objects.requireNonNull(p.getConnectedChannel()).getIdLong())
                 .findFirst()
                 .orElse(null);
     }
@@ -231,35 +231,37 @@ public class MusicManager extends Manager {
     //
 
     @Blocking
-    public boolean isMusicBanned(@NotNull Guild guild, @NotNull User user) {
+    public boolean isMusicBanned(@NotNull Member member) {
 
-        IGuildData guildData = this.guildData.get(guild).join();
-        if (guildData == null) {
+        IMemberData memberData = memberDataManager.get(member).join();
+        if (memberData == null) {
             return false;
         }
 
-        return guildData.container().obtainNode(key).node(user.getId()).getBoolean(false);
+        return memberData.container()
+                .obtainNode(key)
+                .node("banned")
+                .getBoolean(false);
 
     }
 
     @Blocking
-    public void setMusicBanned(@NotNull Guild guild, @NotNull User user, boolean state) {
+    public void setMusicBanned(@NotNull Member member, boolean state) {
 
-        IGuildData guildData = this.guildData.obtain(guild).join();
-
-        ConfigurationNode node = guildData.container().obtainNode(key).node(user.getId());
+        IMemberData memberData = memberDataManager.obtain(member).join();
+        ConfigurationNode node = memberData.container()
+                .obtainNode(key)
+                .node("banned");
 
         try {
-            if (state) {
-                node.set(true);
-            } else {
-                node.set(null);
-            }
-        } catch (SerializationException e) {
+            node.set(state);
+        }
+
+        catch (SerializationException e) {
             throw new RuntimeException(e);
         }
 
-        guildData.save();
+        memberData.save();
 
     }
 
