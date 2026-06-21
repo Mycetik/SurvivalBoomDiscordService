@@ -175,6 +175,7 @@ public class StringCommandManager extends AbstractCommandManager<IStringCommandM
                 }
             }
 
+            boolean hasReply = false;
             for (SubCommandArgument.SubCommand execute : toExecute) {
 
                 StringExecutionInfo info = new StringExecutionInfo(message, stringCommand, command, rootCmdName, result.arguments());
@@ -185,6 +186,21 @@ public class StringCommandManager extends AbstractCommandManager<IStringCommandM
                 if (executor != null) {
                     executor.executes(info);
                 }
+
+                if (info.wasReplied()) {
+                    hasReply = true;
+                }
+
+            }
+
+            if (!hasReply) {
+
+                if (resp != null) {
+                    resp.delete().queue();
+                }
+
+                sbds.getMessages().reply(message, "sbds.interaction-no-response", author).queue();
+                logger.error("Command did not respond to the request. Did something go wrong?");
 
             }
 

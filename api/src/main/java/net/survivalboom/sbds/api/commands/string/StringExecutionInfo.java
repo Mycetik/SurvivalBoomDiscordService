@@ -22,6 +22,8 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
 
     private Message response = null;
 
+    private boolean replied = false;
+
 
     public StringExecutionInfo(
             @NotNull Message message,
@@ -58,6 +60,10 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
         this.response = response;
     }
 
+    public boolean wasReplied() {
+        return replied;
+    }
+
 
     @Override
     public Guild guild() {
@@ -89,6 +95,8 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
             throw new IllegalStateException("Command has no response yet");
         }
 
+        this.replied = true;
+
         return response.editMessage(txt);
 
     }
@@ -100,6 +108,8 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
             throw new IllegalStateException("Command has no response yet");
         }
 
+        this.replied = true;
+
         return response.editMessage(MessageEditData.fromCreateData(data));
 
     }
@@ -108,11 +118,13 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
 
     @Override
     public @NotNull RestAction<?> sendRaw(@NotNull String txt) {
+        this.replied = true;
         return message.reply(txt).onSuccess(m -> this.response = m);
     }
 
     @Override
     public @NotNull RestAction<?> sendRaw(@NotNull MessageCreateData data) {
+        this.replied = true;
         return message.reply(data).onSuccess(m -> this.response = m);
     }
 
@@ -120,6 +132,8 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
 
     @Override
     public @NotNull RestAction<?> replyRaw(@NotNull String txt) {
+
+        this.replied = true;
 
         if (response != null) {
             return editRaw(txt);
@@ -134,6 +148,8 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
     @Override
     public @NotNull RestAction<?> replyRaw(@NotNull MessageCreateData data) {
 
+        this.replied = true;
+
         if (response != null) {
             return editRaw(data);
         }
@@ -146,7 +162,6 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
 
     // COMPONENT //
 
-
     @Override
     public void invalidateInputs() {
 
@@ -157,4 +172,5 @@ public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandMana
         invalidateInputs0(message);
 
     }
+
 }

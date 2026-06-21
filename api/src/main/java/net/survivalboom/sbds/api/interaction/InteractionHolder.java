@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
-import net.dv8tion.jda.api.interactions.callbacks.IDeferrableCallback;
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
@@ -19,6 +18,7 @@ import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
 import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.messages.builder.MessageActionBuilder;
+import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -178,6 +178,12 @@ public interface InteractionHolder {
 
         editRaw(builder.build()).queue();
 
+    }
+
+    // ARGUMENTS //
+
+    default @NotNull TypeMap arguments() {
+        throw new IllegalStateException("No arguments() method applicable to `" + this + "`");
     }
 
 
