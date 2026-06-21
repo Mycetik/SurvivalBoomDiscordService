@@ -62,7 +62,8 @@ public class DatabaseQueue extends Manager {
     @SuppressWarnings("unchecked")
     private void pushAll() {
 
-        if (sessionRequestsQueue.isEmpty()) {
+        // Раніше була перевірка тільки sessionRequestsQueue. Як воно взагалі працювало нафіг?
+        if (sessionRequestsQueue.isEmpty() && recordsSavingQueue.isEmpty()) {
             return;
         }
 
