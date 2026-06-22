@@ -1,15 +1,12 @@
 package net.survivalboom.sbds.api.messages.template;
 
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
-import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import net.survivalboom.sbds.api.messages.components.ComponentLinker;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.serialize.SerializationException;
-
-import java.util.Objects;
 
 public interface IMessageTemplate {
 
@@ -24,31 +21,43 @@ public interface IMessageTemplate {
 
         String content = section.getString();
 
-        IMessageTemplate template;
-
-        if (hasEmbeds) {
-            template = EmbedMessageTemplate.fromSection(section).build();
-        }
-
-        else if (hasComponents) {
-            template = section.get(ComponentMessageTemplate.class);
-        }
-
-        else if (hasContent) {
-            template = new TextMessageTemplate(section.node("$content").getString("null"));
+        if (hasComponents || hasContent || hasEmbeds) {
+            return EmbedMessageTemplate.fromSection(section).build();
         }
 
         else if (content != null) {
-            template = new TextMessageTemplate(content);
+            return new TextMessageTemplate(content);
         }
 
         else {
             throw new IllegalArgumentException("Unknown message template");
         }
 
-        Objects.requireNonNull(template, "template == null; something went wrong?");
+        // TODO Component API v2 все ще не реалізовано :(
+//        IMessageTemplate template;
+//        if (hasEmbeds) {
+//            template = EmbedMessageTemplate.fromSection(section).build();
+//        }
+//
+//        else if (hasComponents) {
+//            template = section.get(ComponentMessageTemplate.class);
+//        }
+//
+//        else if (hasContent) {
+//            template = new TextMessageTemplate(section.node("$content").getString("null"));
+//        }
+//
+//        else if (content != null) {
+//            template = new TextMessageTemplate(content);
+//        }
+//
+//        else {
+//            throw new IllegalArgumentException("Unknown message template");
+//        }
 
-        return template;
+//        Objects.requireNonNull(template, "template == null; something went wrong?");
+//
+//        return template;
 
     }
 

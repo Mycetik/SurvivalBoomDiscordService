@@ -49,6 +49,14 @@ public class StringSelectTemplate implements MessageInteractableComponentTemplat
         this.minCount = minCount;
         this.maxCount = maxCount;
 
+        if (minCount < 1) {
+            throw new IllegalArgumentException("min: " + minCount + " < 1");
+        }
+
+        if (maxCount < 1) {
+            throw new IllegalArgumentException("max: " + maxCount + " < 1");
+        }
+
         this.row = row;
 
         if (name != null) {
@@ -147,11 +155,11 @@ public class StringSelectTemplate implements MessageInteractableComponentTemplat
 
     public static @NotNull Builder fromSection(@NotNull ConfigurationNode section) {
 
-        String name = section.node("node").getString();
+        String name = section.node("name").getString();
 
         int row = section.node("row").getInt();
-        int min = section.node("min").getInt();
-        int max = section.node("max").getInt();
+        int min = section.node("min").getInt(1);
+        int max = section.node("max").getInt(1);
 
         boolean isStatic = section.node("static").getBoolean();
 
@@ -193,15 +201,15 @@ public class StringSelectTemplate implements MessageInteractableComponentTemplat
 
         private String name;
 
-        private int row;
+        private int row = 0;
 
-        private int minCount;
+        private int minCount = 1;
 
-        private int maxCount;
+        private int maxCount = 1;
 
-        private boolean isStatic;
+        private boolean isStatic = false;
 
-        private String placeholder;
+        private String placeholder = null;
 
         private final List<Option> options = new ArrayList<>();
 

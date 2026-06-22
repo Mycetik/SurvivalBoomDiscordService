@@ -44,8 +44,18 @@ public class EntitySelectTemplate implements MessageInteractableComponentTemplat
         Objects.requireNonNull(target, "target == null");
 
         this.name = name;
+
         this.minCount = minCount;
         this.maxCount = maxCount;
+
+        if (minCount < 1) {
+            throw new IllegalArgumentException("min: " + minCount + " < 1");
+        }
+
+        if (maxCount < 1) {
+            throw new IllegalArgumentException("max: " + maxCount + " < 1");
+        }
+
         this.row = row;
         this.isStatic = isStatic;
         this.placeholder = placeholder;
@@ -108,8 +118,8 @@ public class EntitySelectTemplate implements MessageInteractableComponentTemplat
 
         String name = section.node("name").getString();
 
-        int min = section.node("min").getInt();
-        int max = section.node("max").getInt();
+        int min = section.node("min").getInt(1);
+        int max = section.node("max").getInt(1);
 
         int row = section.node("row").getInt();
         boolean isStatic = section.node("static").getBoolean();
@@ -138,15 +148,15 @@ public class EntitySelectTemplate implements MessageInteractableComponentTemplat
 
         private String name;
 
-        private int row;
+        private int row = 0;
 
-        private int minCount;
+        private int minCount = 1;
 
-        private int maxCount;
+        private int maxCount = 1;
 
-        private boolean isStatic;
+        private boolean isStatic = false;
 
-        private String placeholder;
+        private String placeholder = null;
 
         private EntitySelectMenu.SelectTarget target;
 

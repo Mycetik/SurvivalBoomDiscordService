@@ -161,7 +161,6 @@ public class EmbedMessageTemplate implements IMessageTemplate {
         String content = section.node("$content").getString();
 
         var builder = builder();
-
         builder.setContent(content);
 
         ConfigurationNode componentsSection = section.node("$components");
