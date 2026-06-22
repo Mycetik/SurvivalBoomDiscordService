@@ -4,5 +4,5 @@ main: "net.survivalboom.sbds.modules.voice.PrivateVoiceModule"
 description: "Модуль для створення власних приватних каналів. "
 version: "2.0"
 
-author: [TIMURishche, dscss2]
+authors: TIMURishche
 website: "https://survivalboom.net"

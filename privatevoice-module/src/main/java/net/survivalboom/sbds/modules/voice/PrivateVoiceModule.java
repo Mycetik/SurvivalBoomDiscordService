@@ -1,33 +1,24 @@
 package net.survivalboom.sbds.modules.voice;
 
+import net.dv8tion.jda.api.components.textinput.TextInputStyle;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.survivalboom.sbds.api.modules.ModuleMain;
-import net.survivalboom.sbds.modules.voice.commands.VoiceCommand;
-import net.survivalboom.sbds.modules.voice.listener.ControlPanelListener;
-import net.survivalboom.sbds.modules.voice.listener.GuildEventListener;
-import net.survivalboom.sbds.modules.voice.storage.VoiceCreatorChannels;
+import net.survivalboom.sbds.modules.voice.voice.ControlPanelListener;
 import net.survivalboom.sbds.modules.voice.voice.VoiceManager;
 
 import java.util.Map;
 
 public class PrivateVoiceModule extends ModuleMain {
 
-    private VoiceManager voiceManager;
+    private final VoiceManager voiceManager;
 
-    private VoiceCreatorChannels voiceCreatorChannels;
-
-    private GuildEventListener guildEventListener;
-
-    @Override
-    public void onLoad() {
-        voiceCreatorChannels = new VoiceCreatorChannels(this);
-        voiceManager = new VoiceManager(this, voiceCreatorChannels);
-        guildEventListener = new GuildEventListener(voiceManager);
+    public PrivateVoiceModule() {
+        this.voiceManager = new VoiceManager(this);
     }
 
     @Override
     public void onEnable() {
 
-        voiceCreatorChannels.init();
         voiceManager.init();
 
         checkFiles(Map.of(
@@ -37,16 +28,52 @@ public class PrivateVoiceModule extends ModuleMain {
         ));
         addModuleTranslations();
 
-        registerEvents(guildEventListener);
+        registerEvents(voiceManager);
         registerStringDropdown("action", new ControlPanelListener(voiceManager)::onControlPanelDropdown);
-        registerSlashCommand(new VoiceCommand(voiceCreatorChannels));
+
+        registerModal("rename", builder ->
+            builder
+                .setTitle("$[voice.control.rename.modal.title]")
+                .addInput(
+                        "name",
+                        "$[voice.control.set-limit.modal.input-name]",
+                        null,
+                        "$[voice.control.set-limit.modal.input-placeholder]",
+                        null,
+                        TextInputStyle.SHORT,
+                        3,
+                        20,
+                        true
+                )
+        );
+
+        registerModal("limit", builder ->
+            builder
+                .setTitle("$[voice.control.set-limit.modal.title]")
+                .addInput(
+                        "limit",
+                        "$[voice.control.set-limit.modal.input-name]",
+                        null,
+                        "$[voice.control.set-limit.modal.input-placeholder]",
+                        null,
+                        TextInputStyle.SHORT,
+                        1,
+                        2,
+                        true
+                )
+        );
+
+        createGuildConfig(builder ->
+                builder
+                    .addField("creator", "voice.config.creator", VoiceChannel.class, null)
+                    .addField("fallback", "voice.config.fallback", VoiceChannel.class, null)
+        );
 
     }
 
     @Override
     public void onDisable() {
         voiceManager.shutdown();
-        voiceCreatorChannels.shutdown();
     }
 
 

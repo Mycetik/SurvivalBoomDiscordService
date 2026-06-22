@@ -3,6 +3,7 @@ package net.survivalboom.sbds.modules.voice.voice;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.messages.IMessages;
 import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
@@ -37,8 +38,14 @@ public class PrivateVoice {
         this.voiceManager = voiceManager;
     }
 
+    public @NotNull VoiceManager getVoiceManager() {
+        return voiceManager;
+    }
 
-    // TASK //
+    //
+    // TICK
+    //
+
     public void tick() {
 
         boolean exists = channel.getGuild().getChannelById(VoiceChannel.class, channel.getId()) != null;
@@ -70,9 +77,10 @@ public class PrivateVoice {
 
     }
 
+    //
+    // FUNCTIONS
+    //
 
-
-    // FUNCTIONS //
     public void setOwner(@NotNull Member member) {
 
         Member lastOwner = owner;
@@ -92,10 +100,15 @@ public class PrivateVoice {
 
     public void setLocked(boolean v) {
 
-        if (locked == v) return;
-        if (hidden && !v) setHidden(true);
+        if (locked == v) {
+            return;
+        }
 
-        this.locked = true;
+        if (hidden && !v) {
+            setHidden(false);
+        }
+
+        this.locked = v;
 
         Role role = channel.getGuild().getPublicRole();
 
@@ -116,8 +129,13 @@ public class PrivateVoice {
 
     public void setHidden(boolean v) {
 
-        if (hidden == v) return;
-        if (!locked && v) setLocked(true);
+        if (hidden == v) {
+            return;
+        }
+
+        if (!locked && v) {
+            setLocked(true);
+        }
 
         this.hidden = v;
 
@@ -149,7 +167,7 @@ public class PrivateVoice {
         }
 
         Guild guild = channel.getGuild();
-        VoiceChannel vChannel = voiceManager.voiceCreatorChannels().getVoiceCreator(guild);
+        VoiceChannel vChannel = voiceManager.getVoiceCreator(guild).join();
         if (vChannel == null) return;
 
         EnumSet<Permission> permissions = EnumSet.of(Permission.VOICE_SPEAK);
@@ -166,10 +184,10 @@ public class PrivateVoice {
     }
 
     private void reMute(Guild guild, Member member, VoiceChannel vChannel) {
-        voiceManager.getIgnoredMembers().add(member);
+        voiceManager.ignoredMembers.add(member);
         guild.moveVoiceMember(member, vChannel)
                 .queue(v -> guild.moveVoiceMember(member, channel)
-                        .queue(vv -> voiceManager.getIgnoredMembers().remove(member))
+                        .queue(vv -> voiceManager.ignoredMembers.remove(member))
                 );
     }
 
@@ -181,7 +199,6 @@ public class PrivateVoice {
     public void setChannelName(@NotNull String name) {
         channel.getManager().setName(name).queue();
     }
-
 
 
     public void whitelist(@NotNull Member member, boolean value) {
@@ -239,8 +256,10 @@ public class PrivateVoice {
 
     }
 
+    //
+    // PANEL
+    //
 
-    // PANEL //
     public void updateControlPanel(boolean create) {
 
         IMessages messages = voiceManager.getModule().getSbds().getMessages();
@@ -251,44 +270,49 @@ public class PrivateVoice {
 
         Placeholders placeholders = new Placeholders();
         placeholders
-                .add("{CHANNEL}", channel.getAsMention())
-                .add("{OWNER}", owner.getAsMention())
-                .add("{LOCKED}", value(locked))
-                .add("{HIDDEN}", value(hidden))
-                .add("{WHITELIST}", whitelistString)
-                .add("{BLACKLIST}", blacklistString)
-                .add("{MUTED}", mutedString);
+                .add("channel", channel)
+                .add("owner", owner)
+                .add("locked", value(locked))
+                .add("hidden", value(hidden))
+                .add("whitelist", whitelistString)
+                .add("blacklist", blacklistString)
+                .add("muted", mutedString);
 
-        if (controlPanelMessage == null || create) {
-            messages.sendMessage(channel, "voice.control.panel", owner.getUser())
-                    .withPlaceholders(placeholders)
-                    .send()
-                    .setSuppressedNotifications(true)
-                    .queue(m -> controlPanelMessage = m);
+        boolean newMsg = controlPanelMessage == null || create;
+
+        var builder = messages.createMessageBuilder("voice.control.panel", owner.getUser())
+                .withPlaceholders(placeholders);
+
+        if (newMsg) {
+            channel.sendMessage(builder.build().build()).queue(m -> controlPanelMessage = m);
         }
 
         else {
-            messages.editMessage(controlPanelMessage, "voice.control.panel", owner.getUser())
-                    .withPlaceholders(placeholders)
-                    .send()
-                    .queue();
+            controlPanelMessage.editMessage(MessageEditData.fromCreateData(builder.build().build())).queue();
         }
 
     }
 
+    //
+    // GETTERS
+    //
 
-    // GETTERS //
-    public @NotNull VoiceManager getVoiceManager() {
-        return voiceManager;
+    public @NotNull VoiceChannel getChannel() {
+        return channel;
+    }
+
+    public @NotNull Guild getGuild() {
+        return channel.getGuild();
     }
 
     public @NotNull Member getOwner() {
         return owner;
     }
 
-    public @NotNull VoiceChannel getChannel() {
-        return channel;
+    public @NotNull List<Member> getMembers() {
+        return channel.getMembers();
     }
+
 
     public @NotNull Set<Member> getBlackList() {
         return new HashSet<>(blackList);
@@ -302,6 +326,7 @@ public class PrivateVoice {
         return new HashSet<>(muted);
     }
 
+
     public boolean isHidden() {
         return hidden;
     }
@@ -310,22 +335,15 @@ public class PrivateVoice {
         return locked;
     }
 
-    public @NotNull String getChannelName() {
-        return channel.getName();
-    }
-
-    public int getMaxMembers() {
-        return channel.getUserLimit();
-    }
-
+    // // //
 
     private String value(boolean v) {
         return v ? "$[values.true]" : "$[values.false]";
     }
 
-
     @Override
     public String toString() {
-        return "PrivateVoice{name=" + channel.getName() + ",guild=" + channel.getGuild().getName() + ",owner=" + owner.getEffectiveName() + "}";
+        return String.format("PrivateVoice{name=%s, guild=%s, owner=%s}", channel.getName(), channel.getGuild().getName(), owner.getEffectiveName());
     }
+
 }
