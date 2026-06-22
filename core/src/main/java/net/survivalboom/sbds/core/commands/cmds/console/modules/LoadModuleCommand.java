@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.core.commands.cmds.console.modules;
 
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
@@ -65,8 +66,8 @@ public class LoadModuleCommand extends CommandBase implements ConsoleCommandExec
     }
 
     @ArgumentMethod
-    public Argument<?> file() {
-        return new FileArgument(sbds -> sbds.getModuleManager().getModulesDir(), true);
+    public Argument<?> file(ISBDS sbds) {
+        return new FileArgument(sbds.getModuleManager().getModulesDir(), true);
     }
 
 }

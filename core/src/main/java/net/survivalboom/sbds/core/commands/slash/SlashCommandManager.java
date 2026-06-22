@@ -2,10 +2,12 @@ package net.survivalboom.sbds.core.commands.slash;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.survivalboom.sbds.api.commands.Command;
+import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
 import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
@@ -13,6 +15,7 @@ import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.events.EventHandler;
 import net.survivalboom.sbds.api.events.EventListener;
+import net.survivalboom.sbds.api.messages.parsers.LinkedTextParser;
 import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
@@ -112,7 +115,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
 
         try {
 
-            Command command = getCommand(baseCommand, event);
+            Command command = getCommand(baseCommand, event.getFullCommandName(), event.getName());
 
             if (!event.isAcknowledged() && command.isDeferReply()) {
                 event.deferReply(command.isEphemeral()).queue();
@@ -198,7 +201,62 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
 
     }
 
-    private @NotNull Command getCommand(@NotNull Command baseCommand, @NotNull SlashCommandInteractionEvent event) {
+    @EventHandler
+    public void onAutoComplete(@NotNull CommandAutoCompleteInteractionEvent event) {
+
+        try {
+
+            String baseCmdName = event.getName();
+            String fullCmdName = event.getFullCommandName();
+
+            IRegisteredSlashCommand registeredCommand = getByAlias(baseCmdName);
+            if (registeredCommand == null) {
+                logger.warn("[{}] Received autocompletion request for command &b/{}&r, but command does not exist.", event.getUser().getName(), fullCmdName);
+                event.replyChoices(List.of(
+                        new net.dv8tion.jda.api.interactions.commands.Command.Choice("ua.timurishche.DinosaurDeathException", 1),
+                        new net.dv8tion.jda.api.interactions.commands.Command.Choice("java.lang.OutOfMemoryError", 2),
+                        new net.dv8tion.jda.api.interactions.commands.Command.Choice("RAWR-R-R!!!!", 3),
+                        new net.dv8tion.jda.api.interactions.commands.Command.Choice("Slash command `" + fullCmdName + "` does not exist", 4)
+                )).queue();
+                return;
+            }
+
+            Command command = getCommand(registeredCommand.getCommand(), fullCmdName, baseCmdName);
+
+            CommandArgument commandArgument = command.getArgument(event.getFocusedOption().getName());
+            Objects.requireNonNull(commandArgument, "commandArgument == null");
+
+            List<net.dv8tion.jda.api.interactions.commands.Command.Choice> result = commandArgument.argument().onArgumentAutoComplete(event, sbds);
+            if (result == null || result.isEmpty()) {
+                return;
+            }
+
+            LinkedTextParser parser = LinkedTextParser.builder(sbds.getMessages(), event.getUser()).build();
+
+            List<net.dv8tion.jda.api.interactions.commands.Command.Choice> resultFinal = result.stream()
+                    .map(choice -> new net.dv8tion.jda.api.interactions.commands.Command.Choice(
+                            parser.parse(choice.getName()),
+                            parser.parse(choice.getAsString())
+                    ))
+                    .toList();
+
+            event.replyChoices(resultFinal).queue();
+
+        }
+
+        catch (Throwable t) {
+            logger.error("[{}] An internal error occurred while attempting to autocomplete command &b/{}", event.getUser().getName(), event.getFullCommandName(), t);
+            event.replyChoices(List.of(
+                    new net.dv8tion.jda.api.interactions.commands.Command.Choice("ua.timurishche.DinosaurDeathException", 1),
+                    new net.dv8tion.jda.api.interactions.commands.Command.Choice("java.lang.OutOfMemoryError", 2),
+                    new net.dv8tion.jda.api.interactions.commands.Command.Choice("RAWR-R-R!!!!", 3),
+                    new net.dv8tion.jda.api.interactions.commands.Command.Choice("An internal error occurred while attempting to generate suggestions.", 4)
+            )).queue();
+        }
+
+    }
+
+    private @NotNull Command getCommand(@NotNull Command baseCommand, @NotNull String eventFullInput, @NotNull String eventBaseInput) {
 
         boolean hasSubCommands = baseCommand.getArguments().stream()
                 .anyMatch(argument -> argument.argument() instanceof SubCommandArgument);
@@ -207,7 +265,7 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
             return baseCommand;
         }
 
-        String fullInput = event.getFullCommandName().substring(event.getName().length()).trim();
+        String fullInput = eventFullInput.substring(eventBaseInput.length()).trim();
         String[] parts = fullInput.split(" ");
 
         Command command = baseCommand;

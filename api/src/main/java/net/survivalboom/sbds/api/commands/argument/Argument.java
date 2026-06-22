@@ -1,11 +1,16 @@
 package net.survivalboom.sbds.api.commands.argument;
 
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 public abstract class Argument<T> {
@@ -15,10 +20,18 @@ public abstract class Argument<T> {
     //
 
     @ApiStatus.OverrideOnly
-    @ApiStatus.Internal
     public void onCommandExecute(
             @NotNull ArgumentExecutionContext<T> context
     ) {}
+
+    @ApiStatus.OverrideOnly
+    public @Nullable List<Command.Choice> onArgumentAutoComplete(@NotNull CommandAutoCompleteInteractionEvent event, @NotNull ISBDS sbds) {
+        return List.of(
+                new Command.Choice("ua.timurishche.DinosaurDeathException", 1),
+                new Command.Choice("java.lang.OutOfMemoryError", 2),
+                new Command.Choice("RAWR-R-R!!!!", 3)
+        );
+    }
 
     //
     // PARSING
@@ -53,12 +66,23 @@ public abstract class Argument<T> {
 
     public abstract @NotNull OptionType getOptionType();
 
-    public @NotNull OptionData createOptionData(@NotNull CommandArgument argument) {
-        return createOptionData(getOptionType(), argument);
+    public boolean isAutoComplete() {
+        return false;
     }
 
-    public static @NotNull OptionData createOptionData(@NotNull OptionType type, @NotNull CommandArgument argument) {
-        return new OptionData(type, argument.name(), Objects.requireNonNullElse(argument.description(), "-"), argument.required());
+
+    public @NotNull OptionData createOptionData(@NotNull CommandArgument argument) {
+        return createOptionData(argument, getOptionType(), isAutoComplete());
+    }
+
+    public static @NotNull OptionData createOptionData(@NotNull CommandArgument argument, @NotNull OptionType type, boolean autocomplete) {
+        return new OptionData(
+                type,
+                argument.name(),
+                Objects.requireNonNullElse(argument.description(), "-"),
+                argument.required(),
+                autocomplete
+        );
     }
 
 }

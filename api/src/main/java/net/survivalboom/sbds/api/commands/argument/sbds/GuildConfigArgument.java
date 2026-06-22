@@ -1,12 +1,18 @@
 package net.survivalboom.sbds.api.commands.argument.sbds;
 
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class GuildConfigArgument extends Argument<IGuildConfigTemplate> {
 
@@ -36,8 +42,21 @@ public class GuildConfigArgument extends Argument<IGuildConfigTemplate> {
     }
 
     @Override
+    public @Nullable List<Command.Choice> onArgumentAutoComplete(@NotNull CommandAutoCompleteInteractionEvent event, @NotNull ISBDS sbds) {
+        return sbds.getGuildConfigManager().getTemplates()
+                .stream()
+                .map(template -> new Command.Choice(template.getKey(), template.getKey()))
+                .toList();
+    }
+
+    @Override
     public @NotNull OptionType getOptionType() {
         return OptionType.STRING;
+    }
+
+    @Override
+    public boolean isAutoComplete() {
+        return true;
     }
 
 }

@@ -110,16 +110,9 @@ public class TranslationCommand extends CommandBase implements SlashCommandExecu
         return new UserArgument();
     }
 
-    // TODO: Замінити на нормальний TranslationArgument з AbstractSelectArgument.
-    // TODO: ! Варіанти вибору не динамічні, це значить що кожен раз після видалення/створення нового перекладу потрібно перереєструвати цю команду !
-    // TODO: Бажано б було по-нормальному використовувати TranslationArgument.
     @ArgumentMethod(description = "A translation", scope = ArgumentScope.SLASH, required = false)
-    public Argument<?> translation(@NotNull ISBDS sbds) {
-        return new StringSelectArgument(sbds.getTranslationManager().getTranslations()
-                .stream()
-                .map(ITranslation::getName)
-                .toList()
-        );
+    public Argument<?> translation() {
+        return new TranslationArgument();
     }
 
 }

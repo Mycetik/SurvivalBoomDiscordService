@@ -47,7 +47,7 @@ public abstract class AbstractSelectArgument<T> extends Argument<T> {
     @Override
     public @NotNull OptionData createOptionData(@NotNull CommandArgument argument) {
 
-        OptionData optionData = Argument.createOptionData(OptionType.INTEGER, argument);
+        OptionData optionData = Argument.createOptionData(argument, OptionType.INTEGER, false);
         for (int i = 0; i < choices.size(); i++) {
             optionData.addChoice(choices.get(i).toString(), i);
         }

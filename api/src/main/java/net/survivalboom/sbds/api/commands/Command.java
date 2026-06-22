@@ -108,6 +108,10 @@ public class Command {
         return new ArrayList<>(arguments);
     }
 
+    public @Nullable CommandArgument getArgument(@NotNull String name) {
+        return arguments.stream().filter(arg -> arg.name().equals(name)).findAny().orElse(null);
+    }
+
     public @NotNull List<CommandArgument> getSubCommands() {
         return arguments.stream().filter(arg -> arg.argument() instanceof SubCommandArgument).toList();
     }
