@@ -1,5 +1,9 @@
 package net.survivalboom.sbds.api.modules;
 
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
@@ -13,13 +17,33 @@ import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.string.IStringCommandManager;
 import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
 import net.survivalboom.sbds.api.database.IDatabase;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfig;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigManager;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
+import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
+import net.survivalboom.sbds.api.database.members.IMemberDataManager;
+import net.survivalboom.sbds.api.database.users.IUserDataManager;
 import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.events.EventPriority;
 import net.survivalboom.sbds.api.events.IEventManager;
+import net.survivalboom.sbds.api.interaction.component.ComponentInteractionInfo;
+import net.survivalboom.sbds.api.interaction.component.IComponentInteractionManager;
+import net.survivalboom.sbds.api.interaction.modal.IModalInteractionManager;
+import net.survivalboom.sbds.api.interaction.modal.ModalInteractionInfo;
+import net.survivalboom.sbds.api.interaction.modal.ModalTemplate;
+import net.survivalboom.sbds.api.messages.IMessages;
+import net.survivalboom.sbds.api.monitoring.ISystemMonitor;
+import net.survivalboom.sbds.api.permissions.IPermissionManager;
+import net.survivalboom.sbds.api.permissions.Permission;
+import net.survivalboom.sbds.api.registrations.IRegistrationRegistry;
+import net.survivalboom.sbds.api.scheduler.IScheduler;
+import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
+import net.survivalboom.sbds.api.service.IServiceProvider;
+import net.survivalboom.sbds.api.translations.ITranslationManager;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.api.utils.ThrowingConsumer;
+import net.survivalboom.sbds.api.utils.placeholders.IPlaceholderRegistry;
+import net.survivalboom.sbds.api.utils.placeholders.IPlaceholders;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,6 +54,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public abstract class ModuleMain {
 
@@ -59,7 +84,7 @@ public abstract class ModuleMain {
     //
 
     @ApiStatus.Internal
-    public final void init(@NotNull IModule module, @NotNull ISBDS sbds) {
+    public void init(@NotNull IModule module, @NotNull ISBDS sbds) {
 
         if (this.module != null) {
             throw new RuntimeException("Сука, ну написано же для таких долбоебов как ты 'Внутреннее API'. Ты слишком тупой чтобы использовать его, понимаешь? Не для тебя оно было сделано.");
@@ -70,21 +95,30 @@ public abstract class ModuleMain {
 
     }
 
-
-    public final @NotNull IModule getModule() {
-        return module;
-    }
-
-    public final @NotNull ISBDS getSbds() {
-        return sbds;
-    }
-
     //
     // GETTERS
     //
 
+    public @NotNull IModule getModule() {
+        return module;
+    }
+
+    public @NotNull ISBDS getSbds() {
+        return sbds;
+    }
+
+    // MODULE INFO //
+
+    public @NotNull String getId() {
+        return getModule().getId();
+    }
+
     public @NotNull String getName() {
         return getModule().getName();
+    }
+
+    public @NotNull String getVersion() {
+        return getModule().getVersion();
     }
 
     public @Nullable ModuleFile getFile() {
@@ -105,16 +139,94 @@ public abstract class ModuleMain {
 
     // SERVICES //
 
+    public @NotNull IScheduler getScheduler() {
+        return getSbds().getScheduler();
+    }
+
+    public @NotNull ISystemMonitor getSystemMonitor() {
+        return getSbds().getSystemMonitor();
+    }
+
+
     public @NotNull IModuleManager getModuleManager() {
         return getSbds().getModuleManager();
     }
+
+    public @NotNull IGuildConfigManager getGuildConfigManager() {
+        return getSbds().getGuildConfigManager();
+    }
+
+    public @NotNull IRegistrationRegistry getRegistrationRegistry() {
+        return getSbds().getRegistrationRegistry();
+    }
+
+    public @NotNull IServiceProvider getServiceProvider() {
+        return getSbds().getServiceProvider();
+    }
+
+
+    public @NotNull IEventManager getEventManager() {
+        return getSbds().getEventManager();
+    }
+
+    public @NotNull IPermissionManager getPermissionManager() {
+        return getSbds().getPermissionManager();
+    }
+
+
+    public @NotNull IConsoleListener getConsoleListener() {
+        return getSbds().getConsoleListener();
+    }
+
+    public @NotNull ISlashCommandManager getSlashCommandManager() {
+        return getSbds().getSlashCommandManager();
+    }
+
+    public @NotNull IContextCommandManager getContextCommandManager() {
+        return getSbds().getContextCommandManager();
+    }
+
+    public @NotNull IStringCommandManager getStringCommandManager() {
+        return getSbds().getStringCommandManager();
+    }
+
+
+    public @NotNull IComponentInteractionManager getComponentInteractionManager() {
+        return getSbds().getComponentInteractionManager();
+    }
+
+    public @NotNull IModalInteractionManager getModalInteractionManager() {
+        return getSbds().getModalInteractionManager();
+    }
+
 
     public @NotNull IDatabase getDatabase() {
         return getSbds().getDatabase();
     }
 
-    public @NotNull IEventManager getEventManager() {
-        return getSbds().getEventManager();
+    public @NotNull IUserDataManager getUserDataManager() {
+        return getSbds().getUserDataManager();
+    }
+
+    public @NotNull IGuildDataManager getGuildDataManager() {
+        return getSbds().getGuildDataManager();
+    }
+
+    public @NotNull IMemberDataManager getMemberDataManager() {
+        return getSbds().getMemberDataManager();
+    }
+
+
+    public @NotNull ITranslationManager getTranslationManager() {
+        return getSbds().getTranslationManager();
+    }
+
+    public @NotNull IMessages getMessages() {
+        return getSbds().getMessages();
+    }
+
+    public @NotNull IPlaceholderRegistry getPlaceholderRegistry() {
+        return getSbds().getPlaceholderRegistry();
     }
 
     //
@@ -215,6 +327,101 @@ public abstract class ModuleMain {
         return sbds.getStringCommandManager().registerCommand(this, command);
     }
 
+    // COMPONENTS //
+
+    public <T extends GenericComponentInteractionCreateEvent> IComponentInteractionManager.@NotNull IRegisteredListener<T> registerComponent(
+            @NotNull String name,
+            @NotNull Class<T> clazz,
+            @NotNull Consumer<ComponentInteractionInfo<T>> consumer,
+            @Nullable Permission permission
+    ) {
+        return getComponentInteractionManager().registerListener(this, name, clazz, consumer, permission);
+    }
+
+    public <T extends GenericComponentInteractionCreateEvent> IComponentInteractionManager.@NotNull IRegisteredListener<T> registerComponent(
+            @NotNull String name,
+            @NotNull Class<T> clazz,
+            @NotNull Consumer<ComponentInteractionInfo<T>> consumer
+    ) {
+        return getComponentInteractionManager().registerListener(this, name, clazz, consumer, null);
+    }
+
+    // BUTTONS //
+
+    public @NotNull IComponentInteractionManager.IRegisteredListener<ButtonInteractionEvent> registerButton(
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent>> executor,
+            @Nullable Permission permission
+    ) {
+        return getComponentInteractionManager().registerButton(this, name, executor, permission);
+    }
+
+    public @NotNull IComponentInteractionManager.IRegisteredListener<ButtonInteractionEvent> registerButton(
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent>> executor
+    ) {
+        return getComponentInteractionManager().registerButton(this, name, executor, null);
+    }
+
+    // ENTITY SELECT //
+
+    public @NotNull IComponentInteractionManager.IRegisteredListener<EntitySelectInteractionEvent> registerEntityDropdown(
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent>> executor,
+            @Nullable Permission permission
+    ) {
+        return getComponentInteractionManager().registerEntityDropdown(this, name, executor, permission);
+    }
+
+    public @NotNull IComponentInteractionManager.IRegisteredListener<EntitySelectInteractionEvent> registerEntityDropdown(
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent>> executor
+            ) {
+        return getComponentInteractionManager().registerEntityDropdown(this, name, executor, null);
+    }
+
+    // STRING SELECT //
+
+    public @NotNull IComponentInteractionManager.IRegisteredListener<StringSelectInteractionEvent> registerStringDropdown(
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent>> executor,
+            @Nullable Permission permission
+    ) {
+        return getComponentInteractionManager().registerStringDropdown(this, name, executor, permission);
+    }
+
+    public @NotNull IComponentInteractionManager.IRegisteredListener<StringSelectInteractionEvent> registerStringDropdown(
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent>> executor
+            ) {
+        return getComponentInteractionManager().registerStringDropdown(this, name, executor, null);
+    }
+
+    // MODAL //
+
+    public @NotNull IModalInteractionManager.IRegisteredModal registerModal(@NotNull String name, @NotNull ModalTemplate template, @Nullable Consumer<ModalInteractionInfo> executor) {
+        return getModalInteractionManager().registerModal(this, name, template, executor);
+    }
+
+    public @NotNull IModalInteractionManager.IRegisteredModal registerModal(@NotNull String name, @NotNull ModalTemplate template) {
+        return getModalInteractionManager().registerModal(this, name, template);
+    }
+
+
+    public @NotNull IModalInteractionManager.IRegisteredModal registerModal(@NotNull String name, @NotNull Consumer<ModalTemplate.Builder> builder, @NotNull Consumer<ModalInteractionInfo> executor) {
+        return getModalInteractionManager().registerModal(this, name, builder, executor);
+    }
+
+    public @NotNull IModalInteractionManager.IRegisteredModal registerModal(@NotNull String name, @NotNull Consumer<ModalTemplate.Builder> builder) {
+        return getModalInteractionManager().registerModal(this, name, builder);
+    }
+
+    // PLACEHOLDERS //
+
+    public <V> IPlaceholderRegistry.@NotNull IRegisteredPlaceholderProvider<V> registerProvider(@NotNull Class<V> clazz, @NotNull Function<V, IPlaceholders> function) {
+        return getPlaceholderRegistry().registerProvider(this, clazz, function);
+    }
+
     // TRANSLATIONS //
 
     public void addModuleTranslations() {
@@ -237,6 +444,23 @@ public abstract class ModuleMain {
         sbds.getTranslationManager().importModuleMessages(this, directory);
     }
 
+    // SCHEDULER //
+
+    public @NotNull ISchedulerTask schedule(@Nullable String name, @NotNull Consumer<ISchedulerTask> task, int delay, int period) {
+        return getScheduler().schedule(this, name, task, delay, period);
+    }
+
+    public @NotNull ISchedulerTask schedule(@NotNull Consumer<ISchedulerTask> task, int delay, int period) {
+        return getScheduler().schedule(this, task, delay, period);
+    }
+
+    public @NotNull ISchedulerTask schedule(@Nullable String name, @NotNull Runnable task, int delay, int period) {
+        return getScheduler().schedule(this, name, task, delay, period);
+    }
+
+    public @NotNull ISchedulerTask schedule(@NotNull Runnable task, int delay, int period) {
+        return getScheduler().schedule(this, task, delay, period);
+    }
 
     //
     // MODULE FILES

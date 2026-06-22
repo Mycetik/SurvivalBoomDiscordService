@@ -1,6 +1,7 @@
 package net.survivalboom.sbds.api.utils.placeholders;
 
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.IManager;
@@ -17,6 +18,14 @@ public interface IPlaceholderRegistry extends IManager {
             @NotNull Class<V> clazz,
             @NotNull Function<V, IPlaceholders> function
     );
+
+    default <V> @NotNull IRegisteredPlaceholderProvider<V> registerProvider(
+            @NotNull ModuleMain module,
+            @NotNull Class<V> clazz,
+            @NotNull Function<V, IPlaceholders> function
+    ) {
+        return registerProvider(module.getModule(), clazz, function);
+    }
 
     boolean unregisterProvider(@NotNull IRegisteredPlaceholderProvider<?> reg);
 
