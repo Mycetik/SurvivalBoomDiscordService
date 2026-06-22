@@ -59,7 +59,7 @@ public class ComponentInteractionRequest {
     >(
             @NotNull String name,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IComponentInteractionManager.IPendingInteraction>> action,
+            @NotNull Consumer<ComponentInteractionInfo<event>> action,
             @NotNull ExpireMode expire
     ) {}
 
@@ -132,7 +132,7 @@ public class ComponentInteractionRequest {
                 @NotNull String name,
                 @NotNull Class<T> clazz,
                 @NotNull ExpireMode mode,
-                @NotNull Consumer<ComponentInteractionInfo<T, IComponentInteractionManager.IPendingInteraction>> action
+                @NotNull Consumer<ComponentInteractionInfo<T>> action
         ) {
             this.actions.add(new Action<>(name, clazz, action, mode));
             return this;
@@ -164,7 +164,7 @@ public class ComponentInteractionRequest {
         public @NotNull Builder addButton(
                 @NotNull String name,
                 @NotNull ExpireMode mode,
-                @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent, IComponentInteractionManager.IPendingInteraction>> callback
+                @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent>> callback
         ) {
             actions.add(new Action<>(name, ButtonInteractionEvent.class, callback, mode));
             return this;
@@ -175,7 +175,7 @@ public class ComponentInteractionRequest {
         public @NotNull Builder addStringDropdown(
                 @NotNull String name,
                 @NotNull ExpireMode mode,
-                @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent, IComponentInteractionManager.IPendingInteraction>> callback
+                @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent>> callback
         ) {
             actions.add(new Action<>(name, StringSelectInteractionEvent.class, callback, mode));
             return this;
@@ -186,7 +186,7 @@ public class ComponentInteractionRequest {
         public @NotNull Builder addEntityDropdown(
                 @NotNull String name,
                 @NotNull ExpireMode mode,
-                @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent, IComponentInteractionManager.IPendingInteraction>> callback
+                @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent>> callback
         ) {
             actions.add(new Action<>(name, EntitySelectInteractionEvent.class, callback, mode));
             return this;

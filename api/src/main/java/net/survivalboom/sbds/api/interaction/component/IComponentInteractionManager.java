@@ -1,7 +1,10 @@
 package net.survivalboom.sbds.api.interaction.component;
 
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.permissions.Permission;
@@ -35,37 +38,148 @@ public interface IComponentInteractionManager extends IManager {
     <event extends GenericComponentInteractionCreateEvent> @NotNull IRegisteredListener<event> registerListener(
             @NotNull IModule module,
             @NotNull String name,
-            @Nullable Permission permission,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
+            @NotNull Consumer<ComponentInteractionInfo<event>> executor,
+            @Nullable Permission permission
     );
 
     default <event extends GenericComponentInteractionCreateEvent> @NotNull IRegisteredListener<event> registerListener(
             @NotNull IModule module,
             @NotNull String name,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
+            @NotNull Consumer<ComponentInteractionInfo<event>> executor
     ) {
-        return registerListener(module, name, null, clazz, executor);
+        return registerListener(module, name, clazz, executor, null);
     }
 
     default <event extends GenericComponentInteractionCreateEvent> @NotNull IRegisteredListener<event> registerListener(
             @NotNull ModuleMain module,
             @NotNull String name,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor,
+            @NotNull Consumer<ComponentInteractionInfo<event>> executor,
             @Nullable Permission permission
     ) {
-        return registerListener(module.getModule(), name, permission, clazz, executor);
+        return registerListener(module.getModule(), name, clazz, executor, permission);
     }
 
     default <event extends GenericComponentInteractionCreateEvent> @NotNull IRegisteredListener<event> registerListener(
             @NotNull ModuleMain module,
             @NotNull String name,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
+            @NotNull Consumer<ComponentInteractionInfo<event>> executor
     ) {
-        return registerListener(module.getModule(), name, null, clazz, executor);
+        return registerListener(module.getModule(), name, clazz, executor, null);
+    }
+
+    // BUTTONS //
+
+    default @NotNull IRegisteredListener<ButtonInteractionEvent> registerButton(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent>> executor,
+            @Nullable Permission permission
+    ) {
+        return registerListener(module, name, ButtonInteractionEvent.class, executor, permission);
+    }
+
+    default @NotNull IRegisteredListener<ButtonInteractionEvent> registerButton(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent>> executor
+    ) {
+        return registerListener(module, name, ButtonInteractionEvent.class, executor, null);
+    }
+
+
+    default @NotNull IRegisteredListener<ButtonInteractionEvent> registerButton(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent>> executor,
+            @Nullable Permission permission
+    ) {
+        return registerListener(module, name, ButtonInteractionEvent.class, executor, permission);
+    }
+
+    default @NotNull IRegisteredListener<ButtonInteractionEvent> registerButton(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<ButtonInteractionEvent>> executor
+    ) {
+        return registerListener(module, name, ButtonInteractionEvent.class, executor, null);
+    }
+
+    // ENTITY SELECT //
+
+    default @NotNull IRegisteredListener<EntitySelectInteractionEvent> registerEntityDropdown(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent>> executor,
+            @Nullable Permission permission
+    ) {
+        return registerListener(module, name, EntitySelectInteractionEvent.class, executor, permission);
+    }
+
+    default @NotNull IRegisteredListener<EntitySelectInteractionEvent> registerEntityDropdown(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent>> executor
+    ) {
+        return registerListener(module, name, EntitySelectInteractionEvent.class, executor, null);
+    }
+
+
+    default @NotNull IRegisteredListener<EntitySelectInteractionEvent> registerEntityDropdown(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent>> executor,
+            @Nullable Permission permission
+    ) {
+        return registerListener(module, name, EntitySelectInteractionEvent.class, executor, permission);
+    }
+
+    default @NotNull IRegisteredListener<EntitySelectInteractionEvent> registerEntityDropdown(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<EntitySelectInteractionEvent>> executor
+    ) {
+        return registerListener(module, name, EntitySelectInteractionEvent.class, executor, null);
+    }
+
+    // STRING SELECT //
+
+    default @NotNull IRegisteredListener<StringSelectInteractionEvent> registerStringDropdown(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent>> executor,
+            @Nullable Permission permission
+    ) {
+        return registerListener(module, name, StringSelectInteractionEvent.class, executor, permission);
+    }
+
+    default @NotNull IRegisteredListener<StringSelectInteractionEvent> registerStringDropdown(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent>> executor
+    ) {
+        return registerListener(module, name, StringSelectInteractionEvent.class, executor, null);
+    }
+
+
+    default @NotNull IRegisteredListener<StringSelectInteractionEvent> registerStringDropdown(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent>> executor,
+            @Nullable Permission permission
+    ) {
+        return registerListener(module, name, StringSelectInteractionEvent.class, executor, permission);
+    }
+
+    default @NotNull IRegisteredListener<StringSelectInteractionEvent> registerStringDropdown(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ComponentInteractionInfo<StringSelectInteractionEvent>> executor
+    ) {
+        return registerListener(module, name, StringSelectInteractionEvent.class, executor, null);
     }
 
     // UNREG //
@@ -96,6 +210,15 @@ public interface IComponentInteractionManager extends IManager {
 
         boolean isEphemeral();
 
+
+        default @NotNull IRegisteredListener<?> asListener() {
+            return (IRegisteredListener<?>) this;
+        }
+
+        default @NotNull IPendingInteraction asPending() {
+            return (IPendingInteraction) this;
+        }
+
     }
 
     interface IRegisteredListener<event extends GenericComponentInteractionCreateEvent> extends IRegisteredComponent {
@@ -107,7 +230,7 @@ public interface IComponentInteractionManager extends IManager {
         @Nullable Permission getPermission();
 
 
-        @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> getCallback();
+        @NotNull Consumer<ComponentInteractionInfo<event>> getCallback();
 
     }
 

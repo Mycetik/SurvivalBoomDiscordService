@@ -17,7 +17,6 @@ import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.api.utils.valid.Valid;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
-import org.checkerframework.checker.signature.qual.BinaryNameOrPrimitiveType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -142,7 +141,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
     @SuppressWarnings("unchecked")
     private <T extends GenericComponentInteractionCreateEvent> void callExecutor(IRegisteredListener<?> listener, GenericComponentInteractionCreateEvent event) {
         IRegisteredListener<T> castedListener = (IRegisteredListener<T>) listener;
-        ComponentInteractionInfo<T, IRegisteredListener<T>> info = new ComponentInteractionInfo<>((T) event, castedListener, sbds);
+        ComponentInteractionInfo<T> info = new ComponentInteractionInfo<>((T) event, castedListener, sbds);
         castedListener.getCallback().accept(info);
     }
 
@@ -202,7 +201,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
             @NotNull IPendingInteraction pending,
             @NotNull ComponentInteractionRequest.Action<T> action,
             @NotNull GenericComponentInteractionCreateEvent event) {
-        ComponentInteractionInfo<T, IPendingInteraction> info = new ComponentInteractionInfo<>((T) event, pending, sbds);
+        ComponentInteractionInfo<T> info = new ComponentInteractionInfo<>((T) event, pending, sbds);
         action.action().accept(info);
     }
 
@@ -284,9 +283,9 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
     public @NotNull <event extends GenericComponentInteractionCreateEvent> IRegisteredListener<event> registerListener(
             @NotNull IModule module,
             @NotNull String name,
-            @Nullable Permission permission,
             @NotNull Class<event> clazz,
-            @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor
+            @NotNull Consumer<ComponentInteractionInfo<event>> executor,
+            @Nullable Permission permission
     ) {
 
         Objects.requireNonNull(module, "module == null");
@@ -337,7 +336,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
 
         private final Class<event> clazz;
 
-        private final Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor;
+        private final Consumer<ComponentInteractionInfo<event>> executor;
 
         private final @Nullable Permission permission;
 
@@ -345,7 +344,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         public RegisteredListener(
                 @NotNull ComponentInteractionManager manager,
                 @NotNull Class<event> clazz,
-                @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> executor,
+                @NotNull Consumer<ComponentInteractionInfo<event>> executor,
                 @Nullable Permission permission
         ) {
             this.manager = manager;
@@ -366,7 +365,7 @@ public class ComponentInteractionManager extends Manager implements IComponentIn
         }
 
         @Override
-        public @NotNull Consumer<ComponentInteractionInfo<event, IRegisteredListener<event>>> getCallback() {
+        public @NotNull Consumer<ComponentInteractionInfo<event>> getCallback() {
             return executor;
         }
 

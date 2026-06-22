@@ -6,24 +6,21 @@ import net.survivalboom.sbds.api.interaction.InteractionExecutionInfo;
 import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import org.jetbrains.annotations.NotNull;
 
-public class ComponentInteractionInfo<
-        event extends GenericComponentInteractionCreateEvent,
-        reg extends IComponentInteractionManager.IRegisteredComponent
-> extends InteractionExecutionInfo<event> implements InteractionHolder {
+public class ComponentInteractionInfo<event extends GenericComponentInteractionCreateEvent> extends InteractionExecutionInfo<event> implements InteractionHolder {
 
-    private final reg reg;
+    private final IComponentInteractionManager.IRegisteredComponent component;
 
     public ComponentInteractionInfo(
             @NotNull event event,
-            @NotNull reg reg,
+            @NotNull IComponentInteractionManager.IRegisteredComponent component,
             @NotNull ISBDS sbds
     ) {
-        super(event, reg.isEphemeral(), sbds);
-        this.reg = reg;
+        super(event, component.isEphemeral(), sbds);
+        this.component = component;
     }
 
-    public @NotNull reg component() {
-        return reg;
+    public @NotNull IComponentInteractionManager.IRegisteredComponent component() {
+        return component;
     }
 
 }
