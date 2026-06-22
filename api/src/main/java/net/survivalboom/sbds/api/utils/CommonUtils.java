@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -736,6 +737,24 @@ public class CommonUtils {
     }
 
     public record RepeatResult<T>(@NotNull List<Throwable> errors, @NotNull Optional<T> result, int attempts) {}
+
+
+    /**
+     * Объединяет коллекцию CompletableFuture в один CompletableFuture,
+     * который возвращает список успешно выполненных результатов, игнорируя null.
+     */
+    public static <T> CompletableFuture<List<T>> sequenceAsync(Collection<CompletableFuture<T>> futures) {
+        // Создаем массив для CompletableFuture.allOf
+        CompletableFuture<?>[] futuresArray = futures.toArray(new CompletableFuture[0]);
+
+        // Ждем выполнения всех задач, затем собираем результаты
+        return CompletableFuture.allOf(futuresArray)
+                .thenApply(v -> futures.stream()
+                        .map(CompletableFuture::join)
+                        .filter(Objects::nonNull) // Твой фильтр на null
+                        .toList()
+                );
+    }
 
 
 }
