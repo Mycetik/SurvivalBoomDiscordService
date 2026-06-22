@@ -46,7 +46,7 @@ public class MusicModule extends ModuleMain {
                 .addSubCommand(commands)
                 .build();
 
-        getSbds().getConsoleListener().registerCommand(this, consoleCommand);
+        registerConsoleCommand(consoleCommand);
 
     }
 
