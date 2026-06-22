@@ -3,6 +3,7 @@ package net.survivalboom.sbds.api.interaction.modal;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.api.utils.valid.IManager;
@@ -28,12 +29,64 @@ public interface IModalInteractionManager extends IManager {
             @Nullable Consumer<ModalInteractionInfo> executor
     );
 
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull ModalTemplate template
+    ) {
+        return registerModal(module, name, template, null);
+    }
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull ModalTemplate template,
+            @Nullable Consumer<ModalInteractionInfo> executor
+    ) {
+        return registerModal(module.getModule(), name, template, executor);
+    }
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull ModalTemplate template
+    ) {
+        return registerModal(module, name, template, null);
+    }
+
+
     @NotNull IRegisteredModal registerModal(
             @NotNull IModule module,
             @NotNull String name,
             @NotNull Consumer<ModalTemplate.Builder> builder,
             @Nullable Consumer<ModalInteractionInfo> executor
     );
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ModalTemplate.Builder> builder
+    ) {
+        return registerModal(module, name, builder, null);
+    }
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ModalTemplate.Builder> builder,
+            @Nullable Consumer<ModalInteractionInfo> executor
+    ) {
+        return registerModal(module.getModule(), name, builder, executor);
+    }
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ModalTemplate.Builder> builder
+    ) {
+        return registerModal(module, name, builder, null);
+    }
+
 
     boolean unregisterModal(@NotNull IRegisteredModal modal);
 

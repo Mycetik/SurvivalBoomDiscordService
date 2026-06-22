@@ -1,8 +1,11 @@
 package net.survivalboom.sbds.api.interaction.modal;
 
 import net.dv8tion.jda.api.components.ModalTopLevelComponent;
+import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.modals.Modal;
 import net.survivalboom.sbds.api.messages.components.ModalComponentTemplate;
+import net.survivalboom.sbds.api.messages.components.templates.LabelTemplate;
+import net.survivalboom.sbds.api.messages.components.templates.TextInputTemplate;
 import net.survivalboom.sbds.api.messages.parsers.StringParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -123,6 +126,23 @@ public class ModalTemplate {
 
         public @NotNull Builder addComponent(@NotNull ModalComponentTemplate<?> component) {
             this.components.add(component);
+            return this;
+        }
+
+        // INPUT //
+
+        public @NotNull Builder addInput(
+                @NotNull String name,
+                @NotNull String title,
+                @Nullable String description,
+                @Nullable String placeholder,
+                @Nullable String value,
+                @NotNull TextInputStyle style,
+                int min,
+                int max,
+                boolean required
+        ) {
+            this.components.add(new LabelTemplate(title, description, components.size(), new TextInputTemplate(name, min, max, required, placeholder, value, style)));
             return this;
         }
 

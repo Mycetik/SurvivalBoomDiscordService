@@ -15,8 +15,6 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
 
     private final String name;
 
-    private final int index;
-
 
     private final int min;
 
@@ -34,7 +32,6 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
 
     public TextInputTemplate(
             @NotNull String name,
-            int index,
 
             int min,
             int max,
@@ -55,7 +52,6 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
         }
 
         this.name = name;
-        this.index = index;
 
         this.min = min;
         this.max = max;
@@ -70,7 +66,7 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
 
     @Override
     public int getRow() {
-        return index;
+        return 0;
     }
 
     // TEXT INPUT //
@@ -136,8 +132,6 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
 
         private String name;
 
-        private int index = 0;
-
 
         private int min = 1;
 
@@ -156,7 +150,6 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
         private Builder(TextInputTemplate template) {
 
             this.name = template.name;
-            this.index = template.index;
 
             this.min = template.min;
             this.max = template.max;
@@ -172,7 +165,6 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
         private Builder(Builder builder) {
 
             this.name = builder.name;
-            this.index = builder.index;
 
             this.min = builder.min;
             this.max = builder.max;
@@ -198,17 +190,6 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
 
         public String getName() {
             return name;
-        }
-
-        // ROW //
-
-        public @NotNull Builder setIndex(int index) {
-            this.index = index;
-            return this;
-        }
-
-        public int getIndex() {
-            return index;
         }
 
         // MIN //
@@ -280,7 +261,7 @@ public class TextInputTemplate implements ComponentTemplate<TextInput> {
         // BUILD //
 
         public @NotNull TextInputTemplate build() {
-            return new TextInputTemplate(name, index, min, max, required, placeholder, value, style);
+            return new TextInputTemplate(name, min, max, required, placeholder, value, style);
         }
 
         public @NotNull Builder copy() {
