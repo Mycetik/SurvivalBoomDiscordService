@@ -3,7 +3,7 @@ package net.survivalboom.sbds.core.messages;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
@@ -184,7 +184,7 @@ public class Messages extends Manager implements IMessages {
 
             case Message message -> action = message::reply;
 
-            case TextChannel channel -> action = channel::sendMessage;
+            case MessageChannel channel -> action = channel::sendMessage;
 
             case IReplyCallback replyCallback -> {
 
