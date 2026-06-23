@@ -18,7 +18,7 @@ public interface IGuildConfigManager extends IManager {
 
     // REG //
 
-    @NotNull IGuildConfigTemplate registerTemplate(@NotNull IModule module, @NotNull Collection<GuildConfigField> fields);
+    @NotNull IGuildConfigTemplate registerTemplate(@NotNull IModule module, @NotNull Collection<GuildConfigField> fields, @Nullable String translationKey);
 
     @NotNull IGuildConfigTemplate registerTemplate(@NotNull IModule module, @NotNull Consumer<IGuildConfigBuilder> builder);
 
@@ -51,7 +51,23 @@ public interface IGuildConfigManager extends IManager {
 
     interface IGuildConfigBuilder {
 
-        <T> IGuildConfigManager.@NotNull IGuildConfigBuilder addField(@NotNull String key, @NotNull String translationKey, @NotNull Class<T> type, @Nullable T defaultValue);
+        // TRANSLATION //
+
+        @NotNull IGuildConfigBuilder setTranslation(@Nullable String translationKey);
+
+        String getTranslation();
+
+        // FIELDS //
+
+        <T> @NotNull IGuildConfigBuilder addField(@NotNull String key, @NotNull Class<T> type, @Nullable T defaultValue);
+
+        @NotNull IGuildConfigBuilder addFields(@NotNull Collection<GuildConfigField> fields);
+
+        @Nullable IGuildConfigBuilder addFields(GuildConfigField @NotNull... fields);
+
+        @NotNull IGuildConfigBuilder setFields(@Nullable Collection<GuildConfigField> fields);
+
+        @NotNull List<GuildConfigField> getFields();
 
     }
 

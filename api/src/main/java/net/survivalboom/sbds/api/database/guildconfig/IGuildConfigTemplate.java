@@ -16,6 +16,10 @@ public interface IGuildConfigTemplate extends IValid {
 
     @NotNull String getKey();
 
+    @Nullable String getTranslationKey();
+
+    @NotNull String createTranslationKey();
+
 
     @Nullable GuildConfigField getField(@NotNull String key);
 

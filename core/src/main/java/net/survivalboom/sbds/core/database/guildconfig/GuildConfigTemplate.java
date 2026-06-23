@@ -21,8 +21,15 @@ public class GuildConfigTemplate extends Valid implements IGuildConfigTemplate {
 
     protected Registration<IGuildConfigTemplate> registration;
 
-    public GuildConfigTemplate(@NotNull Map<String, GuildConfigField> map, @NotNull GuildConfigManager manager) {
+    private final String translationKey;
+
+    public GuildConfigTemplate(
+            @NotNull Map<String, GuildConfigField> map,
+            @Nullable String translationKey,
+            @NotNull GuildConfigManager manager
+    ) {
         this.fieldMap = map;
+        this.translationKey = translationKey;
         this.manager = manager;
     }
 
@@ -39,6 +46,16 @@ public class GuildConfigTemplate extends Valid implements IGuildConfigTemplate {
     @Override
     public @NotNull String getKey() {
         return registration.key().prefix();
+    }
+
+    @Override
+    public @Nullable String getTranslationKey() {
+        return translationKey;
+    }
+
+    @Override
+    public @NotNull String createTranslationKey() {
+        return String.format("$[%s.label]", getTranslationKey());
     }
 
     @Override

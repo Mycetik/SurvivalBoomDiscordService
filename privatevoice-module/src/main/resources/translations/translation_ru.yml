@@ -8,6 +8,7 @@ $name: sbds:russian
 voice:
 
   config:
+    lable: "Приватные каналы"
     creator: "Канал-создатель"
     fallback: "Резервный канал"
 

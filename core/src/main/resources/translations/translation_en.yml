@@ -21,6 +21,7 @@ values:
 sbds:
 
   config:
+    label: "Core settings"
     prefix: "Command prefix"
 
   command:

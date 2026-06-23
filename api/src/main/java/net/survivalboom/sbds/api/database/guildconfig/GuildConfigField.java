@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public record GuildConfigField(@NotNull String key, @Nullable String translationKey, @NotNull Class<?> type, @Nullable Object defaultValue) {
+public record GuildConfigField(@NotNull String key, @NotNull Class<?> type, @Nullable Object defaultValue) {
 
     public GuildConfigField {
         Objects.requireNonNull(key, "key == null");
@@ -20,6 +20,10 @@ public record GuildConfigField(@NotNull String key, @Nullable String translation
 
         return type.isAssignableFrom(value.getClass());
 
+    }
+
+    public @NotNull String createTranslationKey(@NotNull IGuildConfigTemplate template) {
+        return String.format("$[%s.%s]", template.getTranslationKey(), key);
     }
 
 }

@@ -8,6 +8,7 @@ $name: sbds:english
 voice:
 
   config:
+    label: "Personal channels"
     creator: "Channel creator"
     fallback: "Fallback channel"
 

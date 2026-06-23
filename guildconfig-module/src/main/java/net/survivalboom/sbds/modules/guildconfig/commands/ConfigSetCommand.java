@@ -1,5 +1,6 @@
 package net.survivalboom.sbds.modules.guildconfig.commands;
 
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.TextChannelArgument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 
-@CommandClass(name = "set", description = "Set an option value fro this guild", translationKey = "guildconfig.command.config.set", permission = "guilconfig.command.config.set")
+@CommandClass(name = "set", description = "Set an option value for this guild", translationKey = "guildconfig.command.config.set", permission = "guilconfig.command.config.set")
 public class ConfigSetCommand extends CommandBase implements SlashCommandExecutor {
 
     @Override
@@ -65,7 +66,7 @@ public class ConfigSetCommand extends CommandBase implements SlashCommandExecuto
         info.reply("guildconfig.command.config.set.success")
                 .withPlaceholders(
                         "option.key", field.key(),
-                        "option.translated", field.translationKey() != null ? info.sbds().getMessages().parseTranslations("$[" + field.translationKey() + "]", info.user()) : null,
+                        "option.translated", template.getTranslationKey() != null ? field.createTranslationKey(template) : field.key(),
                         "option.type", field.type(),
                         "option.value", value,
                         "option.default", field.defaultValue(),
@@ -86,7 +87,18 @@ public class ConfigSetCommand extends CommandBase implements SlashCommandExecuto
 
     @ArgumentMethod(index = 1)
     public StringArgument key() {
-        return new StringArgument();
+        return new StringArgument(context -> {
+
+            IGuildConfigTemplate template = context.arguments().getCast("config", IGuildConfigTemplate.class).orElse(null);
+            if (template == null) {
+                return null;
+            }
+
+            return template.getFields().values().stream()
+                    .map(field -> new Command.Choice(field.createTranslationKey(template), field.key()))
+                    .toList();
+
+        });
     }
 
     @ArgumentMethod(index = 2, required = false)

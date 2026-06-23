@@ -42,9 +42,11 @@ public class GuildConfigManager extends Manager implements IGuildConfigManager, 
 
         registry.init();
 
-        registerTemplate0(null, builder -> {
-            builder.addField("prefix", "sbds.config.prefix", String.class, "!");
-        });
+        registerTemplate0(null, builder ->
+            builder
+                .setTranslation("sbds.config")
+                .addField("prefix", String.class, "!")
+        );
 
     }
 
@@ -64,9 +66,9 @@ public class GuildConfigManager extends Manager implements IGuildConfigManager, 
     //
 
     @Override
-    public @NotNull IGuildConfigTemplate registerTemplate(@NotNull IModule module, @NotNull Collection<GuildConfigField> fields) {
+    public @NotNull IGuildConfigTemplate registerTemplate(@NotNull IModule module, @NotNull Collection<GuildConfigField> fields, @Nullable String translationKey) {
         Objects.requireNonNull(module, "module == null");
-        return registerTemplate0(module, fields);
+        return registerTemplate0(module, fields, translationKey);
     }
 
     @Override
@@ -80,11 +82,11 @@ public class GuildConfigManager extends Manager implements IGuildConfigManager, 
         Builder b = new Builder();
         builder.accept(b);
 
-        return registerTemplate0(module, b.fields);
+        return registerTemplate0(module, b.fields, b.translationKey);
 
     }
 
-    public @NotNull IGuildConfigTemplate registerTemplate0(@Nullable IModule module, @NotNull Collection<GuildConfigField> fields) {
+    public @NotNull IGuildConfigTemplate registerTemplate0(@Nullable IModule module, @NotNull Collection<GuildConfigField> fields, @Nullable String translationKey) {
 
         checkValid();
 
@@ -99,7 +101,7 @@ public class GuildConfigManager extends Manager implements IGuildConfigManager, 
         Map<String, GuildConfigField> map = fields.stream()
                 .collect(Collectors.toMap(GuildConfigField::key, field -> field, (field1, field2) -> field1));
 
-        GuildConfigTemplate template = new GuildConfigTemplate(map, this);
+        GuildConfigTemplate template = new GuildConfigTemplate(map, translationKey, this);
         template.registration = registry.register0(module, "config", template);
 
         return template;
@@ -159,12 +161,58 @@ public class GuildConfigManager extends Manager implements IGuildConfigManager, 
 
     public static class Builder implements IGuildConfigBuilder {
 
+        private String translationKey = null;
+
         private final List<GuildConfigField> fields = new ArrayList<>();
 
+        // TRANSLATION //
+
         @Override
-        public @NotNull <T> IGuildConfigBuilder addField(@NotNull String key, @NotNull String translationKey, @NotNull Class<T> type, @Nullable T defaultValue) {
-            this.fields.add(new GuildConfigField(key, translationKey, type, defaultValue));
+        public @NotNull IGuildConfigBuilder setTranslation(@Nullable String translationKey) {
+            this.translationKey = translationKey;
             return this;
+        }
+
+        @Override
+        public String getTranslation() {
+            return translationKey;
+        }
+
+        // FIELDS //
+
+        @Override
+        public @NotNull <T> IGuildConfigBuilder addField(@NotNull String key, @NotNull Class<T> type, @Nullable T defaultValue) {
+            this.fields.add(new GuildConfigField(key, type, defaultValue));
+            return this;
+        }
+
+        @Override
+        public @NotNull IGuildConfigBuilder addFields(@NotNull Collection<GuildConfigField> fields) {
+            this.fields.addAll(fields);
+            return this;
+        }
+
+        @Override
+        public @Nullable IGuildConfigBuilder addFields(GuildConfigField @NotNull ... fields) {
+            return addFields(List.of(fields));
+        }
+
+        @Override
+        public @NotNull IGuildConfigBuilder setFields(@Nullable Collection<GuildConfigField> fields) {
+
+            this.fields.clear();
+
+            if (fields != null) {
+                this.fields.addAll(fields);
+            }
+
+            return this;
+
+        }
+
+        @Override
+        public @NotNull List<GuildConfigField> getFields() {
+            return new ArrayList<>(fields);
         }
 
     }

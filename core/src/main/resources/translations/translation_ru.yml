@@ -20,6 +20,10 @@ values:
 
 sbds:
 
+  config:
+    label: "Параметры ядра"
+    prefix: "Префикс команд"
+
   command:
 
     status:

@@ -4,6 +4,7 @@ $name: sbds:ukrainian
 testmodule:
 
   config:
+    label: "Тестовий модуль"
     replier: "Відповідач"
 
   event:

@@ -65,8 +65,9 @@ public class PrivateVoiceModule extends ModuleMain {
 
         createGuildConfig(builder ->
                 builder
-                    .addField("creator", "voice.config.creator", VoiceChannel.class, null)
-                    .addField("fallback", "voice.config.fallback", VoiceChannel.class, null)
+                    .setTranslation("voice.config")
+                    .addField("creator", VoiceChannel.class, null)
+                    .addField("fallback", VoiceChannel.class, null)
         );
 
     }

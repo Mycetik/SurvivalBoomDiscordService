@@ -23,11 +23,13 @@ public class TestModule extends ModuleMain {
 
         registerCommand(new TestModalCommand());
 
-        createGuildConfig(builder -> {
-            builder.addField("replier", "testmodule.config.replier", TextChannel.class, null);
-        });
-        registerEvents(new MessageReplier(this));
+        createGuildConfig(builder ->
+            builder
+                .setTranslation("testmodule.config")
+                .addField("replier", TextChannel.class, null)
+        );
 
+        registerEvents(new MessageReplier(this));
         registerEvents(new EventListenerTest(this));
 
         getSbds().getDatabase().createRepository(this, "test", TestRecord.class);

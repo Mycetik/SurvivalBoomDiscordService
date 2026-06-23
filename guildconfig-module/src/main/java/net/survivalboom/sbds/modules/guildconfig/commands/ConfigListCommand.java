@@ -4,6 +4,7 @@ import net.survivalboom.sbds.api.commands.base.CommandBase;
 import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
 import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.messages.parsers.TextParser;
 import net.survivalboom.sbds.api.messages.template.EmbedMessageTemplate;
@@ -32,6 +33,7 @@ public class ConfigListCommand extends CommandBase implements SlashCommandExecut
 
         for (var config : configs) {
 
+            IGuildConfigTemplate template = config.getTemplate();
             var module = config.getRegistration().module();
 
             var builder = TextParser.builder()
@@ -57,10 +59,12 @@ public class ConfigListCommand extends CommandBase implements SlashCommandExecut
                 var field = entry.getKey();
                 var value = entry.getValue();
 
+                String translated = template.getTranslationKey() != null ? field.createTranslationKey(template) : field.key();
+
                 TextParser parser1 = TextParser.builder()
                         .addPlaceholders(
                                 "option.key", field.key(),
-                                "option.translated", field.translationKey() != null ? info.sbds().getMessages().parseTranslations("$[" + field.translationKey() + "]", info.user()) : null,
+                                "option.translated", translated,
                                 "option.type", field.type(),
                                 "option.value", value,
                                 "option.default", field.defaultValue()

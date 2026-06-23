@@ -21,6 +21,7 @@ values:
 sbds:
 
   config:
+    label: "Налаштування ядра"
     prefix: "Префікс команд"
 
   command:
