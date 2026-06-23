@@ -23,6 +23,7 @@ import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
 import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
 import net.survivalboom.sbds.api.database.members.IMemberDataManager;
 import net.survivalboom.sbds.api.database.users.IUserDataManager;
+import net.survivalboom.sbds.api.events.EventBase;
 import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.events.EventPriority;
 import net.survivalboom.sbds.api.events.IEventManager;
@@ -460,6 +461,12 @@ public abstract class ModuleMain {
 
     public @NotNull ISchedulerTask schedule(@NotNull Runnable task, int delay, int period) {
         return getScheduler().schedule(this, task, delay, period);
+    }
+
+    // EVENT HANDLER //
+
+    public <T extends EventBase> @NotNull T callEvent(@NotNull T event) {
+        return getEventManager().callEvent(event);
     }
 
     //

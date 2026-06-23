@@ -95,7 +95,7 @@ public class ModuleManager extends Manager implements IModuleManager {
         if (!sortedMetas.isEmpty()) {
 
             log.info("Found {} valid modules. Loading them... \n - {}",
-                    modulesMetas.size(),
+                    sortedMetas.size(),
                     String.join(", ", sortedMetas.stream()
                             .map(meta -> meta.meta().getName())
                             .toList())
@@ -104,7 +104,7 @@ public class ModuleManager extends Manager implements IModuleManager {
         }
 
         List<IModule> successfullyLoaded = new ArrayList<>();
-        for (ModuleMetaLoadResult meta : modulesMetas) {
+        for (ModuleMetaLoadResult meta : sortedMetas) {
 
             String name = meta.meta().getName();
             log.info("Loading module {}...", name);
@@ -156,7 +156,6 @@ public class ModuleManager extends Manager implements IModuleManager {
         if (!modules.isEmpty()) {
             log.info("Disabling modules...");
         }
-
 
         List<IModule> currentModules = getModules();
         List<IModule> sortedModules = sortActiveModulesByDependencies(currentModules);

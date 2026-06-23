@@ -8,7 +8,6 @@ import net.survivalboom.sbds.api.utils.valid.IManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 public interface IEventManager extends IManager {
@@ -16,6 +15,8 @@ public interface IEventManager extends IManager {
     //
     // EVENT HANDLERS
     //
+
+    <T extends EventBase> @NotNull T callEvent(@NotNull T event);
 
     // REGISTER //
 

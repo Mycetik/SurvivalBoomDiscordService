@@ -1,9 +1,7 @@
 package net.survivalboom.sbds.core.events;
 
 import net.dv8tion.jda.api.events.GenericEvent;
-import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.events.EventPriority;
-import net.survivalboom.sbds.api.events.IEventManager;
+import net.survivalboom.sbds.api.events.*;
 import net.survivalboom.sbds.api.events.EventListener;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.registrations.Registration;
@@ -55,6 +53,10 @@ public class EventManager extends Manager implements net.dv8tion.jda.api.hooks.E
 
     @Override
     public void onEvent(@NotNull GenericEvent event) {
+        onEvent((Object) event);
+    }
+
+    private void onEvent(@NotNull Object event) {
 
         if (!sbds.isReady()) {
             return;
@@ -74,11 +76,15 @@ public class EventManager extends Manager implements net.dv8tion.jda.api.hooks.E
             }
 
             try {
-                sex(handler.getEventHandler(), event);
+                rawrrr(handler.getEventHandler(), event);
             }
 
             catch (Throwable t) {
                 logger.error("An exception was thrown in Event Handler `{}`.", handler.getRegistration().key(), t);
+            }
+
+            if (event instanceof ICancellable cancellable) {
+                cancelled = cancellable.isCancelled();
             }
 
         }
@@ -86,9 +92,37 @@ public class EventManager extends Manager implements net.dv8tion.jda.api.hooks.E
     }
 
     @SuppressWarnings("unchecked") // <- Сасі хуй і нє псіхуй.
-    private <T> void sex(@NotNull ThrowingConsumer<?> consumer, @NotNull T you) throws Throwable {
+    private <T> void rawrrr(@NotNull ThrowingConsumer<?> consumer, @NotNull T you) throws Throwable {
         var dragonGayPorn = (ThrowingConsumer<T>) consumer;
         dragonGayPorn.acceptThrowing(you);
+    }
+
+    @Override
+    public <T extends EventBase> @NotNull T callEvent(@NotNull T event) {
+
+        Objects.requireNonNull(event, "event == null");
+        checkValid();
+
+        IModule module = event.getModule();
+        Objects.requireNonNull(module, "module == null");
+
+        sbds.getModuleManager().checkModuleEnabled(module, "Disabled module tried to call an event");
+
+        onEvent(event);
+
+        return event;
+
+    }
+
+    public <T extends EventBase> @NotNull T callEvent0(@NotNull T event) {
+
+        Objects.requireNonNull(event, "event == null");
+        checkValid();
+
+        onEvent(event);
+
+        return event;
+
     }
 
     //
