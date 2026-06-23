@@ -4,7 +4,7 @@
 #
 
 name: "GithubIntegrations"
-version: 1.0
+version: "${version}"
 main: net.survivalboom.sbds.modules.github.GithubModule
 
 

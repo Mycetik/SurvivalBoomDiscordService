@@ -2,8 +2,8 @@ plugins {
     java
 }
 
-group = "net.survivalboom.modules.voices"
-version = "2.0"
+group = "net.survivalboom.sbds.modules.voice"
+version = "1.0"
 
 repositories {
     mavenCentral()

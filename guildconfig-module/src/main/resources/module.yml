@@ -2,7 +2,7 @@ name: "GuildConfigModule"
 main: "net.survivalboom.sbds.modules.guildconfig.GuildConfigModule"
 
 description: "Модуль що додає керування конфігурацією модулів на серверах за допомогою слеш команд"
-version: "1.0"
+version: "${version}"
 
 author: TIMURishche
 website: "https://survivalboom.net"

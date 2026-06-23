@@ -3,7 +3,7 @@ plugins {
     id("com.gradleup.shadow") version "8.3.0"
 }
 
-group = "net.survivalboom.sbds.ai"
+group = "net.survivalboom.sbds.modules.ai"
 version = "1.0"
 
 repositories {

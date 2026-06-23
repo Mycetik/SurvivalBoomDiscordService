@@ -2,7 +2,7 @@ name: "ChatBot"
 main: "net.survivalboom.sbds.modules.chatbot.ChatBotModule"
 
 description: "Ваш друг ШІ прямо в Discord! Хочете щоб у вас у чаті жив дракон?"
-version: 2.0
+version: "${version}"
 
 author: TIMURishche
 website: "https://survivalboom.net"

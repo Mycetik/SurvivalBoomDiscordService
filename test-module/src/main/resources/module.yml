@@ -2,7 +2,7 @@ name: "TestModule"
 main: "net.survivalboom.sbds.modules.test.TestModule"
 
 description: "Тестовий модуль для перевірки роботи SurvivalBoom Discord Service"
-version: "1.0"
+version: "${version}"
 
 author: TIMURishche
 website: "https://survivalboom.net"

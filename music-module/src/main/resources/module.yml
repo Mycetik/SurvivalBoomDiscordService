@@ -7,7 +7,7 @@ main: "net.survivalboom.sbds.modules.music.MusicModule"
 
 name: "MusicModule"
 description: "Музичний модуль для SBDS. Музика!"
-version: "1.0"
+version: "${version}"
 
 authors: TIMURishche
 website: "https://survivalboom.net"

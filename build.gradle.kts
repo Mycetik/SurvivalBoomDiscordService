@@ -33,6 +33,15 @@ subprojects {
         }
     }
 
+    plugins.withType<JavaPlugin> {
+        tasks.named<ProcessResources>("processResources") {
+            filesMatching("module.yml") {
+                duplicatesStrategy = DuplicatesStrategy.INCLUDE
+                expand(mapOf("version" to project.version))
+            }
+        }
+    }
+
 }
 
 tasks {
