@@ -28,12 +28,12 @@ public class TranslationCommand extends CommandBase implements SlashCommandExecu
     @Override
     public void executes(@NotNull SlashExecutionInfo info) {
 
-        String translationRaw = info.arguments().getCast("translation", String.class).orElse(null);
+        ITranslation translation = info.arguments().getCast("translation", ITranslation.class).orElse(null);
 
         IUserDataManager userDataManager = info.sbds().getUserDataManager();
         IUserData userData = userDataManager.get(info.user()).join();
 
-        if (translationRaw == null) {
+        if (translation == null) {
 
             ITranslation currentTranslation = userData != null ? userData.getTranslation() : null;
 
@@ -44,10 +44,6 @@ public class TranslationCommand extends CommandBase implements SlashCommandExecu
             return;
 
         }
-
-        ITranslationManager translationManager = info.sbds().getTranslationManager();
-        ITranslation translation = translationManager.getTranslation(translationRaw);
-        Objects.requireNonNull(translation, "Invalid translation");
 
         if (userData == null) {
             userData = userDataManager.obtain(info.user()).join();
