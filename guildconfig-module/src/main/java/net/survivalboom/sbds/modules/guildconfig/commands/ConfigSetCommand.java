@@ -41,7 +41,7 @@ public class ConfigSetCommand extends CommandBase implements SlashCommandExecuto
         IGuildConfig config = template.obtainConfig(info.guild());
 
         GuildConfigField field = config.getField(key);
-        if (field == null) {
+        if (field == null || field.internal()) {
             info.reply("guildconfig.command.config.set.invalid-key")
                     .withPlaceholders("option", template.getKey() + ":" + key)
                     .queue();
@@ -95,6 +95,7 @@ public class ConfigSetCommand extends CommandBase implements SlashCommandExecuto
             }
 
             return template.getFields().values().stream()
+                    .filter(field -> !field.internal())
                     .map(field -> new Command.Choice(field.createTranslationKey(template), field.key()))
                     .toList();
 

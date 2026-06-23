@@ -181,8 +181,8 @@ public class GuildConfigManager extends Manager implements IGuildConfigManager, 
         // FIELDS //
 
         @Override
-        public @NotNull <T> IGuildConfigBuilder addField(@NotNull String key, @NotNull Class<T> type, @Nullable T defaultValue) {
-            this.fields.add(new GuildConfigField(key, type, defaultValue));
+        public @NotNull <T> IGuildConfigBuilder addField(@NotNull String key, @NotNull Class<T> type, @Nullable T defaultValue, boolean internal) {
+            this.fields.add(new GuildConfigField(key, type, defaultValue, internal));
             return this;
         }
 

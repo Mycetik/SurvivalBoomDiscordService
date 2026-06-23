@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public record GuildConfigField(@NotNull String key, @NotNull Class<?> type, @Nullable Object defaultValue) {
+public record GuildConfigField(@NotNull String key, @NotNull Class<?> type, @Nullable Object defaultValue, boolean internal) {
 
     public GuildConfigField {
         Objects.requireNonNull(key, "key == null");

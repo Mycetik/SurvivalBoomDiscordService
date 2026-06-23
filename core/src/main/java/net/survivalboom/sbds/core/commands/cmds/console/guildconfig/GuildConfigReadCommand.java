@@ -46,11 +46,7 @@ public class GuildConfigReadCommand extends CommandBase implements ConsoleComman
                 Object value = entry.getValue();
                 Object defaultValue = field.defaultValue();
 
-                if (defaultValue != null) {
-                    info.logger().info("> {} -> {} ({})", field.key(), value, defaultValue);
-                } else {
-                    info.logger().info("> {} -> {}", field.key(), value);
-                }
+                info.logger().info("> {} -> {} (Default: {}, Internal: {})", field.key(), value, defaultValue, field.internal());
 
             }
 
@@ -87,13 +83,11 @@ public class GuildConfigReadCommand extends CommandBase implements ConsoleComman
                     Object value = entry2.getValue();
                     Object defaultValue = field.defaultValue();
 
-                    if (defaultValue != null) {
-                        info.logger().info("* {} -> {} ({})", field.key(), value, defaultValue);
-                    } else {
-                        info.logger().info("* {} -> {}", field.key(), value);
-                    }
+                    info.logger().info("* {} -> {} (Default: {}, Internal: {})", field.key(), value, defaultValue, field.internal());
 
                 }
+
+                info.logger().info(" ");
 
             }
 

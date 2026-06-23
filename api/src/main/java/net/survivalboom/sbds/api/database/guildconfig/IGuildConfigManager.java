@@ -59,7 +59,11 @@ public interface IGuildConfigManager extends IManager {
 
         // FIELDS //
 
-        <T> @NotNull IGuildConfigBuilder addField(@NotNull String key, @NotNull Class<T> type, @Nullable T defaultValue);
+        <T> @NotNull IGuildConfigBuilder addField(@NotNull String key, @NotNull Class<T> type, @Nullable T defaultValue, boolean internal);
+
+        default  <T> @NotNull IGuildConfigBuilder addField(@NotNull String key, @NotNull Class<T> type, @Nullable T defaultValue) {
+            return addField(key, type, defaultValue, false);
+        }
 
         @NotNull IGuildConfigBuilder addFields(@NotNull Collection<GuildConfigField> fields);
 
