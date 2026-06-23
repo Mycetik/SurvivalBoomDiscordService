@@ -289,10 +289,10 @@ public class Messages extends Manager implements IMessages {
             }
 
             if (translatedMessage == null) {
-                continue;
+                matcher.appendReplacement(parsedText, found);
             }
 
-            if (translatedMessage instanceof TextMessageTemplate template) {
+            else if (translatedMessage instanceof TextMessageTemplate template) {
                 matcher.appendReplacement(parsedText, template.getContent());
             }
 
