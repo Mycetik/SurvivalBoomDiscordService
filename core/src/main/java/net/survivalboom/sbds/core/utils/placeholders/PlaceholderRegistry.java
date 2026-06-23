@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
+import net.survivalboom.sbds.api.database.guildconfig.GuildConfigField;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.translations.ITranslation;
 import net.survivalboom.sbds.api.utils.placeholders.IPlaceholderRegistry;
@@ -42,6 +43,7 @@ public class PlaceholderRegistry extends Manager implements IPlaceholderRegistry
         registerProvider0(null, Guild.class, GuildPlaceholder::new);
         registerProvider0(null, Channel.class, ChannelPlaceholder::new);
         registerProvider0(null, ITranslation.class, TranslationPlaceholder::new);
+        registerProvider0(null, GuildConfigField.class, GuildConfigFieldPlaceholder::new);
 
     }
 

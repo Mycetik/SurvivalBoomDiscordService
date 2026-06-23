@@ -7,6 +7,9 @@ $name: sbds:english
 
 guildconfig:
 
+  values:
+    empty: "Empty"
+
   command:
 
     # /config [...]
@@ -31,11 +34,12 @@ guildconfig:
 
         config-root:
           $embed:
-            title: "{module.name} v{module.version}"
+            title: "{config.translated}"
             color: 474D19
+
         config-field-format:
           name: "{option.translated}"
-          value: "**{option.value}** *({option.default})*"
+          value: "- **{option.value}**"
 
       # /config set
       set:
@@ -78,7 +82,7 @@ guildconfig:
 
         success:
           $embed:
-            description: Option `{option.translated}` has been set to **{value}**.
+            description: Option **{option.translated}** has been set to **{value}**.
             color: 33d17a
 
         empty:
@@ -88,10 +92,10 @@ guildconfig:
 
         invalid-key:
           $embed:
-            description: Invalid option `{option}`. Please check if it's correct.
+            description: Invalid option **{option}**. Please check if it's correct.
             color: ff0000
 
         invalid-value:
           $embed:
-            description: Invalid value **{value}** for option `{option}`.
+            description: Invalid value **{value}** for option **{option.translated}**.
             color: ff0000

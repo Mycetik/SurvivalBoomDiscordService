@@ -54,9 +54,19 @@ public class ConfigSetCommand extends CommandBase implements SlashCommandExecuto
             value = null;
         }
 
+        String fieldTranslated = template.getTranslationKey() != null ? field.createTranslationKey(template) : template.getKey() + ":" + field.key();
+        Object valueTranslated = value != null ? value : field.defaultValue();
+        if (valueTranslated == null) {
+            valueTranslated = "$[guildconfig.values.empty]";
+        }
+
         if (!field.isValueAllowed(value)) {
             info.reply("guildconfig.command.config.set.invalid-value")
-                    .withPlaceholders("value", value, "option", template.getKey() + ":" + key)
+                    .withPlaceholders(
+                            "option", field,
+                            "option.translated", fieldTranslated,
+                            "value", valueTranslated
+                    )
                     .queue();
             return;
         }
@@ -65,12 +75,9 @@ public class ConfigSetCommand extends CommandBase implements SlashCommandExecuto
 
         info.reply("guildconfig.command.config.set.success")
                 .withPlaceholders(
-                        "option.key", field.key(),
+                        "option", field,
                         "option.translated", template.getTranslationKey() != null ? field.createTranslationKey(template) : field.key(),
-                        "option.type", field.type(),
-                        "option.value", value,
-                        "option.default", field.defaultValue(),
-                        "value", value
+                        "value", valueTranslated
                 )
                 .queue();
 

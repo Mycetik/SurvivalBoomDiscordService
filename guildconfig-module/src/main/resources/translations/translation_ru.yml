@@ -7,6 +7,9 @@ $name: sbds:russian
 
 guildconfig:
 
+  values:
+    empty: "Пусто"
+
   command:
 
     # /config [...]
@@ -32,11 +35,12 @@ guildconfig:
 
         config-root:
           $embed:
-            title: "{module.name} v{module.version}"
+            title: "{config.translated}"
             color: 474D19
+
         config-field-format:
           name: "{option.translated}"
-          value: "**{option.value}** *({option.default})*"
+          value: "- **{option.value}**"
 
       # /config set
       set:
@@ -78,7 +82,7 @@ guildconfig:
 
         success:
           $embed:
-            description: Установлено настройку `{option.translated}` на **{value}**.
+            description: Установлено настройку **{option.translated}** на **{value}**.
             color: 33d17a
 
         empty:
@@ -88,10 +92,10 @@ guildconfig:
 
         invalid-key:
           $embed:
-            description: Неверная настройка `{option}`. Проверьте правильность."
+            description: Неверная настройка **{option}**. Проверьте правильность."
             color: ff0000
 
         invalid-value:
           $embed:
-            description: Неверное значение **{value}** для настройки `{option}`."
+            description: Неверное значение **{value}** для настройки **{option.translated}**."
             color: ff0000

@@ -6,6 +6,7 @@ import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
 import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.api.messages.parsers.LinkedTextParser;
 import net.survivalboom.sbds.api.messages.parsers.TextParser;
 import net.survivalboom.sbds.api.messages.template.EmbedMessageTemplate;
 import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
@@ -36,8 +37,10 @@ public class ConfigListCommand extends CommandBase implements SlashCommandExecut
             IGuildConfigTemplate template = config.getTemplate();
             var module = config.getRegistration().module();
 
-            var builder = TextParser.builder()
-                    .addPlaceholders("module", config.getRegistration().module());
+            String templateTranslated = template.getTranslationKey() != null ? template.createTranslationKey() : template.getKey();
+
+            var builder = LinkedTextParser.builder(info.messages(), info.user())
+                    .addPlaceholders("config.translated", templateTranslated);
 
             if (module != null) {
                 builder.addPlaceholder("module", module);
@@ -50,23 +53,27 @@ public class ConfigListCommand extends CommandBase implements SlashCommandExecut
                 );
             }
 
-            TextParser parser0 = builder.build();
+            LinkedTextParser parser0 = builder.build();
 
-            var msg = getEmbed("guildconfig.command.config.list.config-root", info).getEmbeds().getFirst().build(parser0.createStringParser(info.messages()));
+            var msg = getEmbed("guildconfig.command.config.list.config-root", info).getEmbeds().getFirst().build(parser0);
 
             for (var entry : config.getValues().join().entrySet()) {
 
                 var field = entry.getKey();
                 var value = entry.getValue();
 
-                String translated = template.getTranslationKey() != null ? field.createTranslationKey(template) : field.key();
+                String fieldTranslated = template.getTranslationKey() != null ? field.createTranslationKey(template) : field.key();
+                Object valueTranslated = value != null ? value : field.defaultValue();
+                if (valueTranslated == null) {
+                    valueTranslated = "$[guildconfig.values.empty]";
+                }
 
-                TextParser parser1 = TextParser.builder()
+                LinkedTextParser parser1 = LinkedTextParser.builder(info.messages(), info.user())
                         .addPlaceholders(
                                 "option.key", field.key(),
-                                "option.translated", translated,
+                                "option.translated", fieldTranslated,
                                 "option.type", field.type(),
-                                "option.value", value,
+                                "option.value", valueTranslated,
                                 "option.default", field.defaultValue()
                         )
                         .build();
@@ -97,7 +104,7 @@ public class ConfigListCommand extends CommandBase implements SlashCommandExecut
 
     }
 
-    private @NotNull String getStrMsg(@NotNull String key, @NotNull InteractionHolder info, @NotNull TextParser parser) {
+    private @NotNull String getStrMsg(@NotNull String key, @NotNull InteractionHolder info, @NotNull LinkedTextParser parser) {
 
         IMessageTemplate template = info.messages().getMessage(key, info, true);
         if (!(template instanceof TextMessageTemplate template1)) {
