@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class Command {
 
@@ -106,6 +107,16 @@ public class Command {
 
     public @NotNull List<CommandArgument> getArguments() {
         return new ArrayList<>(arguments);
+    }
+
+    public @NotNull List<CommandArgument> getArguments(@NotNull Collection<ArgumentScope> scopes) {
+        return arguments.stream()
+                .filter(arg -> arg.scopes().stream().anyMatch(scopes::contains))
+                .collect(Collectors.toList());
+    }
+
+    public @NotNull List<CommandArgument> getArguments(ArgumentScope @NotNull... scopes) {
+        return getArguments(List.of(scopes));
     }
 
     public @Nullable CommandArgument getArgument(@NotNull String name) {

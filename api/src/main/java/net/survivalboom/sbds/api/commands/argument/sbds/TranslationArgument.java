@@ -1,11 +1,10 @@
 package net.survivalboom.sbds.api.commands.argument.sbds;
 
-import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.ArgumentAutoCompleteContext;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
 import net.survivalboom.sbds.api.translations.ITranslation;
@@ -40,8 +39,8 @@ public class TranslationArgument extends Argument<ITranslation> {
     }
 
     @Override
-    public @Nullable List<Command.Choice> onArgumentAutoComplete(@NotNull CommandAutoCompleteInteractionEvent event, @NotNull ISBDS sbds) {
-        return sbds.getTranslationManager().getTranslations()
+    public @Nullable List<Command.Choice> onArgumentAutoComplete(@NotNull ArgumentAutoCompleteContext context) {
+        return context.sbds().getTranslationManager().getTranslations()
                 .stream()
                 .map(translation -> new Command.Choice(translation.getDisplayName(), translation.getName()))
                 .toList();

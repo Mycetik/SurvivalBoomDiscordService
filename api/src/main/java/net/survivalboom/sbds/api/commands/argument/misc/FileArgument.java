@@ -1,10 +1,9 @@
 package net.survivalboom.sbds.api.commands.argument.misc;
 
-import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.ArgumentAutoCompleteContext;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
 import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +13,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
 public class FileArgument extends Argument<File> {
 
@@ -48,7 +46,7 @@ public class FileArgument extends Argument<File> {
     }
 
     @Override
-    public @Nullable List<Command.Choice> onArgumentAutoComplete(@NotNull CommandAutoCompleteInteractionEvent event, @NotNull ISBDS sbds) {
+    public @Nullable List<Command.Choice> onArgumentAutoComplete(@NotNull ArgumentAutoCompleteContext context) {
 
         if (dir.exists() || !dir.isDirectory()) {
             return null;

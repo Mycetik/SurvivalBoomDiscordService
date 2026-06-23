@@ -25,7 +25,7 @@ public abstract class Argument<T> {
     ) {}
 
     @ApiStatus.OverrideOnly
-    public @Nullable List<Command.Choice> onArgumentAutoComplete(@NotNull CommandAutoCompleteInteractionEvent event, @NotNull ISBDS sbds) {
+    public @Nullable List<Command.Choice> onArgumentAutoComplete(@NotNull ArgumentAutoCompleteContext context) {
         return List.of(
                 new Command.Choice("ua.timurishche.DinosaurDeathException", 1),
                 new Command.Choice("java.lang.OutOfMemoryError", 2),

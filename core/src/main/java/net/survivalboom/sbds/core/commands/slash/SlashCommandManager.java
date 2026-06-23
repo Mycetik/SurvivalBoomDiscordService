@@ -9,6 +9,8 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
+import net.survivalboom.sbds.api.commands.argument.ArgumentAutoCompleteContext;
+import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
 import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
 import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
@@ -19,6 +21,7 @@ import net.survivalboom.sbds.api.messages.parsers.LinkedTextParser;
 import net.survivalboom.sbds.api.permissions.Permission;
 import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.typemap.TypeMap;
+import net.survivalboom.sbds.api.utils.typemap.UnmodifiableTypeMap;
 import net.survivalboom.sbds.core.BuildConstants;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
@@ -226,7 +229,39 @@ public class SlashCommandManager extends AbstractCommandManager<SlashCommandMana
             CommandArgument commandArgument = command.getArgument(event.getFocusedOption().getName());
             Objects.requireNonNull(commandArgument, "commandArgument == null");
 
-            List<net.dv8tion.jda.api.interactions.commands.Command.Choice> result = commandArgument.argument().onArgumentAutoComplete(event, sbds);
+            Map<String, Object> arguments = new HashMap<>();
+            for (OptionMapping option : event.getOptions()) {
+
+                String name = option.getName();
+                String value = option.getAsString();
+
+                CommandArgument argument = command.getArgument(name);
+                if (argument == null) {
+                    continue;
+                }
+
+                ArgumentParsingContext argumentParsingContext = new ArgumentParsingContext(
+                        registeredCommand,
+                        command,
+                        argument
+                );
+
+                Object result;
+                try {
+                    result = argument.argument().parse(value, argumentParsingContext);
+                } catch (Exception e) {
+                    continue;
+                }
+
+                arguments.put(name, result);
+
+            }
+
+            ArgumentAutoCompleteContext context = new ArgumentAutoCompleteContext(
+                    registeredCommand, command, commandArgument, event.getFocusedOption().getValue(), UnmodifiableTypeMap.ofMap(arguments), event
+            );
+
+            List<net.dv8tion.jda.api.interactions.commands.Command.Choice> result = commandArgument.argument().onArgumentAutoComplete(context);
             if (result == null || result.isEmpty()) {
                 return;
             }
