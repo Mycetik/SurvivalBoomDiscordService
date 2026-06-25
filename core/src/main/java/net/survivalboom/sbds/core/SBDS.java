@@ -244,18 +244,20 @@ public class SBDS implements ISBDS {
         placeholderRegistry.init();
 
         permissionManager.init();
+        consoleListener.init();
+
         eventManager.init();
 
         commandInteractionManager.init();
         slashCommandManager.init();
         stringCommandManager.init();
         contextCommandManager.init();
-        consoleListener.init();
 
         componentInteractionManager.init();
         modalInteractionManager.init();
 
         serviceProvider.init();
+
         moduleManager.init();
 
         bot.getPresence().setPresence(OnlineStatus.IDLE, Activity.customStatus("Running on SBDS v" + BuildConstants.VERSION + "🦖"));

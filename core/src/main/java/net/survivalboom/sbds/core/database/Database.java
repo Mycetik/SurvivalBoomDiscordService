@@ -58,6 +58,8 @@ public class Database extends Manager implements IDatabase {
 
     private boolean failed = false;
 
+    private volatile boolean isRebuilding = false;
+
 
     public Database(@NotNull SBDS sbds) {
         this.sbds = sbds;
@@ -161,7 +163,13 @@ public class Database extends Manager implements IDatabase {
             log.warn("Requested a database reload! Reloading the database!");
         }
 
+        if (this.isRebuilding) {
+            throw new IllegalStateException("Database already rebuiling");
+        }
+
         try {
+
+            this.isRebuilding = true;
 
             if (reloadProperties) {
                 loadProperties();
@@ -178,6 +186,10 @@ public class Database extends Manager implements IDatabase {
             log.error("Failed to reload the database! SBDS will not function properly!");
             log.error("All calls to the database will cause an IllegalStateException. Everything that works with the database will break!", t);
             return;
+        }
+
+        finally {
+            this.isRebuilding = false;
         }
 
         failed = false;
@@ -229,9 +241,7 @@ public class Database extends Manager implements IDatabase {
     private void rebuildSessionFactory(@Nullable Collection<IRepository<?>> toImport) {
 
         Objects.requireNonNull(properties, "properties == null");
-
-        CommonUtils.waitUntil(sbds::isReady); // Чекаємо поки SBDS запуститься.
-
+        
         if (toImport == null) {
             log.info("Rebuilding SessionFactory...");
         }
@@ -319,6 +329,7 @@ public class Database extends Manager implements IDatabase {
         Repository<T> repository = new Repository<>(clazz, this);
         repository.registration = (Registration<IRepository<T>>) (Registration<?>) repositoriesRegistry.register0(module, name, repository);
 
+        this.isRebuilding = true;
         rebuildQueue.append(repository);
 
         return repository;
@@ -375,6 +386,7 @@ public class Database extends Manager implements IDatabase {
     }
 
     public @NotNull Session createSession() {
+        CommonUtils.waitUntil(() -> !isRebuilding, 30000);
         Objects.requireNonNull(sessionFactory, "sessionFactory == null, something went wrong");
         return sessionFactory.openSession();
     }
@@ -554,7 +566,7 @@ public class Database extends Manager implements IDatabase {
     }
 
     private void checkDatabase() {
-
+        CommonUtils.waitUntil(() -> !isRebuilding);
         if (sessionFactory == null) {
             throw new IllegalStateException("Datasource is not present. Looks like database was reloaded incorrectly.");
         }
