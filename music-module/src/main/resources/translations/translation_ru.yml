@@ -3,18 +3,18 @@
 #  Російська  | By TIMURishche
 #
 
-$name: "russian"
+$name: sbds:russian
 
 music:
 
   not-in-voice:
     $embed:
-      description: <:9752barrierblockmc:1013463226752696392> Вы не находитесь в голосовом канале.
+      description: 🚫 Вы не находитесь в голосовом канале.
       color: ff0000
 
   no-bot-in-voice:
     $embed:
-      description: <:9752barrierblockmc:1013463226752696392> В вашем голосовом канале нет музыкального бота.
+      description: 🚫 В вашем голосовом канале нет музыкального бота.
       color: ff0000
 
   command:
@@ -41,61 +41,61 @@ music:
         $embed:
           title: "Нету доступа :("
           description: |
-            Бот {BOT} не может подключиться к {CHANNEL}.
+            Бот {bot.mention} не может подключиться к {channel.mention}.
             Может бот не имеет необходимых прав?
           color: ff0000
 
       no-tracks-found:
         $embed:
-          description: <:google_dinosaur:1077358570091319337> Результатов по запросу `{QUERY}` не найдено!
+          description: ⛓️‍💥 Результатов по запросу `{query}` не найдено!
           color: ff0000
 
       searching-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Поиск треков по запросу `{QUERY}`...
+          description: 🔎 Поиск треков по запросу `{query}`...
           color: ffce47
 
       loading-tracks:
         $embed:
-          description: <a:loading:1086970461549756536> Загружаем треки с `{URL}`...
+          description: 🛸 Загружаем треки с `{url}`...
           color: ffce47
 
       load-failed:
         $embed:
           title: "Ошибка загрузки!"
           description: |
-            <:9752barrierblockmc:1013463226752696392> Произошла ошибка при попытке загрузки трека. Может вы указали неправильну ссылку или динозаврик отгрыз что-то важное в коде.
+            🚫 Произошла ошибка при попытке загрузки трека. Может вы указали неправильну ссылку или динозаврик отгрыз что-то важное в коде.
             ```
-            {ERROR}
+            {error}
             ```
           color: ff0000
 
       playlist-added-single:
         $embed:
 
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Добавлено в плейлист!"
           color: 8f00ff
           description: |
             Добавлено в плейлист:
-            - `{ADDED-NAME}`
+            - `{added.title}`
             Сейчас играет:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
             - name: "Длительность"
-              value: "`{ADDED-DURATION}`"
+              value: "`{added.duration}`"
               inline: true
 
             - name: "Источник"
-              value: "[{ADDED-SOURCE}]({ADDED-LINK})"
+              value: "[{added.source}]({added.link})"
               inline: true
 
             - name: "Треков в плейлисте"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -133,30 +133,30 @@ music:
       playlist-added:
         $embed:
 
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
-          title: "Добавлено `{TRACKS-COUNT}` треков в плейлист!"
+          title: "Добавлено `{count}` треков в плейлист!"
           color: 8f00ff
           description: |
             Добавлено:
-            {TRACKS}
+            {tracks}
             
             Сейчас играет:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
             - name: "Длительность"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
 
             - name: "Источник"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
 
             - name: "Треков в плейлисте"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -195,27 +195,27 @@ music:
       connected:
         $embed:
 
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Свободный бот найден!"
           color: 8f00ff
           description: |
             Сейчас играет:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
             - name: "Длительность"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
 
             - name: "Источник"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
 
             - name: "Треков в плейлисте"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -261,7 +261,7 @@ music:
 
       success:
         $embed:
-          description: "<:blurple_verified:1024732810667364414> Стоп! Музыкальный бот остановлен!"
+          description: "🛑 Стоп! Музыкальный бот остановлен!"
           color: 8f00ff
 
     #
@@ -280,32 +280,32 @@ music:
         $embed:
           title: "Неправильный индекс"
           color: ff0000
-          description: "Укажите правильный индекс от `0` до `{PLAYLIST-SIZE}`."
+          description: "Укажите правильный индекс от `0` до `{steps}`."
 
       multiple:
         $embed:
 
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
-          title: "Пропущено `{SKIP}` треков!"
+          title: "Пропущено `{count}` треков!"
           color: 8f00ff
           description: |
             Сейчас играет:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
             - name: "Длительность"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
 
             - name: "Источник"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
 
             - name: "Треков в плейлисте"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -343,29 +343,29 @@ music:
       single:
         $embed:
 
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Трек пропущено!"
           color: 8f00ff
           description: |
             Пропущено:
-            - `{SKIPPED-NAME}`
+            - `{skipped.title}`
             Сейчас играет:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
             - name: "Длительность"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
 
             - name: "Источник"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
 
             - name: "Треков в плейлисте"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -414,27 +414,27 @@ music:
       multiple:
         $embed:
 
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
-          title: "Пропущено `{COUNT}` песен!"
+          title: "Пропущено `{count}` песен!"
           color: 8f00ff
           description: |
             Сейчас играет:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
             - name: "Длительность"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
 
             - name: "Источник"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
 
             - name: "Треков в плейлисте"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -472,29 +472,29 @@ music:
       single:
         $embed:
 
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Трек пропущено!"
           color: 8f00ff
           description: |
             Пропущено:
-            - `{SKIPPED-NAME}`
+            - `{skipped.title}`
             Сейчас играет:
-            - `{PLAYING-NAME}`
+            - `{playing.title}`
 
           fields:
 
             - name: "Длительность"
-              value: "`{PLAYING-DURATION}`"
+              value: "`{playing.duration}`"
               inline: true
 
             - name: "Источник"
-              value: "[{PLAYING-SOURCE}]({PLAYING-LINK})"
+              value: "[{playing.source}]({playing.link})"
               inline: true
 
             - name: "Треков в плейлисте"
-              value: "`{PLAYLIST-SIZE}`"
+              value: "`{playlist.size}`"
               inline: true
 
         $components:
@@ -539,8 +539,17 @@ music:
 
       success:
         $embed:
-          title: "Плейлист из `{COUNT}` песен."
-          description: "{PLAYLIST}"
+
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
+
+          title: "Плейлист из `{playlist.size}` треков."
+          description: |
+            **Текущий трек**
+            `{playing.index}.` [**{playing.title}**]({playing.link}) `{playing.duration}`
+
+            **Плейлист**
+            {playlist}
 
     #
     # /LOOP
@@ -560,8 +569,8 @@ music:
 
       success:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Повтор"
           color: 8f00ff
@@ -576,8 +585,8 @@ music:
 
       denied:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Музыкальный бот заблокирован!"
           color: ff0000
@@ -585,8 +594,8 @@ music:
 
       locked:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Музыкальный бот заблокирован!"
           color: 8f00ff
@@ -594,8 +603,8 @@ music:
 
       unlocked:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Музыкальный бот разблокирован!"
           color: 8f00ff
@@ -624,7 +633,7 @@ music:
           title: "Пользователь заблокирован!"
           color: 8f00ff
           description: |
-            Вы запретили пользователю {USER} использовать музыкального бота.
+            Вы запретили пользователю {user.mention} использовать музыкального бота.
             Теперь этот пользователь не сможет использовать музыкального бота.
 
       unbanned:
@@ -632,7 +641,7 @@ music:
           title: "Пользователь разблокирован!"
           color: 8f00ff
           description: |
-            Вы разрешили пользователю {USER} использовать музыкального бота.
+            Вы разрешили пользователю {user.mention} использовать музыкального бота.
             Теперь этот пользователь может использовать музыкального бота.
     
     
@@ -646,8 +655,8 @@ music:
 
       paused:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Пауза!"
           color: 8f00ff
@@ -655,8 +664,8 @@ music:
 
       resumed:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Снято с паузы!"
           color: 8f00ff
@@ -671,8 +680,8 @@ music:
 
       enable:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Режим 24/7 включен!"
           color: 8f00ff
@@ -680,8 +689,8 @@ music:
 
       disable:
         $embed:
-          author: "{BOT}"
-          author-icon: "{BOT-AVATAR}"
+          author: "{bot.name}"
+          author-icon: "{bot.avatar}"
 
           title: "Режим 24/7 выключен!"
           color: 8f00ff

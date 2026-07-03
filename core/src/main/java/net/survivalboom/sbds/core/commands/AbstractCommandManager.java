@@ -1,14 +1,19 @@
 package net.survivalboom.sbds.core.commands;
 
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.ICommandManager;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.interaction.command.ICommandInteractionManager;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.registrations.Registration;
+import net.survivalboom.sbds.api.registrations.RegistrationManager;
+import net.survivalboom.sbds.api.utils.NamespacedKey;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.messages.Messages;
-import net.survivalboom.sbds.core.modules.Module;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.permissions.PermissionManager;
+import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -17,12 +22,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public abstract class AbstractCommandManager extends Manager implements ICommandManager {
-
-    protected final List<RegisteredCommand> commands = new ArrayList<>();
-
-    protected final String name;
-
+public abstract class AbstractCommandManager<
+        reg extends ICommandManager.IRegisteredCommand<reg, manager>,
+        manager extends ICommandManager<reg, manager>
+> extends Manager implements ICommandManager<reg, manager>, RegistrationManager.Callback<reg> {
 
     protected final SBDS sbds;
 
@@ -31,96 +34,182 @@ public abstract class AbstractCommandManager extends Manager implements ICommand
     protected final Messages messages;
 
 
+    protected final InternalRegistrationManager<reg> registry;
+
+
     protected final Logger logger;
 
     protected final Logger rootLogger;
 
 
-    protected final boolean subcommandsAllowed;
+    public AbstractCommandManager(
+            @NotNull SBDS sbds
+    ) {
 
-
-    public AbstractCommandManager(@NotNull String name, @NotNull SBDS sbds, boolean subcommandsAllowed) {
-
-        this.name = name;
         this.sbds = sbds;
 
         this.permissionManager = sbds.getPermissionManager();
         this.messages = sbds.getMessages();
 
-        this.rootLogger = sbds.getLogger();
-        this.logger = LoggerFactory.getLogger(name);
+        this.registry = new InternalRegistrationManager<>(this, this, sbds.getRegistrationRegistry());
 
-        this.subcommandsAllowed = subcommandsAllowed;
+        this.rootLogger = sbds.getLogger();
+        this.logger = LoggerFactory.getLogger(getManagerName());
 
     }
 
+    //
+    // MANAGER
+    //
 
     @Override
-    public @NotNull RegisteredCommand registerCommand(@NotNull IModule module, @NotNull Command command) {
+    protected void init0() {
+        registry.init();
+    }
+
+    @Override
+    protected void shutdown0() {
+        registry.shutdown();
+    }
+
+    @Override
+    public @NotNull ISBDS getSbds() {
+        return sbds;
+    }
+
+    //
+    // REGISTRATION
+    //
+
+    // REG //
+
+    @Override
+    public @NotNull reg registerCommand(@NotNull IModule module, @NotNull Command command) {
         Objects.requireNonNull(module, "module == null");
         return registerCommand0(module, command);
     }
 
-    public @NotNull RegisteredCommand registerCommand0(@Nullable IModule imodule, @NotNull Command command) {
-
-        checkValid();
+    @SuppressWarnings("unchecked")
+    public @NotNull reg registerCommand0(@Nullable IModule module, @NotNull Command command) {
 
         Objects.requireNonNull(command, "command == null");
+        checkValid();
 
-        if (getRegisteredCommand(command.getName()) != null) throw new IllegalArgumentException("Command with name `" + command.getName() + "` already registered");
+        for (var reg : registry.getRegisteredObjects()) {
 
-        if (!subcommandsAllowed && command.hasSubcommands()) throw new IllegalArgumentException(name + "does not support subcommands");
+            Command cmd = reg.getCommand();
+            if (cmd.getName().equals(command.getName())) {
+                throw new IllegalStateException("Command with name `" + command.getName() + "` already exists (" + reg.getRegistration().key() + ")");
+            }
 
-        RegisteredCommand registeredCommand;
-        if (imodule != null) {
-            Module module = sbds.getModuleManager().checkModuleEnabled(imodule, "Disabled module attempted to register a command");
-            module.getRegistration().add(name + "-" + command.getName(), () -> unregisterCommand(command));
 
-            registeredCommand = new RegisteredCommand(module, command);
+            String alias = cmd.getAliases().stream()
+                    .filter(a -> command.getAliases().contains(a))
+                    .findAny()
+                    .orElse(null);
+
+            if (alias != null) {
+                throw new IllegalStateException("Command with alias `" + alias + "` already exists (" + reg.getRegistration().key() + ")");
+            }
 
         }
 
-        else {
-            registeredCommand = new RegisteredCommand(null, command);
+        var cmdReg = createCommandReg(command);
+        var oinkOinkOink = (RegisteredCommand<reg, manager>) cmdReg;
+
+        oinkOinkOink.registration = registry.register0(module, command.getName(), cmdReg);
+
+        return cmdReg;
+
+    }
+
+    public @NotNull reg registerCommand0(@Nullable IModule module, @NotNull CommandBase command) {
+        return registerCommand0(module, command.build());
+    }
+
+    // UNREG //
+
+    @Override
+    public boolean unregisterCommand(@NotNull reg registration) {
+        return registry.unregister(registration) != null;
+    }
+
+    //
+    // GETTERS
+    //
+
+    @Override
+    public @NotNull List<reg> getCommands() {
+        return registry.getRegisteredObjects();
+    }
+
+    @Override
+    public @Nullable reg getCommand(@NotNull NamespacedKey key) {
+        return registry.getRegistrationAsObject(key);
+    }
+
+
+    //
+    // ABSTRACT
+    //
+
+    protected abstract @NotNull reg createCommandReg(@NotNull Command command);
+
+    //
+    // REG
+    //
+
+    public static abstract class RegisteredCommand<
+            it extends IRegisteredCommand<it, manager>,
+            manager extends ICommandManager<it, manager>
+    > implements IRegisteredCommand<it, manager> {
+
+        protected final manager manager;
+
+        protected final Command command;
+
+        protected Registration<it> registration;
+
+
+        public RegisteredCommand(@NotNull manager manager, @NotNull Command command) {
+            this.manager = manager;
+            this.command = command;
         }
 
-        commands.add(registeredCommand);
 
-        return registeredCommand;
+        @Override
+        public @NotNull Registration<it> getRegistration() {
+            return registration;
+        }
+
+        @Override
+        public @NotNull Command getCommand() {
+            return command;
+        }
+
+        @Override
+        public @NotNull manager getManager() {
+            return manager;
+        }
 
     }
 
+    public static abstract class RegisteredInteractionCommand<
+            it extends IRegisteredInteractionCommand<it, manager>,
+            manager extends ICommandManager<it, manager>
+    > extends RegisteredCommand<it, manager> implements IRegisteredInteractionCommand<it, manager> {
 
-    @Override
-    public void unregisterCommand(@NotNull Command command) {
-        checkValid();
-        Objects.requireNonNull(command, "command == null");
-        commands.removeIf(c -> c.command().equals(command));
-    }
+        public List<ICommandInteractionManager.IRegisteredCommandData> commandData;
 
+        public RegisteredInteractionCommand(@NotNull manager manager, @NotNull Command command) {
+            super(manager, command);
+        }
 
-    @Override
-    public @Nullable RegisteredCommand getRegisteredCommand(@NotNull String name) {
-        checkValid();
-        return commands.stream().filter(rc -> rc.command().getName().equals(name)).findFirst().orElse(null);
-    }
+        @Override
+        public @NotNull List<ICommandInteractionManager.IRegisteredCommandData> getCommandData() {
+            return new ArrayList<>(commandData);
+        }
 
-    @Override
-    public @Nullable RegisteredCommand findByAlias(@NotNull String alias) {
-        checkValid();
-        return commands.stream().filter(rc -> rc.command().getName().equals(alias) || rc.command().aliases().contains(alias)).findFirst().orElse(null);
-    }
-
-    @Override
-    public @Nullable RegisteredCommand findByBase(@NotNull CommandBase base) {
-        checkValid();
-        return commands.stream().filter(rc -> base.equals(rc.command().origin())).findAny().orElse(null);
-    }
-
-    @Override
-    public @NotNull List<RegisteredCommand> getRegisteredCommands() {
-        checkValid();
-        return new ArrayList<>(commands);
     }
 
 }

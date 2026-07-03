@@ -4,43 +4,173 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
-import net.survivalboom.sbds.api.ISBDS;
+import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
-import net.survivalboom.sbds.api.messages.MessageActionBuilder;
-import net.survivalboom.sbds.api.utils.TypeMap;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.api.utils.typemap.TypeMap;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
-public class StringExecutionInfo extends CommandExecutionInfo {
+public class StringExecutionInfo extends CommandExecutionInfo<IStringCommandManager.IRegisteredStringCommand, IStringCommandManager> implements InteractionHolder {
 
     private final Message message;
 
-    public StringExecutionInfo(@NotNull Command command, @NotNull Message message, @NotNull String alias, @NotNull TypeMap arguments, @NotNull Logger logger, @NotNull ISBDS sbds) {
-        super(command, alias, arguments, logger, sbds);
+    private Message response = null;
+
+    private boolean replied = false;
+
+
+    public StringExecutionInfo(
+            @NotNull Message message,
+            @NotNull IStringCommandManager.IRegisteredStringCommand rootCommand,
+            @NotNull Command currentCommand,
+            @NotNull String alias,
+            @NotNull TypeMap arguments
+    ) {
+        super(rootCommand, currentCommand, alias, arguments);
         this.message = message;
+    }
+
+    @Override
+    public @NotNull Object source() {
+        return message;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return false;
     }
 
     public @NotNull Message message() {
         return message;
     }
 
-    public @Nullable Guild guild() {
-        return this.message.getGuild();
+
+    public Message response() {
+        return response;
     }
 
-    public @Nullable Member guildMember() {
-        return this.message.getMember();
+    @ApiStatus.Internal
+    public void response(@Nullable Message response) {
+        this.response = response;
     }
 
+    public boolean wasReplied() {
+        return replied;
+    }
+
+
+    @Override
+    public Guild guild() {
+        return message.getGuild();
+    }
+
+    @Override
     public @NotNull User user() {
-        return this.message.getAuthor();
+        return message.getAuthor();
     }
 
-    public @NotNull MessageActionBuilder<MessageCreateAction> reply(@NotNull String name) {
-        return messages().createActionMessage(name, user(), d -> message().reply(d));
+    @Override
+    public Member member() {
+        return message.getMember();
+    }
+
+    @Override
+    public Channel channel() {
+        return message.getChannel();
+    }
+
+
+    // EDIT //
+
+    @Override
+    public @NotNull RestAction<?> editRaw(@NotNull String txt) {
+
+        if (response == null) {
+            throw new IllegalStateException("Command has no response yet");
+        }
+
+        this.replied = true;
+
+        return response.editMessage(txt);
+
+    }
+
+    @Override
+    public @NotNull RestAction<?> editRaw(@NotNull MessageCreateData data) {
+
+        if (response == null) {
+            throw new IllegalStateException("Command has no response yet");
+        }
+
+        this.replied = true;
+
+        return response.editMessage(MessageEditData.fromCreateData(data));
+
+    }
+
+    // SEND ONLY //
+
+    @Override
+    public @NotNull RestAction<?> sendRaw(@NotNull String txt) {
+        this.replied = true;
+        return message.reply(txt).onSuccess(m -> this.response = m);
+    }
+
+    @Override
+    public @NotNull RestAction<?> sendRaw(@NotNull MessageCreateData data) {
+        this.replied = true;
+        return message.reply(data).onSuccess(m -> this.response = m);
+    }
+
+    // REPLY (INTELLIGENT) //
+
+    @Override
+    public @NotNull RestAction<?> replyRaw(@NotNull String txt) {
+
+        this.replied = true;
+
+        if (response != null) {
+            return editRaw(txt);
+        }
+
+        else {
+            return sendRaw(txt);
+        }
+
+    }
+
+    @Override
+    public @NotNull RestAction<?> replyRaw(@NotNull MessageCreateData data) {
+
+        this.replied = true;
+
+        if (response != null) {
+            return editRaw(data);
+        }
+
+        else {
+            return sendRaw(data);
+        }
+
+    }
+
+    // COMPONENT //
+
+    @Override
+    public void invalidateInputs() {
+
+        if (response == null) {
+            throw new IllegalStateException("No message sent yet");
+        }
+
+        invalidateInputs0(message);
+
     }
 
 }

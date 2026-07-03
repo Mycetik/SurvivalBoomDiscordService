@@ -7,8 +7,8 @@ import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.GuildArgument;
 import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.CommonUtils;
@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.util.Objects;
 
-@Command(name = "ban", description = "Bans user in a guild", translationKey = "moderation.command.ban", permission = "moderation.command.ban")
+@CommandClass(name = "ban", description = "Bans user in a guild", translationKey = "moderation.command.ban", permission = "moderation.command.ban")
 public class BanCommand extends AbstractModerationCommand {
 
     private final BanManager banManager;
@@ -111,27 +111,27 @@ public class BanCommand extends AbstractModerationCommand {
 
     // ARGUMENTS //
 
-    @CommandArgument(name = "user", description = "A user to ban")
+    @ArgumentMethod(name = "user", description = "A user to ban")
     public Argument<?> user() {
         return new UserArgument();
     }
 
-    @CommandArgument(name = "guild", index = 1, description = "A guild where to ban", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(name = "guild", index = 1, description = "A guild where to ban", scope = ArgumentScope.CONSOLE)
     public Argument<?> guild() {
         return new GuildArgument();
     }
 
-    @CommandArgument(name = "reason", index = 2, description = "A reason to ban", required = false)
+    @ArgumentMethod(name = "reason", index = 2, description = "A reason to ban", required = false)
     public Argument<?> reason() {
         return new StringArgument();
     }
 
-    @CommandArgument(name = "time", index = 3, description = "A duration of the ban", required = false)
+    @ArgumentMethod(name = "time", index = 3, description = "A duration of the ban", required = false)
     public Argument<?> time() {
         return new StringArgument();
     }
 
-    @CommandArgument(name = "comment", index = 4, description = "Comment from a moderator for the ban", required = false)
+    @ArgumentMethod(name = "comment", index = 4, description = "Comment from a moderator for the ban", required = false)
     public Argument<?> comment() {
         return new StringArgument();
     }

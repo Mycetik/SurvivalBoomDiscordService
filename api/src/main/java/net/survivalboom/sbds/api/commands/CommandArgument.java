@@ -1,14 +1,15 @@
 package net.survivalboom.sbds.api.commands;
 
 import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
+import org.apache.commons.collections4.list.UnmodifiableList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class CommandArgument {
+
 
     private final @NotNull String name;
 
@@ -21,12 +22,20 @@ public class CommandArgument {
     private final boolean required;
 
 
-    private final @NotNull List<ArgumentScope> scopes;
+    private final @NotNull List<ArgumentScope> scopes = new ArrayList<>();
 
     private final @NotNull Argument<?> argument;
 
 
-    public CommandArgument(@NotNull String name, @Nullable String description, @Nullable String translationKey, @NotNull List<ArgumentScope> scopes, @NotNull Argument<?> argument, int index, boolean required) {
+    public CommandArgument(
+            @NotNull String name,
+            @Nullable String description,
+            @Nullable String translationKey,
+            @Nullable Collection<ArgumentScope> scopes,
+            @NotNull Argument<?> argument,
+            int index,
+            boolean required
+    ) {
 
         Objects.requireNonNull(name, "name == null");
         Objects.requireNonNull(argument, "argument == null");
@@ -37,7 +46,14 @@ public class CommandArgument {
         this.translationKey = translationKey == null || translationKey.isBlank() ? null: translationKey;
 
         this.argument = argument;
-        this.scopes = new ArrayList<>(scopes);
+
+        if (scopes == null || scopes.isEmpty()) {
+            this.scopes.addAll(List.of(ArgumentScope.SLASH, ArgumentScope.STRING, ArgumentScope.CONSOLE));
+        }
+
+        else {
+            this.scopes.addAll(scopes);
+        }
 
         this.index = index;
         this.required = required;
@@ -74,20 +90,126 @@ public class CommandArgument {
     }
 
 
-    public static @NotNull CommandArgument create(@NotNull String name, @Nullable String description, @NotNull List<ArgumentScope> scopes, @NotNull Argument<?> argument, int index, boolean required) {
-        return new CommandArgument(name, description, null, scopes, argument, index, required);
+    public boolean isSubCommand() {
+        return argument instanceof SubCommandArgument;
     }
 
-    public static @NotNull CommandArgument create(@NotNull String name, @Nullable String description, @NotNull Argument<?> argument) {
-        return new CommandArgument(name, description, null, defaultScopes(), argument, 0, true);
+    //
+    // BUILDER
+    //
+
+    public static @NotNull Builder create(@NotNull String name) {
+        return new Builder(name);
     }
 
-    public static @NotNull CommandArgument create(@NotNull String name, @NotNull Argument<?> argument) {
-        return new CommandArgument(name, null, null, defaultScopes(), argument, 0, true);
+    public static class Builder {
+
+        private final String name;
+
+        private @Nullable String description;
+
+        private int index = 0;
+
+        private boolean required = true;
+
+        private @Nullable String translationKey;
+
+        private Argument<?> argument;
+
+        private final Set<ArgumentScope> scopes = new HashSet<>();
+
+
+        public Builder(@NotNull String name) {
+            this.name = name;
+        }
+
+
+        // NAME //
+
+        public @NotNull String getName() {
+            return name;
+        }
+
+        // DESCRIPTION //
+
+        public @NotNull Builder setDescription(@Nullable String description) {
+            this.description = description;
+            return this;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        // INDEX //
+
+        public @NotNull Builder setIndex(int index) {
+            this.index = index;
+            return this;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        // REQUIRED //
+
+        public @NotNull Builder setRequired(boolean required) {
+            this.required = required;
+            return this;
+        }
+
+        public boolean isRequired() {
+            return required;
+        }
+
+        // TRANSLATION KEY //
+
+        public @NotNull Builder setTranslationKey(@Nullable String key) {
+            this.translationKey = translationKey;
+            return this;
+        }
+
+        public String getTranslationKey() {
+            return translationKey;
+        }
+
+        // ARGUMENT //
+
+        public @NotNull Builder setArgument(@NotNull Argument<?> argument) {
+            this.argument = argument;
+            return this;
+        }
+
+        public Argument<?> getArgument() {
+            return argument;
+        }
+
+        // SCOPES //
+
+        public @NotNull Builder setScopes(@Nullable Collection<ArgumentScope> scopes) {
+
+            this.scopes.clear();
+
+            if (scopes != null) {
+                this.scopes.addAll(scopes);
+            }
+
+            return this;
+
+        }
+
+        public @NotNull Set<ArgumentScope> getScopes() {
+            return scopes;
+        }
+
+        // BUILD //
+
+        public @NotNull CommandArgument build() {
+            return new CommandArgument(name, description, translationKey, scopes, argument, index, required);
+        }
+
     }
 
-    public static @NotNull List<ArgumentScope> defaultScopes() {
-        return List.of(ArgumentScope.SLASH, ArgumentScope.STRING, ArgumentScope.CONSOLE);
-    }
 
 }

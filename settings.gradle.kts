@@ -10,15 +10,14 @@ rootProject.name = "SurvivalBoom Discord Service"
 include("api")
 include("core")
 
-include("test-module")
-include("music-module")
-include("privatevoice-module")
-include("github-module")
-include("translation-module")
-
-include("chatbot-module")
-include("ai-module")
-
-/// MODRATION MODULE ///
-include("moderation-module:api")
-include("moderation-module:module")
+// Шукаємо усі модулі в проєкт й підключаємо їх.
+rootDir.walkTopDown()
+    .maxDepth(3) // По желанию: ограничьте глубину поиска, чтобы сборка не тормозила
+    .filter { it.isDirectory && file("${it.path}/build.gradle.kts").exists() }
+    .forEach { dir ->
+        // Получаем относительный путь от корня и превращаем его в Gradle-путь (например, :core:network)
+        val relativePath = dir.relativeTo(rootDir).path.replace(File.separator, ":")
+        if (relativePath.isNotEmpty()) {
+            include(":$relativePath")
+        }
+    }

@@ -1,12 +1,12 @@
 #
-# SURVIVALBOOM DISCORD | SURVIVALBOOM NETWORK 2025
+# SURVIVALBOOM DISCORD | SURVIVALBOOM NETWORK 2026
 #  English translation | By TIMURishche
 #
 
 $name: "english"
-$display-name: "$[lang.english]"
+$displayName: "$[lang.english]"
 $icon: "🇺🇸"
-$discord-locale: ENGLISH_US
+$locale: ENGLISH_US
 
 lang:
   ukrainian: "Ukrainian"
@@ -20,6 +20,10 @@ values:
 
 sbds:
 
+  config:
+    label: "Core settings"
+    prefix: "Command prefix"
+
   command:
 
     status:
@@ -27,7 +31,7 @@ sbds:
 
   loading:
     $embed:
-      description: "<a:loading:1086970461549756536> Processing your request, please wait..."
+      description: ":pencil: Processing your request, please wait..."
       color: f9f06b
 
   error:
@@ -39,7 +43,15 @@ sbds:
         Information about the error sent to bot's console. Try again later or contact bot's developer.
       fields:
         - name: "Exception:"
-          value: "{EXCEPTION}"
+          value: "{exception}"
+
+  interaction-no-response:
+    title: "A Dead Silence Fell"
+    color: ff0000
+    description: |
+      It looks like no response was received for this interaction...
+      Perhaps something went wrong somewhere, or SBDS does not wish to speak with you. 
+      Error details have been sent to the console. Please try again later or contact the developer.
 
   no-permission:
     $embed:
@@ -48,7 +60,7 @@ sbds:
       description: |
         Looks like you don't have a permission required to use this.  
         Contact server admin, if you think that this is an error.
-        Permission: `{PERMISSION}`.
+        Permission: `{permission}`.
 
   invalid-interaction:
     $embed:
@@ -57,4 +69,62 @@ sbds:
       description: |
         Looks like this interaction was expired or does not exist!
         Try again or contact bot's developer.
-      footer: "Interaction id: {ID}"
+      footer: "Interaction id: {id}"
+
+  slash-invalid-argument:
+    $embed:
+      title: "Invalid argument!"
+      color: ff0000
+      description: |
+        Invalid argument `{argument}`. Seems like you did something wrong.
+        `{message}`
+        
+  string-argument-invalid:
+    $embed:
+      title: "Invalid argument!"
+      color: ff0000
+      description: |
+        You specified an invalid argument value. 
+        Please check the value you entered for correctness.
+      fields:
+
+        - name: Argument
+          value: "`{argument}`"
+          inline: true
+
+        - name: Provided value
+          value: "`{input}`"
+          inline: true
+
+        - name: Error
+          value: "`{message}`"
+          inline: true
+
+  string-argument-error:
+    $embed:
+      title: "Argument error :("
+      color: ff0000
+      description: |
+        Oops! It looks like the argument unexpectedly threw an error while trying to process your value.
+        This is most likely a developer error. The error message has been sent to the console. Please contact the developer or try again a bit later...
+      fields:
+
+        - name: Argument
+          value: "`{argument}`"
+          inline: true
+
+        - name: Provided value
+          value: "`{input}`"
+          inline: true
+
+        - name: Error
+          value: "`{exception}`"
+          inline: true
+
+  string-not-enough-arguments:
+    $embed:
+      title: "Incomplete command"
+      color: ff0000
+      description: |
+        This command requires **{expected}** argument(s). You provided **{got}**.
+        Usage: `{usage}`

@@ -2,40 +2,55 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.interaction.IInteractionInfo;
-import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
-import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.Placeholders;
-import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.modules.music.MusicModule;
+import net.survivalboom.sbds.modules.music.music.MusicManager;
+import net.survivalboom.sbds.modules.music.music.GuildPlayer;
+import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
+@CommandClass(
+        name = "pause",
+        description = "Pauses or resumes current playing track",
+        translationKey = "music.command.pause",
+        permission = "music.command.pause",
+        defaultPermission = true
+)
+public class PauseCommand extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
 
-@Command(name = "pause", description = "Pauses or resumes current playing track", translationKey = "music.command.pause")
-public class PauseCommand extends AbstractPlayerCommand {
+    private final MusicModule module;
 
-    public PauseCommand(@NotNull BotManager botManager) {
-        super(botManager);
+    private final MusicManager manager;
+
+    public PauseCommand(@NotNull MusicModule module) {
+        this.module = module;
+        this.manager = module.getMusicManager();
     }
 
     @Override
-    protected void init(@NotNull ISBDS sbds, @Nullable IModule module) {
-        Objects.requireNonNull(module);
-        sbds.getButtonInteractionManager().registerListener(module, "pause", this::onButtonClick);
-    }
+    protected void init(@NotNull ISBDS sbds) {
 
-    public void onButtonClick(@NotNull ButtonInteractionInfo info) {
-        executes0(info, true);
+        sbds.getComponentInteractionManager().registerListener(
+                module,
+                "pause",
+                ButtonInteractionEvent.class,
+                click -> executes0(click, true)
+        );
+
     }
 
     @Override
@@ -43,28 +58,29 @@ public class PauseCommand extends AbstractPlayerCommand {
         executes0(info, false);
     }
 
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) {
+        executes0(info, false);
+    }
 
-    public void executes0(@NotNull IInteractionInfo info, boolean ephemeral) {
+    private void executes0(@NotNull InteractionHolder info, boolean ephemeral) {
 
-        GuildPlayer player = getPlayer(info, false, ephemeral);
+        GuildPlayer player = Utils.getInteractionPlayer(manager, info, false, ephemeral);
         if (player == null) {
             return;
         }
 
-        if (checkBannedOrLocked(info, player, ephemeral)) return;
+        if (Utils.checkInteractionDenied(manager, info, player, ephemeral)) {
+            return;
+        }
 
         boolean state = !player.isPaused();
         player.setPaused(state);
 
         User botUser = player.getBot().getBot().getSelfUser();
-        Placeholders placeholders = new Placeholders()
-                .add("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator())
-                .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl());
-
         String str = state ? "music.command.pause.paused" : "music.command.pause.resumed";
         info.reply(str)
-                .withPlaceholders(placeholders)
-                .send()
+                .withPlaceholders("bot", botUser)
                 .setEphemeral(ephemeral)
                 .queue();
 
@@ -73,15 +89,10 @@ public class PauseCommand extends AbstractPlayerCommand {
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
-        if (channel == null) {
-            info.logger().warn("Voice channel not provided.");
-            return;
-        }
+        AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
 
-        GuildPlayer player = getPlayer(info, channel, false);
+        GuildPlayer player = Utils.getConsolePlayer(manager, info, channel, false);
         if (player == null) {
-            info.logger().warn("No active player found for the given channel.");
             return;
         }
 
@@ -89,13 +100,12 @@ public class PauseCommand extends AbstractPlayerCommand {
         player.setPaused(newState);
 
         User botUser = player.getBot().getBot().getSelfUser();
-        String stateStr = newState ? "paused" : "resumed";
-
-        info.logger().info("Track has been {} by {}#{}", stateStr, botUser.getName(), botUser.getDiscriminator());
+        String stateStr = newState ? "Paused" : "Resumed";
+        info.logger().info("{} playback for bot {} in channel: {}", stateStr, botUser.getAsTag(), channel.getName());
 
     }
 
-    @CommandArgument(name = "channel", description = "The voice channel", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(description = "The voice channel", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

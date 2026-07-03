@@ -1,26 +1,40 @@
 package net.survivalboom.sbds.modules.test;
 
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.survivalboom.sbds.api.modules.ModuleMain;
-import net.survivalboom.sbds.modules.test.commands.TestCommand;
-import net.survivalboom.sbds.modules.test.commands.context.TestMessageContext;
-import net.survivalboom.sbds.modules.test.commands.context.TestUserContext;
-
-import java.util.Map;
+import net.survivalboom.sbds.modules.test.commands.*;
+import net.survivalboom.sbds.modules.test.database.TestRecord;
+import net.survivalboom.sbds.modules.test.events.EventListenerTest;
+import net.survivalboom.sbds.modules.test.listeners.MessageReplier;
 
 public class TestModule extends ModuleMain {
 
     @Override
     public void onEnable() {
 
-        checkFiles(Map.of("translations/translation_uk.yml", "translations/translation_uk.yml"));
-        addModuleTranslations();
+        addModuleTranslations2("translation_uk.yml");
 
-        registerSlashCommand(new TestCommand());
+        registerCommand(new BanPrototypeCommand());
+        registerCommand(new EphemeralCommand());
+        registerCommand(new LongRespondingCommand());
 
-        registeredContextCommand(new TestMessageContext());
-        registeredContextCommand(new TestUserContext());
+        registerCommand(new TestMessageContext());
+        registerCommand(new TestUserContext());
 
-        getLogger().info("Модуль успішно запущено!");
+        registerCommand(new TestModalCommand());
+
+        createGuildConfig(builder ->
+            builder
+                .setTranslation("testmodule.config")
+                .addField("replier", TextChannel.class, null)
+        );
+
+        registerEvents(new MessageReplier(this));
+        registerEvents(new EventListenerTest(this));
+
+        getSbds().getDatabase().createRepository(this, "test", TestRecord.class);
+
+        getLogger().info("Бугага! Мєня включілі! Вам всім кабздєц!");
 
     }
 

@@ -7,7 +7,7 @@
 #   /" \   :)  /\\ __ //\ |:  __   \    \\   /    /\  |\  \\   //   /  \\  \( \_|:  \ |: |_)  :)\        /  \        / |.  \    /:  |
 #  (_______/  (__________)|__|  \___)    \__/    (__\_|_)  \__/(___/    \___)\_______)(_______/  \"_____/    \"_____/  |___|\__/|___|
 #
-#                        SurvivalBoom Discord Service | By TIMURishche | SurvivalBoom Network 2025
+#                        SurvivalBoom Discord Service | By TIMURishche | SurvivalBoom Network 2026
 #                                           Наш власний дискорд бот. Ми - найкращі!
 #
 #                                                     ! КОНФІГУРАЦІЯ !
@@ -75,7 +75,7 @@ database:
   # * update - оновлює структуру таблиць якщо вона не відповідає коду. Дані не знищуються, додаються нові колонки якщо треба. Але все одно, іноді небезпечно. Добре підходить для тестування.
   # * validate - перевіряє структуру таблиць, але не чіпає їх якщо вони не відповідають коду. Підходить якщо ви боїтесь втратити дані.
   # * none - не перевіряє нічого й не чіпає нічого (може привести до неправильної роботи!)
-  table-modify: update
+  mode: update
 
   # user: dinoZavrik # Користувач.
   # password: abobus2024 # Пароль.
@@ -108,15 +108,15 @@ logging:
 
     # Правило для Hibernate аби він не срав у консоль своєю нахуй не потрібною хуйнею.
     hibernate:
-      target: org.hibernate
+      pattern: org.hibernate
       level: WARN
 
     hikari:
-      target: com.zaxxer.hikari
+      pattern: com.zaxxer.hikari
       level: WARN
 
     jda:
-      target: net.dv8tion.jda
+      pattern: net.dv8tion.jda
       level: WARN
 
 # Налаштування Discord gateway intents.
@@ -149,12 +149,12 @@ translations:
 
   # Переклад який буде використовуватись за замовчуванням
   # у випадку якщо користувач не встановив переклад для себе.
-  default: english
+  default: sbds:english
 
   # Резервний переклад. Використовується у випадках коли повідомлення не знайдено у перекладі користувача.
   # Якщо повідомлення не буде знайдено навіть у цьому перекладі,
   # замість необхідного повідомлення буде просто плейсхолдер `$[path.to.message]`.
-  fallback: ukrainian
+  fallback: sbds:ukrainian
 
   # Чи надсилати у консоль попередження про повідомлення яке було не знайдно у перекладі?
   # true - Кожен раз коли SBDS не знайде повідомлення з перекладу, у консоль буде надіслано попередження.
@@ -169,7 +169,7 @@ translations:
 # Запис дозволів відбувається всередині секції групи.
 # Формат запису дозволу `дозвіл:значення`. Приклад: `sbds.command.test:true`.
 #
-predefined-permissions:
+global-permissions:
 
   # Група default - стандартна група яку мають усі користувачі за замовчуванням.
   # Має пріоритет 0.
@@ -184,60 +184,22 @@ predefined-permissions:
 # Якщо вам потрібна якась бібліотека, можете дописати цю секцію.
 # Але зазвичай, бібліотеки мають бути вказані у секції `libraries` в module.yml для кожного модуля.
 # При запуску SBDS перевіряє та завантажує усе бібліотеки.
+#
+# SBDS завантажує деякі драйвери для підключення до баз даних.
+# Ви можете додати необхідні вам чи прибрати зайві.
+#
 libraries:
 
-  ignore-missing-libraries: false # Ігнорувати помилки при завантаженні бібліотек.
+  pinned:
+    - "org.slf4j:slf4j-api:2.0.16"
 
-  # JDA - фреймворк для розробки discord ботів на java
-  jda:
-    group: "net.dv8tion"
-    artifact: "JDA"
-    version: "5.2.2"
-
-  # Hibernate - фреймворк для роботи із базою даних.
-  hibernate:
-    group: "org.hibernate.orm"
-    artifact: "hibernate-core"
-    version: "6.6.9.Final"
-
-  # HikariCP - дуже ефективний pool з'єднань із базою даних.
-  hikariCP:
-    group: "com.zaxxer"
-    artifact: "HikariCP"
-    version: "6.2.1"
-
-  # Підтримка HikariCP для Hibernate.
-  hibernate-hikari:
-    group: "org.hibernate.orm"
-    artifact: "hibernate-hikaricp"
-    version: "6.6.9.Final"
-
-  # Діаклекти Hibernate для підтримки різних типів баз даних, наприклад SQLite.
-  hibernateDialects:
-    group: "org.hibernate.orm"
-    artifact: "hibernate-community-dialects"
-    version: "6.6.9.Final"
-
-
-  #
-  # Драйвери для підключення до баз даних.
-  # Ви можете прибрати якісь із них для економії місця якщо не користуєтесь.
-  #
-
-  # Драйвер JDBC для підключення до PostgreSQL.
-  postgresql-driver-jdbc:
-    group: "org.postgresql"
-    artifact: "postgresql"
-    version: "42.7.5"
-
-  # Драйвер JDBC для підключення до MySQL
-  mysql-driver-jdbc:
-    group: "com.mysql"
-    artifact: "mysql-connector-j"
-    version: "9.2.0"
-
-  # Драйвер JDBC для підключення до SQLite.
-  sqlite-driver-jdbc:
-    group: "org.xerial"
-    artifact: "sqlite-jdbc"
-    version: "3.49.1.0"
+  dependencies:
+    - "org.spongepowered:configurate-jackson:4.2.0" # Підтримка JSON для Configurate за допомогою Jackson.
+    - "net.dv8tion:JDA:6.4.1" # JDA - фреймворк для розробки discord ботів на java
+    - "org.hibernate.orm:hibernate-core:6.6.9.Final" # Hibernate - фреймворк для роботи із базою даних.
+    - "com.zaxxer:HikariCP:6.2.1" # HikariCP - дуже ефективний pool з'єднань із базою даних.
+    - "org.hibernate.orm:hibernate-hikaricp:6.6.9.Final" # Підтримка HikariCP для Hibernate.
+    - "org.hibernate.orm:hibernate-community-dialects:6.6.9.Final" # Діаклекти Hibernate для підтримки різних типів баз даних, наприклад SQLite.
+    - "org.postgresql:postgresql:42.7.5" # Драйвер JDBC для підключення до PostgreSQL.
+    - "com.mysql:mysql-connector-j:9.2.0" # Драйвер JDBC для підключення до MySQL
+    - "org.xerial:sqlite-jdbc:3.49.1.0" # Драйвер JDBC для підключення до SQLite.

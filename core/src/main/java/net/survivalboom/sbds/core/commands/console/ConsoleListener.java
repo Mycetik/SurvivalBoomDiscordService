@@ -2,17 +2,25 @@ package net.survivalboom.sbds.core.commands.console;
 
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.Command;
-import net.survivalboom.sbds.api.commands.argument.Argument;
-import net.survivalboom.sbds.api.commands.argument.internal.SubCommandArgument;
-import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.CommandArgument;
+import net.survivalboom.sbds.api.commands.CommandExecutor;
+import net.survivalboom.sbds.api.commands.argument.ArgumentParseException;
+import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
+import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.console.IConsoleListener;
-import net.survivalboom.sbds.api.utils.TypeMap;
+import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
 import net.survivalboom.sbds.core.commands.cmds.console.ServersCommand;
-import net.survivalboom.sbds.core.commands.string.StringCommandParser;
+import net.survivalboom.sbds.core.commands.cmds.console.SuicideCommand;
+import net.survivalboom.sbds.core.commands.cmds.console.database.DatabaseCommand;
+import net.survivalboom.sbds.core.commands.cmds.console.guildconfig.GuildConfigCommand;
+import net.survivalboom.sbds.core.commands.cmds.console.permission.PermissionCommand;
+import net.survivalboom.sbds.core.commands.cmds.console.registration.RegistrationCommand;
+import net.survivalboom.sbds.core.commands.parser.StringCommandParser;
 import net.survivalboom.sbds.core.commands.cmds.console.HelpCommand;
 import net.survivalboom.sbds.core.commands.cmds.console.ShutdownCommand;
 import net.survivalboom.sbds.core.commands.cmds.console.modules.ModulesCommand;
@@ -21,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class ConsoleListener extends AbstractCommandManager implements IConsoleListener {
+public class ConsoleListener extends AbstractCommandManager<IConsoleListener.IRegisteredConsoleCommand, IConsoleListener> implements IConsoleListener {
 
     private final Scanner scanner = new Scanner(System.in);
 
@@ -29,19 +37,27 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
 
 
     public ConsoleListener(@NotNull SBDS sbds) {
-        super("ConsoleListener", sbds, true);
+        super(sbds);
     }
 
 
     @Override
     protected void init0() {
 
-        registerCommand0(null, new ShutdownCommand().build(sbds, null));
-        registerCommand0(null, new HelpCommand().build(sbds, null));
-        registerCommand0(null, new ModulesCommand().build(sbds, null));
+        super.init0();
 
-        registerCommand0(null, new StatusCommand(sbds).build(sbds, null));
-        registerCommand0(null, new ServersCommand().build(sbds, null));
+        registerCommand0(null, new SuicideCommand());
+        registerCommand0(null, new ShutdownCommand());
+        registerCommand0(null, new HelpCommand());
+        registerCommand0(null, new ModulesCommand());
+        registerCommand0(null, new RegistrationCommand());
+
+        registerCommand0(null, new DatabaseCommand());
+        registerCommand0(null, new GuildConfigCommand());
+        registerCommand0(null, new PermissionCommand());
+
+        registerCommand0(null, new StatusCommand());
+        registerCommand0(null, new ServersCommand());
 
         task = sbds.getScheduler().schedule0(null, "ConsoleListener", task -> this.consoleListener(), 0, 50);
 
@@ -49,86 +65,156 @@ public class ConsoleListener extends AbstractCommandManager implements IConsoleL
 
     @Override
     protected void shutdown0() {
-        task.cancelForce();
-        commands.clear();
+
+        task.cancelAndWaitOrKill(100, false);
         task = null;
+
+        super.shutdown0();
+
+    }
+
+
+    @Override
+    public void onRegister(@NotNull Registration<IRegisteredConsoleCommand> registration) {
+
+        Command command = registration.object().getCommand();
+        CommandExecutor executor = command.getExecutor();
+
+        if (executor == null) {
+            return;
+        }
+
+        if (!(executor instanceof ConsoleCommandExecutor)) {
+            throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a console command");
+        }
+
+    }
+
+
+    @Override
+    protected @NotNull ConsoleListener.RegisteredConsoleCommand createCommandReg(@NotNull Command command) {
+        return new RegisteredConsoleCommand(this, command);
     }
 
 
     private void consoleListener() {
 
-        if (!sbds.isReady()) return;
-        if (!scanner.hasNext()) return;
+        if (!scanner.hasNext() || !sbds.isReady()) {
+            return;
+        }
 
         String input = scanner.nextLine().strip();
+
+        try {
+            processCommand(input);
+        }
+
+        catch (Throwable t) {
+            logger.error("Ooopsies! A fatal internal error occurred while attempting to process input `{}`. OutOfMemoryError?", input);
+        }
+
+    }
+
+    private void processCommand(@NotNull String input) {
+
         String prefix = StringCommandParser.getPrefix(input);
 
-        RegisteredCommand registeredCommand = findByAlias(prefix);
-        if (registeredCommand == null) {
+        var cmdReg = getByAlias(prefix);
+        if (cmdReg == null) {
             rootLogger.info("Unknown command. Type 'help' to view all available commands.");
             return;
         }
 
-        Command command = registeredCommand.command();
+        Command command = cmdReg.getCommand();
+        String string = input.substring(prefix.length()).strip();
 
         try {
 
-            Argument.ArgumentResources resources = new Argument.ArgumentResources(sbds, TypeMap.empty(false));
+            var result = StringCommandParser.parseInput(string, command, ArgumentScope.CONSOLE, argument -> new ArgumentParsingContext(cmdReg, command, argument));
+            var toExecute = new ArrayList<>(result.foundSubcommands());
+            toExecute.addFirst(new SubCommandArgument.SubCommand(command, prefix));
 
-            String string = input.substring(prefix.length()).strip();
+            for (SubCommandArgument.SubCommand execute : toExecute) {
 
-            processSubcommand(prefix, string, input, command, resources);
+                ConsoleExecutionInfo info = new ConsoleExecutionInfo(cmdReg, execute.command(), input, execute.alias(), result.arguments(), rootLogger);
 
+                CommandExecutor executor = execute.command().getExecutor();
+                if (!(executor instanceof ConsoleCommandExecutor consoleCommandExecutor)) {
+                    continue;
+                }
+
+                consoleCommandExecutor.executes(info);
+
+            }
+
+        }
+
+        catch (StringCommandParser.ArgumentParsingException e) {
+
+            String argumentName = e.getArgument().name();
+            String inputRaw = e.getInput();
+
+            Throwable cause = e.getCause();
+            if (!(cause instanceof ArgumentParseException argumentParseException)) {
+                logger.error("An error occurred while attempting to parse argument `{}`: `{}`.", argumentName, inputRaw, cause);
+                return;
+            }
+
+            logger.error("Invalid input `{}` for argument `{}`: {}", inputRaw, argumentName, argumentParseException.getMessage());
+
+        }
+
+        catch (StringCommandParser.NotEnoughArgumentsException e) {
+            logger.error("Incomplete command. Expected {} arguments, got {}. Usage: `{}`", e.expected.size(), e.got.size(), createUsage(prefix, e.expected, e.got));
         }
 
         catch (Throwable t) {
-            logger.error("An internal error occurred while attempting to perform console command `{}`.", input, t);
+            logger.error("An error occurred while attempting to perform console command `{}`.", input, t);
         }
-
 
     }
 
+    public static String createUsage(@NotNull String prefix, @NotNull List<CommandArgument> args, @NotNull Map<CommandArgument, String> parsed) {
 
-    private void processSubcommand(@NotNull String prefix, @NotNull String input, @NotNull String fullInput, @NotNull Command command, @NotNull Argument.ArgumentResources resources) throws Throwable {
+        List<String> strings = new ArrayList<>();
+        for (CommandArgument argument : args) {
 
-        StringCommandParser parser = new StringCommandParser(input, command, ArgumentScope.CONSOLE, resources);
+            String str;
+            if (argument.isSubCommand()) {
 
-        parser.parse();
+                str = parsed.get(argument);
+                if (str != null) {
+                    strings.add(str);
+                    continue;
+                }
 
-        if (!parser.checkCount()) {
+                str = String.join("/", ((SubCommandArgument) argument.argument()).getSubcommands().stream().map(Command::getName).toList());
 
-            int requiredArguments = command.requiredArguments().size();
-            int currentArguments = parser.getArguments().size();
+            }
 
-            String usage = command.usage() == null ? String.format("%s %s", prefix, String.join(" ", command.requiredArguments().stream().map(v -> "<" + v.name() + ">").toList())) : command.usage();
+            else {
+                str = argument.name();
+            }
 
-            rootLogger.info("Incorrect or incomplete command. Expected {} arguments, got {}. Usage: `{}`", requiredArguments, currentArguments, usage);
+            if (argument.required()) {
+                strings.add("<" + str + ">");
+            }
 
-            return;
-
-        }
-
-        if (command.hasSubcommands()) {
-
-            SubCommandArgument.SubCommand subcommand = parser.getArguments().get("subcommand", SubCommandArgument.SubCommand.class);
-
-            Objects.requireNonNull(subcommand);
-
-            String subInput = input.substring(subcommand.alias().length()).strip();
-
-            processSubcommand(prefix, subInput, fullInput, subcommand.command(), resources);
-
-            return;
+            else {
+                strings.add("[" + str + "]");
+            }
 
         }
 
-        TypeMap commandArguments = parser.getArguments();
+        return prefix + " " + String.join(" ", strings);
 
-        ConsoleExecutionInfo info = new ConsoleExecutionInfo(command, fullInput, prefix, commandArguments, rootLogger, sbds);
+    }
 
-        ConsoleCommand consoleCommand = (ConsoleCommand) command.executor();
+    public static class RegisteredConsoleCommand extends RegisteredCommand<IRegisteredConsoleCommand, IConsoleListener> implements IRegisteredConsoleCommand {
 
-        consoleCommand.executes(info);
+        public RegisteredConsoleCommand(@NotNull ConsoleListener manager, @NotNull Command command) {
+            super(manager, command);
+        }
 
     }
 

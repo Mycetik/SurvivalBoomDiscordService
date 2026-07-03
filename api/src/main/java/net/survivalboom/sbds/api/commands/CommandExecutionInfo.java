@@ -1,44 +1,54 @@
 package net.survivalboom.sbds.api.commands;
 
-import net.dv8tion.jda.annotations.UnknownNullability;
-import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.interaction.*;
-import net.survivalboom.sbds.api.messages.IMessages;
-import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.TypeMap;
+import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
 
-public abstract class CommandExecutionInfo extends ExecutionInfo {
+public abstract class CommandExecutionInfo<cmd extends ICommandManager.IRegisteredCommand<cmd, manager>, manager extends ICommandManager<cmd, manager>> extends ExecutionInfo {
 
-    protected final Command command;
+    protected final cmd rootCommand;
+
+    protected final Command currentCommand;
 
     protected final String alias;
 
     protected final TypeMap arguments;
 
 
-    public CommandExecutionInfo(@NotNull Command command, @NotNull String alias, @NotNull TypeMap arguments, @NotNull Logger logger, @NotNull ISBDS sbds) {
+    public CommandExecutionInfo(
+            @NotNull cmd rootCommand,
+            @NotNull Command currentCommand,
+            @NotNull String alias,
+            @NotNull TypeMap arguments
+    ) {
 
-        super(sbds, logger);
+        super(rootCommand.getManager().getSbds());
 
-        this.command = command;
+        this.rootCommand = rootCommand;
+        this.currentCommand = currentCommand;
+
         this.alias = alias;
         this.arguments = arguments;
 
     }
 
-    public @UnknownNullability IModule module() {
-        return command.module();
+    // CMD //
+
+    public @NotNull cmd rootCommand() {
+        return rootCommand;
     }
 
-    public @NotNull Command command() {
-        return command;
+    public @NotNull Command currentCommand() {
+        return currentCommand;
     }
+
+    // ALIAS //
 
     public @NotNull String alias() {
         return alias;
     }
+
+    // ARGS //
 
     public @NotNull TypeMap arguments() {
         return arguments;

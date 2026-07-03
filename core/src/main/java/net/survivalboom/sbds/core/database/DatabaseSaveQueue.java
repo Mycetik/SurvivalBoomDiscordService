@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.core.database;
 
 import net.survivalboom.sbds.api.database.DataRecord;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.scheduler.SchedulerTask;
 import org.hibernate.Session;
@@ -41,7 +41,7 @@ public class DatabaseSaveQueue extends Manager {
     @Override
     protected void shutdown0() {
 
-        task.cancelAndWait(1000, true);
+        task.tryCancel();
 
         if (!queue.isEmpty()) {
             log.warn("There is {} hibernate entities in queue. Saving...", queue.size());

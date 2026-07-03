@@ -1,44 +1,111 @@
 package net.survivalboom.sbds.api.translations;
 
 import net.dv8tion.jda.api.interactions.DiscordLocale;
-import net.survivalboom.sbds.api.messages.IMessage;
-import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
+import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
+import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.modules.ModuleMain;
+import net.survivalboom.sbds.api.registrations.Registration;
+import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.utils.valid.IValid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
-public interface ITranslation {
+public interface ITranslation extends IValid {
 
-    void update() throws IOException, InvalidConfigurationException, MessageLoadException;
+    //
+    // INFO
+    //
 
-    void save() throws IOException;
+    @NotNull Registration<ITranslation> getRegistration();
 
+    default @NotNull String getName() {
+        return getRegistration().key().toString();
+    }
 
-    @NotNull File getFile();
+    //
+    // MESSAGES
+    //
 
-    @NotNull String getName();
+    @Nullable IMessageTemplate getMessage(@NotNull String key);
 
+    @NotNull Map<String, IMessageTemplate> getMessages();
 
-    @Nullable String displayName();
+    //
+    // MESSAGE POOLS
+    //
 
-    void displayName(@Nullable String displayName);
+    // CREATION //
 
+    @NotNull ITranslationsMessagesPool createMessagesPool(@NotNull IModule module, @NotNull String name);
 
-    @NotNull DiscordLocale discordLocale();
+    default @NotNull ITranslationsMessagesPool createMessagesPool(@NotNull ModuleMain module, @NotNull String name) {
+        return createMessagesPool(module.getModule(), name);
+    }
 
-    void discordLocale(@NotNull DiscordLocale locale);
+    @NotNull ITranslationsMessagesPool obtainMessagesPool(@NotNull IModule module, @NotNull String name);
 
+    // REMOVE //
 
-    @Nullable String icon();
+    boolean removeMessagesPool(@NotNull ITranslationsMessagesPool pool);
 
-    void icon(@Nullable String icon);
+    default @Nullable ITranslationsMessagesPool removeMessagesPool(@NotNull NamespacedKey key) {
 
+        var pool = getMessagesPool(key);
+        if (pool == null) {
+            return null;
+        }
 
-    @Nullable IMessage getMessage(@NotNull String name);
+        removeMessagesPool(pool);
 
-    @NotNull List<IMessage> getMessages();
+        return pool;
+
+    }
+
+    default @Nullable ITranslationsMessagesPool removeMessagesPool(@NotNull String key) {
+        return removeMessagesPool(NamespacedKey.fromString(key));
+    }
+
+    // GETTERS //
+
+    @Nullable ITranslationsMessagesPool getMessagesPool(@NotNull NamespacedKey key);
+
+    default @Nullable ITranslationsMessagesPool getMessagesPool(@NotNull String key) {
+        return getMessagesPool(NamespacedKey.fromString(key));
+    }
+
+    @NotNull List<ITranslationsMessagesPool> getMessagePools();
+
+    //
+    // PROPERTIES
+    //
+
+    // DISPLAY NAME //
+
+    @Nullable String getDisplayName();
+
+    void setDisplayName(@Nullable String displayName);
+
+    // DISCORD LOCALE //
+
+    @Nullable DiscordLocale getDiscordLocale();
+
+    void setDiscordLocale(@Nullable DiscordLocale locale);
+
+    // ICON //
+
+    @Nullable String getIconEmoji();
+
+    void setIconEmoji(@Nullable String icon);
+
+    //
+    // MISC
+    //
+
+    @NotNull ITranslationManager getManager();
+
+    void remove();
 
 }

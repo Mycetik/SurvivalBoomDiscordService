@@ -1,0 +1,142 @@
+package net.survivalboom.sbds.modules.guildconfig.commands;
+
+import net.dv8tion.jda.api.interactions.commands.Command;
+import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.TextChannelArgument;
+import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
+import net.survivalboom.sbds.api.commands.argument.primitive.BooleanArgument;
+import net.survivalboom.sbds.api.commands.argument.primitive.IntegerArgument;
+import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
+import net.survivalboom.sbds.api.commands.argument.sbds.GuildConfigArgument;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
+import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
+import net.survivalboom.sbds.api.database.guildconfig.GuildConfigField;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfig;
+import net.survivalboom.sbds.api.database.guildconfig.IGuildConfigTemplate;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+
+@CommandClass(name = "set", description = "Set an option value for this guild", translationKey = "guildconfig.command.config.set", permission = "guilconfig.command.config.set")
+public class ConfigSetCommand extends CommandBase implements SlashCommandExecutor {
+
+    @Override
+    public void executes(@NotNull SlashExecutionInfo info) {
+
+        IGuildConfigTemplate template = info.arguments().getCast("config", IGuildConfigTemplate.class).orElseThrow();
+        String key = info.arguments().getCast("key", String.class).orElseThrow();
+
+        var args = new ArrayList<>(info.arguments().values());
+        args.remove(template);
+        args.remove(key);
+
+        if (args.isEmpty()) {
+            info.reply("guildconfig.command.config.set.empty").queue();
+            return;
+        }
+
+        IGuildConfig config = template.obtainConfig(info.guild());
+
+        GuildConfigField field = config.getField(key);
+        if (field == null || field.internal()) {
+            info.reply("guildconfig.command.config.set.invalid-key")
+                    .withPlaceholders("option", template.getKey() + ":" + key)
+                    .queue();
+            return;
+        }
+
+        Object value = args.getFirst();
+
+        if (value instanceof String string && string.equals("null")) {
+            value = null;
+        }
+
+        String fieldTranslated = template.getTranslationKey() != null ? field.createTranslationKey(template) : template.getKey() + ":" + field.key();
+        Object valueTranslated = value != null ? value : field.defaultValue();
+        if (valueTranslated == null) {
+            valueTranslated = "$[guildconfig.values.empty]";
+        }
+
+        if (!field.isValueAllowed(value)) {
+            info.reply("guildconfig.command.config.set.invalid-value")
+                    .withPlaceholders(
+                            "option", field,
+                            "option.translated", fieldTranslated,
+                            "value", valueTranslated
+                    )
+                    .queue();
+            return;
+        }
+
+        config.set(key, value).join();
+
+        info.reply("guildconfig.command.config.set.success")
+                .withPlaceholders(
+                        "option", field,
+                        "option.translated", template.getTranslationKey() != null ? field.createTranslationKey(template) : field.key(),
+                        "value", valueTranslated
+                )
+                .queue();
+
+    }
+
+    //
+    // ARGUMENTS
+    //
+
+    @ArgumentMethod
+    public GuildConfigArgument config() {
+        return new GuildConfigArgument();
+    }
+
+    @ArgumentMethod(index = 1)
+    public StringArgument key() {
+        return new StringArgument(context -> {
+
+            IGuildConfigTemplate template = context.arguments().getCast("config", IGuildConfigTemplate.class).orElse(null);
+            if (template == null) {
+                return null;
+            }
+
+            return template.getFields().values().stream()
+                    .filter(field -> !field.internal())
+                    .map(field -> new Command.Choice(field.createTranslationKey(template), field.key()))
+                    .toList();
+
+        });
+    }
+
+    @ArgumentMethod(index = 2, required = false)
+    public TextChannelArgument textchannel() {
+        return new TextChannelArgument();
+    }
+
+    @ArgumentMethod(index = 2, required = false)
+    public VoiceChannelArgument voicechannel() {
+        return new VoiceChannelArgument();
+    }
+
+    @ArgumentMethod(index = 2, required = false)
+    public UserArgument user() {
+        return new UserArgument();
+    }
+
+    @ArgumentMethod(index = 2, required = false)
+    public StringArgument string() {
+        return new StringArgument();
+    }
+
+    @ArgumentMethod(index = 2, required = false)
+    public IntegerArgument integer() {
+        return new IntegerArgument();
+    }
+
+    @ArgumentMethod(index = 2, required = false)
+    public BooleanArgument bool() {
+        return new BooleanArgument();
+    }
+
+}

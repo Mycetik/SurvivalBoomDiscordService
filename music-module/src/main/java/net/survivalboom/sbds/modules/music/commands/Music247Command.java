@@ -5,71 +5,87 @@ import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.utils.Placeholders;
-import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.modules.music.MusicModule;
+import net.survivalboom.sbds.modules.music.music.MusicManager;
+import net.survivalboom.sbds.modules.music.music.GuildPlayer;
+import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
 
-@Command(name = "music-24-7", description = "Disable disconnect on idle for the current music bot", translationKey = "music.command.24-7", permission = "music.command.24_7")
-public class Music247Command extends AbstractPlayerCommand {
+@CommandClass(
+        name = "music-24-7",
+        description = "Disable disconnect on idle for the current music bot",
+        translationKey = "music.command.24-7",
+        permission = "music.command.24-7"
+)
+public class Music247Command extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
 
-    public Music247Command(@NotNull BotManager botManager) {
-        super(botManager);
+    private final MusicManager manager;
+
+    public Music247Command(@NotNull MusicModule module) {
+        this.manager = module.getMusicManager();
     }
 
     @Override
-    public void executes(@NotNull SlashExecutionInfo info) throws Throwable {
+    public void executes(@NotNull SlashExecutionInfo info) {
+        executes0(info);
+    }
 
-        GuildPlayer player = getPlayer(info, false, false);
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) {
+        executes0(info);
+    }
+
+    private void executes0(@NotNull InteractionHolder info) {
+
+        GuildPlayer player = Utils.getInteractionPlayer(manager, info, false, false);
         if (player == null) {
             return;
         }
 
-        if (checkBannedOrLocked(info, player, false)) {
+        if (Utils.checkInteractionDenied(manager, info, player, false)) {
             return;
         }
 
-        boolean state = !player.idleDisconnect();
-        player.idleDisconnect(state);
+        boolean state = !player.isIdleDisconnect();
+        player.setIdleDisconnect(state);
 
         String str = state ? "music.command.24-7.disable" : "music.command.24-7.enable";
 
         User botUser = player.getBot().getBot().getSelfUser();
-        Placeholders placeholders = new Placeholders()
-                .add("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator())
-                .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl());
-
-        info.reply(str).withPlaceholders(placeholders).queue();
+        info.reply(str)
+                .withPlaceholders("bot", botUser)
+                .queue();
 
     }
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
 
-        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
-        if (channel == null) {
-            info.logger().error("Missing or invalid 'channel' argument.");
-            return;
-        }
+        AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
 
-        GuildPlayer player = getPlayer(info, channel, false);
+        GuildPlayer player = Utils.getConsolePlayer(manager, info, channel, false);
         if (player == null) {
-            info.logger().error("No music player found for the specified channel.");
             return;
         }
 
-        boolean newState = !player.idleDisconnect();
-        player.idleDisconnect(newState);
+        boolean newState = !player.isIdleDisconnect();
+        player.setIdleDisconnect(newState);
 
         info.logger().info("24/7 mode is now {}", newState ? "ENABLED (idle disconnect disabled)" : "DISABLED (idle disconnect enabled)");
 
     }
 
-    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

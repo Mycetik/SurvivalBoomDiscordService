@@ -10,10 +10,6 @@ public class ArgumentParseException extends Exception {
         super(message, cause);
     }
 
-    public ArgumentParseException(Throwable cause) {
-        super(cause);
-    }
-
     public ArgumentParseException() {
         super();
     }

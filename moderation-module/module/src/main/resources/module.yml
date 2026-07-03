@@ -6,7 +6,7 @@
 name: ModerationModule
 main: net.survivalboom.sbds.modules.moderation.module.ModerationModule
 
-version: 1.0
+version: "${version}"
 description: Модуль модерації. Також надає API для інших модулів, як от ШІ-модерація.
 author: TIMURishche
 website: https://survivalboom.net

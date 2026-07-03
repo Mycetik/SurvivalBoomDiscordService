@@ -1,51 +1,181 @@
 package net.survivalboom.sbds.api.interaction.modal;
 
-import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
-import net.dv8tion.jda.api.requests.restaction.interactions.ModalCallbackAction;
-import net.survivalboom.sbds.api.interaction.InteractionManager;
-import net.survivalboom.sbds.api.messages.IMessages;
+import net.survivalboom.sbds.api.ISBDS;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
 import net.survivalboom.sbds.api.modules.IModule;
 import net.survivalboom.sbds.api.modules.ModuleMain;
+import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
-import net.survivalboom.sbds.api.utils.Placeholders;
+import net.survivalboom.sbds.api.utils.valid.IManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public interface IModalInteractionManager extends InteractionManager<ModalInteractionInfo> {
+public interface IModalInteractionManager extends IManager {
 
-    @NotNull IRegisteredModal registerModal(@NotNull IModule iModule, @NotNull String name, @NotNull ModalTemplate modal);
+    @NotNull ISBDS getSbds();
 
-    default @NotNull IRegisteredModal registerModal(@NotNull ModuleMain main, @NotNull String name, @NotNull ModalTemplate modalTemplate) {
-        Objects.requireNonNull(main, "main == null");
-        return registerModal(main.getModule(), name, modalTemplate);
+    //
+    // MODALS REGISTRY
+    //
+
+    @NotNull IRegisteredModal registerModal(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull ModalTemplate template,
+            @Nullable Consumer<ModalInteractionInfo> executor
+    );
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull ModalTemplate template
+    ) {
+        return registerModal(module, name, template, null);
+    }
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull ModalTemplate template,
+            @Nullable Consumer<ModalInteractionInfo> executor
+    ) {
+        return registerModal(module.getModule(), name, template, executor);
+    }
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull ModalTemplate template
+    ) {
+        return registerModal(module, name, template, null);
     }
 
 
-    void unregisterModal(@NotNull IModule iModule, @NotNull String name);
+    @NotNull IRegisteredModal registerModal(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ModalTemplate.Builder> builder,
+            @Nullable Consumer<ModalInteractionInfo> executor
+    );
 
-    void unregisterModal(@NotNull IModule iModule, @NotNull IRegisteredModal modal);
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull IModule module,
+            @NotNull String name,
+            @NotNull Consumer<ModalTemplate.Builder> builder
+    ) {
+        return registerModal(module, name, builder, null);
+    }
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ModalTemplate.Builder> builder,
+            @Nullable Consumer<ModalInteractionInfo> executor
+    ) {
+        return registerModal(module.getModule(), name, builder, executor);
+    }
+
+    default @NotNull IRegisteredModal registerModal(
+            @NotNull ModuleMain module,
+            @NotNull String name,
+            @NotNull Consumer<ModalTemplate.Builder> builder
+    ) {
+        return registerModal(module, name, builder, null);
+    }
 
 
-    @NotNull ModalActionBuilder createModal(@NotNull IModalCallback callback, @NotNull String name);
+    boolean unregisterModal(@NotNull IRegisteredModal modal);
 
+    @NotNull List<IRegisteredModal> getRegisteredModals();
 
-    @Nullable IRegisteredModal getModal(@NotNull NamespacedKey key);
+    @Nullable IRegisteredModal getRegisteredModal(@NotNull NamespacedKey key);
 
-    @NotNull IMessages getMessages();
+    default @Nullable IRegisteredModal getRegisteredModal(@NotNull String key) {
+        return getRegisteredModal(NamespacedKey.fromString(key));
+    }
 
+    //
+    // MODAL SENDING
+    //
+
+    @NotNull ModalActionBuilder replyModal(
+            @NotNull InteractionHolder interaction,
+            @NotNull ModalTemplate template
+    );
+
+    @NotNull ModalActionBuilder replyModal(
+            @NotNull InteractionHolder interaction,
+            @NotNull Consumer<ModalTemplate.Builder> builder
+    );
+
+    @NotNull ModalActionBuilder replyModal(
+            @NotNull InteractionHolder interaction,
+            @NotNull NamespacedKey key
+    );
+
+    default @NotNull ModalActionBuilder replyModal(
+            @NotNull InteractionHolder interaction,
+            @NotNull String key
+    ) {
+        return replyModal(interaction, NamespacedKey.fromString(key));
+    }
+
+    @NotNull IPendingModal createPending(@NotNull ModalActionBuilder builder);
+
+    @NotNull List<IPendingModal> getPendingModals();
+
+    //
+    // RECORDS
+    //
 
     interface IRegisteredModal {
 
-        @NotNull ModalActionBuilder createModal(@NotNull IModalCallback interaction);
+        @NotNull Registration<IRegisteredModal> getRegistration();
 
-        @Nullable IModule registrar();
+        @NotNull IModalInteractionManager getManager();
 
-        @NotNull NamespacedKey name();
 
-        @NotNull ModalTemplate template();
+        @NotNull ModalTemplate getTemplate();
+
+        @Nullable Consumer<ModalInteractionInfo> getExecutor();
+
+    }
+
+    interface IPendingModal {
+
+        @NotNull String getId();
+
+        @Nullable IRegisteredModal getOriginModal();
+
+        @NotNull ModalTemplate getTemplate();
+
+
+        @Nullable Consumer<ModalInteractionInfo> getSuccessCallback();
+
+        @Nullable Runnable getFailureCallback();
+
+        default @Nullable Consumer<ModalInteractionInfo> getEffectiveSuccessCallback() {
+
+            var callback = getSuccessCallback();
+            if (callback == null) {
+                callback = Objects.requireNonNull(getOriginModal(), "no origin modal! something went wrong?").getExecutor();
+            }
+
+            return callback;
+
+        }
+
+
+        long getTimestamp();
+
+        int getTimeout();
+
+
+        @NotNull IModalInteractionManager getManager();
 
     }
 

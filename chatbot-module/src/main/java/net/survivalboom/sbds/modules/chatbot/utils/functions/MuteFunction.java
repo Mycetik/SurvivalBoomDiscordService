@@ -5,8 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.github.sashirestela.openai.common.function.Functional;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.survivalboom.sbds.api.messages.MessageBuilder;
+import net.survivalboom.sbds.api.messages.builder.MessageBuilder;
 import net.survivalboom.sbds.api.utils.CommonUtils;
 import net.survivalboom.sbds.modules.chatbot.ChatBotModule;
 

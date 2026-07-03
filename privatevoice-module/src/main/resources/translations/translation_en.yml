@@ -1,11 +1,16 @@
 #
-# SurvivalBoom Discord Service | SurvivalBoom Network 2025
+# SurvivalBoom Discord Service | SurvivalBoom Network 2026
 #         Private Voice Module | By TIMURishche
 #
 
-$name: "english"
+$name: sbds:english
 
 voice:
+
+  config:
+    label: "Personal channels"
+    creator: "Channel creator"
+    fallback: "Fallback channel"
 
   control:
 
@@ -32,15 +37,15 @@ voice:
         description: |
           :level_slider: Voice Channel Control Panel.
           
-          :loud_sound: Voice Channel: {CHANNEL}
-          :crown: Owner: {OWNER}
+          :loud_sound: Voice Channel: {channel.mention}
+          :crown: Owner: {owner.mention}
           
-          :lock: Locked: `{LOCKED}`
-          :eyeglasses: Hidden: `{HIDDEN}`
+          :lock: Locked: `{locked}`
+          :eyeglasses: Hidden: `{hidden}`
           
-          :white_check_mark: Whitelisted Users: `{WHITELIST}`
-          :beginner: Blacklisted Users: `{BLACKLIST}`
-          :microphone2: Muted Users: `{MUTED}`
+          :white_check_mark: Whitelisted Users: `{whitelist}`
+          :beginner: Blacklisted Users: `{blacklist}`
+          :microphone2: Muted Users: `{muted}`
           
           :eight_spoked_asterisk: Lost the panel? Type `+` to send it again.
       $components:
@@ -50,43 +55,43 @@ voice:
           type: STRING_SELECT
           options:
 
-            - name: "change-name"
-              label: "Channel Name"
+            - id: "change-name"
+              title: "Channel Name"
               description: "Change the channel's name."
               emoji: "📑"
 
-            - name: "set-limit"
-              label: "User Limit"
+            - id: "set-limit"
+              title: "User Limit"
               description: "Set the max number of users."
               emoji: "🪬"
 
-            - name: "lock"
-              label: "Lock/Unlock"
+            - id: "lock"
+              title: "Lock/Unlock"
               description: "Manage channel access."
               emoji: "🔐"
 
-            - name: "hide"
-              label: "Hide/Show"
+            - id: "hide"
+              title: "Hide/Show"
               description: "Manage channel visibility."
               emoji: "👁️"
 
-            - name: "blacklist"
-              label: "Blacklist"
+            - id: "blacklist"
+              title: "Blacklist"
               description: "Block specific users."
               emoji: "📕"
 
-            - name: "whitelist"
-              label: "Whitelist"
+            - id: "whitelist"
+              title: "Whitelist"
               description: "Allow specific users."
               emoji: "📘"
 
-            - name: "mute"
-              label: "Mute Control"
+            - id: "mute"
+              title: "Mute Control"
               description: "Mute/unmute a user."
               emoji: "🎙️"
 
-            - name: "delete"
-              label: "Delete"
+            - id: "delete"
+              title: "Delete"
               description: "Delete your private channel."
               emoji: "🗑️"
 
@@ -101,7 +106,7 @@ voice:
         $embed:
           title: "Name Changed!"
           color: 4188fa
-          description: "You've renamed the channel to `{NAME}`."
+          description: "You've renamed the channel to `{name}`."
 
     set-limit:
 
@@ -114,7 +119,7 @@ voice:
         $embed:
           title: "User Limit Updated!"
           color: 4188fa
-          description: "You've set the max number of users to `{LIMIT}`."
+          description: "You've set the max number of users to `{limit}`."
 
       invalid:
         $embed:
@@ -122,7 +127,7 @@ voice:
           color: ff0000
           description: |
             You must enter a number between **1** and **50**.
-            Your input `{INPUT}` is invalid and not a number.
+            Your input `{input}` is invalid and not a number.
 
     lock:
 
@@ -181,13 +186,13 @@ voice:
         $embed:
           title: "User Blocked!"
           color: 4188fa
-          description: "User {MEMBER} is now blocked and can't join this channel."
+          description: "User {member.mention} is now blocked and can't join this channel."
 
       removed:
         $embed:
           title: "User Unblocked!"
           color: 4188fa
-          description: "User {MEMBER} is now unblocked and can join this channel."
+          description: "User {member.mention} is now unblocked and can join this channel."
 
     whitelist:
 
@@ -218,13 +223,13 @@ voice:
         $embed:
           title: "User Whitelisted!"
           color: 4188fa
-          description: "User {MEMBER} has been added to the whitelist."
+          description: "User {member.mention} has been added to the whitelist."
 
       removed:
         $embed:
           title: "User Removed from Whitelist!"
           color: 4188fa
-          description: "User {MEMBER} has been removed from the whitelist."
+          description: "User {member.mention} has been removed from the whitelist."
 
     mute:
 
@@ -263,13 +268,13 @@ voice:
         $embed:
           title: "User Muted!"
           color: 4188fa
-          description: "User {MEMBER} has been muted in this voice channel."
+          description: "User {member.mention} has been muted in this voice channel."
 
       unmuted:
         $embed:
           title: "User Unmuted!"
           color: 4188fa
-          description: "User {MEMBER} has been unmuted in this voice channel."
+          description: "User {member.mention} has been unmuted in this voice channel."
 
   command:
 
@@ -297,7 +302,7 @@ voice:
             fields:
 
               - name: "Channel"
-                value: "{CHANNEL}"
+                value: "{channel.mention}"
 
       remove:
 

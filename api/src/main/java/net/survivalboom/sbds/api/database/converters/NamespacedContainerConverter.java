@@ -1,76 +1,79 @@
 package net.survivalboom.sbds.api.database.converters;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import jakarta.persistence.PersistenceException;
-import net.survivalboom.sbds.api.utils.NamespacedContainer;
+import net.survivalboom.sbds.api.database.IDatabase;
+import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
 import net.survivalboom.sbds.api.utils.NamespacedKey;
-import net.survivalboom.sbds.api.utils.TypeMap;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import net.survivalboom.sbds.api.utils.container.NamespacedDataContainer;
+import org.spongepowered.configurate.ConfigurateException;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.jackson.JacksonConfigurationLoader;
 
 @Converter(autoApply = true)
-public class NamespacedContainerConverter implements AttributeConverter<NamespacedContainer, String> {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+public class NamespacedContainerConverter implements AttributeConverter<INamespacedDataContainer, String> {
 
     @Override
-    public String convertToDatabaseColumn(NamespacedContainer container) {
+    public String convertToDatabaseColumn(INamespacedDataContainer container) {
 
         if (container == null) {
             return null;
         }
 
-        // превращаем в Map<String, Map<String, Object>>
-        Map<String, Map<String, Object>> raw = new HashMap<>();
-        container.map().forEach((nsKey, typeMap) ->
-                raw.put(nsKey.toString(), typeMap.map())
-        );
+        ConfigurationNode rootNode = IDatabase.createConfigurateLoader().build().createNode();
 
+        for (var entry : container.getAsMap().entrySet()) {
+
+            var key = entry.getKey();
+            var node = entry.getValue();
+
+            rootNode.node(key).mergeFrom(node);
+
+        }
+
+        String out;
         try {
-            return OBJECT_MAPPER.writeValueAsString(raw);
+            out = JacksonConfigurationLoader.builder().buildAndSaveString(rootNode);
         }
 
-        catch (JsonProcessingException e) {
-            throw new PersistenceException("Не удалось сериализовать NamespacedContainer в JSON", e);
+        catch (ConfigurateException e) {
+            throw new RuntimeException("Something went wrong! Failed to save NamespacedDataContainer to JSON! This may be an internal error, or you just messed up with objects");
         }
+
+        return out;
 
     }
 
     @Override
-    public NamespacedContainer convertToEntityAttribute(String dbData) {
+    public INamespacedDataContainer convertToEntityAttribute(String dbData) {
 
         if (dbData == null || dbData.isBlank()) {
-            return NamespacedContainer.empty();
+            return new NamespacedDataContainer();
         }
 
+        ConfigurationNode rootNode;
         try {
+            
+            rootNode = IDatabase.createConfigurateLoader().buildAndLoadString(dbData);
 
-            // читаем как Map<String, Map<String, Object>>
-            Map<String, Map<String, Object>> raw = OBJECT_MAPPER.readValue(
-                    dbData, new TypeReference<>() {}
-            );
+            NamespacedDataContainer container = new NamespacedDataContainer();
+            for (var entry : rootNode.childrenMap().entrySet()) {
 
-            NamespacedContainer container = NamespacedContainer.empty();
-            for (Map.Entry<String, Map<String, Object>> entry : raw.entrySet()) {
-                NamespacedKey key = NamespacedKey.fromString(entry.getKey());
-                // создаём/берём TypeMap и заполняем его
-                TypeMap tm = container.getOrCreate(key);
-                tm.putAll(entry.getValue());
+                NamespacedKey namespacedKey = NamespacedKey.fromString((String) entry.getKey());
+                ConfigurationNode node = entry.getValue();
+
+                container.obtainNode(namespacedKey).mergeFrom(node);
+
             }
 
             return container;
 
         }
-
-        catch (IOException e) {
-            throw new PersistenceException("Не удалось десериализовать JSON в NamespacedContainer", e);
+        
+        catch (ConfigurateException e) {
+            throw new RuntimeException("Something went wrong! Failed to load data. Looks like you fucked up with the JSON format. Raw data `" + dbData + "`");
         }
 
     }
+
 }

@@ -2,40 +2,54 @@ package net.survivalboom.sbds.modules.music.commands;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.commands.ArgumentScope;
 import net.survivalboom.sbds.api.commands.argument.Argument;
 import net.survivalboom.sbds.api.commands.argument.discord.channel.VoiceChannelArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandBase;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
-import net.survivalboom.sbds.api.interaction.IInteractionInfo;
-import net.survivalboom.sbds.api.interaction.button.ButtonInteractionInfo;
-import net.survivalboom.sbds.api.modules.IModule;
-import net.survivalboom.sbds.api.utils.Placeholders;
-import net.survivalboom.sbds.modules.music.bots.BotManager;
-import net.survivalboom.sbds.modules.music.bots.GuildPlayer;
+import net.survivalboom.sbds.api.commands.string.StringCommandExecutor;
+import net.survivalboom.sbds.api.commands.string.StringExecutionInfo;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.modules.music.MusicModule;
+import net.survivalboom.sbds.modules.music.music.MusicManager;
+import net.survivalboom.sbds.modules.music.music.GuildPlayer;
+import net.survivalboom.sbds.modules.music.utils.Utils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
+@CommandClass(
+        name = "music-lock",
+        description = "Locks current music bot for staff usage only",
+        translationKey = "music.command.lock",
+        permission = "music.command.lock"
+)
+public class LockCommand extends CommandBase implements SlashCommandExecutor, StringCommandExecutor, ConsoleCommandExecutor {
 
-@Command(name = "music-lock", description = "Locks current music bot for staff usage only", translationKey = "music.command.lock", permission = "music.command.lock")
-public class LockCommand extends AbstractPlayerCommand {
+    private final MusicModule module;
 
-    public LockCommand(@NotNull BotManager botManager) {
-        super(botManager);
+    private final MusicManager manager;
+
+    public LockCommand(@NotNull MusicModule module) {
+        this.module = module;
+        this.manager = module.getMusicManager();
     }
 
     @Override
-    protected void init(@NotNull ISBDS sbds, @Nullable IModule module) {
-        Objects.requireNonNull(module);
-        sbds.getButtonInteractionManager().registerListener(module, "lock", this::onButtonClick, getPermission());
-    }
+    protected void init(@NotNull ISBDS sbds) {
 
-    public void onButtonClick(@NotNull ButtonInteractionInfo info) {
-        executes0(info, true);
+        sbds.getComponentInteractionManager().registerListener(
+                module,
+                "lock",
+                ButtonInteractionEvent.class,
+                click -> executes0(click, true)
+        );
+
     }
 
     @Override
@@ -43,28 +57,26 @@ public class LockCommand extends AbstractPlayerCommand {
         executes0(info, false);
     }
 
+    @Override
+    public void executes(@NotNull StringExecutionInfo info) throws Throwable {
+        executes0(info, false);
+    }
 
-    private void executes0(@NotNull IInteractionInfo info, boolean ephemeral) {
+    private void executes0(@NotNull InteractionHolder info, boolean ephemeral) {
 
-        GuildPlayer player = getPlayer(info, false, ephemeral);
+        GuildPlayer player = Utils.getInteractionPlayer(manager, info, false, ephemeral);
         if (player == null) {
             return;
         }
 
-        boolean state = !player.adminLock();
-
-        player.adminLock(state);
+        boolean state = !player.hasAdminLock();
+        player.setAdminLock(state);
 
         User botUser = player.getBot().getBot().getSelfUser();
-        Placeholders placeholders = new Placeholders()
-                .add("{BOT}", botUser.getEffectiveName() + "#" + botUser.getDiscriminator())
-                .add("{BOT-AVATAR}", botUser.getEffectiveAvatarUrl());
-
 
         String str = state ? "music.command.lock.locked" : "music.command.lock.unlocked";
         info.reply(str)
-                .withPlaceholders(placeholders)
-                .send()
+                .withPlaceholders("bot", botUser)
                 .setEphemeral(ephemeral)
                 .queue();
 
@@ -72,27 +84,23 @@ public class LockCommand extends AbstractPlayerCommand {
 
     @Override
     public void executes(@NotNull ConsoleExecutionInfo info) {
-        AudioChannelUnion channel = info.arguments().get("channel", AudioChannelUnion.class);
-        if (channel == null) {
-            info.logger().error("Channel argument is missing or invalid.");
-            return;
-        }
 
-        GuildPlayer player = getPlayer(info, channel, false);
+        AudioChannelUnion channel = info.arguments().getCast("channel", AudioChannelUnion.class).orElseThrow();
+
+        GuildPlayer player = Utils.getConsolePlayer(manager, info, channel, false);
         if (player == null) {
-            info.logger().error("No player found for the provided channel.");
             return;
         }
 
-        boolean newState = !player.adminLock(); // toggle lock
-        player.adminLock(newState);
+        boolean newState = !player.hasAdminLock(); // toggle lock
+        player.setAdminLock(newState);
 
         String msg = newState ? "Music bot is now &blocked &rfor staff-only use." : "Music bot is now &bunlocked &rfor all users.";
         info.logger().info(msg);
 
     }
 
-    @CommandArgument(name = "channel", description = "Channel with bot", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(description = "Channel with bot", scope = ArgumentScope.CONSOLE)
     public Argument<?> channel() {
         return new VoiceChannelArgument();
     }

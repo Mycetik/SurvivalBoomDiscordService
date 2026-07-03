@@ -1,9 +1,9 @@
 #
-# SURVIVALBOOM DISCORD SERVICE | SURVIVALBOOM NETWORK 2025
+# SURVIVALBOOM DISCORD SERVICE | SURVIVALBOOM NETWORK 2026
 #         English Translation | By TIMURishche
 #
 
-$name: "english"
+$name: sbds:english
 
 translation:
 
@@ -17,14 +17,17 @@ translation:
         name: "language"
         description: "Language that will use bot in messages for you"
         choices:
-          ukrainian: "Українська"
-          russian: "Русский"
-          english: "English"
+          sbds:ukrainian: "Українська"
+          sbds:russian: "Русский"
+          sbds:english: "English"
 
-      show: "Your current language: `{TRANSLATION}`."
+      show:
+        $embed:
+          description: "Your current language: `{translation.name}`."
+          color: 34eb83
 
       set:
         $embed:
           title: "Language set!"
           color: 34eb83
-          description: "You set your language to `{TRANSLATION}`."
+          description: "You set your language to `{translation.name}`."

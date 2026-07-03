@@ -4,8 +4,8 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.commands.argument.primitive.IntegerArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.modules.moderation.module.commands.AbstractModerationCommand;
@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
-@Command(name = "unwarn", description = "Removes a warn from a user in the guild", translationKey = "moderation.command.unwarn", permission = "moderation.command.unwarn")
+@CommandClass(name = "unwarn", description = "Removes a warn from a user in the guild", translationKey = "moderation.command.unwarn", permission = "moderation.command.unwarn")
 public class UnWarnCommand extends AbstractModerationCommand {
 
     private final WarnManager warnManager;
@@ -72,17 +72,17 @@ public class UnWarnCommand extends AbstractModerationCommand {
 
     }
 
-    @CommandArgument(name = "id", index = 1)
+    @ArgumentMethod(name = "id", index = 1)
     public IntegerArgument id() {
         return new IntegerArgument();
     }
 
-    @CommandArgument(name = "reason", index = 2, required = false)
+    @ArgumentMethod(name = "reason", index = 2, required = false)
     public StringArgument reason() {
         return new StringArgument();
     }
 
-    @CommandArgument(name = "comment", index = 3, required = false)
+    @ArgumentMethod(name = "comment", index = 3, required = false)
     public StringArgument comment() {
         return new StringArgument();
     }

@@ -2,7 +2,7 @@ package net.survivalboom.sbds.modules.chatbot.bot;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.modules.chatbot.ChatBotModule;
 import net.survivalboom.sbds.modules.chatbot.storage.AIChannels;
 import org.jetbrains.annotations.NotNull;

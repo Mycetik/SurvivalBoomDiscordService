@@ -1,55 +1,95 @@
 package net.survivalboom.sbds.core.database.guilds;
 
-import jakarta.persistence.*;
-import net.survivalboom.sbds.api.database.DataRecord;
-import net.survivalboom.sbds.api.database.converters.NamespacedContainerConverter;
-import net.survivalboom.sbds.api.database.converters.TranslationConverter;
+import net.dv8tion.jda.api.entities.Guild;
+import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
 import net.survivalboom.sbds.api.database.guilds.IGuildData;
+import net.survivalboom.sbds.api.database.guilds.IGuildDataManager;
 import net.survivalboom.sbds.api.translations.ITranslation;
-import net.survivalboom.sbds.api.utils.NamespacedContainer;
-import org.hibernate.annotations.DynamicUpdate;
+import net.survivalboom.sbds.api.utils.valid.Valid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@Entity
-@Table(name = "sbds_guilds")
-@DynamicUpdate
-public class GuildData extends DataRecord implements IGuildData {
+import java.util.concurrent.CompletableFuture;
 
-    @Id
-    @Column(nullable = false)
-    private long guildId;
+public class GuildData extends Valid implements IGuildData {
 
-    @Column(columnDefinition = "jsonb", nullable = false)
-    @Convert(converter = NamespacedContainerConverter.class)
-    private NamespacedContainer data;
+    private final GuildDataManager manager;
 
-    @Column
-    @Convert(converter = TranslationConverter.class)
-    private ITranslation translation;
+    private final GuildDataRecord record;
+
+    private final Guild guild;
 
 
-    protected GuildData() {}
+    public GuildData(
+            @NotNull GuildDataRecord record,
+            @NotNull GuildDataManager manager
+    ) {
 
-    public GuildData(long id) {
-        this.guildId = id;
-        this.data = NamespacedContainer.empty();
+        this.record = record;
+        this.manager = manager;
+
+        this.guild = manager.getSbds().getBot().getGuildById(record.getGuildId());
+
     }
+
 
     @Override
-    public long getId() {
-        return guildId;
+    public @NotNull IGuildDataManager getManager() {
+        return manager;
     }
 
+    // GUILD //
+
     @Override
-    public @NotNull NamespacedContainer container() {
-        return data;
+    public @NotNull Guild getGuild() {
+        return guild;
     }
+
+    // TRANSLATION //
 
     @Override
     public @Nullable ITranslation getTranslation() {
-        return translation;
+        return record.getTranslation();
     }
 
+    @Override
+    public void setTranslation(@Nullable ITranslation translation) {
+        checkValid();
+        record.setTranslation(translation);
+        save();
+    }
+
+    // DATABASE //
+
+    public @NotNull GuildDataRecord getRecord() {
+        return record;
+    }
+
+    @Override
+    public @NotNull INamespacedDataContainer container() {
+        checkValid();
+        return record.getData();
+    }
+
+    @Override
+    public void save() {
+        checkValid();
+        manager.save(this);
+    }
+
+    @Override
+    public @NotNull CompletableFuture<Void> delete() {
+        checkValid();
+        return manager.delete(this);
+    }
+
+    //
+    // VALID
+    //
+
+    @Override
+    protected void setValid(boolean v) {
+        super.setValid(v);
+    }
 
 }

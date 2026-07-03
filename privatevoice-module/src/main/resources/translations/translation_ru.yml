@@ -1,11 +1,16 @@
 #
-# SurvivalBoom Discord Service | SurvivalBoom Network 2025
+# SurvivalBoom Discord Service | SurvivalBoom Network 2026
 #         Private Voice Module | By TIMURishche
 #
 
-$name: "russian"
+$name: sbds:russian
 
 voice:
+
+  config:
+    lable: "Приватные каналы"
+    creator: "Канал-создатель"
+    fallback: "Резервный канал"
 
   control:
 
@@ -32,15 +37,15 @@ voice:
         description: |
           :level_slider: Панель управления голосовым каналом.
           
-          :loud_sound: Голосовый канал: {CHANNEL} 
-          :crown: Владелец: {OWNER}
+          :loud_sound: Голосовый канал: {channel.name} 
+          :crown: Владелец: {owner.mention}
           
-          :lock: Заблокировано: `{LOCKED}` 
-          :eyeglasses: Скрыто: `{HIDDEN}`
+          :lock: Заблокировано: `{locked}` 
+          :eyeglasses: Скрыто: `{hidden}`
           
-          :white_check_mark: Белый список: `{WHITELIST}`
-          :beginner: Чёрный список: `{BLACKLIST}` 
-          :microphone2: Замученные пользователи: `{MUTED}` 
+          :white_check_mark: Белый список: `{whitelist}`
+          :beginner: Чёрный список: `{blacklist}` 
+          :microphone2: Замученные пользователи: `{muted}` 
           
           :eight_spoked_asterisk: Потеряли панель? Напишите `+` чтобы отправить панель снова.
       $components:
@@ -50,43 +55,43 @@ voice:
           type: STRING_SELECT
           options:
 
-            - name: "change-name"
-              label: "Название канала"
+            - id: "change-name"
+              title: "Название канала"
               description: "Изменить название канала."
               emoji: "📑"
 
-            - name: "set-limit"
-              label: "Лимит пользователей"
+            - id: "set-limit"
+              title: "Лимит пользователей"
               description: "Изменить лимит пользователей в канале."
               emoji: "🪬"
 
-            - name: "lock"
-              label: "Заблокировать/Разблокировать"
+            - id: "lock"
+              title: "Заблокировать/Разблокировать"
               description: "Управление доступом к каналу."
               emoji: "🔐"
 
-            - name: "hide"
-              label: "Скрыть/Показать"
+            - id: "hide"
+              title: "Скрыть/Показать"
               description: "Управление видимостью канала."
               emoji: "👁️"
 
-            - name: "blacklist"
-              label: "Чорный список"
+            - id: "blacklist"
+              title: "Чорный список"
               description: "Управление чёрным списком пользователей."
               emoji: "📕"
 
-            - name: "whitelist"
-              label: "Белый список"
+            - id: "whitelist"
+              title: "Белый список"
               description: "Управление белым списком пользователей."
               emoji: "📘"
 
-            - name: "mute"
-              label: "Управление мутами"
+            - id: "mute"
+              title: "Управление мутами"
               description: "Замутить/размутить пользователя."
               emoji: "🎙️"
 
-            - name: "delete"
-              label: "Удалить"
+            - id: "delete"
+              title: "Удалить"
               description: "Удалить приватный канал."
               emoji: "🗑️"
 
@@ -101,7 +106,7 @@ voice:
         $embed:
           title: "Название изменено!"
           color: 4188fa
-          description: "Вы изменили название канала на `{NAME}`."
+          description: "Вы изменили название канала на `{name}`."
 
     set-limit:
 
@@ -114,7 +119,7 @@ voice:
         $embed:
           title: "Количество участников изменено!"
           color: 4188fa
-          description: "Вы изменили максимальное количество участников на `{LIMIT}`."
+          description: "Вы изменили максимальное количество участников на `{limit}`."
 
       invalid:
         $embed:
@@ -122,7 +127,7 @@ voice:
           color: ff0000
           description: |
             Вы должны указать число от **1** до **50**.
-            Ваше значение `{INPUT}` неправильное, потому что оно не является числом.
+            Ваше значение `{input}` неправильное, потому что оно не является числом.
 
     lock:
 
@@ -183,13 +188,13 @@ voice:
         $embed:
           title: "Пользователь заблокирован!"
           color: 4188fa
-          description: "Пользователь {MEMBER} заблокирован! Теперь он не сможет зайти в этот канал."
+          description: "Пользователь {member.mention} заблокирован! Теперь он не сможет зайти в этот канал."
 
       removed:
         $embed:
           title: "Пользователь разблокирован!"
           color: 4188fa
-          description: "Пользователь {MEMBER} разблокирован! Теперь он сможет зайти в этот канал."
+          description: "Пользователь {member.mention} разблокирован! Теперь он сможет зайти в этот канал."
 
     whitelist:
 
@@ -220,13 +225,13 @@ voice:
         $embed:
           title: "Добавлено в белый список!"
           color: 4188fa
-          description: "Пользователь {MEMBER} добавлен в белый список."
+          description: "Пользователь {member.mention} добавлен в белый список."
 
       removed:
         $embed:
           title: "Удалено из белого списка."
           color: 4188fa
-          description: "Пользователь {MEMBER} удален из белого списка."
+          description: "Пользователь {member.mention} удален из белого списка."
 
     mute:
 
@@ -265,52 +270,10 @@ voice:
         $embed:
           title: "Пользователь замучен!"
           color: 4188fa
-          description: "Пользователь {MEMBER} замучен в этом голосовом канале."
+          description: "Пользователь {member.mention} замучен в этом голосовом канале."
 
       unmuted:
         $embed:
           title: "Пользователь размучен!"
           color: 4188fa
-          description: "Пользователь {MEMBER} размучен в этом голосовом канале."
-
-
-
-
-
-  command:
-
-    setup:
-
-      invalid-channel:
-        $embed:
-          title: "Неправильный канал!"
-          color: ff0000
-          description: "Пожалуйста, выберите **голосовой** канал."
-
-      set:
-
-        description: "Устанавливает канал-создатель приватных голосовых каналов."
-
-        channel:
-          name: "канал"
-          description: "Канал-создатель приватных каналов"
-
-        success:
-          $embed:
-            title: "Приватные каналы настроены!"
-            color: 00ff08
-            description: "Вы установили канал для создания приватных голосовых каналов. Поздравляем!"
-            fields:
-
-              - name: "Канал"
-                value: "{CHANNEL}"
-
-      remove:
-
-        description: "Удаляет канал-создатель приватных каналов и выключает приватные каналы."
-
-        success:
-          $embed:
-            title: "Приватные каналы выключено!"
-            color: 00ff08
-            description: "Вы удалили канал-создатель приватных каналов."
+          description: "Пользователь {member.mention} размучен в этом голосовом канале."

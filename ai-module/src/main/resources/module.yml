@@ -8,7 +8,7 @@ description: "Модуль, що реалізує API для взаємодії 
 
 main: "net.survivalboom.sbds.modules.ai.AIModule"
 
-version: "1.0"
+version: "${version}"
 author: TIMURishche
 
 libraries:

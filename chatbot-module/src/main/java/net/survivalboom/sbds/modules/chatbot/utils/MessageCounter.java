@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.survivalboom.sbds.api.modules.ModuleMain;
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;

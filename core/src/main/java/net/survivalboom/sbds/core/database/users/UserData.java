@@ -1,76 +1,90 @@
 package net.survivalboom.sbds.core.database.users;
 
-import jakarta.persistence.*;
-import net.survivalboom.sbds.api.database.converters.NamespacedContainerConverter;
-import net.survivalboom.sbds.api.database.converters.TranslationConverter;
-import net.survivalboom.sbds.api.translations.ITranslation;
-import net.survivalboom.sbds.api.database.DataRecord;
+import net.dv8tion.jda.api.entities.User;
 import net.survivalboom.sbds.api.database.users.IUserData;
-import net.survivalboom.sbds.api.utils.NamespacedContainer;
+import net.survivalboom.sbds.api.database.users.IUserDataManager;
+import net.survivalboom.sbds.api.translations.ITranslation;
+import net.survivalboom.sbds.api.utils.container.INamespacedDataContainer;
+import net.survivalboom.sbds.api.utils.valid.Valid;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@Entity
-@Table(name = "sbds_users")
-public class UserData extends DataRecord implements IUserData {
+import java.util.concurrent.CompletableFuture;
 
-    @Id
-    @Column(nullable = false)
-    private long id;
+public class UserData extends Valid implements IUserData {
 
-    @Column(columnDefinition = "jsonb", nullable = false)
-    @Convert(converter = NamespacedContainerConverter.class)
-    private NamespacedContainer data;
+    private final UserDataManager manager;
 
-    @Column
-    @Convert(converter = TranslationConverter.class)
-    @Nullable
-    private ITranslation translation;
+    private final UserDataRecord record;
 
 
-    protected UserData() {}
+    private final User user;
 
-    public UserData(long id) {
-        this.id = id;
-        this.data = NamespacedContainer.empty();
-        this.translation = null;
+
+    public UserData(@NotNull UserDataRecord record, @NotNull UserDataManager manager) {
+
+        this.record = record;
+        this.manager = manager;
+
+        this.user = manager.getSbds().getBot().retrieveUserById(record.getUserId()).complete();
+
     }
 
     @Override
-    public long getID() {
-        return id;
+    public @NotNull IUserDataManager getManager() {
+        return manager;
     }
 
+    // USER //
+
     @Override
-    public boolean equals(Object obj) {
+    public @NotNull User getUser() {
+        return user;
+    }
 
-        if (obj instanceof Long l) {
-            return l.equals(id);
-        }
+    // TRANSLATION //
 
-        return false;
-
+    @Override
+    public @Nullable ITranslation getTranslation() {
+        return record.getTranslation();
     }
 
     @Override
     public void setTranslation(@Nullable ITranslation translation) {
-        this.translation = translation;
+        checkValid();
+        record.setTranslation(translation);
+        save();
+    }
+
+    // DATABASE //
+
+    public UserDataRecord getRecord() {
+        return record;
     }
 
     @Override
-    public @NotNull NamespacedContainer container() {
-        return data;
+    public @NotNull INamespacedDataContainer container() {
+        checkValid();
+        return record.getContainer();
     }
 
     @Override
-    public @Nullable ITranslation getTranslation() {
-        return translation;
+    public void save() {
+        manager.save(this);
     }
 
+    @Override
+    public @NotNull CompletableFuture<Void> delete() {
+        return manager.delete(this);
+    }
+
+    //
+    // MISC
+    //
 
     @Override
-    public long getId() {
-        return id;
+    protected void setValid(boolean v) {
+        super.setValid(v);
     }
 
 }

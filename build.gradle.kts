@@ -1,12 +1,48 @@
 import java.nio.file.Files
 
 group = "net.survivalboom.sbds"
-version = "3.0.0"
+version = "4.0.0"
 
 val outFile = File(childProjects["core"]!!.layout.buildDirectory.asFile.orNull, "libs/SBDS-${version}.jar")
 val runDir = File(rootProject.projectDir, "run")
 val runFile = File(runDir, outFile.name)
 val runModules = File(runDir, "modules")
+
+subprojects {
+
+    afterEvaluate {
+
+        val resourcesDir = file("src/main/resources")
+        val hasModuleYml = !fileTree(resourcesDir).matching {
+            include("**/module.yml")
+        }.isEmpty
+
+        if (hasModuleYml) {
+
+            val copyModuleToRun by tasks.registering(Copy::class) {
+
+                val jarTask = tasks.named<Jar>("jar")
+                dependsOn(jarTask)
+
+                from(jarTask.flatMap { it.archiveFile })
+
+                into(runModules)
+
+            }
+
+        }
+    }
+
+    plugins.withType<JavaPlugin> {
+        tasks.named<ProcessResources>("processResources") {
+            filesMatching("module.yml") {
+                duplicatesStrategy = DuplicatesStrategy.INCLUDE
+                expand(mapOf("version" to project.version))
+            }
+        }
+    }
+
+}
 
 tasks {
 
@@ -25,50 +61,21 @@ tasks {
 
     }
 
-    val copyModulesToRun = create("copyModulesToRun") {
+    create<Exec>("runApp") {
 
         dependsOn(copyToRun)
 
-        val projects = subprojects.stream().filter { project ->
-            File(project.projectDir, "src/main/resources/module.yml").exists()
-        }.toList()
-
-        projects.forEach { project -> dependsOn("${project.name}:build") }
-
-      doLast {
-
-            runModules.mkdirs()
-
-            projects.forEach { project ->
-
-                val jarTask = project.tasks.named("jar", Jar::class)
-                val moduleFile = jarTask.get().archiveFile.get().asFile
-                val newModuleFile = File(runModules, moduleFile.name)
-
-                Files.deleteIfExists(newModuleFile.toPath())
-                Files.copy(moduleFile.toPath(), newModuleFile.toPath())
-
-            }
-
-        }
-
-    }
-
-    create<Exec>("runApp") {
-
-        dependsOn(copyModulesToRun)
         workingDir = runDir
         commandLine("java", "-jar", runFile.name)
 
     }
 
-   create("clean") {
+   create("cleanRun") {
 
         doLast {
             Files.deleteIfExists(runFile.toPath())
         }
 
     }
-
 
 }

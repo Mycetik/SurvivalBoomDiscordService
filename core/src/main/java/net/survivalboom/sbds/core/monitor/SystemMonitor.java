@@ -2,7 +2,7 @@ package net.survivalboom.sbds.core.monitor;
 
 import net.survivalboom.sbds.api.monitoring.ISystemMonitor;
 import net.survivalboom.sbds.api.monitoring.disk.IDiskUsage;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.monitor.cpu.CpuInfo;
 import net.survivalboom.sbds.core.monitor.cpu.CpuMonitor;
 import net.survivalboom.sbds.core.monitor.disk.DiskUsage;

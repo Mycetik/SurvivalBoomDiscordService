@@ -2,7 +2,7 @@ plugins {
     java
 }
 
-group = "net.survivalboom.survivalboomapi"
+group = "net.survivalboom.sbds.modules.github"
 version = "1.0"
 
 repositories {

@@ -1,20 +1,22 @@
 package net.survivalboom.sbds.core;
 
+import net.survivalboom.sbds.api.libraries.LibrarySatisfyConfiguration;
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.core.libraries.JarLoader;
+import net.survivalboom.sbds.core.libraries.DynamicClassLoader;
 import net.survivalboom.sbds.core.libraries.LibrariesManager;
-import net.survivalboom.sbds.core.logging.LoggerFilter;
+import net.survivalboom.sbds.core.libraries.simple.SimpleLibrariesDownloader;
 import net.survivalboom.sbds.core.logging.LoggerLayout;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spongepowered.configurate.ConfigurationNode;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,24 +26,38 @@ public class SbdsBootstrap {
 
     private final File workingDir;
 
+
     private final LibrariesManager librariesManager;
 
-    private final YamlConfiguration yamlConfiguration = new YamlConfiguration();
+    private final SimpleLibrariesDownloader simpleLibrariesDownloader;
+
+
+    private ConfigurationNode configuration;
+
 
     private String token;
 
 
-    public SbdsBootstrap(@NotNull File workingDir, @NotNull JarLoader jarLoader) {
+    public SbdsBootstrap(
+            @NotNull File workingDir,
+            @NotNull SimpleLibrariesDownloader downloader,
+            @NotNull DynamicClassLoader rootClassLoader
+    ) {
+
         this.logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         this.workingDir = workingDir;
-        this.librariesManager = new LibrariesManager(new File(workingDir, "libraries"), jarLoader);
+
+        this.simpleLibrariesDownloader = downloader;
+
+        this.librariesManager = new LibrariesManager(new File(workingDir, "libraries"), rootClassLoader);
+
     }
 
 
     public void launch() {
 
         LoggerLayout.setup();
-        LoggerLayout.layout.colors = true;
+        LoggerLayout.INSTANCE.setColorsSupport(true);
 
         logger.info("");
         logger.info("    ____              _           _____                ");
@@ -49,7 +65,7 @@ public class SbdsBootstrap {
         logger.info("  _\\ \\/ // / __/ |/ / / |/ / _ `/ / _  / _ \\/ _ \\/  '  /");
         logger.info(" /___/\\_,_/_/  |___/_/|___/\\_,_/_/____/\\___/\\___/_/_/_/");
         logger.info("");
-        logger.info("SurvivalBoom Network 2025 | SurvivalBoom Discord Service");
+        logger.info("SurvivalBoom Network 2026 | SurvivalBoom Discord Service");
         logger.info("                    By TIMURishche \uD83E\uDD96");
         logger.info("");
         logger.info("                    Version {}", BuildConstants.VERSION);
@@ -60,13 +76,9 @@ public class SbdsBootstrap {
             checkFiles();
             loadConfiguration();
 
-            LoggerFilter filter = new LoggerFilter(yamlConfiguration);
-            filter.init();
-            LoggerLayout.layout.loggerFilter = filter;
-
             checkLibraries();
 
-            sbdsStart().blockThread();
+            sbdsRun();
 
         }
 
@@ -93,32 +105,19 @@ public class SbdsBootstrap {
 
     }
 
-    private void checkLibraries() {
-
-        logger.info("Loading libraries...");
-
-        ConfigurationSection section = yamlConfiguration.getConfigurationSection("libraries");
-        if (section == null) {
-            logger.warn("Libraries section does not exist or is empty. SBDS may crash!");
-            return;
-        }
-
-        boolean success = librariesManager.satisfy0(null, section, true);
-        if (!success) {
-            logger.error("Some libraries were failed to download. Refusing to start.");
-            librariesManager.getLibraries().forEach(library -> logger.warn(library.toString()));
-            throw new RuntimeException();
-        }
-
-    }
-
     private boolean loadConfiguration() throws IOException {
 
         logger.info("Loading configuration...");
 
+        YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
+                .path(new File(workingDir, "settings.yml").toPath())
+                .build();
+
         try {
-            yamlConfiguration.load(new File(workingDir, "settings.yml"));
+
+            configuration = loader.load();
             token = loadToken(new File(workingDir, "token"));
+
         }
 
         catch (Throwable t) {
@@ -128,24 +127,81 @@ public class SbdsBootstrap {
         }
 
         if (token == null) {
+
             logger.warn("Token file is empty. Please provide a discord bot token. Exiting in 10 seconds...");
+
             new File(workingDir, "token").createNewFile();
+
             Main.exit();
             return true;
+
         }
 
         return false;
 
     }
 
-    private @NotNull SBDS sbdsStart() throws InterruptedException {
+    private void checkLibraries() {
+
+        logger.info("Loading libraries...");
+
+        librariesManager.init();
+        librariesManager.importFromSimpleLibrariesDownloader(simpleLibrariesDownloader);
+        librariesManager.loadLibrariesFromDisk();
+        librariesManager.setupRootClassLoader();
+
+        ConfigurationNode section = configuration.node("libraries");
+        if (section.virtual()) {
+            logger.warn("Libraries section does not exist or is empty. No libraries will be downloaded, SBDS may crash!");
+            return;
+        }
+
+        LibrarySatisfyConfiguration.MassLoadResult request = LibrarySatisfyConfiguration.fromSection(section);
+        boolean failure = false;
+
+        Map<String, Exception> failed = new HashMap<>();
+        failed.putAll(request.declarationsFailed());
+        failed.putAll(request.pinnedFailed());
+
+        var result = librariesManager.satisfy(request.result());
+        if (!result.failed().isEmpty()) {
+
+            for (var entry : result.failed().entrySet()) {
+                logger.error("Failed to load library `{}`. An exception occurred.", entry.getKey(), entry.getValue());
+            }
+
+            failure = true;
+
+        }
+
+        if (!failed.isEmpty()) {
+
+            for (var entry : failed.entrySet()) {
+                logger.error("Found an invalid LibraryDeclaration `{}`.", entry.getKey(), entry.getValue());
+            }
+
+            failure = true;
+
+        }
+
+        if (failure) {
+            logger.error("Some libraries were failed to download. Refusing to start.");
+            throw new RuntimeException();
+        }
+
+        librariesManager.addGlobalPinned(request.result().getPinnedLibraries());
+
+
+    }
+
+    private @NotNull SBDS sbdsRun() throws InterruptedException {
 
         logger.info("Starting SBDS...");
 
-        SBDS sbds = new SBDS(logger, librariesManager, yamlConfiguration, workingDir, token);
+        SBDS sbds = new SBDS(logger, librariesManager, configuration, workingDir, token);
         SBDS.sbds = sbds;
 
-        sbds.launch();
+        sbds.run();
 
         return sbds;
 

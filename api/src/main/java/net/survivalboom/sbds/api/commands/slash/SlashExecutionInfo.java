@@ -2,28 +2,46 @@ package net.survivalboom.sbds.api.commands.slash;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.interactions.InteractionHook;
-import net.dv8tion.jda.api.interactions.callbacks.IMessageEditCallback;
-import net.dv8tion.jda.api.interactions.callbacks.IModalCallback;
-import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
+import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
-import net.survivalboom.sbds.api.ISBDS;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandExecutionInfo;
-import net.survivalboom.sbds.api.interaction.IInteractionInfo;
-import net.survivalboom.sbds.api.utils.TypeMap;
+import net.survivalboom.sbds.api.interaction.InteractionHolder;
+import net.survivalboom.sbds.api.utils.typemap.TypeMap;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
 
-public class SlashExecutionInfo extends CommandExecutionInfo implements IInteractionInfo {
+public class SlashExecutionInfo extends CommandExecutionInfo<ISlashCommandManager.IRegisteredSlashCommand, ISlashCommandManager> implements InteractionHolder {
 
     protected final SlashCommandInteraction interaction;
 
-    public SlashExecutionInfo(@NotNull Command command, @NotNull SlashCommandInteraction interaction, @NotNull String alias, @NotNull TypeMap arguments, @NotNull Logger logger, @NotNull ISBDS sbds) {
-        super(command, alias, arguments, logger, sbds);
+    protected final boolean ephemeral;
+
+    public SlashExecutionInfo(
+            @NotNull SlashCommandInteraction interaction,
+            @NotNull ISlashCommandManager.IRegisteredSlashCommand rootCommand,
+            @NotNull Command currentCommand,
+            @NotNull String alias,
+            @NotNull TypeMap arguments,
+            boolean ephemeral
+    ) {
+        super(rootCommand, currentCommand, alias, arguments);
         this.interaction = interaction;
+        this.ephemeral = ephemeral;
+    }
+
+    @Override
+    public @NotNull Object source() {
+        return interaction;
+    }
+
+    @Override
+    public boolean isEphemeral() {
+        return ephemeral;
     }
 
     public @NotNull SlashCommandInteraction interaction() {
@@ -31,8 +49,13 @@ public class SlashExecutionInfo extends CommandExecutionInfo implements IInterac
     }
 
     @Override
-    public @Nullable Guild guild() {
-        return this.interaction.getGuild();
+    public Guild guild() {
+        return interaction.getGuild();
+    }
+
+    @Override
+    public @NotNull User user() {
+        return interaction.getUser();
     }
 
     @Override
@@ -41,22 +64,99 @@ public class SlashExecutionInfo extends CommandExecutionInfo implements IInterac
     }
 
     @Override
-    public @NotNull IReplyCallback replyCallback() {
-        return interaction;
+    public Channel channel() {
+        return interaction.getChannel();
+    }
+
+    // EDIT //
+
+    @Override
+    public @NotNull RestAction<?> editRaw(@NotNull String txt) {
+        return interaction.getHook().editOriginal(txt);
     }
 
     @Override
-    public @NotNull IModalCallback modalCallback() {
-        return interaction;
+    public @NotNull RestAction<?> editRaw(@NotNull MessageCreateData data) {
+        return interaction.getHook().editOriginal(MessageEditData.fromCreateData(data));
+    }
+
+    // SEND ONLY //
+
+    @Override
+    public @NotNull RestAction<?> sendRaw(@NotNull String txt) {
+
+        if (interaction.isAcknowledged()) {
+            return interaction.getHook().sendMessage(txt).setEphemeral(currentCommand.isEphemeral());
+        }
+
+        return interaction.reply(txt).setEphemeral(currentCommand.isEphemeral());
+
     }
 
     @Override
-    public @NotNull InteractionHook hook() {
-        return interaction.getHook();
+    public @NotNull RestAction<?> sendRaw(@NotNull MessageCreateData data) {
+
+        if (interaction.isAcknowledged()) {
+            return interaction.getHook().sendMessage(data).setEphemeral(currentCommand.isEphemeral());
+        }
+
+        return interaction.reply(data).setEphemeral(currentCommand.isEphemeral());
+
     }
 
-    public @NotNull User user() {
-        return this.interaction.getUser();
+    // REPLY (INTELLIGENT) //
+
+    @Override
+    public @NotNull RestAction<?> replyRaw(@NotNull String txt) {
+
+        if (currentCommand.isEphemeral()) {
+            return sendRaw(txt);
+        }
+
+        if (interaction.isAcknowledged()) {
+            return editRaw(txt);
+        }
+
+        else {
+            return sendRaw(txt);
+        }
+
+    }
+
+    @Override
+    public @NotNull RestAction<?> replyRaw(@NotNull MessageCreateData data) {
+
+        if (currentCommand.isEphemeral()) {
+            return sendRaw(data);
+        }
+
+        if (interaction.isAcknowledged()) {
+            return editRaw(data);
+        }
+
+        else {
+            return sendRaw(data);
+        }
+
+    }
+
+    // COMPONENT //
+
+    @Override
+    public void invalidateInputs() {
+
+        if (isEphemeral()) {
+            return;
+        }
+
+        Message message = interaction.getHook().retrieveOriginal().complete();
+        if (message == null) {
+            throw new IllegalStateException("No message sent yet");
+        }
+
+        invalidateInputs0(message);
+
+
     }
 
 }

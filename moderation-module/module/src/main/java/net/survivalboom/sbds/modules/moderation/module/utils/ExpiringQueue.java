@@ -1,7 +1,7 @@
 package net.survivalboom.sbds.modules.moderation.module.utils;
 
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.modules.moderation.module.ModerationModule;
 import net.survivalboom.sbds.modules.moderation.module.storage.Punishment;
 import org.jetbrains.annotations.NotNull;

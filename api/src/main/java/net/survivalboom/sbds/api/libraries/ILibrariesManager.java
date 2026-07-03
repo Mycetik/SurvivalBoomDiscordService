@@ -1,31 +1,146 @@
 package net.survivalboom.sbds.api.libraries;
 
-import net.survivalboom.sbds.api.modules.IModule;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
-import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
+import net.survivalboom.sbds.api.utils.valid.IManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
-public interface ILibrariesManager {
+/**
+ * Менеджер бібілотек SurvivalBoom Discord Service.
+ * Займається завантаженням необхідних бібліотек та бібліотек для модулів.
+ * Також відіграє важливу роль у взаємодії ClassLoader бібілотек (пошук класів, ресурсів)
+ */
+public interface ILibrariesManager extends IManager {
 
-    String MAVEN_CENTRAL_URL = "https://repo1.maven.org/maven2/";
+    /**
+     * Стандартне посилання на репозиторії Maven.
+     */
+    String MAVEN_REPO_URL = "https://repo1.maven.org/maven2/";
+
+    /**
+     * Шаблон для плейсхолдерів з maven properties.
+     */
+    String MAVEN_PROPERTIES_LAYOUT = "${$p$}";
 
 
-    default boolean satisfy(@NotNull IModule module, @NotNull File file) throws IOException, InvalidConfigurationException {
+    /**
+     * @return Повертає головний ClassLoader для SurvivalBoom Discord Service.
+     */
 
-        YamlConfiguration yamlConfiguration = new YamlConfiguration();
-        yamlConfiguration.load(file);
+    @NotNull ClassLoader getRootClassLoader();
 
-        return satisfy(module, yamlConfiguration);
+    //
+    // LIBRARIES
+    //
+
+    // DOWNLOAD //
+
+    @NotNull MassLibraryDownloadResult satisfy(@NotNull LibrarySatisfyConfiguration configuration);
+
+    /**
+     * Завантажує вказану бібліотеку на диск.
+     * Ви можете вказати закріплені артефакти, щоб бібліотека використовувала саме вказану версію бібліотек для своїх залежностей.
+     * Якщо jar файл бібліотеки вже існує, але бібліотека ще не була завантажена, буде використаний такий файл замість завантаження з репозиторія.
+     * @param pom POM файл бібліотеки
+     * @param findOptimal Увімкнути пошук схожих по версії бібліотек замість завантаження нових.
+     * @return Завантажена бібліотека.
+     * @throws LibraryDownloadException Якщо щось пішло не так під час завантаження бібліотеки.
+     * @throws IllegalStateException Якщо така бібліотека вже завантажена.
+     */
+    @NotNull ILibrary downloadLibrary(
+            @NotNull IPomData pom,
+            @Nullable Collection<LibraryDeclaration> pinnedArtifacts,
+            boolean findOptimal
+    ) throws LibraryDownloadException;
+
+    // GETTERS //
+
+    @Nullable ILibrary getLoadedLibrary(@NotNull ArtifactAddress address);
+
+    default @Nullable ILibrary getLoadedLibrary(@NotNull IPomData pom) {
+        return getLoadedLibrary(pom.getAddress());
+    }
+
+    default @Nullable ILibrary getLoadedLibrary(@NotNull String gradleString) {
+        return getLoadedLibrary(ArtifactAddress.fromGradleString(gradleString));
+    }
+
+    @NotNull Map<ArtifactAddress, ILibrary> getLoadedLibraries();
+
+    //
+    // POM
+    //
+
+    // RETRIEVE //
+
+    @NotNull IPomData retrievePom(@NotNull String repository, @NotNull ArtifactAddress address) throws PomResolutionException;
+
+    default @NotNull IPomData retrievePom(@NotNull Collection<String> repositories, @NotNull ArtifactAddress address) throws PomResolutionException {
+
+        if (repositories.isEmpty()) {
+            throw new IllegalArgumentException("repositories are empty");
+        }
+
+        PomResolutionException lastException = null;
+        for (String repo : repositories) {
+
+            IPomData pom;
+
+            try {
+                pom = retrievePom(repo, address);
+            }
+
+            catch (PomResolutionException e) {
+                lastException = e;
+                continue;
+            }
+
+            return pom;
+
+        }
+
+        throw lastException;
 
     }
 
-    boolean satisfy(@NotNull IModule module, @NotNull ConfigurationSection section);
+    default @NotNull IPomData retrievePom(@NotNull LibraryDeclaration declaration) throws PomResolutionException {
+
+        Objects.requireNonNull(declaration, "declaration == null");
+
+        ArtifactAddress address = declaration.address();
+        String repository = declaration.source();
+
+        if (repository == null) {
+            repository = MAVEN_REPO_URL;
+        }
+
+        return retrievePom(repository, address);
+
+    }
+
+    default @NotNull IPomData retrievePom(@NotNull String repository, @NotNull String gradleString) throws PomResolutionException {
+        return retrievePom(repository, ArtifactAddress.fromGradleString(gradleString));
+    }
+
+    // GETTERS //
+
+    @Nullable IPomData getLoadedPom(@NotNull ArtifactAddress address);
+
+    default @Nullable IPomData getLoadedPom(@NotNull String gradleString) {
+        return getLoadedPom(ArtifactAddress.fromGradleString(gradleString));
+    }
+
+    @NotNull Map<ArtifactAddress, IPomData> getLoadedPoms();
+
+
+    record MassLibraryDownloadResult(
+            @NotNull List<ILibrary> downloaded,
+            @NotNull List<ILibrary> skipped,
+            @NotNull Map<LibraryDeclaration, Exception> failed
+    ) {}
 
 }

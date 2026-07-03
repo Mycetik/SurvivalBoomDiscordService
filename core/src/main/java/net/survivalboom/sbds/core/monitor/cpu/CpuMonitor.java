@@ -95,7 +95,7 @@ public class CpuMonitor implements ICpuMonitor {
     }
 
     public void stopMonitoringTask() {
-        monitoringTask.cancelAndWait(1000, true);
+        monitoringTask.tryCancel();
     }
 
 

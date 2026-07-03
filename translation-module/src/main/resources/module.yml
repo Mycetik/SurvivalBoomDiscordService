@@ -7,8 +7,8 @@
 name: "TranslationModule"
 main: "net.survivalboom.sbds.modules.translation.TranslationModule"
 
-description: "Select your translation and translate messages"
-version: "1.0"
+description: "Модуль, що дозволяє переглянути та обрати переклад SBDS"
+version: "${version}"
 
 author: "TIMURishche"
 website: "https://survivalboom.net"

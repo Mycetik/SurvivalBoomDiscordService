@@ -1,92 +1,100 @@
 package net.survivalboom.sbds.core.service;
 
+import net.survivalboom.sbds.api.ISBDS;
 import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.registrations.Registration;
 import net.survivalboom.sbds.api.service.IServiceProvider;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.core.SBDS;
-import net.survivalboom.sbds.core.modules.ModuleManager;
+import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class ServiceProvider extends Manager implements IServiceProvider {
 
-    private static final Logger log = LoggerFactory.getLogger(ServiceProvider.class);
-    private final ModuleManager moduleManager;
+    private final ISBDS sbds;
 
-    private final Set<RegisteredService> registeredServices = new HashSet<>();
+    private final InternalRegistrationManager<IRegisteredService<?>> registry;
 
 
     public ServiceProvider(@NotNull SBDS sbds) {
-        this.moduleManager = sbds.getModuleManager();
+        this.sbds = sbds;
+        this.registry = new InternalRegistrationManager<>(this, null, sbds.getRegistrationRegistry());
     }
 
 
     @Override
     protected void init0() {
-
+        registry.init();
     }
 
     @Override
     protected void shutdown0() {
-        registeredServices.clear();
+        registry.shutdown();
     }
 
-    @Override
-    public @NotNull IServiceProvider.RegisteredService registerService(@NotNull IModule module, @NotNull Object service) {
+    // REG //
 
+    @Override
+    public <T> IServiceProvider.@NotNull IRegisteredService<T> registerService(@NotNull IModule module, @NotNull Class<T> clazz, @NotNull T service) {
+        Objects.requireNonNull(module, "module == null");
+        return registeredService0(module, clazz, service);
+    }
+
+    @SuppressWarnings("unchecked") // <-- Іді нахуй сука блять.
+    public <T> IServiceProvider.@NotNull IRegisteredService<T> registeredService0(@Nullable IModule module, @NotNull Class<T> clazz, @NotNull T service) {
+
+        Objects.requireNonNull(service, "service == null");
+        Objects.requireNonNull(clazz, "clazz == null");
         checkValid();
 
-        moduleManager.checkModuleEnabled(module, "Disabled module tried to register a service");
-
-        Class<?> clazz = service.getClass();
-        RegisteredService foundService = getRegisteredService(clazz);
-
-        if (foundService!= null) {
-
-            if (!foundService.module().equals(module)) {
-                throw new IllegalStateException("Service `" + clazz.getSimpleName() + ".class` is already registered by module `" + module.getName() + " `. Access denied");
-            }
-
-            registeredServices.remove(foundService);
-
+        if (module != null) {
+            sbds.getModuleManager().checkModuleEnabled(module, "Disabled module tried to register a service");
         }
 
-        RegisteredService registeredService = new RegisteredService(module, clazz, service);
-        registeredServices.add(registeredService);
+        IRegisteredService<?> foundService = getRegisteredService(clazz);
+        if (foundService != null) {
+            throw new IllegalStateException("Service `" + clazz.getSimpleName() + ".class` is already registered `" + foundService.getRegistration().key() + " `. Access denied");
+        }
+
+        RegisteredService<T> registeredService = new RegisteredService<>(clazz, service, this);
+        registeredService.registration = (Registration<IRegisteredService<T>>) (Registration<?>) registry.register0(module, clazz.getSimpleName(), registeredService);
 
         return registeredService;
 
     }
 
+    // UNREG //
+
     @Override
-    public void unregisterService(@NotNull IModule module, @NotNull Class<?> clazz) {
-
+    public boolean unregisterService(@NotNull IRegisteredService<?> reg) {
         checkValid();
-
-        moduleManager.checkModuleEnabled(module, "Disabled module tried to unregister a service");
-        RegisteredService service = getRegisteredService(clazz);
-        if (service == null) {
-            return;
-        }
-
-        if (!service.module().equals(module)) {
-            throw new IllegalStateException("Service `" + service.getClass() + ".class` was registered by module `" + service.module().getName() + "`. Access denied");
-        }
-
+        return registry.unregister(reg) != null;
     }
 
+    // GET //
+
     @Override
-    public @Nullable RegisteredService getRegisteredService(@NotNull Class<?> clazz) {
+    public @Nullable IRegisteredService<?> getRegisteredService(@NotNull NamespacedKey key) {
+        checkValid();
+        return registry.getRegistrationAsObject(key);
+    }
 
-        Objects.requireNonNull(clazz, "class == null");
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> @Nullable IRegisteredService<T> getRegisteredService(@NotNull Class<T> clazz) {
 
+        Objects.requireNonNull(clazz, "clazz == null");
         checkValid();
 
-        List<RegisteredService> services = registeredServices.stream().filter(r -> clazz.isAssignableFrom(r.clazz())).toList();
+        List<IRegisteredService<?>> services = registry.getRegisteredObjects()
+                .stream()
+                .filter(r -> clazz.isAssignableFrom(r.getClazz()))
+                .toList();
+
         if (services.isEmpty()) {
             return null;
         }
@@ -95,25 +103,68 @@ public class ServiceProvider extends Manager implements IServiceProvider {
             throw new IllegalStateException("Multiple services found for requested class `" + clazz.getSimpleName() + ".class`. " + services);
         }
 
-        return services.getFirst();
+        return (IRegisteredService<T>) services.getFirst();
 
     }
 
     @Override
-    public @NotNull List<RegisteredService> getRegisteredServices() {
-        return new ArrayList<>(registeredServices);
+    public @NotNull List<IRegisteredService<?>> getRegistry() {
+        checkValid();
+        return registry.getRegisteredObjects();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> @Nullable T getService(@NotNull Class<T> clazz) {
 
-        RegisteredService service = getRegisteredService(clazz);
+        var service = getRegisteredService(clazz);
         if (service == null) {
             return null;
         }
 
-        return (T) service.service();
+        return service.getObject();
+
+    }
+
+    //
+    // RECORD
+    //
+
+    public static class RegisteredService<T> implements IRegisteredService<T> {
+
+        private final Class<T> clazz;
+
+        private final T object;
+
+        private final ServiceProvider manager;
+
+        private Registration<IRegisteredService<T>> registration;
+
+
+        public RegisteredService(@NotNull Class<T> clazz, @NotNull T object, @NotNull ServiceProvider manager) {
+            this.clazz = clazz;
+            this.object = object;
+            this.manager = manager;
+        }
+
+        @Override
+        public @NotNull IServiceProvider getManager() {
+            return manager;
+        }
+
+        @Override
+        public @NotNull Registration<IRegisteredService<T>> getRegistration() {
+            return registration;
+        }
+
+        @Override
+        public @NotNull Class<T> getClazz() {
+            return clazz;
+        }
+
+        @Override
+        public @NotNull T getObject() {
+            return object;
+        }
 
     }
 

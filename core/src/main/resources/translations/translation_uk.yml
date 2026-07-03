@@ -1,12 +1,12 @@
 #
-# SURVIVALBOOM DISCORD | SURVIVALBOOM NETWORK 2025
+# SURVIVALBOOM DISCORD | SURVIVALBOOM NETWORK 2026
 # Український переклад | By TIMURishche
 #
 
 $name: "ukrainian"
-$display-name: "$[lang.ukrainian]"
+$displayName: "$[lang.ukrainian]"
 $icon: "🇺🇦"
-$discord-locale: UKRAINIAN
+$locale: UKRAINIAN
 
 lang:
   ukrainian: "Українська"
@@ -20,6 +20,10 @@ values:
 
 sbds:
 
+  config:
+    label: "Налаштування ядра"
+    prefix: "Префікс команд"
+
   command:
 
     status:
@@ -27,7 +31,7 @@ sbds:
 
   loading:
     $embed:
-      description: "<a:loading:1086970461549756536> Оброблюємо ваш запит, зачекайте..."
+      description: ":pencil: Оброблюємо ваш запит, зачекайте..."
       color: f9f06b
 
   error:
@@ -39,7 +43,16 @@ sbds:
         Інформацію про помилку надіслано у консоль. Спробуйте ще раз пізніше або зв'яжіться з розробником.
       fields:
         - name: "Помилка:"
-          value: "{EXCEPTION}"
+          value: "{exception}"
+
+  interaction-no-response:
+    $embed:
+      title: "Запала мертва тиша"
+      color: ff0000
+      description: |
+        Схоже, що відповідь на цю взаємодію не було отримано...
+        Можливо, десь щось пішло не так, або ж SBDS не бажає із вами розмовляти. 
+        Інформацію про помилку надіслано у консоль. Спробуйте ще раз пізніше або зв'яжіться з розробником.
 
   no-permission:
     $embed:
@@ -48,7 +61,7 @@ sbds:
       description: |
         Отакої! Схоже, що вам бракує дозволів для цього!
         Спробуйте звернутись до адміністратора, якщо ви думаєте що це помилка.
-        Необхідний дозвіл: `{PERMISSION}`.
+        Необхідний дозвіл: `{permission}`.
 
   invalid-interaction:
     $embed:
@@ -58,4 +71,62 @@ sbds:
         Отакої! Схоже, що цієї взаємодії не існує!
         Можливо ця дія прострочилась або ви намагаєтесь зробити щось неможливе.
         Спробуйте виконати команду ще раз або зверніться до розробника, якщо ви думаєте що це помилка.
-      footer: "Interaction id: {ID}"
+      footer: "Interaction id: {id}"
+
+  slash-invalid-argument:
+    $embed:
+      title: "Невірний аргумент!"
+      color: ff0000
+      description: |
+        Невірний аргумент `{argument}`. Схоже, ви десь припустились помилки.
+        `{message}`
+
+  string-argument-invalid:
+    $embed:
+      title: "Невірний аргумент!"
+      color: ff0000
+      description: |
+        Ви вказали невірне значення аргументу. 
+        Будь ласка, перевірте вказане вами значення на правильність.
+      fields:
+
+        - name: Аргумент
+          value: "`{argument}`"
+          inline: true
+
+        - name: Вказане значення
+          value: "`{input}`"
+          inline: true
+
+        - name: Помилка
+          value: "`{message}`"
+          inline: true
+
+  string-argument-error:
+    $embed:
+      title: "Помилка аргументу :("
+      color: ff0000
+      description: |
+        Йойки! Схоже, що аргумент несподівано видав помилку при спробі обробити вказане вами значення.
+        Скоріш за все це помилка розробника. Повідомлення про помилку надіслано у консоль. Зв'яжіться із розробником або ж спробуйте трішки пізніше...
+      fields:
+
+        - name: Аргумент
+          value: "`{argument}`"
+          inline: true
+
+        - name: Вказане значення
+          value: "`{input}`"
+          inline: true
+
+        - name: Помилка
+          value: "`{exception}`"
+          inline: true
+
+  string-not-enough-arguments:
+    $embed:
+      title: "Неповна команда"
+      color: ff0000
+      description: |
+        Ця команда вимагає **{expected}** кількість аргументів. Ви вказали **{got}**.
+        Використання: `{usage}`

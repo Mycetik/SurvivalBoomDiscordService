@@ -1,86 +1,95 @@
 package net.survivalboom.sbds.core.modules;
 
+import net.survivalboom.sbds.api.libraries.ILibrary;
+import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.modules.dependencies.ModuleDependency;
+import net.survivalboom.sbds.api.utils.valid.Manager;
+import net.survivalboom.sbds.core.libraries.LibrariesManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
-public class ModulesClasspath {
+public class ModulesClasspath extends Manager {
 
-    private final Set<ModuleClassLoader> classLoaders = new HashSet<>();
+    private final ModuleManager moduleManager;
 
-    public void register(@NotNull ModuleClassLoader classLoader) {
+    private final LibrariesManager librariesManager;
 
-        Objects.requireNonNull(classLoader, "classLoader == null");
+    private final Map<String, Class<?>> recentClasses = new WeakHashMap<>();
 
-        if (classLoaders.stream().anyMatch(cl -> cl.getName().equals(classLoader.getName()))) {
-            throw new IllegalStateException("Classloader with name " + classLoader.getName() + " already registered!");
+
+    public ModulesClasspath(@NotNull ModuleManager moduleManager) {
+        this.moduleManager = moduleManager;
+        this.librariesManager = moduleManager.getSbds().getLibrariesManager();;
+    }
+
+    //
+    // MANAGER
+    //
+
+    @Override
+    protected void init0() {
+
+    }
+
+    @Override
+    protected void shutdown0() {
+        purgeCache();
+    }
+
+    public void purgeCache() {
+        recentClasses.clear();
+    }
+
+    //
+    // REQUEST
+    //
+
+    public @Nullable Class<?> request(@NotNull String name, @NotNull Module module) {
+
+        checkValid();
+        moduleManager.checkModuleValid(module);
+
+        // Шукаємо у кешу //
+
+        if (recentClasses.containsKey(name)) {
+            return recentClasses.get(name);
         }
 
-        classLoaders.add(classLoader);
-    }
+        // Намагаємось виконати пошук класу по бібліотекам модуля //
 
-    public void unregister(@NotNull ModuleClassLoader classLoader) {
-        classLoaders.remove(classLoader);
-    }
+        List<ILibrary> libraries = module.getLibraries();
 
-    public @NotNull List<ModuleClassLoader> getClassLoaders() {
-        return new ArrayList<>(classLoaders);
-    }
-
-    public @Nullable Class<?> findInModules(@NotNull String name) {
-
-        for (ModuleClassLoader classLoader : getClassLoaders()) {
-
-            try {
-                return classLoader.loadClass0(name, false, false, false);
-            }
-
-            catch (ClassNotFoundException ignored) {}
-
+        Class<?> clazz = null;
+        for (ILibrary library : libraries) {
+            clazz = librariesManager.requestClass(library, name);
         }
 
-        return null;
-
-    }
-
-    public @Nullable Class<?> request(@NotNull String name, @NotNull ModuleClassLoader requester) {
-
-        ModuleMeta meta = requester.getModule().getMeta();
-
-        Class<?> clazz;
-        for (ModuleMeta.Dependency dependency : meta.getDependencies()) {
-
-            if (!dependency.joinClasspath()) continue;
-
-            clazz = findClassInDependency(name, dependency, requester);
-            if (clazz != null) return clazz;
-
+        if (clazz != null) {
+            return clazz;
         }
 
-        return null;
+        // Шукаємо запитуваний клас у всіх модулях, що приписані у залежностях. //
+        // Отримуємо список усіх завантажених модулів та відсіюємо ті які не прописані у залежностях модуля що запитує клас.
 
-    }
+        List<IModule> modules = moduleManager.getModules();
+        List<ModuleDependency> dependencies = module.getMeta().getDependencies();
 
-    private @Nullable Class<?> findClassInDependency(@NotNull String name, @NotNull ModuleMeta.Dependency dependency, @NotNull ModuleClassLoader ignore) {
+        modules.removeIf(m -> dependencies.stream().noneMatch(dependency -> dependency.id().equals(module.getName()) && dependency.joinClasspath()));
 
-        Optional<ModuleClassLoader> classLoaderOptional = classLoaders.stream().filter(cl -> cl.getName().equals(dependency.getName())).findFirst();
-        if (classLoaderOptional.isEmpty()) return null;
-
-        ModuleClassLoader classLoader = classLoaderOptional.get();
-
-        if (classLoader.equals(ignore)) return null;
-
-        try {
-            return classLoader.loadClass0(name, false, false, false);
-        }
-        catch (ClassNotFoundException e) {
-            return null;
+        for (IModule depModule : modules) {
+            Module m = (Module) depModule;
+            clazz = m.getClassLoader().getClass(name, false, false);
         }
 
+        recentClasses.put(name, clazz); // Не забуваємо додати у кеш результат. Навіть якщо null.
+
+        return clazz;
+
     }
-
-
 
 
 }

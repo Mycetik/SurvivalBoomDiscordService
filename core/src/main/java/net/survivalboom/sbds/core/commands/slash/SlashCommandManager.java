@@ -2,256 +2,325 @@ package net.survivalboom.sbds.core.commands.slash;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.build.*;
-import net.dv8tion.jda.api.utils.messages.MessageEditData;
-import net.survivalboom.sbds.api.commands.ArgumentScope;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.survivalboom.sbds.api.commands.Command;
 import net.survivalboom.sbds.api.commands.CommandArgument;
 import net.survivalboom.sbds.api.commands.CommandExecutor;
-import net.survivalboom.sbds.api.commands.argument.Argument;
+import net.survivalboom.sbds.api.commands.argument.ArgumentAutoCompleteContext;
+import net.survivalboom.sbds.api.commands.argument.ArgumentParsingContext;
+import net.survivalboom.sbds.api.commands.argument.misc.SubCommandArgument;
 import net.survivalboom.sbds.api.commands.slash.ISlashCommandManager;
+import net.survivalboom.sbds.api.commands.slash.SlashCommandExecutor;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.events.Listener;
-import net.survivalboom.sbds.api.utils.Placeholders;
-import net.survivalboom.sbds.api.utils.TypeMap;
+import net.survivalboom.sbds.api.events.EventListener;
+import net.survivalboom.sbds.api.messages.parsers.LinkedTextParser;
+import net.survivalboom.sbds.api.permissions.Permission;
+import net.survivalboom.sbds.api.registrations.Registration;
+import net.survivalboom.sbds.api.utils.typemap.TypeMap;
+import net.survivalboom.sbds.api.utils.typemap.UnmodifiableTypeMap;
+import net.survivalboom.sbds.core.BuildConstants;
 import net.survivalboom.sbds.core.SBDS;
 import net.survivalboom.sbds.core.commands.AbstractCommandManager;
 import net.survivalboom.sbds.core.commands.cmds.common.StatusCommand;
+import net.survivalboom.sbds.core.commands.parser.SlashCommandParser;
 import net.survivalboom.sbds.core.interaction.command.CommandInteractionManager;
-import net.survivalboom.sbds.core.translations.TranslationManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-// TODO Зробити так щоб команди компілювались в CommandData лише раз, тільки при реєстрації або ініціалізації менеджера.
-public class SlashCommandManager extends AbstractCommandManager implements Listener, ISlashCommandManager {
+public class SlashCommandManager extends AbstractCommandManager<SlashCommandManager.IRegisteredSlashCommand, ISlashCommandManager> implements ISlashCommandManager, EventListener {
 
     private final CommandInteractionManager commandInteractionManager;
 
-    private final SlashCommandLocalizator localizator;
-
-
     public SlashCommandManager(@NotNull SBDS sbds) {
-        super("SlashCommandManager", sbds, true);
+        super(sbds);
         this.commandInteractionManager = sbds.getCommandInteractionManager();
-        this.localizator = new SlashCommandLocalizator(sbds.getTranslationManager());
     }
+
+    //
+    // MANAGER
+    //
 
     @Override
     protected void init0() {
 
+        super.init0();
+
         sbds.getEventManager().registerEvents0(null, this);
 
-        commandInteractionManager.putGlobal(this::prepareGlobalCommandData);
-        commandInteractionManager.putGuild(this::prepareGuildCommandData);
-
-        registerCommand0(null, new StatusCommand(sbds).build(sbds, null));
+        registerCommand0(null, new StatusCommand().build());
 
     }
 
     @Override
     protected void shutdown0() {
-        commands.clear();
         sbds.getEventManager().unregisterEvents(this);
+        super.shutdown0();
     }
 
     @Override
-    public void updateCommands() {
-        commandInteractionManager.update();
+    protected @NotNull SlashCommandManager.IRegisteredSlashCommand createCommandReg(@NotNull Command command) {
+        return new RegisteredSlashCommand(this, command);
     }
 
+    @Override
+    public void onRegister(@NotNull Registration<IRegisteredSlashCommand> registration) {
 
-    private @NotNull List<CommandData> prepareGlobalCommandData() {
-        return getRegisteredCommands().stream().filter(c -> c.command().global()).map(c -> createCommandData(c.command())).toList();
-    }
+        RegisteredSlashCommand reg = (RegisteredSlashCommand) registration.object();
+        Command command = registration.object().getCommand();
+        CommandExecutor executor = command.getExecutor();
 
-    private @NotNull List<CommandData> prepareGuildCommandData() {
-        return getRegisteredCommands().stream().filter(c -> c.command().guild()).map(c -> createCommandData(c.command())).toList();
-    }
-
-
-    private @NotNull CommandData createCommandData(@NotNull Command command) {
-
-        String description = Objects.requireNonNullElse(command.description(), "-");
-        SlashCommandData commandData = Commands.slash(command.getName(), description);
-
-        commandData.setLocalizationFunction(localizator.createLocalizationFunction(command));
-
-        if (!command.hasSubcommands()) {
-            commandData.addOptions(createCommandOptions(command));
+        if (executor != null && !(executor instanceof SlashCommandExecutor)) {
+            throw new IllegalArgumentException("Command `" + command.getName() + "` does not have executor for a slash command");
         }
 
-        else {
-            addSlashSubCommands(commandData, command);
-        }
-
-        return commandData;
+         reg.commandData = commandInteractionManager.registerCommand(registration.object(), List.of(net.dv8tion.jda.api.interactions.commands.Command.Type.SLASH));
 
     }
 
-//    private @Nullable String getLocalizationKey(@NotNull Command command, @NotNull String request) {
-//
-//        String[] parts = request.split("\\.");
-//        int lastIndex = parts.length - 1;
-//        int lastInformativeIndex = lastIndex - 1;
-//        String type = parts[lastIndex];
-//
-//        if (parts[lastInformativeIndex].equals(command.getName())) {
-//            if (type.equals("name")) return null;
-//            String translationKey = command.translationKey();
-//            return translationKey != null ? translationKey + "." + type : null;
-//        }
-//
-//        Command targetCommand = command;
-//        int index = 0;
-//        for (int i = 1; i < parts.length && i < 4; i++) {
-//
-//            index = i;
-//
-//            String part = parts[i];
-//            Command cmd = targetCommand.subcommands().stream().filter(c -> c.getName().equals(part)).findAny().orElse(null);
-//            if (cmd == null) break;
-//
-//            targetCommand = cmd;
-//
-//        }
-//
-//        String argumentTarget = parts[index];
-//        CommandArgument argument = targetCommand.arguments().stream().filter(a -> a.name().equals(argumentTarget)).findAny().orElse(null);
-//        if (argument == null) {
-//            return null;
-//        }
-//
-//        String argumentTranslationKey = argument.translationKey();
-//        if (argumentTranslationKey == null) {
-//            return null;
-//        }
-//
-//        if (index == lastInformativeIndex) {
-//            return argumentTranslationKey;
-//        }
-//
-//        index++;
-//
-//        String additionalTranslationKey = parts[index];
-//
-//        return argumentTranslationKey + "." + additionalTranslationKey;
-//
-//    }
-
-
-
-    private List<OptionData> createCommandOptions(@NotNull Command command) {
-
-        List<OptionData> out = new ArrayList<>();
-        for (CommandArgument argument : command.arguments()) {
-
-            if (!argument.scopes().contains(ArgumentScope.SLASH)) continue;
-
-            OptionData optionData = argument.argument().build(argument);
-            out.add(optionData);
-
-        }
-
-        return out;
-
+    @Override
+    public void unRegister(@NotNull Registration<IRegisteredSlashCommand> registration) {
+        commandInteractionManager.unregisterCommand(registration.object());
     }
 
-    private void addSlashSubCommands(@NotNull SlashCommandData slash, @NotNull Command command) {
-
-        for (Command subcommand : command.subcommands()) {
-
-            String name = subcommand.getName();
-            String description = Objects.requireNonNullElse(subcommand.description(), "- ");
-
-            if (!subcommand.hasSubcommands()) {
-                slash.addSubcommands(new SubcommandData(name, description).addOptions(createCommandOptions(subcommand)));
-                continue;
-            }
-
-
-            SubcommandGroupData subcommandGroup = new SubcommandGroupData(name, description);
-            for (Command subsubcommand : subcommand.subcommands()) {
-                subcommandGroup.addSubcommands(new SubcommandData(subsubcommand.getName(), Objects.requireNonNullElse(subsubcommand.description(), "- ")).addOptions(createCommandOptions(subsubcommand)));
-            }
-
-            slash.addSubcommandGroups(subcommandGroup);
-
-        }
-
-    }
+    //
+    // HANDLER
+    //
 
     @EventHandler
     public void onGuildJoin(@NotNull GuildJoinEvent event) {
-        commandInteractionManager.update(event.getGuild());
+        commandInteractionManager.updateGuild(event.getGuild());
     }
 
     @EventHandler
     public void onCommand(@NotNull SlashCommandInteractionEvent event) {
 
-        if (!sbds.isReady()) return;
-
-        String commandName = event.getName();
-
-        RegisteredCommand registeredCommand = findByAlias(commandName);
-        if (registeredCommand == null) {
-            logger.warn("Something went wrong! Slash command with name `{}` does not exist in SlashCommandManager!", commandName);
+        if (!sbds.isReady()) {
             return;
         }
 
-        Command baseCommand = registeredCommand.command();
+        String commandName = event.getName();
+        String fullCommandStr = event.getFullCommandName();
+
+        logger.info("User &b{} &rexecuted slash-command &b/{} {}", event.getUser().getEffectiveName(), fullCommandStr, String.join(" ", event.getOptions().stream().map(OptionMapping::getAsString).toList()));
+
+        IRegisteredSlashCommand registeredCommand = getByAlias(commandName);
+        if (registeredCommand == null) {
+            logger.warn("Something went wrong! Slash command /{} does not exist in SlashCommandManager!", fullCommandStr);
+            return;
+        }
+
+        Command baseCommand = registeredCommand.getCommand();
 
         try {
 
-            Command command = getCommand(baseCommand, event);
+            Command command = getCommand(baseCommand, event.getFullCommandName(), event.getName());
 
-            if (!permissionCheck(command, event)) return;
-
-            Argument.ArgumentResources resources = new Argument.ArgumentResources(sbds, TypeMap.empty(false));
-            SlashCommandParser parser = new SlashCommandParser(command, resources, event.getInteraction());
-
-            parser.parse();
-
-            if (!parser.checkCount()) {
-                throw new RuntimeException("Invalid argument count");
+            if (!event.isAcknowledged() && command.isDeferReply()) {
+                event.deferReply(command.isEphemeral()).queue();
             }
 
-            SlashExecutionInfo info = new SlashExecutionInfo(command, event.getInteraction(), commandName, parser.getArguments(), rootLogger, sbds);
+            SlashCommandExecutor executor = (SlashCommandExecutor) command.getExecutor();
 
-            CommandExecutor executor = command.executor();
-            executor.execute(info);
-
-            if (!event.isAcknowledged()) {
-                event.reply("Something went wrong. Looks like the executor `" + executor + "` refused to respond to the interaction.").queue();
-                logger.error("Command executor of command /`{}` did not respond to the interaction. Are you sure you did it right?", commandName);
+            if (executor == null) {
+                logger.error("Command executor of /{} is null. You did something wrong?", event.getFullCommandName());
+                messages.reply(event, "sbds.error", event.getUser())
+                        .withPlaceholders("exception", "Command executor is null")
+                        .queue();
+                return;
             }
+
+            TypeMap arguments;
+
+            try {
+                arguments = SlashCommandParser.parse(registeredCommand, command, event);
+            }
+
+            catch (SlashCommandParser.ArgumentParsingException e) {
+
+                var argument = e.getArgument();
+
+                String argTranslated;
+                if (command.getTranslationKey() != null) {
+                    argTranslated = "$[" + command.getTranslationKey() + "." + argument.name() + ".name" + "]";
+                }
+
+                else {
+                    argTranslated = argument.name();
+                }
+
+                messages.reply(event, "sbds.slash-invalid-argument", event.getUser())
+                        .withPlaceholders(
+                                "argument", argTranslated,
+                                "message", e.getCause().getMessage().replace("`", "")
+                        )
+                        .queue();
+
+                return;
+
+            }
+
+            SlashExecutionInfo info = new SlashExecutionInfo(event, registeredCommand, command, commandName, arguments, command.isEphemeral());
+
+            if (!permissionCheck(info)) {
+                return;
+            }
+
+            executor.executes(info);
 
         }
 
         catch (Throwable t) {
-            logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName(), commandName, t);
-            if (!event.isAcknowledged()) messages.reply(event, "sbds.error", event.getUser()).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
-            else messages.createActionMessage("sbds.error", event.getUser(), d -> event.getHook().editOriginal(MessageEditData.fromCreateData(d))).withPlaceholders(Placeholders.of("{EXCEPTION}", t.toString())).queue();
+
+            String place = event.getGuild() != null ? event.getGuild().getName() + ":" + event.getUser().getName() : event.getUser().getName();
+
+            logger.error("[{}] An internal error occurred while attempting to perform slash command /{}", place, event.getFullCommandName(), t);
+
+            try {
+
+                messages.reply(event, "sbds.error", event.getUser())
+                        .withPlaceholders("exception", t.toString())
+                        .queue();
+
+            }
+
+            catch (Throwable tt) {
+                event.reply(
+                    """ 
+                    **SurvivalBoom Discord Service** *v{v}*
+                    A low-level fatal error occurred in SurvivalBoom Discord Service while attempting to process your request!
+                    This is an internal error. Looks like something went completely wrong!
+                    `{e}`
+                    """.replace("{v}", BuildConstants.VERSION).replace("{e}", tt.toString())
+                ).queue();
+                throw tt;
+            }
+
         }
 
     }
 
-    private @NotNull Command getCommand(@NotNull Command baseCommand, @NotNull SlashCommandInteractionEvent event) {
+    @EventHandler
+    public void onAutoComplete(@NotNull CommandAutoCompleteInteractionEvent event) {
 
-        if (!baseCommand.hasSubcommands()) return baseCommand;
+        try {
 
-        String fullInput = event.getFullCommandName().substring(event.getName().length()).trim();
+            String baseCmdName = event.getName();
+            String fullCmdName = event.getFullCommandName();
+
+            IRegisteredSlashCommand registeredCommand = getByAlias(baseCmdName);
+            if (registeredCommand == null) {
+                logger.warn("[{}] Received autocompletion request for command &b/{}&r, but command does not exist.", event.getUser().getName(), fullCmdName);
+                event.replyChoices(List.of(
+                        new net.dv8tion.jda.api.interactions.commands.Command.Choice("ua.timurishche.DinosaurDeathException", 1),
+                        new net.dv8tion.jda.api.interactions.commands.Command.Choice("java.lang.OutOfMemoryError", 2),
+                        new net.dv8tion.jda.api.interactions.commands.Command.Choice("RAWR-R-R!!!!", 3),
+                        new net.dv8tion.jda.api.interactions.commands.Command.Choice("Slash command `" + fullCmdName + "` does not exist", 4)
+                )).queue();
+                return;
+            }
+
+            Command command = getCommand(registeredCommand.getCommand(), fullCmdName, baseCmdName);
+
+            CommandArgument commandArgument = command.getArgument(event.getFocusedOption().getName());
+            Objects.requireNonNull(commandArgument, "commandArgument == null");
+
+            Map<String, Object> arguments = new HashMap<>();
+            for (OptionMapping option : event.getOptions()) {
+
+                String name = option.getName();
+                String value = option.getAsString();
+
+                CommandArgument argument = command.getArgument(name);
+                if (argument == null) {
+                    continue;
+                }
+
+                ArgumentParsingContext argumentParsingContext = new ArgumentParsingContext(
+                        registeredCommand,
+                        command,
+                        argument
+                );
+
+                Object result;
+                try {
+                    result = argument.argument().parse(value, argumentParsingContext);
+                } catch (Exception e) {
+                    continue;
+                }
+
+                arguments.put(name, result);
+
+            }
+
+            ArgumentAutoCompleteContext context = new ArgumentAutoCompleteContext(
+                    registeredCommand, command, commandArgument, event.getFocusedOption().getValue(), UnmodifiableTypeMap.ofMap(arguments), event
+            );
+
+            List<net.dv8tion.jda.api.interactions.commands.Command.Choice> result = commandArgument.argument().onArgumentAutoComplete(context);
+            if (result == null || result.isEmpty()) {
+                return;
+            }
+
+            LinkedTextParser parser = LinkedTextParser.builder(sbds.getMessages(), event.getUser()).build();
+
+            List<net.dv8tion.jda.api.interactions.commands.Command.Choice> resultFinal = result.stream()
+                    .map(choice -> new net.dv8tion.jda.api.interactions.commands.Command.Choice(
+                            parser.parse(choice.getName()),
+                            parser.parse(choice.getAsString())
+                    ))
+                    .toList();
+
+            event.replyChoices(resultFinal).queue();
+
+        }
+
+        catch (Throwable t) {
+            logger.error("[{}] An internal error occurred while attempting to autocomplete command &b/{}", event.getUser().getName(), event.getFullCommandName(), t);
+            event.replyChoices(List.of(
+                    new net.dv8tion.jda.api.interactions.commands.Command.Choice("ua.timurishche.DinosaurDeathException", 1),
+                    new net.dv8tion.jda.api.interactions.commands.Command.Choice("java.lang.OutOfMemoryError", 2),
+                    new net.dv8tion.jda.api.interactions.commands.Command.Choice("RAWR-R-R!!!!", 3),
+                    new net.dv8tion.jda.api.interactions.commands.Command.Choice("An internal error occurred while attempting to generate suggestions.", 4)
+            )).queue();
+        }
+
+    }
+
+    private @NotNull Command getCommand(@NotNull Command baseCommand, @NotNull String eventFullInput, @NotNull String eventBaseInput) {
+
+        boolean hasSubCommands = baseCommand.getArguments().stream()
+                .anyMatch(argument -> argument.argument() instanceof SubCommandArgument);
+
+        if (!hasSubCommands) {
+            return baseCommand;
+        }
+
+        String fullInput = eventFullInput.substring(eventBaseInput.length()).trim();
         String[] parts = fullInput.split(" ");
 
         Command command = baseCommand;
         for (String part : parts) {
 
-             Command subcommand = command.subcommands().stream().filter(sc -> sc.getName().equals(part) || sc.aliases().contains(part)).findAny().orElse(null);
-             if (subcommand == null) break;
+            List<Command> subcommands = command.getArguments().stream()
+                    .filter(argument -> argument.argument() instanceof SubCommandArgument)
+                    .flatMap(argument -> ((SubCommandArgument) argument.argument()).getSubcommands().stream())
+                    .toList();
 
-             command = subcommand;
+            Command subcommand = subcommands.stream()
+                    .filter(sc -> sc.getName().equals(part) || sc.getAliases().contains(part))
+                    .findAny()
+                    .orElse(null);
+
+            if (subcommand == null) {
+                break;
+            }
+
+            command = subcommand;
 
         }
 
@@ -259,24 +328,37 @@ public class SlashCommandManager extends AbstractCommandManager implements Liste
 
     }
 
-    private boolean permissionCheck(@NotNull Command command, @NotNull SlashCommandInteractionEvent event) {
+    private boolean permissionCheck(@NotNull SlashExecutionInfo info) {
 
-        String permission = command.permission();
-        if (event.isFromGuild() && permission != null) {
+        Permission permission = info.currentCommand().getPermission();
+        SlashCommandInteraction event = info.interaction();
 
-            Member member = event.getMember();
+        Member member = event.getMember();
+        if (member != null && permission != null) {
 
-            assert member != null;
-
-            boolean hasPermission = permissionManager.hasPermission(member, permission, command.defaultPermission());
+            boolean hasPermission = permissionManager.hasPermission(member,  permission);
             if (!hasPermission) {
-                messages.reply(event.getInteraction(),"sbds.no-permission", event.getUser()).withPlaceholders(Placeholders.of("{PERMISSION}", permission)).queue();
+                messages.reply(event,"sbds.no-permission", event.getUser())
+                        .withPlaceholders("permission", permission.permission())
+                        .queue();
                 return false;
             }
 
         }
 
         return true;
+
+    }
+
+
+    public static class RegisteredSlashCommand extends AbstractCommandManager.RegisteredInteractionCommand<IRegisteredSlashCommand, ISlashCommandManager> implements IRegisteredSlashCommand {
+
+        public RegisteredSlashCommand(
+                @NotNull ISlashCommandManager manager,
+                @NotNull Command command
+        ) {
+            super(manager, command);
+        }
 
     }
 

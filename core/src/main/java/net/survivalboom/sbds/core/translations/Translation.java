@@ -1,32 +1,25 @@
 package net.survivalboom.sbds.core.translations;
 
 import net.dv8tion.jda.api.interactions.DiscordLocale;
-import net.survivalboom.sbds.api.messages.IMessage;
-import net.survivalboom.sbds.api.messages.InvalidComponentException;
-import net.survivalboom.sbds.api.messages.MessageTemplate;
-import net.survivalboom.sbds.api.translations.ITranslation;
-import net.survivalboom.sbds.api.translations.InvalidTranslationException;
-import net.survivalboom.sbds.api.translations.MessageLoadException;
-import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.core.messages.Message;
-import net.survivalboom.sbds.api.utils.Valid;
-import net.survivalboom.sbds.api.messages.InvalidEmbedException;
-import net.survivalboom.sbds.core.modules.Module;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
-import org.bspfsystems.yamlconfiguration.configuration.InvalidConfigurationException;
-import org.bspfsystems.yamlconfiguration.file.YamlConfiguration;
+import net.survivalboom.sbds.api.messages.template.IMessageTemplate;
+import net.survivalboom.sbds.api.modules.IModule;
+import net.survivalboom.sbds.api.registrations.RegistrationManager;
+import net.survivalboom.sbds.api.translations.*;
+import net.survivalboom.sbds.api.registrations.Registration;
+import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.utils.valid.Valid;
+import net.survivalboom.sbds.core.registration.InternalRegistrationManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
-public class Translation extends Valid implements ITranslation {
+public class Translation extends Valid implements ITranslation, RegistrationManager.Callback<ITranslationsMessagesPool> {
 
-    private final String name;
+    private final ITranslationManager manager;
 
-    private final File file;
+    protected Registration<ITranslation> registration;
+
 
     private DiscordLocale discordLocale;
 
@@ -35,231 +28,207 @@ public class Translation extends Valid implements ITranslation {
     private String icon;
 
 
-    private final Map<String, Message> messages = new HashMap<>();
+    private final InternalRegistrationManager<ITranslationsMessagesPool> registry;
 
-    private final Map<Module, Map<String, Message>> moduleMessages = new HashMap<>();
+    protected final Map<String, IMessageTemplate> cache = new HashMap<>();
 
 
-    public Translation(@NotNull File file) throws IOException, InvalidConfigurationException, MessageLoadException, InvalidTranslationException {
+    public Translation(@NotNull String name, @NotNull TranslationManager manager) {
+        this.manager = manager;
+        this.registry = new InternalRegistrationManager<>(this, name, this, manager.sbds.getRegistrationRegistry());
+        this.registry.init();
+    }
 
-        Objects.requireNonNull(file, "file == null");
-        if (!file.exists() || !file.isFile()) throw new InvalidTranslationException("Invalid file `" + file.getPath() + "`");
+    //
+    // INFO
+    //
 
-        this.file = file;
+    @Override
+    public @NotNull Registration<ITranslation> getRegistration() {
+        return registration;
+    }
 
-        YamlConfiguration yamlConfiguration = new YamlConfiguration();
-        yamlConfiguration.load(file);
+    //
+    // MESSAGES
+    //
 
-        this.name = yamlConfiguration.getString("$name");
-        if (this.name == null) throw new InvalidTranslationException("Invalid translation. Key `$name` not found");
+    @Override
+    public @Nullable IMessageTemplate getMessage(@NotNull String key) {
+        checkValid();
+        return cache.get(key);
+    }
 
-        load(yamlConfiguration);
+    @Override
+    public @NotNull Map<String, IMessageTemplate> getMessages() {
+        return new HashMap<>(cache);
+    }
 
-        if (discordLocale == null) throw new InvalidTranslationException("Invalid translation. Value of key `$discord-locale` is not valid");
+    //
+    // POOLS
+    //
+
+    // create/remove //
+
+    @Override
+    public @NotNull ITranslationsMessagesPool createMessagesPool(@NotNull IModule module, @NotNull String name) {
+        Objects.requireNonNull(module, "module == null");
+        return createMessagesPool0(module, name);
+    }
+
+    public @NotNull ITranslationsMessagesPool createMessagesPool0(@Nullable IModule module, @NotNull String name) {
+
+        Objects.requireNonNull(name, "name == null");
+        checkValid();
+
+        TranslationMessagesPool pool = new TranslationMessagesPool(this);
+        pool.registration = registry.register0(module, name, pool);
+
+        return pool;
 
     }
 
-
-    private void load(@NotNull YamlConfiguration yamlConfiguration) throws MessageLoadException {
-
+    @Override
+    public boolean removeMessagesPool(@NotNull ITranslationsMessagesPool pool) {
         checkValid();
+        return registry.unregister(pool) != null;
+    }
 
-        this.displayName = yamlConfiguration.getString("$display-name");
-        this.icon = yamlConfiguration.getString("$icon");
-        this.discordLocale = CommonUtils.getEnumValue(DiscordLocale.class, yamlConfiguration.getString("$discord-locale"));
+    @Override
+    public void unRegister(@NotNull Registration<ITranslationsMessagesPool> registration) {
+        cacheFullRecalculate();
+    }
 
-        Set<String> keys = yamlConfiguration.getKeys(false);
-        keys.remove("$name");
-        keys.remove("$display-name");
-        keys.remove("$icon");
+    private void cacheFullRecalculate() {
 
-        this.messages.clear();
-
-        Map<String, Message> map = new HashMap<>();
-        for (String s : keys) {
-            load(yamlConfiguration, map, s);
+        Map<String, IMessageTemplate> out = new HashMap<>();
+        for (var pool : getMessagePools()) {
+            out.putAll(pool.getMessages());
         }
 
-        this.messages.putAll(map);
+        this.cache.clear();
+        this.cache.putAll(out);
 
     }
 
-    @Override
-    public synchronized void update() throws IOException, InvalidConfigurationException, MessageLoadException {
-
-        YamlConfiguration yamlConfiguration = new YamlConfiguration();
-        yamlConfiguration.load(file);
-
-        load(yamlConfiguration);
-
-    }
+    // getters //
 
     @Override
-    public synchronized void save() throws IOException {
-
+    public @Nullable ITranslationsMessagesPool getMessagesPool(@NotNull NamespacedKey key) {
         checkValid();
+        return registry.getRegistrationAsObject(key);
+    }
 
-        if (!file.exists()) {
-            //noinspection ResultOfMethodCallIgnored
-            file.mkdirs();
-            //noinspection ResultOfMethodCallIgnored
-            file.createNewFile();
+    @Override
+    public @NotNull List<ITranslationsMessagesPool> getMessagePools() {
+        checkValid();
+        return registry.getRegisteredObjects();
+    }
+
+    // obtain //
+
+    @Override
+    public @NotNull ITranslationsMessagesPool obtainMessagesPool(@NotNull IModule module, @NotNull String name) {
+        Objects.requireNonNull(module, "module == null");
+        return obtainMessagesPool0(module, name);
+    }
+
+    public @NotNull ITranslationsMessagesPool obtainMessagesPool0(@Nullable IModule module, @NotNull String name) {
+
+        NamespacedKey key = module != null ? NamespacedKey.fromModule(module, name) : NamespacedKey.sbds(name);
+
+        var pool = getMessagesPool(key);
+        if (pool == null) {
+            return createMessagesPool0(module, name);
         }
 
-        YamlConfiguration yamlConfiguration = new YamlConfiguration();
-
-        yamlConfiguration.set("$description", displayName);
-
-        messages.values().forEach(message -> message.dump(yamlConfiguration));
-
-        yamlConfiguration.save(file);
+        return pool;
 
     }
 
 
+    //
+    // PROPERTIES
+    //
+
+    // DISPLAY NAME //
 
     @Override
-    public @Nullable Message getMessage(@NotNull String name) {
-        checkValid();
-
-        Message message = messages.get(name);
-        if (message != null) return message;
-
-        return getModuleMessage(name);
-
-    }
-
-    private @Nullable Message getModuleMessage(@NotNull String name) {
-        return moduleMessages.values().stream().map(map -> map.get(name)).filter(Objects::nonNull).findFirst().orElse(null);
-    }
-
-    @Override
-    public @NotNull List<IMessage> getMessages() {
-        return new ArrayList<>(messages.values());
-    }
-
-
-
-    public void addMessage(@NotNull String key, @NotNull Message message) {
-
-        checkValid();
-
-        Objects.requireNonNull(key, "key == null");
-        Objects.requireNonNull(message, "message == null");
-
-        messages.put(key, message);
-
-    }
-
-    public @NotNull List<Message> getMessages0() {
-        return new ArrayList<>(messages.values());
-    }
-
-
-
-    private void load(@NotNull YamlConfiguration configuration, @NotNull Map<String, Message> map, @NotNull String path) throws MessageLoadException {
-
-        ConfigurationSection section = configuration.getConfigurationSection(path);
-
-        if (section != null) {
-
-            if (section.contains("$embed") || section.contains("$embeds") || section.contains("$content") || section.contains("$components")) {
-
-                try {
-                    map.put(path, new Message(path, this, MessageTemplate.fromSection(section)));
-                }
-
-                catch (InvalidEmbedException | InvalidComponentException e) {
-                    throw new MessageLoadException(path, e);
-                }
-
-                return;
-            }
-
-            for (String s : section.getKeys(false)) {
-                load(configuration, map, path + "." + s);
-            }
-
-            return;
-
-        }
-
-        map.put(path, new Message(path, this, MessageTemplate.fromContent(configuration.getString(path, "Value of `" + path + "` is null"))));
-
-    }
-
-
-
-    @Override
-    public @NotNull File getFile() {
-        return file;
-    }
-
-    @Override
-    public @NotNull String getName() {
-        return name;
-    }
-
-
-    public void addModuleTranslation(@NotNull Module module, @NotNull YamlConfiguration yamlConfiguration) throws MessageLoadException {
-        checkValid();
-
-        Set<String> keys = yamlConfiguration.getKeys(false);
-        keys.remove("$name");
-
-        Map<String, Message> map = new HashMap<>();
-        for (String s : keys) {
-            load(yamlConfiguration, map, s);
-        }
-
-        moduleMessages.put(module, map);
-
-    }
-
-    public void removeModuleTranslation(@NotNull Module module) {
-        moduleMessages.remove(module);
-    }
-
-
-    @Override
-    public @Nullable String displayName() {
+    public @Nullable String getDisplayName() {
         return displayName;
     }
 
     @Override
-    public void displayName(@Nullable String displayName) {
+    public void setDisplayName(@Nullable String displayName) {
+        checkValid();
         this.displayName = displayName;
     }
 
+    // DISCORD LOCALE //
+
     @Override
-    public @NotNull DiscordLocale discordLocale() {
+    public @Nullable DiscordLocale getDiscordLocale() {
         return discordLocale;
     }
 
     @Override
-    public void discordLocale(@NotNull DiscordLocale locale) {
+    public void setDiscordLocale(@Nullable DiscordLocale locale) {
+        checkValid();
         this.discordLocale = locale;
     }
 
+    // ICON //
 
     @Override
-    public @Nullable String icon() {
+    public @Nullable String getIconEmoji() {
         return icon;
     }
 
     @Override
-    public void icon(@Nullable String icon) {
+    public void setIconEmoji(@Nullable String icon) {
+        checkValid();
         this.icon = icon;
     }
 
+    //
+    // MISC
+    //
 
-    public void invalid() {
-        valid(false);
+
+    @Override
+    public @NotNull ITranslationManager getManager() {
+        return manager;
+    }
+
+    @Override
+    public void remove() {
+        checkValid();
+        manager.removeTranslation(this);
+    }
+
+    @Override
+    protected void setValid(boolean v) {
+
+        if (v) {
+            registry.init();
+        }
+
+        else {
+            registry.shutdown();
+            cache.clear();
+        }
+
+        super.setValid(v);
+
     }
 
     @Override
     public String toString() {
-        return "Translation{name=" + name + ", display-name=" + displayName + ", messages=" + messages.size() + ", icon=" + icon + ", file=" + file.getName() + "}";
+        return String.format(
+                "Translation{key=%s, displayName=%s, messagesSize=%s}",
+                registration.key(),
+                displayName,
+                cache.size()
+        );
     }
 
 }

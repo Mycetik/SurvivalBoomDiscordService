@@ -1,19 +1,19 @@
 
 plugins {
     application
-    id("net.kyori.blossom") version("2.1.0")
-    id("com.gradleup.shadow") version "8.3.0"
+    id("net.kyori.blossom") version "2.1.0"
+    id("com.gradleup.shadow") version "9.4.1"
 }
 
-group = "net.survivalboom.sbds.core"
-version = rootProject.version
+group = rootProject.group;
+version = rootProject.version;
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compileOnly(project(":api"))
+    implementation(project(":api"))
     compileOnly("ch.qos.logback:logback-classic:1.5.6") // logging
 }
 
@@ -27,13 +27,9 @@ tasks {
 
     shadowJar {
 
-        dependsOn(":api:jar")
-
-        archiveBaseName.set("SBDS")
-        archiveVersion.set(rootProject.version.toString())
-        archiveClassifier.set("")
-
-        from(zipTree(project(":api").tasks.jar.get().archiveFile.get()))
+        archiveBaseName = "SBDS"
+        archiveVersion = rootProject.version.toString()
+        archiveClassifier = ""
 
     }
 

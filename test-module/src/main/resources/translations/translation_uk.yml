@@ -1,30 +1,69 @@
 
-$name: "ukrainian"
+$name: sbds:ukrainian
 
-test:
+testmodule:
 
-  modal:
+  config:
+    label: "Тестовий модуль"
+    replier: "Відповідач"
 
-    msg:
+  event:
+
+    on_message: "ХРЮ-ХРЮ-ХРЮ! Я СВІНТУС! :pig:"
+
+  command:
+
+    ephemeral-test:
       $embed:
-        title: "Тест Modal"
-        description: |
-          Це перевірка роботи Modal вікон в SurvivalBoom Discord Service!
-          Натисність кнопку нижче, щоб викликати вікно!
-      $components:
-        - type: BUTTON
-          name: modal
-          label: "Тиць"
-          emoji: "🦖"
-          style: PRIMARY
+        title: Вітаємо!
+        description: Якщо ви бачите це повідомлення, значить зараз ви отримаєте бан!
 
-    title: "Це - вікно"
+    long-responding:
+      first: "🪄 **База даних** оброблює ваш запит, зачекайте хвилинку..."
+      loop: "🛰️ **Ви знаходитесь у черзі.** Ваша позиція `{index}`"
+      success:
+        $embed:
+          title: "Успіх!"
+          description: Ваш запит успішно прийнято, дякуємо за звернення!
 
-    input.short.title: "Мале поле"
-    input.short.placeholder: "хрю..."
+    test-modal:
 
-    input.long.title: "Велике поле"
-    input.long.placeholder: "хрю..."
+      modal:
+        title: Напишіть фанфік
+        label: Фанфік
+        text: Жив був дракон, він усіх зжер, кінець...
+
+      success: "**СВІНТУС!** {text}"
+
+    ban:
+
+      confirm:
+        $embed:
+          title: Підтвердження
+          description: Ви дійсно хочете заблокувати користувача {user.mention}?
+          color: f700ff
+        $components:
+          - name: confirm
+            type: BUTTON
+            style: SUCCESS
+            emoji: ✅
+
+          - name: cancel
+            type: BUTTON
+            style: DANGER
+            emoji: ❌
+
+      cancelled:
+        $embed:
+          title: Скасовано!
+          description: Блокування користувача {user.mention} скасовано!
+
+      success:
+        $embed:
+          title: Успіх!
+          description: Користувача {user.mention} успішно заблоковано!
+
+
 
   context:
 
@@ -38,13 +77,13 @@ test:
         fields:
 
           - name: "ID повідомлення:"
-            value: "{ID}"
+            value: "{id}"
 
           - name: "Автор:"
-            value: "{AUTHOR}"
+            value: "{author.mention}"
 
           - name: "Текст повідомлення:"
-            value: "`{TEXT}`"
+            value: "`{text}`"
 
     user:
       $embed:
@@ -54,6 +93,5 @@ test:
           Ви використали контекстну команду на користувачеві!
           Якщо ви бачите це повідомлення, значить - усе працює!
         fields:
-
           - name: "Користувач:"
-            value: "{USER}"
+            value: "{user.mention}"

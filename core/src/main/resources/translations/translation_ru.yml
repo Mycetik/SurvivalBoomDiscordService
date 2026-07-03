@@ -1,12 +1,12 @@
 #
-# SURVIVALBOOM DISCORD | SURVIVALBOOM NETWORK 2025
+# SURVIVALBOOM DISCORD | SURVIVALBOOM NETWORK 2026
 #      Русский перевод | By TIMURishche
 #
 
 $name: "russian"
-$display-name: "$[lang.russian]"
+$displayName: "$[lang.russian]"
 $icon: "🇷🇺"
-$discord-locale: RUSSIAN
+$locale: RUSSIAN
 
 lang:
   ukrainian: "Украинский"
@@ -20,6 +20,10 @@ values:
 
 sbds:
 
+  config:
+    label: "Параметры ядра"
+    prefix: "Префикс команд"
+
   command:
 
     status:
@@ -27,7 +31,7 @@ sbds:
 
   loading:
     $embed:
-      description: "<a:loading:1086970461549756536> Обрабатываем ваш запрос, секундочку..."
+      description: ":pencil: Обрабатываем ваш запрос, секундочку..."
       color: f9f06b
 
   error:
@@ -39,7 +43,15 @@ sbds:
         Информацию про ошибку отправлено в консоль. Попробуйте позже или свяжитесь с разработчиком.
       fields:
         - name: "Ошибка:"
-          value: "{EXCEPTION}"
+          value: "{exception}"
+
+  interaction-no-response:
+    title: "Повисла мертвая тишина"
+    color: ff0000
+    description: |
+      Похоже, ответ на это взаимодействие не был получен...
+      Возможно, что-то пошло не так, или же SBDS не желает с вами разговаривать. 
+      Информация об ошибке отправлена в консоль. Попробуйте еще раз позже или свяжитесь с разработчиком.
 
   no-permission:
     $embed:
@@ -48,7 +60,7 @@ sbds:
       description: |
         Ой-ой! Похоже, что у вас недостаточно прав для использования этого.
         Попробуйте обратиться к администрации, если вы думаете что это ошибка.
-        Необходимое разрешение: `{PERMISSION}`.
+        Необходимое разрешение: `{permission}`.
 
   invalid-interaction:
     $embed:
@@ -58,4 +70,62 @@ sbds:
         Ой-ой! Похоже, этого взаимодействия не существует.
         Может быть это взаимодействие больше недоступно или вы пытаетесь сделать невозможное.
         Попробуйте вызвать команду еще раз или обратитесь к разработчику, если вы думаете что это ошибка.
-      footer: "Interaction id: {ID}"
+      footer: "Interaction id: {id}"
+
+  slash-invalid-argument:
+    $embed:
+      title: "Неправильный аргумен!"
+      color: ff0000
+      description: |
+        Неправильный аргумент `{argument}`. Похоже, вы где-то ошиблись.
+        `{message}`
+        
+  string-argument-invalid:
+    $embed:
+      title: "Неверный аргумент!"
+      color: ff0000
+      description: |
+        Вы указали неверное значение аргумента.
+        Пожалуйста, проверьте указанное вами значение на правильность.
+      fields:
+
+        - name: Аргумент
+          value: "`{argument}`"
+          inline: true
+
+        - name: Указанное значение
+          value: "`{input}`"
+          inline: true
+
+        - name: Ошибка
+          value: "`{message}`"
+          inline: true
+
+  string-argument-error:
+    $embed:
+      title: Ошибка аргумента :(
+      color: ff0000
+      description: |
+        Упсь! Похоже, аргумент неожиданно выдал ошибку при попытке обработать указанное вам значние.
+        Скорее всего это ошибка разработчика. Лог ошибки отправлен в консолью Свяжитесь с разработчиком либо повторите попытку чуть позже...
+      fields:
+
+        - name: Аргумент
+          value: "`{argument}`"
+          inline: true
+
+        - name: Указанное значение
+          value: "`{input}`"
+          inline: true
+
+        - name: Ошибка
+          value: "`{exception}`"
+          inline: true
+
+  string-not-enough-arguments:
+    $embed:
+      title: Неполная команда
+      color: ff0000
+      description: |
+        Эта команда имеет **{expected}** аргументов. Вы указали **{got}**.
+        Использование: `{usage}`

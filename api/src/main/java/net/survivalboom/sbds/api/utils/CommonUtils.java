@@ -2,12 +2,14 @@ package net.survivalboom.sbds.api.utils;
 
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import org.bspfsystems.yamlconfiguration.configuration.ConfigurationSection;
+import net.survivalboom.sbds.api.utils.placeholders.Placeholders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;
+import org.spongepowered.configurate.ConfigurationNode;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,25 +21,41 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.*;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class CommonUtils {
 
+    public static String STACK_TRACE_FORMAT = "    at {class}.{method}({file}:{line}) ~[{classloader}}:{module}]";
 
-    public static String STACK_TRACE_FORMAT = "    at {CLASS}.{METHOD}({FILE}:{LINE}) ~[{CLASSLOADER}:{MODULE}]";
+    public static final Random RANDOM = new Random();
 
 
     //
     // FILES
     //
 
+    public static void checkFiles(@NotNull Class<?> origin, @NotNull File workingDir, @Nullable Logger logger, String... args) {
+        Map<String, String> map = mapOf((Object[]) args);
+        checkFiles(origin, workingDir, map, logger);
+    }
+
     public static void checkFiles(@NotNull Class<?> origin, @NotNull File workingDir, @NotNull Map<String, String> files, @Nullable Logger logger) {
 
-        if (workingDir.isFile()) throw new IllegalArgumentException(String.format("File at %s is a file!", workingDir.getPath()));
+        Objects.requireNonNull(origin, "origin == null");
+        Objects.requireNonNull(workingDir, "workingDir == null");
+        Objects.requireNonNull(files, "files == null");
+
+        if (workingDir.isFile()) {
+            throw new IllegalArgumentException(String.format("File at %s is a file!", workingDir.getPath()));
+        }
 
         try {
 
@@ -135,6 +153,33 @@ public class CommonUtils {
     }
 
     //
+    // TEXT
+    //
+
+    public static @Nullable Character checkString(@NotNull String string, @NotNull String allowed) {
+
+        for (char c : string.toCharArray()) {
+
+            if (allowed.indexOf(c) == -1) {
+                return c;
+            }
+
+        }
+
+        return null;
+
+    }
+
+    public static void checkStringExceptionally(@NotNull String name, @NotNull String string, @NotNull String allowed) {
+
+        Character c = checkString(string, allowed);
+        if (c != null) {
+            throw new IllegalArgumentException("Illegal input `" + string + "` for `" + name + "`. Illegal character `" + c + "`. Valid characters: `" + allowed + "`");
+        }
+
+    }
+
+    //
     // LOGGING
     //
 
@@ -167,12 +212,12 @@ public class CommonUtils {
         String classLoader = element.getClassLoaderName();
 
         Placeholders placeholders = new Placeholders();
-        placeholders.add("{CLASS}", element.getClassName());
-        placeholders.add("{METHOD}", element.getMethodName());
-        placeholders.add("{FILE}", Objects.requireNonNullElse(element.getFileName(), "?"));
-        placeholders.add("{LINE}", element.getLineNumber());
-        placeholders.add("{CLASSLOADER}", classLoader == null ? "?" : classLoader);
-        placeholders.add("{MODULE}", module == null ? "?" : module);
+        placeholders.add("class", element.getClassName());
+        placeholders.add("method", element.getMethodName());
+        placeholders.add("file", Objects.requireNonNullElse(element.getFileName(), "?"));
+        placeholders.add("line", element.getLineNumber());
+        placeholders.add("classloader", classLoader == null ? "?" : classLoader);
+        placeholders.add("module", module == null ? "?" : module);
 
         return placeholders.parse(STACK_TRACE_FORMAT);
 
@@ -289,77 +334,185 @@ public class CommonUtils {
 
     public static @Nullable Object invokeMethod(@NotNull Object origin, @NotNull Method method, Object... resources) {
 
-        // Создаем карту доступных ресурсов с ключами по их классам
-        Map<Class<?>, Object> resourceMap = new HashMap<>();
-        for (Object resource : resources) {
-            if (resource == null) continue;
-            resourceMap.put(resource.getClass(), resource);
-        }
-
-        // Получаем параметры метода
         Class<?>[] parameterTypes = method.getParameterTypes();
         Object[] arguments = new Object[parameterTypes.length];
 
-        // Подбираем ресурсы для каждого параметра метода
         for (int i = 0; i < parameterTypes.length; i++) {
-
             Class<?> paramType = parameterTypes[i];
+            Object matchedResource = null;
 
-            if (resourceMap.containsKey(paramType)) arguments[i] = resourceMap.get(paramType);
+            // Перебираем массив ресурсов и ищем подходящий по типу
+            for (Object resource : resources) {
+                if (resource == null) continue;
 
-            else {
-
-                String errorMsg = String.format("Failed to invoke %s.%s. No resource found for parameter type: %s", method.getDeclaringClass().getSimpleName(), method.getName(), paramType.getName());
-
-                throw new IllegalArgumentException(errorMsg);
-
+                // Если тип параметра можно присвоить из класса ресурса (paramType = ResourceClass)
+                if (paramType.isAssignableFrom(resource.getClass())) {
+                    matchedResource = resource;
+                    break; // Нашли первое подходящее совпадение
+                }
             }
 
+            if (matchedResource != null) {
+                arguments[i] = matchedResource;
+            } else {
+                throw new IllegalArgumentException(
+                        String.format("Failed to invoke %s.%s. No resource found for parameter type: %s",
+                                method.getDeclaringClass().getSimpleName(), method.getName(), paramType.getName())
+                );
+            }
         }
 
-        // Делаем метод доступным, если он private
         if (!method.canAccess(origin)) {
             method.setAccessible(true);
         }
 
-        // Вызываем метод
         try {
             return method.invoke(origin, arguments);
-        }
-
-        catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    //
+    // MAP
+    //
+
+    @SuppressWarnings("unchecked")
+    public static @NotNull <K, V> Map<K, V> mapOf(Object... args) {
+
+        Map<K, V> map = new HashMap<>();
+
+        if ((args.length % 2) != 0) {
+            throw new IllegalArgumentException("Invalid count of arguments " + args.length);
+        }
+
+        int index = 0;
+        while (index < args.length) {
+
+            Object key = args[index];
+            Object value = args[index + 1];
+
+            map.put((K) key, (V) value);
+
+            index += 2;
+
+        }
+
+        return map;
 
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T deepCopy(T object) {
+
+        // 1. Обработка Map
+        if (object instanceof Map<?, ?>) {
+            Map<Object, Object> sourceMap = (Map<Object, Object>) object;
+            Map<Object, Object> copyMap = new LinkedHashMap<>(); // Сохраняем порядок вставки
+            for (Map.Entry<Object, Object> entry : sourceMap.entrySet()) {
+                copyMap.put(deepCopy(entry.getKey()), deepCopy(entry.getValue()));
+            }
+
+            return (T) copyMap;
+
+        }
+
+        // 2. Обработка List (включая List<Map>)
+        else if (object instanceof List<?>) {
+            List<Object> sourceList = (List<Object>) object;
+            List<Object> copyList = new ArrayList<>(sourceList.size());
+            for (Object item : sourceList) {
+                copyList.add(deepCopy(item));
+            }
+
+            return (T) copyList;
+
+        }
+
+        // 3. Обработка Set (опционально, для полноты)
+        else if (object instanceof Set<?>) {
+
+            Set<Object> sourceSet = (Set<Object>) object;
+            Set<Object> copySet = new LinkedHashSet<>();
+            for (Object item : sourceSet) {
+                copySet.add(deepCopy(item));
+            }
+
+            return (T) copySet;
+
+        }
+
+        // 4. Базовый случай: примитивы, String, неизменяемые объекты или null
+        // В Java String и обертки примитивов неизменяемы, их копировать не нужно.
+        return object;
+
+    }
+
+    public static @NotNull Map<String, Object> compressDeepMap(@NotNull Map<String, Object> source) {
+        Objects.requireNonNull(source, "source == null");
+        return compressDeepMap0(source, new HashMap<>(), "");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static @NotNull Map<String, Object> compressDeepMap0(@NotNull Map<String, Object> source, @NotNull Map<String, Object> map, @NotNull String path) {
+
+        for (var entry : map.entrySet()) {
+
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            String newPath = path + key + ".";
+
+            if (value instanceof Map<?,?> m) {
+
+                Map<String, Object> mm;
+                try {
+                    mm = (Map<String, Object>) m;
+                }
+
+                catch (ClassCastException ignored) {
+                    continue;
+                }
+
+                compressDeepMap0(mm, map, newPath);
+
+            }
+
+            else if (value instanceof Collection<?> undefinedCollection) {
+
+                Collection<Map<String, Object>> collection;
+
+                try {
+                    collection = (Collection<Map<String, Object>>) undefinedCollection;
+                }
+
+                catch (ClassCastException ignored) {
+                    continue;
+                }
+
+                var list = List.copyOf(collection);
+                for (int i = 0; i < list.size(); i++) {
+                    var m = list.get(i);
+                    compressDeepMap0(m, map, newPath + i + ".");
+                }
+
+            }
+
+            else {
+                map.put(newPath, value);
+            }
+
+        }
+
+        return map;
+
+    }
 
     //
     // YAML
     //
 
-    @SuppressWarnings("unchecked")
-    public static @NotNull List<TypeMap> typeMap(@NotNull List<Map<?, ?>> map) {
-
-        List<TypeMap> out = new ArrayList<>();
-        map.forEach(m -> out.add(TypeMap.ofMap((Map<String, Object>) m, true)));
-
-        return out;
-    }
-
-    public static @NotNull ConfigurationSection getOrCreateSection(@NotNull ConfigurationSection configuration, @NotNull String path) {
-
-        Objects.requireNonNull(configuration, "configuration == null");
-        Objects.requireNonNull(path, "path == null");
-
-        ConfigurationSection out = configuration.getConfigurationSection(path);
-        if (out == null) out = configuration.createSection(path);
-
-        return out;
-
-    }
-
-    public static @NotNull Properties getPropertiesFromYaml(@NotNull ConfigurationSection section) {
+    public static @NotNull Properties getPropertiesFromYaml(@NotNull ConfigurationNode section) {
 
         Properties properties = new Properties();
         properties.putAll(getStringMapFromYaml(section));
@@ -368,24 +521,34 @@ public class CommonUtils {
 
     }
 
-    public static @NotNull Map<String, String> getStringMapFromYaml(@NotNull ConfigurationSection section) {
-
-        Map<String, String> map = new HashMap<>();
-        section.getKeys(false).forEach(k -> loadPropertiesMap(section, map, k));
-
-        return map;
-
+    public static @NotNull Map<String, String> getStringMapFromYaml(@NotNull ConfigurationNode section) {
+        return loadPropertiesMap(section, new HashMap<>());
     }
 
-    private static void loadPropertiesMap(@NotNull ConfigurationSection configuration, @NotNull Map<String, String> map, @NotNull String path) {
+    private static Map<String, String> loadPropertiesMap(@NotNull ConfigurationNode node, @NotNull Map<String, String> map) {
 
-        ConfigurationSection section = configuration.getConfigurationSection(path);
-        if (section != null) {
-            section.getKeys(false).forEach(k -> loadPropertiesMap(configuration, map, path + "." + k));
-            return;
+        for (ConfigurationNode child : node.childrenMap().values()) {
+
+            if (!child.isMap()) {
+
+                String path = String.join(".", Arrays.stream(child.path().array()).map(Object::toString).toList());
+
+                String string = child.getString();
+                if (string == null) {
+                    continue;
+                }
+
+                map.put(path, string);
+
+                continue;
+
+            }
+
+            loadPropertiesMap(child, map);
+
         }
 
-        map.put(path, configuration.getString(path));
+        return map;
 
     }
 
@@ -461,7 +624,151 @@ public class CommonUtils {
 
     }
 
+    //
+    // HASH
+    //
 
+    public static long longHash(Object... args) {
+
+        if (args == null || args.length == 0) {
+            return 0L;
+        }
+
+        // Начальное значение (seed) на основе золотого сечения для минимизации коллизий
+        long h = 0x9E3779B97F4A7C15L;
+
+        for (Object arg : args) {
+            long value;
+
+            if (arg == null) {
+                value = 0L;
+            } else if (arg instanceof Number) {
+                // Если это Long, Integer и т.д., берем их примитивное значение
+                value = ((Number) arg).longValue();
+            } else {
+                // Для строк и других объектов используем hashCode
+                // Мы "растягиваем" 32-битный hashCode, чтобы он лучше перемешивался
+                value = arg.hashCode();
+            }
+
+            // Качественное перемешивание (Mixer из MurmurHash3)
+            value = (value ^ (value >>> 33)) * -0xae502812aa7333L;
+            value = (value ^ (value >>> 33)) * -0x3b3146010f6d7dL;
+            value = value ^ (value >>> 33);
+
+            // Комбинируем текущий хэш с новым значением
+            h ^= value + 0x9e3779b9 + (h << 6) + (h >> 2);
+        }
+
+        return h;
+
+    }
+
+    //
+    // COLOR
+    //
+
+    public static @Nullable Color parseColor(@Nullable String hex) {
+
+        if (hex == null) {
+            return null;
+        }
+
+        int resultRed, resultGreen, resultBlue;
+        try {
+            resultRed = Integer.valueOf(hex.substring(0, 2), 16);
+            resultGreen = Integer.valueOf(hex.substring(2, 4), 16);
+            resultBlue = Integer.valueOf(hex.substring(4, 6), 16);
+        }
+
+        catch (NumberFormatException e) {
+            return null;
+        }
+
+        return new Color(resultRed, resultGreen, resultBlue);
+
+    }
+
+    //
+    // STRING
+    //
+
+    public static @NotNull String[] splitString(@NotNull String string, @NotNull String regex) {
+
+        String[] parts = string.split(regex);
+        if (parts.length == 0) {
+            return new String[]{string};
+        }
+
+        return parts;
+
+    }
+
+    //
+    // REPEAT
+    //
+
+    public static <T> RepeatResult<T> tryRepeat(@NotNull ThrowingSupplier<T> supplier, int attempts, int sleep) {
+
+        if (attempts < 1) {
+            throw new IllegalArgumentException("attempts < 1");
+        }
+
+        List<Throwable> errors = new ArrayList<>();
+        int index = 0;
+        T value = null;
+
+        while (index <= attempts) {
+
+            try {
+                value = supplier.getThrowing();
+                break;
+            }
+
+            catch (Throwable t) {
+                errors.add(t);
+            }
+
+            index++;
+            sleep(sleep);
+
+        }
+
+        return new RepeatResult<>(errors, Optional.ofNullable(value), index);
+
+    }
+
+    public record RepeatResult<T>(@NotNull List<Throwable> errors, @NotNull Optional<T> result, int attempts) {}
+
+
+    /**
+     * Объединяет коллекцию CompletableFuture в один CompletableFuture,
+     * который возвращает список успешно выполненных результатов, игнорируя null.
+     */
+    public static <T> CompletableFuture<List<T>> sequenceAsync(Collection<CompletableFuture<T>> futures) {
+        // Создаем массив для CompletableFuture.allOf
+        CompletableFuture<?>[] futuresArray = futures.toArray(new CompletableFuture[0]);
+
+        // Ждем выполнения всех задач, затем собираем результаты
+        return CompletableFuture.allOf(futuresArray)
+                .thenApply(v -> futures.stream()
+                        .map(CompletableFuture::join)
+                        .filter(Objects::nonNull) // Твой фильтр на null
+                        .collect(Collectors.toList())
+                );
+    }
+
+
+    public static <R, V> CompletableFuture<List<R>> sequenceAsync(@NotNull Collection<V> something, @NotNull Function<V, CompletableFuture<R>> function) {
+
+        List<CompletableFuture<R>> futures = new ArrayList<>();
+        for (V thing : something) {
+            futures.add(function.apply(thing));
+        }
+
+        return sequenceAsync(futures);
+
+    }
 
 
 }

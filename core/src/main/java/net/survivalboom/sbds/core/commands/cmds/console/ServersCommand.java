@@ -1,20 +1,19 @@
 package net.survivalboom.sbds.core.commands.cmds.console;
 
 import net.dv8tion.jda.api.entities.Guild;
-import net.survivalboom.sbds.api.commands.base.Command;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
 import net.survivalboom.sbds.api.commands.base.CommandBase;
-import net.survivalboom.sbds.api.commands.console.ConsoleCommand;
+import net.survivalboom.sbds.api.commands.console.ConsoleCommandExecutor;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Objects;
 
-@Command(name = "servers", description = "Shows a list of servers where bot was invited", usage = "servers")
-public class ServersCommand extends CommandBase implements ConsoleCommand {
+@CommandClass(name = "servers", description = "Shows a list of servers where bot was invited", usage = "servers")
+public class ServersCommand extends CommandBase implements ConsoleCommandExecutor {
 
     @Override
-    public void executes(@NotNull ConsoleExecutionInfo info) throws Throwable {
+    public void executes(@NotNull ConsoleExecutionInfo info) {
 
         List<Guild> guilds = info.sbds().getBot().getGuilds();
         if (guilds.isEmpty()) {
@@ -25,8 +24,7 @@ public class ServersCommand extends CommandBase implements ConsoleCommand {
         info.logger().info("--- Server List ---");
         for (Guild guild : guilds) {
 
-            var owner = guild.getOwner();
-            Objects.requireNonNull(owner, "owner == null; " + guild.getId());
+            var owner = guild.retrieveOwner().complete();
 
             info.logger().info("{} ({}) - {} members. Owner: {} ({}). Joined at: {}", guild.getName(), guild.getId(), guild.getMemberCount(), owner.getEffectiveName(), owner.getId(), guild.getSelfMember().getTimeJoined());
 

@@ -2,22 +2,41 @@ package net.survivalboom.sbds.api.commands.context;
 
 import net.dv8tion.jda.api.events.interaction.command.GenericContextInteractionEvent;
 import net.survivalboom.sbds.api.ISBDS;
-import net.survivalboom.sbds.api.interaction.InteractionInfoImpl;
-import net.survivalboom.sbds.api.interaction.modal.ModalActionBuilder;
-import net.survivalboom.sbds.api.utils.NamespacedKey;
+import net.survivalboom.sbds.api.commands.Command;
+import net.survivalboom.sbds.api.interaction.InteractionExecutionInfo;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
 
-public abstract class ContextInteractionInfo<E extends GenericContextInteractionEvent<?>> extends InteractionInfoImpl<E> {
+public abstract class ContextInteractionInfo<E extends GenericContextInteractionEvent<?>> extends InteractionExecutionInfo<E> {
 
-    public ContextInteractionInfo(@NotNull E event, @NotNull ISBDS sbds, @NotNull Logger logger) {
-        super(event, sbds, logger);
+    protected final IContextCommandManager.IRegisteredContextCommand rootCommand;
+
+    protected final Command currentCommand;
+
+    protected final String alias;
+
+    public ContextInteractionInfo(
+            @NotNull E event,
+            @NotNull IContextCommandManager.IRegisteredContextCommand rootCommand,
+            @NotNull Command currentCommand,
+            @NotNull String alias,
+            @NotNull ISBDS sbds
+    ) {
+        super(event, currentCommand.isEphemeral(), sbds);
+        this.rootCommand = rootCommand;
+        this.currentCommand = currentCommand;
+        this.alias = alias;
     }
 
+    public @NotNull IContextCommandManager.IRegisteredContextCommand rootCommand() {
+        return rootCommand;
+    }
 
-    @Override
-    public @NotNull ModalActionBuilder replyModal(@NotNull String key) {
-        return new ModalActionBuilder(sbds.getModalInteractionManager(), event, NamespacedKey.fromString(key));
+    public @NotNull Command currentCommand() {
+        return currentCommand;
+    }
+
+    public @NotNull String alias() {
+        return alias;
     }
 
 }

@@ -7,8 +7,8 @@ import net.survivalboom.sbds.api.commands.argument.discord.GuildArgument;
 import net.survivalboom.sbds.api.commands.argument.discord.UserArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.GreedyStringArgument;
 import net.survivalboom.sbds.api.commands.argument.primitive.StringArgument;
-import net.survivalboom.sbds.api.commands.base.Command;
-import net.survivalboom.sbds.api.commands.base.CommandArgument;
+import net.survivalboom.sbds.api.commands.base.CommandClass;
+import net.survivalboom.sbds.api.commands.base.ArgumentMethod;
 import net.survivalboom.sbds.api.commands.console.ConsoleExecutionInfo;
 import net.survivalboom.sbds.api.commands.slash.SlashExecutionInfo;
 import net.survivalboom.sbds.api.utils.CommonUtils;
@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.time.Duration;
 import java.util.Objects;
 
-@Command(name = "warn", description = "Warns user in a guild", translationKey = "moderation.command.warn", permission = "moderation.command.warn")
+@CommandClass(name = "warn", description = "Warns user in a guild", translationKey = "moderation.command.warn", permission = "moderation.command.warn")
 public class WarnCommand extends AbstractModerationCommand {
 
     private final WarnManager warnManager;
@@ -98,27 +98,27 @@ public class WarnCommand extends AbstractModerationCommand {
     }
 
 
-    @CommandArgument(name = "guild", scope = ArgumentScope.CONSOLE)
+    @ArgumentMethod(name = "guild", scope = ArgumentScope.CONSOLE)
     public GuildArgument guild() {
         return new GuildArgument();
     }
 
-    @CommandArgument(name = "user", index = 1)
+    @ArgumentMethod(name = "user", index = 1)
     public UserArgument user() {
         return new UserArgument();
     }
 
-    @CommandArgument(name = "reason", index = 2, required = false)
+    @ArgumentMethod(name = "reason", index = 2, required = false)
     public StringArgument reason() {
         return new StringArgument();
     }
 
-    @CommandArgument(name = "comment", index = 3, required = false)
+    @ArgumentMethod(name = "comment", index = 3, required = false)
     public StringArgument comment() {
         return new StringArgument();
     }
 
-    @CommandArgument(name = "time", index = 4, required = false)
+    @ArgumentMethod(name = "time", index = 4, required = false)
     public GreedyStringArgument time() {
         return new GreedyStringArgument();
     }

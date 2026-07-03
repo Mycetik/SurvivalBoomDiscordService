@@ -2,6 +2,9 @@ plugins {
     java
 }
 
+group = "net.survivalboom.sbds.modules.test"
+version = "1.0"
+
 repositories {
     mavenCentral()
 }

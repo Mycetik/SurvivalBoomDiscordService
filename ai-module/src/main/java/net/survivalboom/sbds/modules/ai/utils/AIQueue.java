@@ -1,11 +1,10 @@
 package net.survivalboom.sbds.modules.ai.utils;
 
 import io.github.sashirestela.cleverclient.Event;
-import io.github.sashirestela.openai.domain.response.Response;
 import io.github.sashirestela.openai.domain.response.ResponseRequest;
 import net.survivalboom.sbds.api.scheduler.ISchedulerTask;
 import net.survivalboom.sbds.api.utils.CommonUtils;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.modules.ai.AIModule;
 import org.jetbrains.annotations.NotNull;
 

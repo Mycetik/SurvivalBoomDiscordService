@@ -2,7 +2,7 @@ plugins {
     java
 }
 
-group = "net.survivalboom.modules.chatbot"
+group = "net.survivalboom.sbds.modules.chatbot"
 version = "1.0"
 
 repositories {

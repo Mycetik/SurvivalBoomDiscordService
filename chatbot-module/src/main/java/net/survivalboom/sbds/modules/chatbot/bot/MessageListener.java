@@ -14,8 +14,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.survivalboom.sbds.api.events.EventHandler;
-import net.survivalboom.sbds.api.events.Listener;
-import net.survivalboom.sbds.api.utils.Manager;
+import net.survivalboom.sbds.api.events.EventListener;
+import net.survivalboom.sbds.api.utils.valid.Manager;
 import net.survivalboom.sbds.modules.chatbot.ChatBotModule;
 import net.survivalboom.sbds.modules.chatbot.storage.AIChannels;
 import net.survivalboom.sbds.modules.chatbot.utils.MessageBuffer;
@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class MessageListener extends Manager implements Listener {
+public class MessageListener extends Manager implements EventListener {
 
 
     private static final int MAX_CHARACTERS = 2048;
