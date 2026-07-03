@@ -23,9 +23,11 @@ import java.time.Duration;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -752,8 +754,20 @@ public class CommonUtils {
                 .thenApply(v -> futures.stream()
                         .map(CompletableFuture::join)
                         .filter(Objects::nonNull) // Твой фильтр на null
-                        .toList()
+                        .collect(Collectors.toList())
                 );
+    }
+
+
+    public static <R, V> CompletableFuture<List<R>> sequenceAsync(@NotNull Collection<V> something, @NotNull Function<V, CompletableFuture<R>> function) {
+
+        List<CompletableFuture<R>> futures = new ArrayList<>();
+        for (V thing : something) {
+            futures.add(function.apply(thing));
+        }
+
+        return sequenceAsync(futures);
+
     }
 
 
