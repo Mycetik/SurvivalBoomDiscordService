@@ -49,14 +49,13 @@ public class GuildData extends Valid implements IGuildData {
 
     @Override
     public @Nullable ITranslation getTranslation() {
-        return record.getTranslation();
-    }
-
-    @Override
-    public void setTranslation(@Nullable ITranslation translation) {
         checkValid();
-        record.setTranslation(translation);
-        save();
+
+        var configTemplate = manager.getSbds().getGuildConfigManager().getSbdsConfig();
+        var config = configTemplate.obtainConfig(guild);
+
+        return config.get("translation", ITranslation.class).join().orElse(null);
+
     }
 
     // DATABASE //
