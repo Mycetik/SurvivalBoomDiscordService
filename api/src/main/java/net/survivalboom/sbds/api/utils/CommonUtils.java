@@ -332,7 +332,8 @@ public class CommonUtils {
 
     }
 
-    public static @Nullable Object invokeMethod(@NotNull Object origin, @NotNull Method method, Object... resources) {
+    @SuppressWarnings("unchecked")
+    public static <V> @Nullable V invokeMethod(@NotNull Object origin, @NotNull Method method, Object... resources) {
 
         Class<?>[] parameterTypes = method.getParameterTypes();
         Object[] arguments = new Object[parameterTypes.length];
@@ -367,7 +368,7 @@ public class CommonUtils {
         }
 
         try {
-            return method.invoke(origin, arguments);
+            return (V) method.invoke(origin, arguments);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
