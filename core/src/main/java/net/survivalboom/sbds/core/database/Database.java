@@ -107,7 +107,10 @@ public class Database extends Manager implements IDatabase {
 
         if (sessionFactory != null) {
             sessionFactory.close();
+            sessionFactory = null;
         }
+
+        currentAttachedRepositories.clear();
 
     }
 
@@ -342,13 +345,9 @@ public class Database extends Manager implements IDatabase {
 
     @Override
     public synchronized boolean removeRepository(@NotNull IRepository<?> repository) {
-
         checkValid();
-
-        var reg = repositoriesRegistry.unregister(repository);
-
-        return reg != null;
-
+        currentAttachedRepositories.remove(repository);
+        return repositoriesRegistry.unregister(repository) != null;
     }
 
     // GETTERS //
@@ -402,6 +401,7 @@ public class Database extends Manager implements IDatabase {
 
     @Override
     public void queueSave(@NotNull DataRecord record) {
+        checkValid();
         checkRepository(record);
         queue.queueRecordSave(record);
     }
