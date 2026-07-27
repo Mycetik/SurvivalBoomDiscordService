@@ -9,9 +9,9 @@ $icon: "🇺🇸"
 $locale: ENGLISH_US
 
 lang:
-  ukrainian: "Ukrainian"
+  ukrainian: "🇺🇦 Ukrainian"
   russian: "🐷 Russian"
-  english: "English"
+  english: "🇺🇸 English"
 
 values:
   true: "Yes"
