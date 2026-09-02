@@ -38,7 +38,7 @@ public class MemberDataManager extends Manager implements IMemberDataManager {
 
     @Override
     protected void init0() {
-        this.repository = sbds.getDatabase().createRepository0(null, "members", MemberDataRecord.class);
+        this.repository = sbds.getDatabase().createRepository0(null, MemberDataRecord.class);
     }
 
     @Override
