@@ -2,11 +2,13 @@ package net.survivalboom.sbds.core.database;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.survivalboom.sbds.api.database.DataRecord;
 import net.survivalboom.sbds.api.database.IDatabase;
 import net.survivalboom.sbds.api.database.IRepository;
 import net.survivalboom.sbds.api.database.converters.ChannelConverter;
+import net.survivalboom.sbds.api.database.converters.RoleConverter;
 import net.survivalboom.sbds.api.database.converters.TimeZoneConverter;
 import net.survivalboom.sbds.api.database.converters.TranslationConverter;
 import net.survivalboom.sbds.api.modules.IModule;
@@ -89,6 +91,7 @@ public class Database extends Manager implements IDatabase {
         registerSerializer0(null, Channel.class, new ChannelConverter());
         registerSerializer0(null, TimeZone.class, new TimeZoneConverter());
         registerSerializer0(null, ITranslation.class, new TranslationConverter());
+        registerSerializer0(null, Role.class, new RoleConverter());
 
         queue.init();
 
