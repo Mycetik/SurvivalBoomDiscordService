@@ -31,10 +31,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StringCommandManager extends AbstractCommandManager<IStringCommandManager.IRegisteredStringCommand, IStringCommandManager> implements IStringCommandManager, EventListener {
 
     private final IGuildConfigManager guildConfigManager;
+
+    private final Set<Long> executingUsers = ConcurrentHashMap.newKeySet();
 
     public StringCommandManager(@NotNull SBDS sbds) {
         super(sbds);
@@ -168,6 +171,22 @@ public class StringCommandManager extends AbstractCommandManager<IStringCommandM
                 0,
                 0
         );
+
+    }
+
+    private void executeStringCommand(
+            @NotNull MessageReceivedEvent event,
+            @NotNull IRegisteredStringCommand rootCommand,
+            @NotNull String argsRaw,
+            boolean isDM
+    ) {
+
+        Message message = event.getMessage();
+        User author = event.getAuthor();
+        Guild guild = event.getGuild();
+
+        String rootCmdName = rootCommand.getCommand().getName();
+        Command command = rootCommand.getCommand();
 
         Message resp = null;
         try {
